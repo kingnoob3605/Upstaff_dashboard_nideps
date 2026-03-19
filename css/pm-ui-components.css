@@ -1401,3 +1401,196 @@
   border-radius: 12px;
   margin-bottom: 12px;
 }
+
+/* ══════════════════════════════════════════════
+   UTILITY CLASSES — replaces repeated inline styles
+   Keep these minimal; only extract styles used 3+ times.
+══════════════════════════════════════════════ */
+
+/* Layout */
+.u-flex {
+  display: flex;
+}
+.u-flex-center {
+  display: flex;
+  align-items: center;
+}
+.u-flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.u-flex-col {
+  display: flex;
+  flex-direction: column;
+}
+.u-flex-wrap {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.u-flex-1 {
+  flex: 1;
+  min-width: 0;
+}
+.u-flex-shrink-0 {
+  flex-shrink: 0;
+}
+.u-gap-4 {
+  gap: 4px;
+}
+.u-gap-6 {
+  gap: 6px;
+}
+.u-gap-8 {
+  gap: 8px;
+}
+.u-gap-10 {
+  gap: 10px;
+}
+.u-gap-12 {
+  gap: 12px;
+}
+.u-gap-14 {
+  gap: 14px;
+}
+.u-mt-2 {
+  margin-top: 2px;
+}
+.u-mt-4 {
+  margin-top: 4px;
+}
+.u-mt-5 {
+  margin-top: 5px;
+}
+.u-mt-6 {
+  margin-top: 6px;
+}
+
+/* Typography */
+.u-text-xs {
+  font-size: 10px;
+}
+.u-text-sm {
+  font-size: 11px;
+}
+.u-text-base {
+  font-size: 12px;
+}
+.u-text-md {
+  font-size: 13px;
+}
+.u-text-lg {
+  font-size: 16px;
+}
+.u-text-muted {
+  color: var(--muted);
+}
+.u-text-light {
+  color: var(--light);
+}
+.u-text-cyan {
+  color: var(--cyan);
+}
+.u-text-danger {
+  color: #ef4444;
+}
+.u-font-500 {
+  font-weight: 500;
+}
+.u-font-600 {
+  font-weight: 600;
+}
+.u-font-700 {
+  font-weight: 700;
+}
+.u-font-800 {
+  font-weight: 800;
+}
+.u-font-mono {
+  font-family: "Montserrat", sans-serif;
+}
+.u-font-syne {
+  font-family: "Syne", sans-serif;
+}
+.u-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.u-break-all {
+  word-break: break-all;
+}
+.u-text-center {
+  text-align: center;
+}
+
+/* Surfaces */
+.u-surface-card {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+}
+.u-surface-note {
+  background: var(--surface-3);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 12px;
+  color: var(--muted);
+  font-style: italic;
+  margin-top: 10px;
+}
+
+/* Empty / no-data states */
+.u-no-data {
+  font-size: 12px;
+  color: var(--light);
+}
+.u-no-data-md {
+  font-size: 13px;
+  color: var(--light);
+  text-align: center;
+  padding: 12px 0;
+}
+.u-no-data-pad {
+  font-size: 12px;
+  color: var(--light);
+  padding: 8px 0;
+}
+.u-no-data-center {
+  font-size: 12px;
+  color: var(--light);
+  padding: 6px 0 4px;
+}
+
+/* Inline badges / chips */
+.u-badge-cyan {
+  font-size: 10px;
+  font-weight: 700;
+  background: rgba(68, 215, 233, 0.15);
+  color: var(--cyan);
+  padding: 1px 7px;
+  border-radius: 5px;
+  font-family: Montserrat, sans-serif;
+}
+
+/* Input validation states */
+.u-input-error {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.15) !important;
+}
+.u-input-ok {
+  border-color: #43e97b !important;
+}
+.u-field-error-msg {
+  font-size: 11px;
+  color: #ef4444;
+  margin-top: 3px;
+  font-family: "DM Sans", sans-serif;
+  display: none;
+}
+.u-field-error-msg.visible {
+  display: block;
+}

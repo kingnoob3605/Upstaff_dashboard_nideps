@@ -1563,7 +1563,7 @@ function renderBoard() {
   const _boardEl = document.getElementById("board-wrap");
   if (_boardEl) {
     _boardEl.innerHTML =
-      '<div style="display:flex;gap:12px">' +
+      '<div class="u-flex u-gap-12">' +
       Array(4)
         .fill('<div class="skeleton skeleton-board-card" style="flex:1"></div>')
         .join("") +
@@ -1751,12 +1751,12 @@ function _refreshScoreSummary() {
         const passed = kNum >= 75;
         const resultColor = passed ? "var(--green)" : "#ef4444";
         const resultBg = passed ? "rgba(67,233,123,.12)" : "rgba(239,68,68,.1)";
-        return `<div class="score-item" style="flex-direction:column;align-items:flex-start;gap:4px;grid-column:1/-1;">
+        return `<div class="score-item score-item-full u-flex-col u-gap-4">
           <span class="score-label">📝 Knowledge Test</span>
-          <div style="display:flex;align-items:center;gap:8px;width:100%;">
+          <div class="u-flex-center u-gap-8" style="width:100%;">
             <span class="score-val">${knowledge}/100</span>
             <span style="font-size:11px;font-weight:800;font-family:'Montserrat',sans-serif;padding:2px 10px;border-radius:99px;background:${resultBg};color:${resultColor};">${passed ? "✓ PASSED" : "✗ FAILED"}</span>
-            <span style="font-size:10px;color:var(--muted);font-family:'DM Sans',sans-serif;margin-left:auto;">Threshold: 75/100</span>
+            <span class="u-text-xs u-text-muted" style="font-family:'DM Sans',sans-serif;margin-left:auto;">Threshold: 75/100</span>
           </div>
         </div>`;
       })()}
@@ -2552,7 +2552,7 @@ function _renderIvSavedList(task) {
     .sort((a, b) => (a.date || "").localeCompare(b.date || ""));
 
   if (!matched.length) {
-    el.innerHTML = `<div style="font-size:12px;color:var(--light);padding:8px 0;">No interviews scheduled yet. Use the form above to add one.</div>`;
+    el.innerHTML = `<div class="u-no-data-pad">No interviews scheduled yet. Use the form above to add one.</div>`;
     return;
   }
 
@@ -2573,12 +2573,12 @@ function _renderIvSavedList(task) {
       const endFmt = end ? " – " + fmtTime(end) : "";
 
       return `
-      <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-          <div style="font-size:13px;font-weight:700;color:var(--text);">
+      <div class="u-surface-card">
+        <div class="u-flex-between" style="margin-bottom:6px;">
+          <div class="u-text-md u-font-700">
             ${e.round || e.interview_type || "Interview"}
           </div>
-          <div style="display:flex;align-items:center;gap:8px;">
+          <div class="u-flex-center u-gap-8">
             <span style="font-size:11px;font-weight:700;color:${sc};background:${sc}18;padding:2px 10px;border-radius:20px;">
               ${e.status || "Scheduled"}
             </span>
@@ -2588,7 +2588,7 @@ function _renderIvSavedList(task) {
               title="Remove">✕</button>
           </div>
         </div>
-        <div style="font-size:12px;color:var(--muted);display:flex;flex-wrap:wrap;gap:10px;">
+        <div class="u-text-base u-text-muted u-flex-wrap u-gap-10">
           <span>📅 ${e.date || "—"}</span>
           <span>⏰ ${startFmt}${endFmt}</span>
           ${e.interviewer ? `<span>👤 ${e.interviewer}</span>` : ""}
@@ -2744,6 +2744,14 @@ function saveInterviewSchedule() {
     showToast("⚠️ Please enter a date and start time.");
     return;
   }
+  if (meetingLink) {
+    const urlCheck = validateField(meetingLink, "url");
+    if (!urlCheck.ok) {
+      showToast("⚠️ Meeting link must be a valid URL (include https://).");
+      document.getElementById("iv-meeting-link")?.focus();
+      return;
+    }
+  }
 
   const ev = {
     id: Date.now(),
@@ -2821,7 +2829,7 @@ function _renderReviewScheduledList(task) {
     .sort((a, b) => (a.date || "").localeCompare(b.date || ""));
 
   if (!matched.length) {
-    el.innerHTML = `<div style="font-size:12px;color:var(--light);padding:6px 0 4px;">No interviews scheduled yet. Use the Calendar to add one.</div>`;
+    el.innerHTML = `<div class="u-no-data-center">No interviews scheduled yet. Use the Calendar to add one.</div>`;
     return;
   }
   el.innerHTML = matched
@@ -2947,6 +2955,17 @@ document.getElementById("btn-task-save").addEventListener("click", async () => {
       icon: "⚠️",
       title: "Name Required",
     });
+    return;
+  }
+  // Validate optional fields format
+  const formOk = validateForm([
+    { id: "f-email", type: "email", label: "Email" },
+    { id: "f-phone", type: "phone", label: "Phone" },
+    { id: "f-resume", type: "url", label: "Resume Link" },
+    { id: "f-portfolio", type: "url", label: "Portfolio Link" },
+  ]);
+  if (!formOk) {
+    showToast("⚠️ Please fix the highlighted fields.");
     return;
   }
   const newStatus = document.getElementById("f-status").value;
@@ -3479,7 +3498,7 @@ function buildEmployeeCard(e) {
   return `<div class="employee-card ${statusCls}" onclick="openEmpDetail(${e.id})">
     <div class="employee-card-top">
       <div class="employee-avatar-lg" style="background:${ac};">${initParts}</div>
-      <div style="flex:1;min-width:0;">
+      <div class="u-flex-1">
         <div class="employee-name">${sanitize(e.fname)} ${sanitize(e.lname)}</div>
         <div class="employee-position">${sanitize(e.position)} · ${sanitize(e.dept) || "—"}</div>
         <div class="employee-start">Started: ${e.start ? new Date(e.start + "T00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—"}</div>
@@ -3612,6 +3631,14 @@ function saveNewHire() {
         showToast("❌ Name is required.");
         return;
       }
+      const editOk = validateForm([
+        { id: "hf-email", type: "email", label: "Email" },
+        { id: "hf-phone", type: "phone", label: "Phone" },
+      ]);
+      if (!editOk) {
+        showToast("⚠️ Please fix the highlighted fields.");
+        return;
+      }
       e.fname = fname;
       e.lname = lname;
       e.email = document.getElementById("hf-email")?.value || "";
@@ -3643,6 +3670,14 @@ function saveNewHire() {
   const lname = document.getElementById("hf-lname")?.value.trim();
   if (!fname || !lname) {
     showToast("❌ First and last name are required.");
+    return;
+  }
+  const hireOk = validateForm([
+    { id: "hf-email", type: "email", label: "Email" },
+    { id: "hf-phone", type: "phone", label: "Phone" },
+  ]);
+  if (!hireOk) {
+    showToast("⚠️ Please fix the highlighted fields.");
     return;
   }
   const checklist = DEFAULT_CHECKLIST.map((item) => ({ item, done: false }));
@@ -3704,7 +3739,7 @@ function openEmpDetail(empId) {
   document.getElementById("emp-detail-body").innerHTML = `
     <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border);">
       <div style="width:56px;height:56px;border-radius:16px;background:${ac};display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:#fff;font-family:'Montserrat',sans-serif;">${initParts}</div>
-      <div style="flex:1;">
+      <div class="u-flex-1">
         <div style="font-size:16px;font-weight:800;font-family:'Syne',sans-serif;color:var(--text);">${sanitize(e.fname)} ${sanitize(e.lname)}</div>
         <div style="font-size:12px;color:var(--muted);margin-top:2px;">${sanitize(e.position)} · ${sanitize(e.dept) || "—"}</div>
         <span style="display:inline-flex;margin-top:5px;padding:3px 10px;border-radius:99px;font-size:10px;font-weight:700;font-family:'Montserrat',sans-serif;background:${sm.bg};color:${sm.color};">${sm.label}</span>
@@ -3721,7 +3756,7 @@ function openEmpDetail(empId) {
         <div class="emp-info-item"><div class="emp-info-label">Manager</div><div class="emp-info-value">${sanitize(e.manager) || "—"}</div></div>
         <div class="emp-info-item"><div class="emp-info-label">Department</div><div class="emp-info-value">${sanitize(e.dept) || "—"}</div></div>
       </div>
-      ${e.notes ? `<div style="margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--surface-3);font-size:12px;color:var(--muted);font-style:italic;">"${sanitize(e.notes)}"</div>` : ""}
+      ${e.notes ? `<div class="u-surface-note">"${sanitize(e.notes)}"</div>` : ""}
     </div>
 
     <div class="emp-detail-section">
@@ -3749,13 +3784,13 @@ function openEmpDetail(empId) {
         ${docs
           .map((d, i) => {
             const hasLink = d.link && d.link.trim();
-            return `<div class="doc-item" style="flex-direction:column;align-items:stretch;gap:8px;">
-            <div style="display:flex;align-items:center;gap:10px;">
+            return `<div class="doc-item u-flex-col" style="align-items:stretch;gap:8px;">
+            <div class="u-flex-center u-gap-10">
               <div class="doc-item-icon" style="background:${d.color}22;color:${d.color};">${d.icon}</div>
               <div class="doc-item-name">${sanitize(d.name)}</div>
               <span class="doc-item-status" style="background:${d.uploaded ? "rgba(67,233,123,.15)" : "rgba(250,130,49,.12)"};color:${d.uploaded ? "#43e97b" : "#fa8231"};cursor:pointer;flex-shrink:0;" onclick="toggleDocUploaded(${e.id},${i})" title="Click to toggle">${d.uploaded ? "✓ Uploaded" : "Pending"}</span>
             </div>
-            <div style="display:flex;gap:6px;align-items:center;">
+            <div class="u-flex-center u-gap-6">
               <input type="url" placeholder="Paste or auto-generate link…" value="${sanitize(d.link || "")}"
                 style="flex:1;border-radius:8px;border:1.5px solid var(--border);background:var(--surface-3);color:var(--text);font-size:11px;padding:6px 10px;font-family:'DM Sans',sans-serif;"
                 onchange="saveDocLink(${e.id},${i},this.value)"
@@ -3850,11 +3885,11 @@ function renderTable() {
   const thead = `<thead><tr>${cols.map((c) => `<th onclick="sortTable('${c.key}')">${c.label} ${tableSort.col === c.key ? (tableSort.dir === 1 ? "↑" : "↓") : ""}</th>`).join("")}</tr></thead>`;
   if (data.length === 0) {
     document.getElementById("table-el").innerHTML = `
-      <tbody><tr><td colspan="11" style="text-align:center;padding:48px 24px;">
-        <div style="color:var(--muted);font-size:13px;display:flex;flex-direction:column;align-items:center;gap:8px;">
+      <tbody><tr><td colspan="11" class="u-text-center" style="padding:48px 24px;">
+        <div class="u-text-md u-text-muted u-flex-col u-gap-8" style="align-items:center;">
           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.4"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <span style="font-weight:600;">No applicants found</span>
-          <span style="font-size:11px;opacity:0.6;">Try a different search or add an applicant</span>
+          <span class="u-font-600">No applicants found</span>
+          <span class="u-text-sm" style="opacity:0.6;">Try a different search or add an applicant</span>
         </div>
       </td></tr></tbody>`;
     return;
@@ -3867,14 +3902,14 @@ function renderTable() {
       const dc = dueCls(t.due);
       const typScore = t.typing_score
         ? `<span style="font-weight:600;color:#44d7e9;">${t.typing_score}</span>`
-        : `<span style="color:var(--muted);font-size:11px;">—</span>`;
+        : `<span class="u-text-sm u-text-muted">—</span>`;
       const knwScore = t.knowledge_score
         ? (() => {
             const s = parseInt(t.knowledge_score);
             const c = s >= 75 ? "#43e97b" : "#fa4d56";
             return `<span style="font-weight:600;color:${c};">${s}%</span>`;
           })()
-        : `<span style="color:var(--muted);font-size:11px;">—</span>`;
+        : `<span class="u-text-sm u-text-muted">—</span>`;
       return `<tr onclick="openTaskEdit(${t.id})">
       <td style="font-weight:500;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${sanitize(t.name)}</td>
       <td style="font-size:12px;color:var(--muted);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${sanitize(t.applicant_email || "—")}</td>
@@ -4159,7 +4194,7 @@ function renderAgenda() {
     });
   const el = document.getElementById("cal-today-agenda");
   if (!evts.length) {
-    el.innerHTML = `<div style="text-align:center;padding:20px 0;color:var(--light);font-size:13px;">No interviews today.</div>`;
+    el.innerHTML = `<div class="u-no-data-md">No interviews today.</div>`;
     return;
   }
   el.innerHTML = evts
@@ -4213,7 +4248,7 @@ function renderCalendarSidebar() {
 
   el.innerHTML =
     rows ||
-    `<div style="font-size:12px;color:var(--light);padding:8px 6px;line-height:1.8;">
+    `<div class="u-no-data u-no-data-pad" style="line-height:1.8;">
     No calendars yet.<br>
     <span style="opacity:.8;">Sync Google Cal or
       <a href="#" onclick="navigateToCalendarsSettings();return false;"
@@ -4237,7 +4272,7 @@ function renderSettingsCalendarList() {
   if (!el) return;
 
   if (!UPSTAFF_CALENDARS.length) {
-    el.innerHTML = `<div style="font-size:13px;color:var(--light);padding:12px 0;text-align:center;">
+    el.innerHTML = `<div class="u-no-data-md">
       No calendars synced yet. Sign in with Google and click <strong>Sync Google Cal</strong>.
     </div>`;
     return;
@@ -4267,7 +4302,7 @@ function renderSettingsCalendarList() {
            display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;
            border:1.5px solid ${cal.color}44;">${icon}</div>
       <!-- Info -->
-      <div style="flex:1;min-width:0;">
+      <div class="u-flex-1">
         <div style="font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
           ${cal.calendarName}${isPrimary ? ' <span style="font-size:10px;font-weight:700;background:rgba(68,215,233,.15);color:var(--cyan);padding:1px 7px;border-radius:5px;font-family:Montserrat,sans-serif;">PRIMARY</span>' : ""}
         </div>
@@ -4330,7 +4365,7 @@ function renderCalendarLegend() {
   const el = document.getElementById("cal-legend-dynamic");
   if (!el) return;
   el.innerHTML =
-    `<span style="font-size:11px;font-weight:700;color:var(--muted);font-family:'Montserrat',sans-serif;">Calendars:</span>` +
+    `<span class="u-text-sm u-font-700 u-text-muted u-font-mono">Calendars:</span>` +
     UPSTAFF_CALENDARS.map((cal) => {
       const hidden = hiddenCalendars.has(cal.calendarId);
       return `<div class="cal-legend-item" onclick="toggleCalendarVisibility('${cal.calendarId}')" title="${hidden ? "Show" : "Hide"} ${cal.calendarName}" style="cursor:pointer;opacity:${hidden ? 0.4 : 1};transition:opacity .15s;">
@@ -5054,7 +5089,7 @@ function renderMembersList() {
       <span class="member-role-badge" style="background:${ROLE_COLORS[m.role] || "#9ca3af"}22;color:${ROLE_COLORS[m.role] || "#9ca3af"};">${sanitize(m.role)}</span>
       <div class="member-actions">
         <button class="member-action-btn" onclick="showToast('✏️ Edit coming soon!')">Edit</button>
-        <button class="member-action-btn" style="color:#ef4444;border-color:#fca5a5;" onclick="showToast('⚠️ Remove coming soon!')">Remove</button>
+        <button class="member-action-btn" class="u-text-danger" style="border-color:#fca5a5;" onclick="showToast('⚠️ Remove coming soon!')">Remove</button>
       </div>
     </div>`,
   ).join("");
@@ -5686,8 +5721,7 @@ function buildDonut(container, data, colors) {
   // data = [{label, value}, ...]
   const total = data.reduce((s, d) => s + d.value, 0);
   if (total === 0) {
-    container.innerHTML =
-      '<div style="color:var(--light);font-size:13px;">No data</div>';
+    container.innerHTML = '<div class="u-no-data">No data</div>';
     return;
   }
 
@@ -5874,7 +5908,7 @@ function renderAnalytics() {
       <th>Applicants</th>
       <th>Total</th>
     </tr></thead>
-    <tbody>${tableRows || '<tr><td colspan="3" style="color:var(--light);text-align:center;padding:16px;">No applicants yet</td></tr>'}</tbody>`;
+    <tbody>${tableRows || '<tr><td colspan="3" class="u-text-center u-text-light" style="padding:16px;">No applicants yet</td></tr>'}</tbody>`;
 
   /* ── 3. Applicants per position bar chart (live from TASKS) ── */
   const posData = posEntries.map(([label, value]) => ({ label, value }));

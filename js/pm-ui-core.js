@@ -26,6 +26,115 @@ function sanitize(str) {
 }
 
 /* ══════════════════════════════════════════════
+   INPUT VALIDATION LAYER
+   validateField(value, type) → { ok, message }
+   Types: "name" | "email" | "phone" | "url" | "date" | "required"
+   showFieldError(inputEl, message) — attaches inline error under input
+   clearFieldError(inputEl)         — removes inline error
+   validateForm(rules)              — validates multiple fields at once
+     rules = [{ id, type, label }]
+     returns true if all pass, false + shows errors if any fail
+══════════════════════════════════════════════ */
+
+function validateField(value, type) {
+  const v = (value || "").trim();
+  switch (type) {
+    case "required":
+      return v.length > 0
+        ? { ok: true }
+        : { ok: false, message: "This field is required." };
+    case "name":
+      if (!v) return { ok: false, message: "Name is required." };
+      if (v.length < 2)
+        return { ok: false, message: "Name must be at least 2 characters." };
+      if (v.length > 80)
+        return { ok: false, message: "Name is too long (max 80 chars)." };
+      if (/[<>{}]/.test(v))
+        return { ok: false, message: "Name contains invalid characters." };
+      return { ok: true };
+    case "email":
+      if (!v) return { ok: true }; // email optional unless caller requires it
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)
+        ? { ok: true }
+        : { ok: false, message: "Enter a valid email address." };
+    case "phone":
+      if (!v) return { ok: true }; // phone optional
+      return /^[\d\s\-\+\(\)]{7,20}$/.test(v)
+        ? { ok: true }
+        : { ok: false, message: "Enter a valid phone number." };
+    case "url":
+      if (!v) return { ok: true }; // url optional
+      try {
+        new URL(v);
+        return { ok: true };
+      } catch {
+        return { ok: false, message: "Enter a valid URL (include https://)." };
+      }
+    case "date":
+      if (!v) return { ok: false, message: "Date is required." };
+      return isNaN(Date.parse(v))
+        ? { ok: false, message: "Enter a valid date." }
+        : { ok: true };
+    default:
+      return { ok: true };
+  }
+}
+
+function showFieldError(inputEl, message) {
+  if (!inputEl) return;
+  inputEl.classList.add("u-input-error");
+  inputEl.classList.remove("u-input-ok");
+  let msg = inputEl.parentElement?.querySelector(".u-field-error-msg");
+  if (!msg) {
+    msg = document.createElement("div");
+    msg.className = "u-field-error-msg";
+    inputEl.parentElement?.appendChild(msg);
+  }
+  msg.textContent = message;
+  msg.classList.add("visible");
+}
+
+function clearFieldError(inputEl) {
+  if (!inputEl) return;
+  inputEl.classList.remove("u-input-error");
+  // Only add ok style if has value
+  if (inputEl.value?.trim()) inputEl.classList.add("u-input-ok");
+  const msg = inputEl.parentElement?.querySelector(".u-field-error-msg");
+  if (msg) msg.classList.remove("visible");
+}
+
+function clearAllFieldErrors(containerEl) {
+  if (!containerEl) return;
+  containerEl.querySelectorAll(".u-input-error").forEach((el) => {
+    el.classList.remove("u-input-error", "u-input-ok");
+  });
+  containerEl.querySelectorAll(".u-field-error-msg.visible").forEach((el) => {
+    el.classList.remove("visible");
+  });
+}
+
+/**
+ * validateForm(rules) — validate multiple fields at once.
+ * rules = [{ id: "input-id", type: "name"|"email"|..., label: "Field Name" }]
+ * Returns true if all pass. Shows inline errors and returns false if any fail.
+ */
+function validateForm(rules) {
+  let allOk = true;
+  rules.forEach(({ id, type, label }) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const result = validateField(el.value, type);
+    if (!result.ok) {
+      showFieldError(el, result.message || `${label || "Field"} is invalid.`);
+      allOk = false;
+    } else {
+      clearFieldError(el);
+    }
+  });
+  return allOk;
+}
+
+/* ══════════════════════════════════════════════
    UTILITY — Debug Logger
    Set DEBUG = true to enable console output.
 ══════════════════════════════════════════════ */
