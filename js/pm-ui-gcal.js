@@ -3,15 +3,14 @@ const GCAL_CONFIG = {
   // STEP 1: Your API Key
   // Google Cloud Console → APIs & Services → Credentials → API Key
   // ─────────────────────────────────────────────────────────────────
-  API_KEY: "AIzaSyCNxV5_0ymt6B2s1WEtSYI8586U6bcYHYI",
+  API_KEY: "",
 
   // ─────────────────────────────────────────────────────────────────
   // STEP 2: Your OAuth 2.0 Client ID
   // Google Cloud Console → Credentials → OAuth 2.0 Client ID
   // Authorized origin: http://localhost:8080
   // ─────────────────────────────────────────────────────────────────
-  CLIENT_ID:
-    "960820536270-rsnda80hpl03rmdm1tqki2p11b01svuv.apps.googleusercontent.com",
+  CLIENT_ID: "",
 
   // Calendar IDs are discovered dynamically via gcalFetchCalendarList()
   // No hardcoding needed — calendars are fetched from the Google API.
@@ -20,11 +19,10 @@ const GCAL_CONFIG = {
   MONTHS_RANGE: 2,
 
   // Google API scopes — full read+write access for creating/updating/deleting events
-  SCOPES: "https://www.googleapis.com/auth/calendar",
+  SCOPES: "",
 
   // Google API discovery document for Calendar v3
-  DISCOVERY_DOC:
-    "https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest",
+  DISCOVERY_DOC: "",
 
   // ─────────────────────────────────────────────────────────────────
   // REMINDER SETTINGS

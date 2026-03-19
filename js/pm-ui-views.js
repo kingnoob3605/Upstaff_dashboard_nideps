@@ -2116,9 +2116,9 @@ function applyPendingAssessment() {
 
 /* ── Load / Save EmailJS config from localStorage ── */
 const EMAILJS_DEFAULTS = {
-  serviceId: "service_u2ndjyi",
-  templateId: "template_jqjzkgs",
-  publicKey: "uf6F8j1q2Hki-DR9s",
+  serviceId: "",
+  templateId: "",
+  publicKey: "",
   portalUrl: "https://kingnoob3605.github.io/upstaff-portal/",
   expiryHours: 72,
 };
