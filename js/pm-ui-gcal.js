@@ -33,6 +33,45 @@ const GCAL_CONFIG = {
   REMINDER_MINUTES: [60, 30, 10],
 };
 
+// ── Retry utility for Google API calls ──
+async function _gcalWithRetry(fn, maxRetries = 3) {
+  let lastErr;
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastErr = err;
+      const status = err?.result?.error?.code || err?.status;
+      const msg = err?.result?.error?.message || "";
+      // Don't retry auth errors
+      if (status === 401 || status === 403) {
+        gcalSignedIn = false;
+        localStorage.removeItem(LS_KEYS.GCAL_AUTH);
+        showCalToast("⚠️ Google Calendar session expired — please reconnect.");
+        throw err;
+      }
+      // Rate limit — wait before retry
+      if (status === 429) {
+        showCalToast(`⏳ Google rate limited — retrying (${attempt}/${maxRetries})…`);
+        await new Promise((r) => setTimeout(r, attempt * 1500));
+        continue;
+      }
+      // Network error or 5xx — retry with backoff
+      if (!status || status >= 500) {
+        if (attempt < maxRetries) {
+          await new Promise((r) => setTimeout(r, attempt * 800));
+          continue;
+        }
+      }
+      break;
+    }
+  }
+  const errMsg = lastErr?.result?.error?.message || lastErr?.message || "Unknown error";
+  console.warn("[GCal] ❌ Failed after retries:", errMsg, lastErr);
+  showCalToast(`⚠️ Google Calendar error: ${errMsg}`);
+  throw lastErr;
+}
+
 // ── Calendar registry is declared earlier and populated by gcalFetchCalendarList() ──
 let gcalTokenClient = null; // Holds the OAuth token client
 let gcalSignedIn = false; // True once we have a valid access token
@@ -49,6 +88,8 @@ let reminderTimer = null; // setInterval handle for reminder checks
 ────────────────────────────────────────────── */
 function gcalInit() {
   if (
+    !GCAL_CONFIG.API_KEY ||
+    !GCAL_CONFIG.CLIENT_ID ||
     GCAL_CONFIG.API_KEY === "YOUR_API_KEY_HERE" ||
     GCAL_CONFIG.CLIENT_ID === "YOUR_CLIENT_ID_HERE.apps.googleusercontent.com"
   ) {
@@ -220,9 +261,9 @@ async function gcalFetchCalendarList() {
   try {
     // Use "reader" (not "writer" or "freeBusyReader") so that subscribed
     // public/holiday calendars — which are read-only — are included in the list.
-    const resp = await gapi.client.calendar.calendarList.list({
+    const resp = await _gcalWithRetry(() => gapi.client.calendar.calendarList.list({
       minAccessRole: "reader",
-    });
+    }));
     const items = resp.result.items || [];
 
     UPSTAFF_CALENDARS = items.map((cal, i) => ({
@@ -266,10 +307,9 @@ async function gcalFetchCalendarList() {
     renderCalendarSidebar();
     return UPSTAFF_CALENDARS;
   } catch (err) {
-    console.warn(
-      "[GCal] ⚠️ Could not fetch calendar list:",
-      err?.result?.error?.message || err,
-    );
+    const msg = err?.result?.error?.message || "";
+    if (!msg) showCalToast("⚠️ Could not load Google Calendars. Check your connection.");
+    console.warn("[GCal] ⚠️ Could not fetch calendar list:", msg || err);
     return UPSTAFF_CALENDARS;
   }
 }

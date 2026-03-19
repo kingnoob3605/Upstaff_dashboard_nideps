@@ -600,6 +600,7 @@ function persistSave() {
     dbg(
       `[Persist] 💾 Saved ${localOnly.length} events, ${TASKS.length} tasks, ${UPSTAFF_CALENDARS.length} calendar(s)`,
     );
+    checkStorageQuota();
   } catch (e) {
     console.warn(
       "[Persist] ⚠️ localStorage write failed (storage full or blocked):",
@@ -629,6 +630,14 @@ function persistLoad() {
       TASKS = [];
       UPSTAFF_CALENDARS = [];
     }
+    // Migrate: ensure every task has assignees[], comments[], activity[], attachments[]
+    TASKS.forEach((t) => {
+      if (!t.assignees) t.assignees = t.assignee ? [t.assignee] : ["HR Team"];
+      if (!t.assignee) t.assignee = t.assignees[0] || "HR Team";
+      if (!t.comments) t.comments = [];
+      if (!t.activity) t.activity = [];
+      if (!t.attachments) t.attachments = [];
+    });
 
     dbg(
       `[Persist] ✅ Restored ${calEvents.length} event(s), ${TASKS.length} task(s), ${UPSTAFF_CALENDARS.length} calendar(s)`,
@@ -785,6 +794,9 @@ function moveApplicantToStage(taskId, newStage, opts = {}) {
     showToast(`✅ Moved to ${newStage}`);
   }
 
+  // Log activity & notify
+  logActivity(taskId, "stage_change", `${oldStage} → ${newStage}`);
+  pushNotif("stage", `${t.applicant_name || t.name} moved to ${newStage}`, taskId);
   persistSave();
   refreshCurrentView();
   dbg(`[Pipeline] Task #${taskId} "${t.name}": ${oldStage} → ${newStage}`);
@@ -965,39 +977,56 @@ function getCalName(calendarId) {
 /* ── Positions list (used by Settings) ── */
 let POSITIONS = [...JOB_POSITIONS];
 
-/* ── Team members (used by Settings) ── */
-const MEMBERS = [
-  {
-    name: "Ana Reyes",
-    role: "HR Manager",
-    email: "ana@upstaff.com",
-    color: "#6c63ff",
-  },
-  {
-    name: "HR Team",
-    role: "Recruiter",
-    email: "hr@upstaff.com",
-    color: "#44d7e9",
-  },
-  {
-    name: "Marketing",
-    role: "Reviewer",
-    email: "mkt@upstaff.com",
-    color: "#fa8231",
-  },
-  {
-    name: "CEO Office",
-    role: "Admin",
-    email: "ceo@upstaff.com",
-    color: "#ff6584",
-  },
-  {
-    name: "HR Panel",
-    role: "Interviewer",
-    email: "panel@upstaff.com",
-    color: "#43e97b",
-  },
+/* ── Team members (used by Settings) — loaded from localStorage ── */
+const DEFAULT_MEMBERS = [
+  { name: "Ana Reyes",  role: "HR Manager",  email: "ana@upstaff.com",   color: "#6c63ff" },
+  { name: "HR Team",    role: "Recruiter",   email: "hr@upstaff.com",    color: "#44d7e9" },
+  { name: "Marketing",  role: "Reviewer",    email: "mkt@upstaff.com",   color: "#fa8231" },
+  { name: "CEO Office", role: "Admin",       email: "ceo@upstaff.com",   color: "#ff6584" },
+  { name: "HR Panel",   role: "Interviewer", email: "panel@upstaff.com", color: "#43e97b" },
 ];
+let MEMBERS = (() => {
+  try {
+    const raw = localStorage.getItem("upstaff_members");
+    if (raw) return JSON.parse(raw);
+  } catch (_) {}
+  return DEFAULT_MEMBERS.map((m) => ({ ...m }));
+})();
+function saveMembers() {
+  try { localStorage.setItem("upstaff_members", JSON.stringify(MEMBERS)); } catch (_) {}
+}
+
+/* ── Notification store ── */
+const LS_NOTIFS_KEY = "upstaff_notifs";
+let NOTIFS = (() => {
+  try { const r = localStorage.getItem(LS_NOTIFS_KEY); return r ? JSON.parse(r) : []; } catch (_) { return []; }
+})();
+let _notifIdCtr = NOTIFS.length ? Math.max(...NOTIFS.map((n) => n.id)) + 1 : 1;
+function saveNotifs() {
+  try { localStorage.setItem(LS_NOTIFS_KEY, JSON.stringify(NOTIFS)); } catch (_) {}
+}
+function pushNotif(type, msg, taskId = null) {
+  const n = { id: _notifIdCtr++, type, msg, taskId, read: false, createdAt: new Date().toISOString() };
+  NOTIFS.unshift(n);
+  if (NOTIFS.length > 50) NOTIFS.length = 50; // cap
+  saveNotifs();
+  _updateNotifBadge();
+  // Browser Notification API
+  if (Notification.permission === "granted") {
+    new Notification("Upstaff", { body: msg, icon: "css/Logo-Footer.png" });
+  } else if (Notification.permission === "default") {
+    Notification.requestPermission().then((p) => {
+      if (p === "granted") new Notification("Upstaff", { body: msg, icon: "css/Logo-Footer.png" });
+    });
+  }
+}
+function _updateNotifBadge() {
+  const badge = document.getElementById("notif-badge");
+  const unread = NOTIFS.filter((n) => !n.read).length;
+  if (!badge) return;
+  badge.textContent = unread;
+  badge.style.display = unread > 0 ? "flex" : "none";
+}
 
 /* ══════════════════════════════════════════════
    UTILITIES
@@ -1055,6 +1084,72 @@ function uiConfirm(
 ) {
   return _showDialog({ icon, title, msg, okText, okDanger, showCancel: true });
 }
+
+/* ── Storage quota check ─────────────────────── */
+let _quotaWarnedSession = false;
+function checkStorageQuota() {
+  try {
+    const bytes = new Blob([JSON.stringify(localStorage)]).size;
+    const MB = bytes / (1024 * 1024);
+    const pct = Math.round((MB / 5) * 100);
+    // Update storage bar in Settings if visible
+    const bar = document.getElementById("storage-usage-bar");
+    const label = document.getElementById("storage-usage-label");
+    if (bar) bar.style.width = Math.min(pct, 100) + "%";
+    if (bar) bar.style.background = pct > 85 ? "#ef4444" : pct > 65 ? "#fa8231" : "var(--cyan)";
+    if (label) label.textContent = `${MB.toFixed(2)} MB used (~${pct}% of 5 MB)`;
+    if (pct > 85) {
+      showToast("⚠️ Storage nearly full! Consider exporting & clearing old data.");
+    } else if (pct > 65 && !_quotaWarnedSession) {
+      _quotaWarnedSession = true;
+      showToast("💾 Storage is over 65% full. Keep an eye on it.");
+    }
+  } catch (_) {}
+}
+
+/* ── Activity log helper ─────────────────────── */
+let _actIdCtr = Date.now();
+function logActivity(taskId, action, detail = "") {
+  const t = TASKS.find((x) => x.id === taskId);
+  if (!t) return;
+  if (!t.activity) t.activity = [];
+  // Get current user name from profile or default
+  let byName = "HR Admin";
+  try {
+    const p = JSON.parse(localStorage.getItem("upstaff_profile") || "{}");
+    if (p.firstName) byName = (p.firstName + " " + (p.lastName || "")).trim();
+  } catch (_) {}
+  t.activity.push({ id: _actIdCtr++, action, by: byName, at: new Date().toISOString(), detail });
+  persistSave();
+}
+
+/* ── Cross-tab data sync (storage event) ─────── */
+window.addEventListener("storage", function onStorageSync(e) {
+  const watchedKeys = Object.values(LS_KEYS).concat(["upstaff_todos", "upstaff_employees", "upstaff_notifs"]);
+  if (!e.key || !watchedKeys.includes(e.key)) return;
+  // Reload affected data slices
+  try {
+    if (e.key === LS_KEYS.TASKS && e.newValue) {
+      TASKS = JSON.parse(e.newValue);
+      TASKS.forEach((t) => {
+        if (!t.assignees) t.assignees = t.assignee ? [t.assignee] : ["HR Team"];
+        if (!t.comments) t.comments = [];
+        if (!t.activity) t.activity = [];
+        if (!t.attachments) t.attachments = [];
+      });
+    }
+    if (e.key === LS_KEYS.CAL && e.newValue) {
+      const local = JSON.parse(e.newValue);
+      calEvents = [...local, ...calEvents.filter((ev) => ev.isGoogleEvent)];
+    }
+    if (e.key === LS_NOTIFS_KEY && e.newValue) {
+      NOTIFS = JSON.parse(e.newValue);
+      _updateNotifBadge();
+    }
+  } catch (_) {}
+  refreshCurrentView();
+  showToast("🔄 Data synced from another tab.");
+});
 
 function showCalToast(msg) {
   const t = document.getElementById("cal-toast");
@@ -1406,5 +1501,204 @@ document.addEventListener("click", function (e) {
     case "dismissReminder":
       dismissReminder();
       break;
+
+    // Members CRUD
+    case "addMember":
+      addMemberForm();
+      break;
+    case "editMember":
+      editMemberForm(Number(arg));
+      break;
+    case "removeMember":
+      removeMemberAction(Number(arg));
+      break;
+
+    // Notifications
+    case "toggleNotifPanel":
+      toggleNotifPanel();
+      break;
+    case "markAllNotifsRead":
+      markAllNotifsRead();
+      break;
+    case "dismissNotif":
+      dismissNotif(Number(arg));
+      break;
+
+    // Activity / Comments
+    case "postComment":
+      postComment();
+      break;
+
+    // File attachments
+    case "triggerFileInput":
+      document.getElementById("file-attach-input")?.click();
+      break;
+    case "deleteAttachment":
+      deleteAttachment(Number(arg));
+      break;
   }
 });
+
+/* ══════════════════════════════════════════════
+   MEMBER CRUD FUNCTIONS
+══════════════════════════════════════════════ */
+const MEMBER_COLORS = ["#6c63ff","#44d7e9","#43e97b","#fa8231","#ff6584","#f59e0b","#3b82f6","#8b5cf6","#ec4899","#14b8a6"];
+const MEMBER_ROLES  = ["HR Manager","Recruiter","Reviewer","Interviewer","Admin","Administrator"];
+
+async function addMemberForm() {
+  const name  = (prompt("Full name of new member:") || "").trim();
+  if (!name) return;
+  const role  = (prompt(`Role (${MEMBER_ROLES.join(", ")}):`) || "Recruiter").trim();
+  const email = (prompt("Email address:") || "").trim();
+  const colorIdx = MEMBERS.length % MEMBER_COLORS.length;
+  MEMBERS.push({ name, role, email: email || `${name.toLowerCase().replace(/\s+/g,".")}@upstaff.com`, color: MEMBER_COLORS[colorIdx] });
+  saveMembers();
+  if (typeof renderMembersList === "function") renderMembersList();
+  if (typeof _rebuildAssigneeOptions === "function") _rebuildAssigneeOptions();
+  showToast(`✅ ${name} added to team!`);
+}
+
+async function editMemberForm(idx) {
+  const m = MEMBERS[idx];
+  if (!m) return;
+  const name  = (prompt("Full name:", m.name) || "").trim();
+  if (!name) return;
+  const role  = (prompt(`Role (${MEMBER_ROLES.join(", ")}):`, m.role) || m.role).trim();
+  const email = (prompt("Email:", m.email) || m.email).trim();
+  MEMBERS[idx] = { ...m, name, role, email };
+  saveMembers();
+  if (typeof renderMembersList === "function") renderMembersList();
+  if (typeof _rebuildAssigneeOptions === "function") _rebuildAssigneeOptions();
+  showToast(`✅ ${name} updated!`);
+}
+
+async function removeMemberAction(idx) {
+  const m = MEMBERS[idx];
+  if (!m) return;
+  if (!(await uiConfirm(`Remove "${m.name}" from the team?`, { icon: "🗑️", title: "Remove Member?", okText: "Remove", okDanger: true }))) return;
+  MEMBERS.splice(idx, 1);
+  saveMembers();
+  if (typeof renderMembersList === "function") renderMembersList();
+  if (typeof _rebuildAssigneeOptions === "function") _rebuildAssigneeOptions();
+  showToast("🗑️ Member removed.");
+}
+
+/* ══════════════════════════════════════════════
+   NOTIFICATION PANEL FUNCTIONS
+══════════════════════════════════════════════ */
+function toggleNotifPanel() {
+  const panel = document.getElementById("notif-panel");
+  if (!panel) return;
+  const isOpen = panel.classList.contains("open");
+  if (isOpen) {
+    panel.classList.remove("open");
+  } else {
+    panel.classList.add("open");
+    if (typeof renderNotifPanel === "function") renderNotifPanel();
+    // Mark all as read when opened
+    NOTIFS.forEach((n) => (n.read = true));
+    saveNotifs();
+    _updateNotifBadge();
+  }
+}
+
+function markAllNotifsRead() {
+  NOTIFS.forEach((n) => (n.read = true));
+  saveNotifs();
+  _updateNotifBadge();
+  if (typeof renderNotifPanel === "function") renderNotifPanel();
+}
+
+function dismissNotif(id) {
+  const idx = NOTIFS.findIndex((n) => n.id === id);
+  if (idx > -1) { NOTIFS.splice(idx, 1); saveNotifs(); }
+  if (typeof renderNotifPanel === "function") renderNotifPanel();
+  _updateNotifBadge();
+}
+
+// Request browser notification permission on load
+if (typeof Notification !== "undefined" && Notification.permission === "default") {
+  Notification.requestPermission();
+}
+
+// Update badge on load
+setTimeout(_updateNotifBadge, 500);
+
+/* ══════════════════════════════════════════════
+   COMMENT FUNCTIONS
+══════════════════════════════════════════════ */
+function postComment() {
+  const textarea = document.getElementById("comment-input");
+  if (!textarea) return;
+  const text = textarea.value.trim();
+  if (!text) return showToast("⚠️ Comment cannot be empty.");
+  const taskId = window._editingTaskId;
+  if (!taskId) return;
+  const t = TASKS.find((x) => x.id === taskId);
+  if (!t) return;
+  if (!t.comments) t.comments = [];
+  let byName = "HR Admin";
+  try {
+    const p = JSON.parse(localStorage.getItem("upstaff_profile") || "{}");
+    if (p.firstName) byName = (p.firstName + " " + (p.lastName || "")).trim();
+  } catch (_) {}
+  t.comments.push({ id: _actIdCtr++, author: byName, text, createdAt: new Date().toISOString() });
+  logActivity(taskId, "comment", `${byName} commented`);
+  textarea.value = "";
+  if (typeof renderActivityTab === "function") renderActivityTab(t);
+}
+
+/* ══════════════════════════════════════════════
+   FILE ATTACHMENT FUNCTIONS
+══════════════════════════════════════════════ */
+const MAX_FILE_SIZE_MB = 1;
+const MAX_FILES_PER_TASK = 5;
+
+function handleFileAttach(input) {
+  const taskId = window._editingTaskId;
+  if (!taskId) return showToast("⚠️ Save the task first, then attach files.");
+  const t = TASKS.find((x) => x.id === taskId);
+  if (!t) return;
+  if (!t.attachments) t.attachments = [];
+  const files = Array.from(input.files);
+  if (!files.length) return;
+  if (t.attachments.length + files.length > MAX_FILES_PER_TASK) {
+    return showToast(`⚠️ Max ${MAX_FILES_PER_TASK} files per task.`);
+  }
+  let processed = 0;
+  files.forEach((file) => {
+    if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
+      showToast(`⚠️ "${file.name}" exceeds ${MAX_FILE_SIZE_MB} MB limit — skipped.`);
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      let byName = "HR Admin";
+      try { const p = JSON.parse(localStorage.getItem("upstaff_profile") || "{}"); if (p.firstName) byName = (p.firstName + " " + (p.lastName || "")).trim(); } catch (_) {}
+      t.attachments.push({ id: _actIdCtr++, name: file.name, type: file.type, size: file.size, dataUrl: ev.target.result, uploadedAt: new Date().toISOString(), uploadedBy: byName });
+      logActivity(taskId, "attachment", `Attached "${file.name}"`);
+      processed++;
+      if (processed === files.filter((f) => f.size <= MAX_FILE_SIZE_MB * 1024 * 1024).length) {
+        if (typeof renderFilesTab === "function") renderFilesTab(t);
+        showToast(`✅ ${processed} file(s) attached!`);
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+  input.value = "";
+}
+
+async function deleteAttachment(attachId) {
+  const taskId = window._editingTaskId;
+  if (!taskId) return;
+  const t = TASKS.find((x) => x.id === taskId);
+  if (!t || !t.attachments) return;
+  const idx = t.attachments.findIndex((a) => a.id === attachId);
+  if (idx === -1) return;
+  if (!(await uiConfirm(`Delete "${t.attachments[idx].name}"?`, { icon: "🗑️", title: "Delete File?", okText: "Delete", okDanger: true }))) return;
+  const name = t.attachments[idx].name;
+  t.attachments.splice(idx, 1);
+  logActivity(taskId, "attachment_deleted", `Deleted "${name}"`);
+  if (typeof renderFilesTab === "function") renderFilesTab(t);
+  showToast("🗑️ File deleted.");
+}

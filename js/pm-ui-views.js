@@ -146,6 +146,23 @@ function refreshStorageStatus() {
       true,
     ),
   ].join("");
+  // Storage usage bar
+  try {
+    const bytes = new Blob([JSON.stringify(localStorage)]).size;
+    const MB = bytes / (1024 * 1024);
+    const pct = Math.min(Math.round((MB / 5) * 100), 100);
+    const barColor = pct > 85 ? "#ef4444" : pct > 65 ? "#fa8231" : "var(--cyan)";
+    el.insertAdjacentHTML("afterend", `
+      <div style="margin-top:12px;">
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px;">
+          <span>Storage Usage</span>
+          <span id="storage-usage-label">${MB.toFixed(2)} MB (~${pct}% of 5 MB)</span>
+        </div>
+        <div style="height:6px;border-radius:99px;background:var(--border);overflow:hidden;">
+          <div id="storage-usage-bar" style="height:100%;width:${pct}%;background:${barColor};border-radius:99px;transition:width 0.3s;"></div>
+        </div>
+      </div>`);
+  } catch (_) {}
 }
 
 /* View tab clicks */
@@ -396,7 +413,8 @@ function renderList() {
           </div></td></tr>`
               : stTasks
                   .map((t) => {
-                    const ac = avatarColor(t.assignee || "HR");
+                    const _assignees = t.assignees || (t.assignee ? [t.assignee] : ["HR"]);
+                    const ac = avatarColor(_assignees[0] || "HR");
                     const folderTag = t.candidateFolder
                       ? `<span class="folder-tag">${t.candidateFolder === "Ready to Hire" ? "🎯" : t.candidateFolder === "Ready to Call" ? "📞" : "⭐"} ${t.candidateFolder}</span>`
                       : "";
@@ -495,7 +513,7 @@ function renderList() {
                 </div>
               </div></td>
               <td><span style="font-size:12px;color:var(--text);font-weight:500;line-height:1.4;">${sanitize(t.position) || "—"}</span></td>
-              <td class="col-recruiter"><div class="assignee-chip"><div class="assignee-avatar" style="background:${ac};">${initials(t.assignee || "?")}</div><span style="font-size:12px;">${sanitize(t.assignee) || "—"}</span></div></td>
+              <td class="col-recruiter"><div class="assignee-chip">${_assignees.slice(0,3).map((a,i) => `<div class="assignee-avatar" style="background:${avatarColor(a)};margin-left:${i>0?"-6px":"0"};z-index:${3-i};" title="${sanitize(a)}">${initials(a)}</div>`).join("")}${_assignees.length > 3 ? `<span style="font-size:10px;color:var(--muted);margin-left:4px;">+${_assignees.length-3}</span>` : ""}<span style="font-size:12px;margin-left:4px;">${sanitize(_assignees[0]) || "—"}</span></div></td>
               <td class="col-intdate">${intDateHTML}</td>
               <td>
                 <span class="${statusPillClass(t.status)}">${t.status}</span>
@@ -1465,7 +1483,8 @@ function renderBoard() {
           .map((t) => {
             const pc = PRIORITY_COLORS[t.priority] || "#ccc";
             const dc = dueCls(t.due);
-            const ac = avatarColor(t.assignee);
+            const _boardAssignees = t.assignees || (t.assignee ? [t.assignee] : ["HR"]);
+            const ac = avatarColor(_boardAssignees[0] || "HR");
             const nextStg = getNextStage(t.status);
             const isActive = ACTIVE_STAGES.includes(t.status);
             const hasScores =
@@ -1487,7 +1506,7 @@ function renderBoard() {
             <div class="board-card-meta">
               <span class="board-card-pos">${sanitize(t.position)}</span>
               <span class="priority-pill" style="background:${pc}22;color:${pc};font-size:10px;">${t.priority}</span>
-              <div class="assignee-avatar" style="background:${ac};margin-left:auto;" title="${sanitize(t.assignee)}">${initials(t.assignee)}</div>
+              <div style="display:flex;margin-left:auto;">${_boardAssignees.slice(0,2).map((a,i) => `<div class="assignee-avatar" style="background:${avatarColor(a)};margin-left:${i>0?"-4px":"0"};z-index:${2-i};" title="${sanitize(a)}">${initials(a)}</div>`).join("")}${_boardAssignees.length>2?`<span style="font-size:9px;color:var(--muted);margin-left:2px;">+${_boardAssignees.length-2}</span>`:""}</div>
             </div>
             ${t.due ? `<div style="margin-top:4px;"><span class="due-date ${dc}" style="font-size:10px;">📅 ${fmtDue(t.due)}</span></div>` : ""}
             ${scoreTag}
@@ -1623,6 +1642,25 @@ function _setField(id, value) {
 }
 
 /** Switch the applicant modal tab */
+/* ── Helper: get/set multi-assignees from checkbox list ── */
+function _getAssignees() {
+  return Array.from(document.querySelectorAll("#assignee-checkbox-list input[name='f-assignees']:checked")).map((cb) => cb.value);
+}
+function _setAssignees(arr) {
+  document.querySelectorAll("#assignee-checkbox-list input[name='f-assignees']").forEach((cb) => {
+    cb.checked = arr.includes(cb.value);
+  });
+  _updateAssigneeDropdownLabel();
+}
+function _updateAssigneeDropdownLabel() {
+  const selected = _getAssignees();
+  const label = document.getElementById("assignee-dropdown-label");
+  if (!label) return;
+  if (selected.length === 0) label.textContent = "— None —";
+  else if (selected.length === 1) label.textContent = selected[0];
+  else label.textContent = `${selected[0]} +${selected.length - 1} more`;
+}
+
 function _switchModalTab(tabName, btnEl) {
   document
     .querySelectorAll(".modal-tab")
@@ -1640,6 +1678,12 @@ function _switchModalTab(tabName, btnEl) {
     _refreshScoreSummary();
     const task = taskEditId ? TASKS.find((x) => x.id === taskEditId) : null;
     _updateImportBanner(task);
+  }
+  // Render activity/files tabs on switch
+  if (tabName === "activity" || tabName === "files") {
+    const task = taskEditId ? TASKS.find((x) => x.id === taskEditId) : null;
+    if (task && tabName === "activity") renderActivityTab(task);
+    if (task && tabName === "files") renderFilesTab(task);
   }
 }
 
@@ -2345,7 +2389,8 @@ function openTaskNew(status = "Applied") {
   document.getElementById("f-status").value = status;
   document.getElementById("f-priority").value = "Medium";
   document.getElementById("f-position").value = "Intake Caller";
-  document.getElementById("f-assignee").value = "HR Team";
+  _rebuildAssigneeOptions();
+  _setAssignees(["HR Team"]);
   document.getElementById("f-start").value = new Date()
     .toISOString()
     .slice(0, 10);
@@ -2393,7 +2438,8 @@ function openTaskEdit(id, goToAssessment = false) {
   document.getElementById("f-status").value = t.status;
   document.getElementById("f-priority").value = t.priority;
   document.getElementById("f-position").value = t.position;
-  document.getElementById("f-assignee").value = t.assignee;
+  _rebuildAssigneeOptions();
+  _setAssignees(t.assignees || (t.assignee ? [t.assignee] : ["HR Team"]));
   document.getElementById("f-start").value = t.start || "";
   document.getElementById("f-due").value = t.due || "";
   document.getElementById("f-notes").value = t.notes || "";
@@ -2994,7 +3040,8 @@ document.getElementById("btn-task-save").addEventListener("click", async () => {
     status: newStatus,
     priority: document.getElementById("f-priority").value,
     position: document.getElementById("f-position").value,
-    assignee: document.getElementById("f-assignee").value,
+    assignees: _getAssignees().length ? _getAssignees() : ["HR Team"],
+    assignee: _getAssignees()[0] || existing?.assignee || "HR Team",
     start: document.getElementById("f-start").value,
     due: dueDate,
     notes: document.getElementById("f-notes").value,
@@ -3051,7 +3098,16 @@ document.getElementById("btn-task-save").addEventListener("click", async () => {
       newStatus !== existing?.status
         ? new Date().toISOString()
         : existing?.stage_changed_at,
+    // Preserve activity, comments, attachments
+    comments: existing?.comments || [],
+    activity: existing?.activity || [],
+    attachments: existing?.attachments || [],
   };
+  // Log activity for status change
+  if (taskEditId && existing && newStatus !== existing.status) {
+    t.activity.push({ id: Date.now(), action: "stage_change", by: (() => { try { const p = JSON.parse(localStorage.getItem("upstaff_profile")||"{}"); return p.firstName ? (p.firstName+" "+(p.lastName||"")).trim() : "HR Admin"; } catch(_){return "HR Admin";} })(), at: new Date().toISOString(), detail: `${existing.status} → ${newStatus}` });
+    pushNotif("stage", `${t.applicant_name || t.name} moved to ${newStatus}`, t.id);
+  }
 
   if (taskEditId) {
     const i = TASKS.findIndex((x) => x.id === taskEditId);
@@ -3898,7 +3954,8 @@ function renderTable() {
     .map((t) => {
       const sm = STATUS_META[t.status] || { color: "#9ca3af", bg: "#f3f4f6" };
       const pc = PRIORITY_COLORS[t.priority] || "#ccc";
-      const ac = avatarColor(t.assignee);
+      const _tblAssignees = t.assignees || (t.assignee ? [t.assignee] : ["HR"]);
+      const ac = avatarColor(_tblAssignees[0] || "HR");
       const dc = dueCls(t.due);
       const typScore = t.typing_score
         ? `<span style="font-weight:600;color:#44d7e9;">${t.typing_score}</span>`
@@ -3917,7 +3974,7 @@ function renderTable() {
       <td><span class="${statusPillClass(t.status)}">${t.status}</span></td>
       <td><span class="priority-pill" style="background:${pc}22;color:${pc};">${t.priority}</span></td>
       <td>${sanitize(t.position)}</td>
-      <td><div class="assignee-chip"><div class="assignee-avatar" style="background:${ac};">${initials(t.assignee)}</div>${sanitize(t.assignee)}</div></td>
+      <td><div class="assignee-chip">${_tblAssignees.slice(0,2).map((a,i)=>`<div class="assignee-avatar" style="background:${avatarColor(a)};margin-left:${i>0?"-5px":"0"};" title="${sanitize(a)}">${initials(a)}</div>`).join("")}<span style="font-size:11px;margin-left:4px;">${sanitize(_tblAssignees[0])}</span>${_tblAssignees.length>1?`<span style="font-size:10px;color:var(--muted);">+${_tblAssignees.length-1}</span>`:""}</div></td>
       <td style="color:var(--muted);font-size:12px;">${fmtDue(t.application_date || t.start)}</td>
       <td><span class="due-date ${dc}">${fmtDue(t.due)}</span></td>
       <td style="text-align:center;">${typScore}</td>
@@ -5070,6 +5127,7 @@ function navigateToCalendarsSettings() {
 /* ── Team Members render ── */
 function renderMembersList() {
   const el = document.getElementById("members-list");
+  if (!el) return;
   const ROLE_COLORS = {
     Administrator: "#6c63ff",
     "HR Manager": "#44d7e9",
@@ -5079,7 +5137,7 @@ function renderMembersList() {
     Admin: "#9ca3af",
   };
   el.innerHTML = MEMBERS.map(
-    (m) => `
+    (m, i) => `
     <div class="member-row">
       <div class="assignee-avatar" style="background:${m.color};width:36px;height:36px;font-size:12px;flex-shrink:0;">${initials(m.name)}</div>
       <div class="member-info">
@@ -5088,11 +5146,111 @@ function renderMembersList() {
       </div>
       <span class="member-role-badge" style="background:${ROLE_COLORS[m.role] || "#9ca3af"}22;color:${ROLE_COLORS[m.role] || "#9ca3af"};">${sanitize(m.role)}</span>
       <div class="member-actions">
-        <button class="member-action-btn" onclick="showToast('✏️ Edit coming soon!')">Edit</button>
-        <button class="member-action-btn" class="u-text-danger" style="border-color:#fca5a5;" onclick="showToast('⚠️ Remove coming soon!')">Remove</button>
+        <button class="member-action-btn" data-action="editMember" data-arg="${i}">Edit</button>
+        <button class="member-action-btn" style="color:#ef4444;border-color:#fca5a5;" data-action="removeMember" data-arg="${i}">Remove</button>
       </div>
     </div>`,
-  ).join("");
+  ).join("") + `<button class="btn-add-member" data-action="addMember" style="margin-top:10px;width:100%;padding:8px;border:1.5px dashed var(--border);border-radius:10px;background:transparent;color:var(--muted);cursor:pointer;font-size:12px;font-weight:600;">+ Add Member</button>`;
+}
+
+/* ── Rebuild assignee options in modal ── */
+function _rebuildAssigneeOptions() {
+  const list = document.getElementById("assignee-checkbox-list");
+  if (!list) return;
+  list.innerHTML = MEMBERS.map((m) => `
+    <label class="assignee-check-item">
+      <input type="checkbox" name="f-assignees" value="${sanitize(m.name)}"/>
+      <div class="assignee-avatar" style="background:${m.color};width:22px;height:22px;font-size:9px;flex-shrink:0;">${initials(m.name)}</div>
+      <span style="font-size:12px;">${sanitize(m.name)}</span>
+      <span style="font-size:10px;color:var(--muted);margin-left:auto;">${sanitize(m.role)}</span>
+    </label>`).join("");
+}
+
+/* ── Render notification panel ── */
+function renderNotifPanel() {
+  const el = document.getElementById("notif-panel-list");
+  if (!el) return;
+  if (!NOTIFS.length) {
+    el.innerHTML = `<div style="padding:24px;text-align:center;color:var(--muted);font-size:12px;">No notifications yet</div>`;
+    return;
+  }
+  const typeIcon = { stage: "📋", overdue: "⚠️", comment: "💬", attachment: "📎", attachment_deleted: "🗑️" };
+  el.innerHTML = NOTIFS.map((n) => `
+    <div class="notif-item${n.read ? "" : " notif-unread"}">
+      <span class="notif-icon">${typeIcon[n.type] || "🔔"}</span>
+      <div class="notif-body">
+        <div class="notif-msg">${sanitize(n.msg)}</div>
+        <div class="notif-time">${_relTime(n.createdAt)}</div>
+      </div>
+      <button class="notif-dismiss" data-action="dismissNotif" data-arg="${n.id}" title="Dismiss">×</button>
+    </div>`).join("");
+}
+function _relTime(iso) {
+  const diff = Date.now() - new Date(iso).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return "just now";
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  return `${Math.floor(h / 24)}d ago`;
+}
+
+/* ── Render Activity tab ── */
+function renderActivityTab(task) {
+  const el = document.getElementById("tab-activity-feed");
+  if (!el) return;
+  const all = [
+    ...(task.activity || []).map((a) => ({ ...a, _isAct: true })),
+    ...(task.comments || []).map((c) => ({ ...c, _isComment: true })),
+  ].sort((a, b) => new Date(a.at || a.createdAt) - new Date(b.at || b.createdAt));
+
+  const actLabel = { stage_change: "moved to stage", comment: "commented", attachment: "attached a file", attachment_deleted: "deleted a file" };
+  el.innerHTML = all.length ? all.map((item) => {
+    if (item._isComment) {
+      return `<div class="activity-item activity-comment">
+        <div class="activity-avatar">${initials(item.author || "?")}</div>
+        <div class="activity-content">
+          <div class="activity-author">${sanitize(item.author)}</div>
+          <div class="comment-bubble">${sanitize(item.text)}</div>
+          <div class="activity-time">${_relTime(item.createdAt)}</div>
+        </div>
+      </div>`;
+    }
+    return `<div class="activity-item">
+      <div class="activity-dot"></div>
+      <div class="activity-content">
+        <span class="activity-author">${sanitize(item.by)}</span>
+        <span class="activity-action"> ${actLabel[item.action] || item.action}</span>
+        ${item.detail ? `<span class="activity-detail"> — ${sanitize(item.detail)}</span>` : ""}
+        <div class="activity-time">${_relTime(item.at)}</div>
+      </div>
+    </div>`;
+  }).join("") : `<div style="padding:20px;text-align:center;color:var(--muted);font-size:12px;">No activity yet</div>`;
+}
+
+/* ── Render Files tab ── */
+function renderFilesTab(task) {
+  const el = document.getElementById("tab-files-list");
+  if (!el) return;
+  const atts = task.attachments || [];
+  const fileIcon = (type) => {
+    if (type.startsWith("image/")) return "🖼️";
+    if (type.includes("pdf")) return "📄";
+    if (type.includes("word")) return "📝";
+    if (type.includes("sheet") || type.includes("excel")) return "📊";
+    return "📎";
+  };
+  const fmtSize = (b) => b > 1024 * 1024 ? (b / (1024 * 1024)).toFixed(1) + " MB" : (b / 1024).toFixed(0) + " KB";
+  el.innerHTML = atts.length ? atts.map((a) => `
+    <div class="file-item">
+      <span class="file-icon">${fileIcon(a.type)}</span>
+      <div class="file-info">
+        <div class="file-name">${sanitize(a.name)}</div>
+        <div class="file-meta">${fmtSize(a.size)} · ${_relTime(a.uploadedAt)} · by ${sanitize(a.uploadedBy)}</div>
+      </div>
+      <a class="file-download" href="${a.dataUrl}" download="${sanitize(a.name)}" title="Download">↓</a>
+      <button class="file-delete" data-action="deleteAttachment" data-arg="${a.id}" title="Delete">🗑️</button>
+    </div>`).join("") : `<div style="padding:20px;text-align:center;color:var(--muted);font-size:12px;">No files attached yet</div>`;
 }
 
 /* ── Positions render ── */
@@ -5133,6 +5291,21 @@ document.getElementById("add-position-btn").addEventListener("click", () => {
     renderPositionsList();
     showToast("✅ Position added!");
   }
+});
+
+/* ── Assignee dropdown toggle ── */
+document.addEventListener("click", function(e) {
+  const toggle = e.target.closest("#assignee-dropdown-toggle");
+  const panel  = document.getElementById("assignee-dropdown-panel");
+  if (!panel) return;
+  if (toggle) {
+    panel.style.display = panel.style.display === "block" ? "none" : "block";
+  } else if (!e.target.closest("#assignee-dropdown-panel")) {
+    panel.style.display = "none";
+  }
+});
+document.addEventListener("change", function(e) {
+  if (e.target.name === "f-assignees") _updateAssigneeDropdownLabel();
 });
 
 /* ── Reset demo data ── */
@@ -6952,3 +7125,37 @@ async function zoomCreateMeeting({
   dbg("[Zoom] ✅ Meeting created:", data.join_url);
   return data.join_url;
 }
+
+/* ══════════════════════════════════════════════
+   FILE DROPZONE DRAG-AND-DROP SETUP
+══════════════════════════════════════════════ */
+document.addEventListener("dragover", function(e) {
+  const zone = e.target.closest("#file-dropzone");
+  if (zone) { e.preventDefault(); zone.classList.add("dragover"); }
+});
+document.addEventListener("dragleave", function(e) {
+  const zone = e.target.closest("#file-dropzone");
+  if (zone && !zone.contains(e.relatedTarget)) zone.classList.remove("dragover");
+});
+document.addEventListener("drop", function(e) {
+  const zone = e.target.closest("#file-dropzone");
+  if (!zone) return;
+  e.preventDefault();
+  zone.classList.remove("dragover");
+  const input = document.getElementById("file-attach-input");
+  if (!input) return;
+  // Create a DataTransfer to reuse handleFileAttach
+  const dt = new DataTransfer();
+  Array.from(e.dataTransfer.files).forEach((f) => dt.items.add(f));
+  input.files = dt.files;
+  handleFileAttach(input);
+});
+
+/* ══════════════════════════════════════════════
+   CLOSE NOTIF PANEL ON OUTSIDE CLICK
+══════════════════════════════════════════════ */
+document.addEventListener("click", function(e) {
+  const panel = document.getElementById("notif-panel");
+  if (!panel || !panel.classList.contains("open")) return;
+  if (!e.target.closest("#notif-wrapper")) panel.classList.remove("open");
+});
