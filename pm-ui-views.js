@@ -1,867 +1,4 @@
 /* ══════════════════════════════════════════════
-   CONSTANTS & DATA
-══════════════════════════════════════════════ */
-const PRIORITY_COLORS = {
-  Low: "#43e97b",
-  Medium: "#44d7e9",
-  High: "#fa8231",
-  Urgent: "#ff6584",
-};
-/* ── Recruitment Pipeline stages ──────────────────────────────────────────
-   Applied → Screening → Assessment → Interview → Review → Hired / Rejected / Cancelled
-   Legacy generic statuses are preserved as aliases so old data still renders.
-───────────────────────────────────────────────────────────────────────── */
-const STATUS_META = {
-  // ── Pipeline stages ──
-  Applied: { color: "#6c63ff", bg: "#ede9ff" },
-  Screening: { color: "#44d7e9", bg: "#e0fafb" },
-  Assessment: { color: "#f59e0b", bg: "#fef3c7" },
-  Interview: { color: "#fa8231", bg: "#fff3e8" },
-  Review: { color: "#a855f7", bg: "#f3e8ff" },
-  Hired: { color: "#43e97b", bg: "#e8fdf1" },
-  Rejected: { color: "#ef4444", bg: "#fee2e2" },
-  Cancelled: { color: "#9ca3af", bg: "#f3f4f6" },
-  // ── Legacy aliases (keeps old tasks rendering correctly) ──
-  "To Do": { color: "#6c63ff", bg: "#ede9ff" },
-  "In Progress": { color: "#44d7e9", bg: "#e0fafb" },
-  "In Review": { color: "#a855f7", bg: "#f3e8ff" },
-  Done: { color: "#43e97b", bg: "#e8fdf1" },
-};
-
-/** Returns the CSS class for a status pill — theme-aware, always readable */
-function statusPillClass(status) {
-  const map = {
-    Applied: "sp-applied",
-    Screening: "sp-screening",
-    Assessment: "sp-assessment",
-    Interview: "sp-interview",
-    Review: "sp-review",
-    Hired: "sp-hired",
-    Rejected: "sp-rejected",
-    Cancelled: "sp-cancelled",
-    // Legacy aliases
-    "To Do": "sp-applied",
-    "In Progress": "sp-screening",
-    "In Review": "sp-review",
-    Done: "sp-hired",
-  };
-  return "status-pill " + (map[status] || "sp-applied");
-}
-
-/** Returns class for calendar event status pills */
-function calStatusPillClass(status) {
-  const map = {
-    Scheduled: "sp-inprog",
-    Completed: "sp-done",
-    Rescheduled: "sp-review",
-    Cancelled: "sp-cancelled",
-  };
-  return "status-pill " + (map[status] || "sp-todo");
-}
-const AVATAR_COLORS = [
-  "#6c63ff",
-  "#44d7e9",
-  "#fa8231",
-  "#43e97b",
-  "#ff6584",
-  "#f59e0b",
-];
-
-/* ══════════════════════════════════════════════
-   JOB POSITIONS — Single source of truth
-   Used by task modal, calendar modal, analytics, settings
-══════════════════════════════════════════════ */
-const JOB_POSITIONS = [
-  "Accountant",
-  "Accounts Payable Specialist",
-  "Accounts VA",
-  "Administrative Assistant",
-  "Admin Support",
-  "Amazon & Levanta Marketing Manager",
-  "Amazon Listing & SKU Specialist",
-  "Architectural Draftsperson",
-  "Attorney",
-  "Backend Web Developer",
-  "Bookkeeper",
-  "Client Communication & Sales Coordinator",
-  "Customer Service Representative",
-  "Data Entry Specialist",
-  "Ecommerce Listing & Optimizing Specialist",
-  "Ecommerce VA",
-  "General Ledger Accountant",
-  "German Reading and Writing Support",
-  "Google Advertising Specialist",
-  "Graphic Designer",
-  "Graphic Designer / Social Media Content",
-  "HR Assistant",
-  "Intake Caller",
-  "Meta Advertising Specialist",
-  "Patient Care Admin Associate",
-  "Recruitment Officer",
-  "Spanish Client Support Specialist",
-  "Team Leader",
-  "Video Editor",
-];
-
-/* ── Candidate folders ── */
-const CANDIDATE_FOLDERS = [
-  "Ready to Call",
-  "Ready to Hire",
-  "Talent Pool / Shortlisted",
-];
-const LS_KEYS_CANDIDATES = "upstaff_candidates";
-
-/* ── Public calendars available for subscription ── */
-const PUBLIC_CALENDARS = [
-  {
-    id: "en.christian#holiday@group.v.calendar.google.com",
-    name: "Christian Holidays",
-    icon: "✝️",
-    desc: "Official Christian holiday calendar",
-  },
-  {
-    id: "en.philippines#holiday@group.v.calendar.google.com",
-    name: "Philippine Public Holidays",
-    icon: "🇵🇭",
-    desc: "Official Philippine national holidays",
-  },
-  {
-    id: "en.islamic#holiday@group.v.calendar.google.com",
-    name: "Islamic Holidays",
-    icon: "☪️",
-    desc: "Official Islamic holidays",
-  },
-  {
-    id: "en.usa#holiday@group.v.calendar.google.com",
-    name: "US Holidays",
-    icon: "🇺🇸",
-    desc: "US public holidays",
-  },
-];
-
-/* ── Candidates store ── */
-let CANDIDATES = [];
-(function loadCandidates() {
-  try {
-    const raw = localStorage.getItem(LS_KEYS_CANDIDATES);
-    if (raw) CANDIDATES = JSON.parse(raw);
-  } catch (e) {
-    CANDIDATES = [];
-  }
-})();
-function saveCandidates() {
-  localStorage.setItem(LS_KEYS_CANDIDATES, JSON.stringify(CANDIDATES));
-}
-
-/* ── Drag state ── */
-let _dragTaskId = null;
-
-/* ── Seed task data ── */
-const _SEED_TASKS_UNUSED = [
-  {
-    id: 1,
-    name: "Maria Santos",
-    status: "Screening",
-    priority: "High",
-    position: "Intake Caller",
-    assignee: "HR Team",
-    start: "2026-03-08",
-    due: "2026-03-15",
-    notes: "Strong resume from referral",
-    applicant_name: "Maria Santos",
-    applicant_email: "maria.santos@gmail.com",
-    applicant_phone: "09171234567",
-    resume_link: "https://drive.google.com/file/maria-santos-resume",
-    portfolio_link: "",
-    application_date: "2026-03-07",
-    typing_score: "",
-    knowledge_score: "82",
-    verbal_link: "",
-    interview_notes: "",
-    candidateFolder: "",
-  },
-  {
-    id: 2,
-    name: "Paolo Garcia",
-    status: "Applied",
-    priority: "Medium",
-    position: "CSR",
-    assignee: "Ana Reyes",
-    start: "2026-03-10",
-    due: "2026-03-17",
-    notes: "",
-    applicant_name: "Paolo Garcia",
-    applicant_email: "paolo.garcia@gmail.com",
-    applicant_phone: "09281234567",
-    resume_link: "",
-    portfolio_link: "",
-    application_date: "2026-03-10",
-    typing_score: "",
-    knowledge_score: "",
-    verbal_link: "",
-    interview_notes: "",
-    candidateFolder: "",
-  },
-  {
-    id: 3,
-    name: "Sophie Tan",
-    status: "Hired",
-    priority: "High",
-    position: "Team Leader",
-    assignee: "CEO Office",
-    start: "2026-03-01",
-    due: "2026-03-10",
-    notes: "Excellent leadership background",
-    applicant_name: "Sophie Tan",
-    applicant_email: "sophie.tan@gmail.com",
-    applicant_phone: "09351234567",
-    resume_link: "https://drive.google.com/file/sophie-tan-resume",
-    portfolio_link: "",
-    application_date: "2026-02-28",
-    typing_score: "",
-    knowledge_score: "91",
-    verbal_link: "https://drive.google.com/verbal-sophie",
-    interview_notes: "Outstanding panel performance. Unanimous hire.",
-    hired_at: "2026-03-10",
-    candidateFolder: "Ready to Hire",
-  },
-  {
-    id: 4,
-    name: "David Lim",
-    status: "Review",
-    priority: "Urgent",
-    position: "HR Assistant",
-    assignee: "HR Panel",
-    start: "2026-03-12",
-    due: "2026-03-15",
-    notes: "3 panel interviewers",
-    applicant_name: "David Lim",
-    applicant_email: "david.lim@gmail.com",
-    applicant_phone: "09451234567",
-    resume_link: "",
-    portfolio_link: "",
-    application_date: "2026-03-11",
-    typing_score: "",
-    knowledge_score: "76",
-    verbal_link: "",
-    interview_notes:
-      "Good cultural fit. Needs follow-up on salary expectations.",
-    candidateFolder: "Ready to Call",
-  },
-  {
-    id: 5,
-    name: "Angela Cruz",
-    status: "Assessment",
-    priority: "Medium",
-    position: "Google Ads Specialist",
-    assignee: "Marketing",
-    start: "2026-03-11",
-    due: "2026-03-13",
-    notes: "",
-    applicant_name: "Angela Cruz",
-    applicant_email: "angela.cruz@gmail.com",
-    applicant_phone: "09561234567",
-    resume_link: "https://drive.google.com/file/angela-resume",
-    portfolio_link: "https://behance.net/angelacruz",
-    application_date: "2026-03-10",
-    typing_score: "",
-    knowledge_score: "",
-    verbal_link: "",
-    interview_notes: "",
-    candidateFolder: "",
-  },
-  {
-    id: 6,
-    name: "Mark Villanueva",
-    status: "Screening",
-    priority: "Low",
-    position: "CSR",
-    assignee: "HR Team",
-    start: "2026-03-09",
-    due: "2026-03-18",
-    notes: "",
-    applicant_name: "Mark Villanueva",
-    applicant_email: "mark.v@gmail.com",
-    applicant_phone: "09671234567",
-    resume_link: "",
-    portfolio_link: "",
-    application_date: "2026-03-09",
-    typing_score: "",
-    knowledge_score: "",
-    verbal_link: "",
-    interview_notes: "",
-    candidateFolder: "",
-  },
-  {
-    id: 7,
-    name: "Mia Flores",
-    status: "Interview",
-    priority: "High",
-    position: "Intake Caller",
-    assignee: "HR Team",
-    start: "2026-03-17",
-    due: "2026-03-19",
-    notes: "Offer ready if passes",
-    applicant_name: "Mia Flores",
-    applicant_email: "mia.flores@gmail.com",
-    applicant_phone: "09781234567",
-    resume_link: "",
-    portfolio_link: "",
-    application_date: "2026-03-15",
-    typing_score: "68",
-    knowledge_score: "88",
-    verbal_link: "https://drive.google.com/verbal-mia",
-    interview_notes: "",
-    candidateFolder: "Talent Pool / Shortlisted",
-  },
-  {
-    id: 8,
-    name: "John Reyes",
-    status: "Assessment",
-    priority: "Low",
-    position: "CSR",
-    assignee: "HR Team",
-    start: "2026-03-11",
-    due: "2026-03-13",
-    notes: "",
-    applicant_name: "John Reyes",
-    applicant_email: "john.reyes@gmail.com",
-    applicant_phone: "09891234567",
-    resume_link: "",
-    portfolio_link: "",
-    application_date: "2026-03-11",
-    typing_score: "74",
-    knowledge_score: "",
-    verbal_link: "",
-    interview_notes: "",
-    candidateFolder: "",
-  },
-  {
-    id: 9,
-    name: "Jay Santos",
-    status: "Interview",
-    priority: "Medium",
-    position: "Team Leader",
-    assignee: "Ana Reyes",
-    start: "2026-03-16",
-    due: "2026-03-17",
-    notes: "",
-    applicant_name: "Jay Santos",
-    applicant_email: "jay.santos@gmail.com",
-    applicant_phone: "09901234567",
-    resume_link: "",
-    portfolio_link: "",
-    application_date: "2026-03-14",
-    typing_score: "",
-    knowledge_score: "79",
-    verbal_link: "",
-    interview_notes: "Solid management experience.",
-    candidateFolder: "",
-  },
-  {
-    id: 10,
-    name: "Grace Ramos",
-    status: "Cancelled",
-    priority: "Low",
-    position: "CSR",
-    assignee: "HR Team",
-    start: "2026-03-10",
-    due: "2026-03-14",
-    notes: "Withdrew application",
-    applicant_name: "Grace Ramos",
-    applicant_email: "grace.ramos@gmail.com",
-    applicant_phone: "09011234567",
-    resume_link: "",
-    portfolio_link: "",
-    application_date: "2026-03-09",
-    typing_score: "",
-    knowledge_score: "",
-    verbal_link: "",
-    interview_notes: "",
-    archived: true,
-    candidateFolder: "",
-  },
-];
-
-/* ── Seed calendar events ── (empty — real events come from the form or Google Calendar sync) */
-const SEED_CALENDAR_EVENTS = [];
-
-/* Mutable working copies — hydrated from localStorage below */
-let TASKS = [];
-let calEvents = [];
-
-/* ── Google Calendar registry — must be declared BEFORE persistLoad() is called ── */
-/* Moved up from its original position to avoid a temporal dead zone crash:          */
-/* persistLoad() (line ~497) assigns UPSTAFF_CALENDARS, so it must exist first.      */
-let UPSTAFF_CALENDARS = [];
-
-/* Runtime state */
-let taskNextId = 100;
-let taskEditId = null;
-let calNextId = 200;
-let calEditId = null;
-let tableSort = { col: "due", dir: 1 };
-
-/* ══════════════════════════════════════════════
-   PERSISTENCE LAYER — localStorage
-   ──────────────────────────────────────────────
-   Strategy:
-   • Local events (manually created) → saved to localStorage on every mutation.
-   • Google Calendar events           → NOT stored locally; re-fetched on load
-                                        via silent OAuth token refresh.
-   • TASKS                            → saved to localStorage on every mutation.
-   • ID counters                      → saved to prevent collisions after reload.
-   • gcal_signed flag                 → remembers if user previously signed in
-                                        so we can attempt a silent re-auth on load.
-
-   localStorage keys
-   ─────────────────────────────────────────────
-   upstaff_calEvents   — JSON array of LOCAL calendar events
-   upstaff_tasks       — JSON array of tasks
-   upstaff_calNextId   — integer counter
-   upstaff_taskNextId  — integer counter
-   upstaff_gcal_signed — '1' if user authorised Google Calendar before
-   upstaff_gcal_count  — last known synced event count (UI display only)
-   upstaff_calendars   — JSON array of discovered Google Calendar entries
-══════════════════════════════════════════════ */
-const LS_KEYS = {
-  CAL: "upstaff_calEvents",
-  TASKS: "upstaff_tasks",
-  CAL_ID: "upstaff_calNextId",
-  TASK_ID: "upstaff_taskNextId",
-  GCAL_AUTH: "upstaff_gcal_signed",
-  GCAL_COUNT: "upstaff_gcal_count",
-  CALENDARS: "upstaff_calendars",
-};
-
-/* ── Save to localStorage ───────────────────── */
-function persistSave() {
-  try {
-    // Only persist LOCAL events — Google events are ephemeral and re-fetched on load
-    const localOnly = calEvents.filter((e) => !e.isGoogleEvent);
-    localStorage.setItem(LS_KEYS.CAL, JSON.stringify(localOnly));
-    localStorage.setItem(LS_KEYS.TASKS, JSON.stringify(TASKS));
-    localStorage.setItem(LS_KEYS.CAL_ID, String(calNextId));
-    localStorage.setItem(LS_KEYS.TASK_ID, String(taskNextId));
-    if (UPSTAFF_CALENDARS.length)
-      localStorage.setItem(
-        LS_KEYS.CALENDARS,
-        JSON.stringify(UPSTAFF_CALENDARS),
-      );
-    console.log(
-      `[Persist] 💾 Saved ${localOnly.length} events, ${TASKS.length} tasks, ${UPSTAFF_CALENDARS.length} calendar(s)`,
-    );
-  } catch (e) {
-    console.warn(
-      "[Persist] ⚠️ localStorage write failed (storage full or blocked):",
-      e,
-    );
-  }
-}
-
-/* ── Load from localStorage ─────────────────── */
-function persistLoad() {
-  try {
-    const rawCal = localStorage.getItem(LS_KEYS.CAL);
-    const rawTasks = localStorage.getItem(LS_KEYS.TASKS);
-    const rawCalId = localStorage.getItem(LS_KEYS.CAL_ID);
-    const rawTaskId = localStorage.getItem(LS_KEYS.TASK_ID);
-    const rawCals = localStorage.getItem(LS_KEYS.CALENDARS);
-
-    try {
-      if (rawCal) calEvents = JSON.parse(rawCal);
-      if (rawTasks) TASKS = JSON.parse(rawTasks);
-      if (rawCalId) calNextId = parseInt(rawCalId, 10) || 200;
-      if (rawTaskId) taskNextId = parseInt(rawTaskId, 10) || 100;
-      if (rawCals) UPSTAFF_CALENDARS = JSON.parse(rawCals);
-    } catch (e) {
-      console.error("[Persist] ❌ Corrupted saved data, resetting:", e);
-      calEvents = [];
-      TASKS = [];
-      UPSTAFF_CALENDARS = [];
-    }
-
-    console.log(
-      `[Persist] ✅ Restored ${calEvents.length} event(s), ${TASKS.length} task(s), ${UPSTAFF_CALENDARS.length} calendar(s)`,
-    );
-  } catch (e) {
-    console.warn("[Persist] ⚠️ localStorage read failed — starting fresh:", e);
-    calEvents = [];
-    TASKS = [];
-  }
-}
-
-/* ── Wipe calendar from localStorage ───────── */
-function persistClearCalendar() {
-  localStorage.removeItem(LS_KEYS.CAL);
-  localStorage.removeItem(LS_KEYS.CAL_ID);
-  localStorage.removeItem(LS_KEYS.GCAL_COUNT);
-  localStorage.removeItem(LS_KEYS.CALENDARS);
-  UPSTAFF_CALENDARS = [];
-}
-
-/* ── Wipe everything from localStorage ──────── */
-function persistClearAll() {
-  Object.values(LS_KEYS).forEach((k) => localStorage.removeItem(k));
-}
-
-/* ── Hydrate on script parse (before first render) ── */
-persistLoad();
-
-/* ══════════════════════════════════════════════
-   AUTO STATUS PROGRESSION
-   Checks each applicant's due date against today.
-   If the due date has passed and the task is still
-   active (not Done / Cancelled), marks it Done.
-   Safe to call before every render — runs in O(n).
-══════════════════════════════════════════════ */
-function autoProgressStatuses() {
-  // In the recruitment pipeline we do NOT auto-advance stages — stage progression
-  // is intentional (recruiter-driven). We only auto-flag severely overdue active tasks.
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  TASKS.forEach((t) => {
-    if (TERMINAL_STAGES.includes(t.status)) return;
-    if (!t.due) return;
-    const due = new Date(t.due + "T00:00");
-    if (due < today) t._overdue = true;
-  });
-}
-
-/* ══════════════════════════════════════════════
-   STAGE PROGRESS BAR HELPER
-   Renders a 5-step progress bar for the
-   To Do → In Progress → In Review → Done flow.
-══════════════════════════════════════════════ */
-/* ── Recruitment Pipeline order ─────────────────────────────────────────── */
-const STAGE_ORDER = [
-  "Applied",
-  "Screening",
-  "Assessment",
-  "Interview",
-  "Review",
-  "Hired",
-];
-const TERMINAL_STAGES = ["Hired", "Rejected", "Cancelled"];
-const ACTIVE_STAGES = [
-  "Applied",
-  "Screening",
-  "Assessment",
-  "Interview",
-  "Review",
-];
-
-/* ── Assessment config: which tests each position type requires ─────────── */
-const ASSESSMENT_CONFIG = {
-  // Data-entry / typing-heavy roles
-  "Data Entry": ["typing", "knowledge"],
-  Encoder: ["typing", "knowledge"],
-  "Intake Caller": ["verbal", "knowledge", "interview"],
-  // Customer-facing
-  CSR: ["verbal", "knowledge", "interview"],
-  "Customer Support": ["verbal", "interview"],
-  // Technical / specialist
-  "Google Ads Specialist": ["knowledge", "interview"],
-  "Digital Marketing": ["knowledge", "interview"],
-  // Leadership
-  "Team Leader": ["knowledge", "verbal", "interview"],
-  "HR Assistant": ["knowledge", "interview"],
-  // Default fallback
-  _default: ["knowledge", "interview"],
-};
-
-function getAssessmentConfig(position) {
-  if (!position) return ASSESSMENT_CONFIG["_default"];
-  const exact = ASSESSMENT_CONFIG[position];
-  if (exact) return exact;
-  // Fuzzy match
-  const lower = position.toLowerCase();
-  for (const [key, val] of Object.entries(ASSESSMENT_CONFIG)) {
-    if (key !== "_default" && lower.includes(key.toLowerCase())) return val;
-  }
-  return ASSESSMENT_CONFIG["_default"];
-}
-
-/* ── Pipeline progression helpers ──────────────────────────────────────── */
-function getNextStage(currentStatus) {
-  const idx = STAGE_ORDER.indexOf(currentStatus);
-  if (idx === -1 || idx >= STAGE_ORDER.length - 1) return null;
-  return STAGE_ORDER[idx + 1];
-}
-
-function moveApplicantToStage(taskId, newStage, opts = {}) {
-  const t = TASKS.find((x) => x.id === taskId);
-  if (!t) return;
-  const oldStage = t.status;
-  t.status = newStage;
-  t.stage_changed_at = new Date().toISOString();
-
-  if (newStage === "Hired") {
-    t.hired_at = new Date().toISOString();
-    t.archived = false;
-    showToast(
-      `🎉 ${t.name.split(" — ")[1] || t.name} hired! Moving to Onboarding.`,
-    );
-    // Auto-create onboarding employee record
-    _autoCreateEmployee(t);
-  } else if (newStage === "Rejected") {
-    t.rejected_at = new Date().toISOString();
-    t.archived = true;
-    showToast(`Applicant moved to Rejected and archived.`);
-  } else {
-    showToast(`✅ Moved to ${newStage}`);
-  }
-
-  persistSave();
-  refreshCurrentView();
-  console.log(
-    `[Pipeline] Task #${taskId} "${t.name}": ${oldStage} → ${newStage}`,
-  );
-}
-
-function advanceToNextStage(taskId) {
-  const t = TASKS.find((x) => x.id === taskId);
-  if (!t) return;
-  const next = getNextStage(t.status);
-  if (!next) {
-    showToast("This applicant is already at the final active stage.");
-    return;
-  }
-  moveApplicantToStage(taskId, next);
-}
-
-function hireApplicant(taskId) {
-  if (
-    !confirm("Mark this applicant as Hired? This will move them to Onboarding.")
-  )
-    return;
-  moveApplicantToStage(taskId, "Hired");
-}
-
-function rejectApplicant(taskId) {
-  if (!confirm("Reject this applicant? They will be archived.")) return;
-  moveApplicantToStage(taskId, "Rejected");
-}
-
-/* Auto-creates an onboarding employee when a candidate is Hired */
-function _autoCreateEmployee(t) {
-  const nameParts = (
-    t.applicant_name ||
-    t.name.split(" — ")[1] ||
-    t.name
-  ).split(" ");
-  const existing = EMPLOYEES.find(
-    (e) =>
-      (e.fname + " " + e.lname).toLowerCase() ===
-      (t.applicant_name || "").toLowerCase(),
-  );
-  if (existing) return; // already in onboarding
-  EMPLOYEES.push({
-    id: empNextId ? empNextId++ : Date.now(),
-    fname: nameParts[0] || "",
-    lname: nameParts.slice(1).join(" ") || "",
-    position: t.position || "",
-    dept: "",
-    emptype: "Probationary",
-    start: new Date().toISOString().slice(0, 10),
-    status: "Pending",
-    email: t.applicant_email || "",
-    phone: t.applicant_phone || "",
-    manager: t.assignee || "HR Team",
-    notes:
-      `Auto-created from recruitment pipeline. ${t.interview_notes || ""}`.trim(),
-  });
-}
-function buildStageProgress(status) {
-  if (status === "Cancelled") {
-    return `<div class="stage-progress-wrap">
-      <div class="stage-progress-label"><span>Pipeline</span><span style="color:#9ca3af;">Cancelled</span></div>
-      <div class="stage-steps">${STAGE_ORDER.map((s) => `<div class="stage-step s-cancelled" title="${s}"></div>`).join("")}</div>
-    </div>`;
-  }
-  if (status === "Rejected") {
-    return `<div class="stage-progress-wrap">
-      <div class="stage-progress-label"><span>Pipeline</span><span style="color:#ef4444;">Rejected</span></div>
-      <div class="stage-steps">${STAGE_ORDER.map((s) => `<div class="stage-step s-rejected" title="${s}"></div>`).join("")}</div>
-    </div>`;
-  }
-  const idx = STAGE_ORDER.indexOf(status);
-  const steps = STAGE_ORDER.map((s, i) => {
-    const cls = i < idx ? "s-done" : i === idx ? "s-active" : "";
-    return `<div class="stage-step ${cls}" title="${s}"></div>`;
-  }).join("");
-  const pct =
-    idx === -1 ? 0 : Math.round((idx / (STAGE_ORDER.length - 1)) * 100);
-  const stageLabel =
-    idx === -1 ? status : `${status} (${idx + 1}/${STAGE_ORDER.length})`;
-  return `<div class="stage-progress-wrap">
-    <div class="stage-progress-label"><span>Pipeline</span><span style="color:var(--cyan);">${stageLabel}</span></div>
-    <div class="stage-steps">${steps}</div>
-    <div class="stage-names">${STAGE_ORDER.map((s, i) => `<span class="${i === idx ? "stage-name-active" : ""}">${s}</span>`).join("")}</div>
-  </div>`;
-}
-
-/* Calendar sub-view & date */
-const STATUS_COLORS = {
-  Scheduled: "#44D7E9",
-  Completed: "#43E97B",
-  Rescheduled: "#FA8231",
-  Cancelled: "#9CA3AF",
-};
-let calView = "month";
-let calDate = new Date();
-
-/* ══════════════════════════════════════════════
-   DYNAMIC CALENDAR REGISTRY
-   Populated from Google Calendar API after sign-in.
-   Persisted to localStorage so the list survives page refresh.
-   No hardcoded IDs — the system auto-discovers all calendars.
-══════════════════════════════════════════════ */
-
-/* Color palette assigned in order to discovered calendars */
-const CALENDAR_COLOR_PALETTE = [
-  "#44D7E9",
-  "#6C63FF",
-  "#43E97B",
-  "#FA8231",
-  "#FF6584",
-  "#F59E0B",
-  "#10B981",
-  "#3B82F6",
-  "#8B5CF6",
-  "#EC4899",
-];
-
-/* Calendar visibility (hidden = unchecked in sidebar) */
-let hiddenCalendars = new Set();
-
-/* ── Helper: get a calendar config object by ID ── */
-function getCalConfig(calendarId) {
-  return UPSTAFF_CALENDARS.find((c) => c.calendarId === calendarId) || null;
-}
-
-/* ── Helper: get display color for any event ── */
-function getEventColor(ev) {
-  const calId = ev.calendarId || ev.sourceCalendar;
-  if (calId) {
-    const cal = getCalConfig(calId);
-    if (cal) return cal.color;
-  }
-  return STATUS_COLORS[ev.status] || "#44D7E9";
-}
-
-/* ── Helper: get calendar name for display ── */
-function getCalName(calendarId) {
-  const cal = getCalConfig(calendarId);
-  return cal
-    ? cal.calendarName
-    : calendarId?.split("@")[0] || "Unknown Calendar";
-}
-
-/* ── Positions list (used by Settings) ── */
-let POSITIONS = [...JOB_POSITIONS];
-
-/* ── Team members (used by Settings) ── */
-const MEMBERS = [
-  {
-    name: "Ana Reyes",
-    role: "HR Manager",
-    email: "ana@upstaff.com",
-    color: "#6c63ff",
-  },
-  {
-    name: "HR Team",
-    role: "Recruiter",
-    email: "hr@upstaff.com",
-    color: "#44d7e9",
-  },
-  {
-    name: "Marketing",
-    role: "Reviewer",
-    email: "mkt@upstaff.com",
-    color: "#fa8231",
-  },
-  {
-    name: "CEO Office",
-    role: "Admin",
-    email: "ceo@upstaff.com",
-    color: "#ff6584",
-  },
-  {
-    name: "HR Panel",
-    role: "Interviewer",
-    email: "panel@upstaff.com",
-    color: "#43e97b",
-  },
-];
-
-/* ══════════════════════════════════════════════
-   UTILITIES
-══════════════════════════════════════════════ */
-function showToast(msg) {
-  const t = document.getElementById("toast");
-  t.textContent = msg;
-  t.classList.add("show");
-  setTimeout(() => t.classList.remove("show"), 2800);
-}
-function showCalToast(msg) {
-  const t = document.getElementById("cal-toast");
-  t.textContent = msg;
-  t.classList.add("show");
-  setTimeout(() => t.classList.remove("show"), 2800);
-}
-function initials(s) {
-  return s
-    .split(" ")
-    .map((w) => w[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-}
-function avatarColor(s) {
-  let h = 0;
-  for (let c of s) h = (h * 31 + c.charCodeAt(0)) % AVATAR_COLORS.length;
-  return AVATAR_COLORS[h];
-}
-function dueCls(d) {
-  if (!d) return "";
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const dd = new Date(d);
-  if (dd < today) return "overdue";
-  if (dd.toDateString() === today.toDateString()) return "today";
-  return "";
-}
-function fmtDue(d) {
-  if (!d) return "—";
-  const dd = new Date(d);
-  return dd.toLocaleDateString("en-PH", { month: "short", day: "numeric" });
-}
-function fmtDate(d) {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
-function fmtTime(t) {
-  if (!t) return "";
-  const [h, m] = t.split(":").map(Number);
-  return `${h % 12 || 12}:${String(m).padStart(2, "0")} ${h >= 12 ? "PM" : "AM"}`;
-}
-function todayStr() {
-  return fmtDate(new Date());
-}
-
-/* ══════════════════════════════════════════════
-   SIDEBAR COLLAPSE
-══════════════════════════════════════════════ */
-document.getElementById("toggle-btn").addEventListener("click", () => {
-  const sb = document.getElementById("sidebar");
-  sb.classList.toggle("collapsed");
-  const icon = document.getElementById("toggle-icon");
-  icon.style.transform = sb.classList.contains("collapsed")
-    ? "rotate(180deg)"
-    : "";
-});
-
-/* ══════════════════════════════════════════════
    VIEW SWITCHING  — project views + settings
 ══════════════════════════════════════════════ */
 const PROJECT_VIEWS = ["list", "board", "calendar", "table", "mytasks"];
@@ -949,6 +86,7 @@ function showSettings() {
   renderSettingsCalendarList();
   renderPublicCalendars();
   populateEmailJSSettings();
+  if (window._settingsLoad) window._settingsLoad();
 }
 
 /* ── localStorage status display ── */
@@ -1161,9 +299,7 @@ function renderList() {
   const todayCount = allTasks.filter(
     (t) => dueCls(t.due) === "today" && t.status !== "Hired",
   ).length;
-  const doneCount = allTasks.filter((t) =>
-    ["Hired", "Job Offer"].includes(t.status),
-  ).length;
+  const doneCount = allTasks.filter((t) => t.status === "Hired").length;
   const totalCount = allTasks.length;
   const statsEl = document.getElementById("list-stats-bar");
   if (statsEl)
@@ -1349,23 +485,23 @@ function renderList() {
                 </div>
                 <div style="min-width:0;">
                   <div class="task-name ${t.status === "Hired" || t.status === "Done" ? "done" : t.status === "Cancelled" || t.status === "Rejected" ? "cancelled" : ""}">
-                    ${t.name}${folderTag ? ` ${folderTag}` : ""}
+                    ${sanitize(t.name)}${folderTag ? ` ${folderTag}` : ""}
                   </div>
                   <div style="display:flex;align-items:center;gap:5px;margin-top:2px;flex-wrap:wrap;">
-                    ${t.notes ? `<span class="task-notes-preview">${t.notes}</span>` : ""}
+                    ${t.notes ? `<span class="task-notes-preview">${sanitize(t.notes)}</span>` : ""}
                     ${t.gcalEventId ? `<span class="task-gcal-badge">☁️ GCal</span>` : ""}
                     <span class="priority-pill" style="background:${pc}22;color:${pc};font-size:10px;">${t.priority}</span>
                   </div>
                 </div>
               </div></td>
-              <td><span style="font-size:12px;color:var(--text);font-weight:500;line-height:1.4;">${t.position || "—"}</span></td>
-              <td><div class="assignee-chip"><div class="assignee-avatar" style="background:${ac};">${initials(t.assignee || "?")}</div><span style="font-size:12px;">${t.assignee || "—"}</span></div></td>
-              <td>${intDateHTML}</td>
+              <td><span style="font-size:12px;color:var(--text);font-weight:500;line-height:1.4;">${sanitize(t.position) || "—"}</span></td>
+              <td class="col-recruiter"><div class="assignee-chip"><div class="assignee-avatar" style="background:${ac};">${initials(t.assignee || "?")}</div><span style="font-size:12px;">${sanitize(t.assignee) || "—"}</span></div></td>
+              <td class="col-intdate">${intDateHTML}</td>
               <td>
                 <span class="${statusPillClass(t.status)}">${t.status}</span>
                 ${stageMini}
               </td>
-              <td><div class="list-scores-cell">${scoresHTML || `<span style="font-size:11px;color:var(--light);">—</span>`}</div></td>
+              <td class="col-scores"><div class="list-scores-cell">${scoresHTML || `<span style="font-size:11px;color:var(--light);">—</span>`}</div></td>
               <td onclick="event.stopPropagation()"><div class="list-row-actions">
                 <button class="list-actions-btn" onclick="toggleListActionMenu(${t.id},this)" title="Actions">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="5" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="12" cy="19" r="1.2"/></svg>
@@ -1426,43 +562,26 @@ function renderList() {
       <div class="list-empty-sub">No applicants yet — click <strong>+ Add Applicant</strong> in the top right to get started.</div>
   </div>`;
 
-  // Pagination — flatten all filtered tasks for page slicing
+  // Render the fully-built html into the DOM
+  const _listEl = document.getElementById("list-sections");
+  if (_listEl) {
+    _listEl.innerHTML =
+      '<div class="skeleton-list-wrap">' +
+      Array(5).fill('<div class="skeleton skeleton-list-row"></div>').join("") +
+      "</div>";
+    requestAnimationFrame(() => {
+      _listEl.innerHTML = html;
+    });
+  }
+
+  // Pagination bar (page controls only — sections already rendered above)
   const allFiltered = tasks;
   const totalPages = Math.max(
     1,
     Math.ceil(allFiltered.length / LIST_PAGE_SIZE),
   );
   listCurrentPage = Math.min(Math.max(1, listCurrentPage), totalPages);
-  const pageTasks = allFiltered.slice(
-    (listCurrentPage - 1) * LIST_PAGE_SIZE,
-    listCurrentPage * LIST_PAGE_SIZE,
-  );
 
-  // Re-render sections using paginated tasks
-  const paginatedGroups = {};
-  pageTasks.forEach((t) => {
-    if (!paginatedGroups[t.status]) paginatedGroups[t.status] = [];
-    paginatedGroups[t.status].push(t);
-  });
-
-  // Rebuild html using paginatedGroups
-  let pagedHtml = "";
-  let pagedAny = false;
-  order.forEach((st) => {
-    if (f.status && st !== f.status) return;
-    const stTasks = sortTasks(paginatedGroups[st] || []);
-    if (stTasks.length === 0 && f.status !== st) return;
-    pagedAny = true;
-    pagedHtml += html.includes(
-      `list-section-title" style="color:${STATUS_META[st]?.color}">${st}<`,
-    )
-      ? ""
-      : "";
-  });
-
-  document.getElementById("list-sections").innerHTML = html;
-
-  // Pagination bar
   const paginationEl = document.getElementById("list-pagination");
   const prevBtn = document.getElementById("pagination-prev");
   const nextBtn = document.getElementById("pagination-next");
@@ -1573,7 +692,7 @@ function getPrevStage(currentStatus) {
 }
 
 /** Revert an applicant to their previous pipeline stage */
-function listRevertStage(taskId) {
+async function listRevertStage(taskId) {
   closeAllListMenus();
   const t = TASKS.find((x) => x.id === taskId);
   if (!t) return;
@@ -1584,8 +703,9 @@ function listRevertStage(taskId) {
     return;
   }
 
-  const confirmed = confirm(
-    `Move "${t.applicant_name || t.name}" back to "${prev}"?\n\nThis will undo the last stage advancement.`,
+  const confirmed = await uiConfirm(
+    "This will undo the last stage advancement.",
+    { icon: "↩️", title: `Move back to "${prev}"?`, okText: "Move Back" },
   );
   if (!confirmed) return;
 
@@ -1684,7 +804,9 @@ function toggleDone(id) {
   persistSave();
   renderList();
 }
-document.getElementById("list-search").addEventListener("input", renderList);
+document
+  .getElementById("list-search")
+  .addEventListener("input", debounce(renderList, 200));
 document
   .getElementById("list-quickadd-input")
   ?.addEventListener("keydown", (e) => {
@@ -1730,9 +852,10 @@ function todoSave() {
   try {
     localStorage.setItem(LS_KEY_TODOS, JSON.stringify(TODOS));
     localStorage.setItem(LS_KEY_TODOID, String(todoNextId));
-  } catch (e) {}
+  } catch (e) {
+    dbg("[todoSave] localStorage write failed:", e);
+  }
 }
-
 /* ── Show todos view (now via unified switchView) ── */
 function showTodos() {
   // Route through the Recruitment view-bar system — My Tasks is now tab #5
@@ -1878,14 +1001,14 @@ function _buildTodoItemHTML(t, today) {
       ${t.completed ? `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>` : ""}
     </div>
     <div class="todo-item-body">
-      <div class="todo-item-title">${t.title}</div>
+      <div class="todo-item-title">${sanitize(t.title)}</div>
       <div class="todo-item-meta">
         <span class="todo-pill" style="background:${pc}18;color:${pc};">${t.priority}</span>
         ${t.category ? `<span class="todo-pill todo-cat-pill" style="background:${cc}18;color:${cc};">${t.category}</span>` : ""}
         ${dueChip}
         ${t.gcalEventId ? '<span class="todo-gcal-badge">☁️ GCal</span>' : ""}
       </div>
-      ${t.notes ? `<div class="todo-item-notes">${t.notes}</div>` : ""}
+      ${t.notes ? `<div class="todo-item-notes">${sanitize(t.notes)}</div>` : ""}
     </div>
     <div class="todo-item-actions">
       <button class="todo-item-edit-btn" onclick="openTodoModal(${t.id})">Edit</button>
@@ -2065,7 +1188,15 @@ document
   .addEventListener("click", async function () {
     if (_todoEditId == null) return;
     const t = TODOS.find((x) => x.id === _todoEditId);
-    if (!confirm(`Delete "${t?.title}"?`)) return;
+    if (
+      !(await uiConfirm("This todo will be permanently deleted.", {
+        icon: "🗑️",
+        title: `Delete "${t?.title}"?`,
+        okText: "Delete",
+        okDanger: true,
+      }))
+    )
+      return;
 
     // ── Also delete the Google Calendar event if one was linked ──
     if (t?.gcalEventId && gcalSignedIn && gapi?.client?.calendar) {
@@ -2304,48 +1435,7 @@ function saveEmpDetailChanges() {
   }
 }
 
-/* Patch saveNewHire to handle edits */
-const _origSaveNewHire = window.saveNewHire;
-window.saveNewHire = function () {
-  if (_empEditingId != null) {
-    const e = EMPLOYEES.find((x) => x.id === _empEditingId);
-    if (e) {
-      const fname = document.getElementById("hf-fname")?.value.trim();
-      const lname = document.getElementById("hf-lname")?.value.trim();
-      if (!fname || !lname) {
-        showToast("❌ Name is required.");
-        return;
-      }
-      e.fname = fname;
-      e.lname = lname;
-      e.email = document.getElementById("hf-email")?.value || "";
-      e.phone = document.getElementById("hf-phone")?.value || "";
-      e.address = document.getElementById("hf-address")?.value || "";
-      e.position =
-        document.getElementById("hf-position")?.value || JOB_POSITIONS[0];
-      e.dept = document.getElementById("hf-dept")?.value || "Customer Service";
-      e.emptype =
-        document.getElementById("hf-emptype")?.value || "Probationary";
-      e.start = document.getElementById("hf-start")?.value || "";
-      e.manager = document.getElementById("hf-manager")?.value || "HR Team";
-      e.status = document.getElementById("hf-status")?.value || "Pending";
-      e.notes = document.getElementById("hf-notes")?.value || "";
-      empPersistSave();
-      _empEditingId = null;
-      // Reset title
-      const titleEl = document.querySelector(".hire-modal-title");
-      if (titleEl) titleEl.textContent = "New Hire Information";
-      closeHireModal();
-      showToast(`✅ ${fname} ${lname} updated!`);
-      if (document.getElementById("view-onboarding").style.display !== "none")
-        renderOnboarding();
-
-      return;
-    }
-    _empEditingId = null;
-  }
-  _origSaveNewHire();
-};
+/* saveNewHire patch removed — edit logic merged into original function above */
 
 /* ══════════════════════════════════════════════
    BOARD VIEW — Drag & Drop Kanban
@@ -2383,7 +1473,7 @@ function renderBoard() {
             const scoreTag = hasScores
               ? `<div class="board-card-scores">
             ${t.typing_score ? `<span class="score-chip">⌨️ ${t.typing_score}%</span>` : ""}
-            ${t.knowledge_score ? `<span class="score-chip">📝 ${t.knowledge_score}%</span>` : ""}
+            ${t.knowledge_score ? `<span class="score-chip" style="${parseInt(t.knowledge_score) >= 75 ? "background:rgba(67,233,123,.12);color:var(--green);" : "background:rgba(239,68,68,.1);color:#ef4444;"}">📝 ${t.knowledge_score} ${parseInt(t.knowledge_score) >= 75 ? "✓" : "✗"}</span>` : ""}
             ${t.verbal_link ? `<span class="score-chip">🎙️ Verbal</span>` : ""}
           </div>`
               : "";
@@ -2393,11 +1483,11 @@ function renderBoard() {
             ondragstart="boardDragStart(event,${t.id})"
             ondragend="boardDragEnd(event)"
             onclick="openTaskEdit(${t.id})">
-            <div class="board-card-name">${t.applicant_name || t.name}</div>
+            <div class="board-card-name">${sanitize(t.applicant_name || t.name)}</div>
             <div class="board-card-meta">
-              <span class="board-card-pos">${t.position}</span>
+              <span class="board-card-pos">${sanitize(t.position)}</span>
               <span class="priority-pill" style="background:${pc}22;color:${pc};font-size:10px;">${t.priority}</span>
-              <div class="assignee-avatar" style="background:${ac};margin-left:auto;" title="${t.assignee}">${initials(t.assignee)}</div>
+              <div class="assignee-avatar" style="background:${ac};margin-left:auto;" title="${sanitize(t.assignee)}">${initials(t.assignee)}</div>
             </div>
             ${t.due ? `<div style="margin-top:4px;"><span class="due-date ${dc}" style="font-size:10px;">📅 ${fmtDue(t.due)}</span></div>` : ""}
             ${scoreTag}
@@ -2458,9 +1548,9 @@ function renderBoard() {
             (
               t,
             ) => `<div class="board-card board-card-archived" onclick="openTaskEdit(${t.id})">
-          <div class="board-card-name" style="opacity:.55;text-decoration:line-through;">${t.applicant_name || t.name}</div>
+          <div class="board-card-name" style="opacity:.55;text-decoration:line-through;">${sanitize(t.applicant_name || t.name)}</div>
           <div class="board-card-meta">
-            <span class="board-card-pos">${t.position}</span>
+            <span class="board-card-pos">${sanitize(t.position)}</span>
             <span class="${statusPillClass(t.status)}" style="font-size:9px;">${t.status}</span>
           </div>
         </div>`,
@@ -2470,7 +1560,18 @@ function renderBoard() {
     </div>`;
   }
 
-  document.getElementById("board-wrap").innerHTML = html;
+  const _boardEl = document.getElementById("board-wrap");
+  if (_boardEl) {
+    _boardEl.innerHTML =
+      '<div style="display:flex;gap:12px">' +
+      Array(4)
+        .fill('<div class="skeleton skeleton-board-card" style="flex:1"></div>')
+        .join("") +
+      "</div>";
+    requestAnimationFrame(() => {
+      _boardEl.innerHTML = html;
+    });
+  }
 }
 
 function boardDragStart(event, taskId) {
@@ -2508,7 +1609,7 @@ function boardDrop(event, newStatus) {
   persistSave();
   renderBoard();
   showToast(`✅ Moved to ${newStatus}`);
-  console.log(`[Board] Task "${t.name}" moved: ${oldStatus} → ${newStatus}`);
+  dbg(`[Board] Task "${t.name}" moved: ${oldStatus} → ${newStatus}`);
 }
 
 /* ══════════════════════════════════════════════
@@ -2644,7 +1745,21 @@ function _refreshScoreSummary() {
     <div class="score-summary-title">📊 Score Summary</div>
     <div class="score-summary-grid">
       ${typing ? `<div class="score-item"><span class="score-label">⌨️ Typing</span><span class="score-val">${typing}%</span></div>` : ""}
-      ${knowledge ? `<div class="score-item"><span class="score-label">📝 Knowledge</span><span class="score-val">${knowledge}/100</span></div>` : ""}
+      ${(() => {
+        if (!knowledge) return "";
+        const kNum = parseInt(knowledge) || 0;
+        const passed = kNum >= 75;
+        const resultColor = passed ? "var(--green)" : "#ef4444";
+        const resultBg = passed ? "rgba(67,233,123,.12)" : "rgba(239,68,68,.1)";
+        return `<div class="score-item" style="flex-direction:column;align-items:flex-start;gap:4px;grid-column:1/-1;">
+          <span class="score-label">📝 Knowledge Test</span>
+          <div style="display:flex;align-items:center;gap:8px;width:100%;">
+            <span class="score-val">${knowledge}/100</span>
+            <span style="font-size:11px;font-weight:800;font-family:'Montserrat',sans-serif;padding:2px 10px;border-radius:99px;background:${resultBg};color:${resultColor};">${passed ? "✓ PASSED" : "✗ FAILED"}</span>
+            <span style="font-size:10px;color:var(--muted);font-family:'DM Sans',sans-serif;margin-left:auto;">Threshold: 75/100</span>
+          </div>
+        </div>`;
+      })()}
       ${verbal ? `<div class="score-item"><span class="score-label">🎙️ Verbal</span><a href="${verbal}" target="_blank" class="score-val" style="color:var(--cyan);">View</a></div>` : ""}
       ${notes ? `<div class="score-item score-item-full"><span class="score-label">💬 Notes</span><span class="score-val" style="font-weight:400;color:var(--muted);">${notes.slice(0, 80)}${notes.length > 80 ? "…" : ""}</span></div>` : ""}
     </div>`;
@@ -2760,9 +1875,7 @@ window.submitAssessmentResult = function (result) {
       existing[dupIdx] = entry; // overwrite with latest
     else existing.push(entry);
     localStorage.setItem(ASSESSMENT_PORTAL_LS_KEY, JSON.stringify(existing));
-    console.log(
-      `[Assessment] ✅ Result stored for "${result.name || result.email}"`,
-    );
+    dbg(`[Assessment] ✅ Result stored for "${result.name || result.email}"`);
     // Notify pm-ui if it's already open (same tab / same-origin)
     window.dispatchEvent(
       new CustomEvent("upstaff:assessmentSubmitted", { detail: entry }),
@@ -2787,7 +1900,9 @@ function _loadPendingAssessments() {
 function _savePendingAssessments(list) {
   try {
     localStorage.setItem(ASSESSMENT_PORTAL_LS_KEY, JSON.stringify(list));
-  } catch (e) {}
+  } catch (e) {
+    dbg("[_savePendingAssessments] localStorage write failed:", e);
+  }
 }
 
 /**
@@ -3198,15 +2313,17 @@ function resendAssessmentEmail() {
 }
 
 /* ── Reset attempt — allows applicant to retake ── */
-function resetAssessmentAttempt() {
+async function resetAssessmentAttempt() {
   const taskId = window._editingTaskId;
   if (!taskId) return;
   const task = TASKS.find((t) => t.id === taskId);
   if (!task) return;
   if (
-    !confirm(
-      "Reset this applicant's assessment attempt? They will be able to retake it.",
-    )
+    !(await uiConfirm("They will be able to retake the assessment.", {
+      icon: "🔄",
+      title: "Reset Assessment?",
+      okText: "Reset",
+    }))
   )
     return;
   task.assess_completed = false;
@@ -3373,7 +2490,7 @@ function _updateInterviewScheduleTab(status) {
 function _populateInterviewScheduleTab(task) {
   if (!task) return;
 
-  // Set today as default date if empty
+  // Auto-fill date → today
   const today = new Date();
   const pad = (n) => String(n).padStart(2, "0");
   const todayStr = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
@@ -3381,16 +2498,38 @@ function _populateInterviewScheduleTab(task) {
   const dateEl = document.getElementById("iv-date");
   if (dateEl && !dateEl.value) dateEl.value = todayStr;
 
+  // Auto-fill times → 9:00 – 10:00
   const startEl = document.getElementById("iv-start-time");
   if (startEl && !startEl.value) startEl.value = "09:00";
-
   const endEl = document.getElementById("iv-end-time");
   if (endEl && !endEl.value) endEl.value = "10:00";
 
+  // Auto-fill interviewer from task assignee
   const interviewerEl = document.getElementById("iv-interviewer");
   if (interviewerEl && !interviewerEl.value) {
     interviewerEl.value = task.assignee || "HR Team";
   }
+
+  // Auto-select interview stage based on task status
+  const typeEl = document.getElementById("iv-type");
+  if (typeEl && task.status) {
+    const stageMap = {
+      Interview: "Initial Interview",
+      Screening: "HR Round",
+      Assessment: "Knowledge Assessment",
+      Review: "Final Interview",
+    };
+    if (stageMap[task.status]) typeEl.value = stageMap[task.status];
+  }
+
+  // Reset IV platform UI to Google Meet
+  _ivPlatform = "meet";
+  const meetBtn = document.querySelector("[data-ivplatform='meet']");
+  if (meetBtn) setIvPlatform("meet", meetBtn);
+
+  // Reset link preview
+  const ivPreview = document.getElementById("iv-link-preview");
+  if (ivPreview) ivPreview.style.display = "none";
 
   // Render the saved interviews list for this applicant
   _renderIvSavedList(task);
@@ -3462,6 +2601,128 @@ function _renderIvSavedList(task) {
     .join("");
 }
 
+/* ── IV tab platform state ── */
+let _ivPlatform = "meet";
+
+function ivAutoEndTime(start) {
+  if (!start) return "";
+  const [h, m] = start.split(":").map(Number);
+  const end = new Date(2000, 0, 1, h, m + 60);
+  return `${String(end.getHours()).padStart(2, "0")}:${String(end.getMinutes()).padStart(2, "0")}`;
+}
+
+function setIvPlatform(platform, btnEl) {
+  _ivPlatform = platform;
+  document
+    .querySelectorAll("[data-ivplatform]")
+    .forEach((b) => b.classList.remove("active"));
+  if (btnEl) btnEl.classList.add("active");
+  const genBtn = document.getElementById("iv-btn-gen-link");
+  const openBtn = document.getElementById("iv-btn-open-link");
+  const input = document.getElementById("iv-meeting-link");
+  const noteEl = document.getElementById("iv-link-note");
+  if (!genBtn) return;
+  if (platform === "custom") {
+    genBtn.style.display = "none";
+    openBtn.style.display = "none";
+    if (input) input.placeholder = "https://your-meeting-link.com/join";
+    if (noteEl)
+      noteEl.textContent =
+        "Paste any video conferencing link (Teams, Webex, etc.)";
+  } else if (platform === "zoom") {
+    genBtn.textContent = "⚡ Generate Zoom link";
+    genBtn.style.display = "";
+    openBtn.style.display = "";
+    if (input) input.placeholder = "https://zoom.us/j/123456789";
+    if (noteEl)
+      noteEl.textContent =
+        "💡 Click Generate to create a real Zoom meeting instantly.";
+  } else {
+    genBtn.textContent = "⚡ Generate Meet link";
+    genBtn.style.display = "";
+    openBtn.style.display = "";
+    if (input) input.placeholder = "https://meet.google.com/xxx-xxxx-xxx";
+    if (noteEl)
+      noteEl.textContent = gcalSignedIn
+        ? "💡 A real Google Meet room will be created when you save (GCal connected)."
+        : "💡 Generate a placeholder link, or open Google Meet to create a room.";
+  }
+}
+
+async function generateIvMeetingLink() {
+  const input = document.getElementById("iv-meeting-link");
+  const preview = document.getElementById("iv-link-preview");
+  const anchor = document.getElementById("iv-link-anchor");
+  const genBtn = document.getElementById("iv-btn-gen-link");
+  let url = "";
+
+  if (_ivPlatform === "zoom") {
+    // Real Zoom meeting via Server-to-Server OAuth
+    if (genBtn) {
+      genBtn.disabled = true;
+      genBtn.textContent = "Creating…";
+    }
+    try {
+      // Build start time from the date/time fields if available
+      const dateVal =
+        document.getElementById("iv-date")?.value ||
+        new Date().toISOString().slice(0, 10);
+      const timeVal =
+        document.getElementById("iv-start-time")?.value || "09:00";
+      const startISO = `${dateVal}T${timeVal}:00`;
+      const taskId = window._editingTaskId;
+      const task = TASKS.find((x) => x.id === taskId);
+      const topic = task
+        ? `Interview – ${task.applicant_name || task.name}`
+        : "Interview";
+      url = await zoomCreateMeeting({ topic, startISO });
+      showToast("✅ Real Zoom meeting created!");
+    } catch (err) {
+      console.error("[Zoom] ❌ Could not create meeting:", err);
+      showToast("❌ Zoom meeting creation failed — check console.");
+      if (genBtn) {
+        genBtn.disabled = false;
+        genBtn.textContent = "⚡ Generate Zoom link";
+      }
+      return;
+    }
+    if (genBtn) {
+      genBtn.disabled = false;
+      genBtn.textContent = "⚡ Generate Zoom link";
+    }
+  } else if (_ivPlatform === "meet") {
+    if (gcalSignedIn) {
+      // Real Meet room will be auto-created when the event is saved to GCal
+      showToast(
+        "💡 A real Google Meet room will be created automatically when you save.",
+      );
+      return;
+    }
+    // Fallback placeholder if not connected to GCal
+    const r = () => Math.random().toString(36).slice(2, 5).toLowerCase();
+    url = `https://meet.google.com/${r()}-${r()}-${r()}`;
+    showToast(
+      "⚡ Placeholder generated — connect Google Calendar to auto-create real rooms.",
+    );
+  }
+
+  if (!url) return;
+  if (input) input.value = url;
+  if (anchor) {
+    anchor.href = url;
+    anchor.textContent = "Join Meeting";
+  }
+  if (preview) preview.style.display = "block";
+}
+
+function openIvPlatform() {
+  const url =
+    _ivPlatform === "zoom"
+      ? "https://zoom.us/meeting/schedule"
+      : "https://meet.google.com/new";
+  window.open(url, "_blank", "noopener");
+}
+
 /** Save a new interview from the Interview tab form into calEvents */
 function saveInterviewSchedule() {
   const taskId = window._editingTaskId;
@@ -3470,12 +2731,14 @@ function saveInterviewSchedule() {
 
   const date = document.getElementById("iv-date").value;
   const startTime = document.getElementById("iv-start-time").value;
-  const endTime = document.getElementById("iv-end-time").value;
+  const endTime =
+    document.getElementById("iv-end-time").value || ivAutoEndTime(startTime);
   const type = document.getElementById("iv-type").value;
   const status = document.getElementById("iv-status").value;
   const meetingLink = document.getElementById("iv-meeting-link").value.trim();
   const interviewer = document.getElementById("iv-interviewer").value.trim();
   const notes = document.getElementById("iv-notes").value.trim();
+  const isVirtual = meetingLink.length > 0;
 
   if (!date || !startTime) {
     showToast("⚠️ Please enter a date and start time.");
@@ -3495,7 +2758,7 @@ function saveInterviewSchedule() {
     end_time: endTime,
     round: type,
     interview_type: type,
-    type: "Virtual",
+    type: isVirtual ? "Virtual" : "Face-to-Face",
     status,
     interviewer,
     meeting_link: meetingLink,
@@ -3507,18 +2770,28 @@ function saveInterviewSchedule() {
   calEvents.push(ev);
   persistSave();
 
-  // Clear notes and link but keep date/interviewer for convenience
+  // Reset link + notes but keep date/type/interviewer for consecutive scheduling
   document.getElementById("iv-meeting-link").value = "";
   document.getElementById("iv-notes").value = "";
   document.getElementById("iv-status").value = "Scheduled";
+  const ivPreview = document.getElementById("iv-link-preview");
+  if (ivPreview) ivPreview.style.display = "none";
 
   _renderIvSavedList(task);
   showToast("✅ Interview scheduled!");
 }
 
 /** Delete a saved interview event from the Interview tab list */
-function deleteIvScheduleEvent(eventId) {
-  if (!confirm("Remove this interview from the schedule?")) return;
+async function deleteIvScheduleEvent(eventId) {
+  if (
+    !(await uiConfirm("This interview will be removed from the schedule.", {
+      icon: "📅",
+      title: "Remove Interview?",
+      okText: "Remove",
+      okDanger: true,
+    }))
+  )
+    return;
   calEvents = calEvents.filter((e) => e.id !== eventId);
   persistSave();
   const task = TASKS.find((x) => x.id === window._editingTaskId);
@@ -3556,7 +2829,7 @@ function _renderReviewScheduledList(task) {
       const color = getEventColor(e);
       const ml = e.meeting_link || e.meetingLink || "";
       return `<div class="rv-interview-item" style="border-left:3px solid ${color};">
-      <div class="rv-interview-item-title">${e.title || e.name || "Interview"}</div>
+      <div class="rv-interview-item-title">${sanitize(e.title || e.name) || "Interview"}</div>
       <div class="rv-interview-item-meta">
         📅 ${e.date || "—"} &nbsp; ⏰ ${fmtTime(e.time || e.start_time || "")}
         &nbsp; ${e.type === "Virtual" ? "💻 Virtual" : "🏢 On-site"}
@@ -3588,7 +2861,14 @@ function _renderReviewAssessmentSummary(task) {
   el.innerHTML = `
     <div class="rv-assess-row"><span class="rv-assess-label">Portal Status</span>${statusBadge}</div>
     ${typing ? `<div class="rv-assess-row"><span class="rv-assess-label">⌨️ Typing Test</span><span class="rv-assess-val">${typing} WPM</span></div>` : ""}
-    ${knowledge ? `<div class="rv-assess-row"><span class="rv-assess-label">📝 Knowledge Test</span><span class="rv-assess-val">${knowledge} / 100</span></div>` : ""}
+    ${(() => {
+      if (!knowledge) return "";
+      const kNum = parseInt(knowledge) || 0;
+      const passed = kNum >= 75;
+      const rc = passed ? "var(--green)" : "#ef4444";
+      const rb = passed ? "rgba(67,233,123,.12)" : "rgba(239,68,68,.1)";
+      return `<div class="rv-assess-row"><span class="rv-assess-label">📝 Knowledge Test</span><div style="display:flex;align-items:center;gap:6px;"><span class="rv-assess-val">${knowledge} / 100</span><span style="font-size:10px;font-weight:800;font-family:'Montserrat',sans-serif;padding:2px 8px;border-radius:99px;background:${rb};color:${rc};">${passed ? "✓ PASSED" : "✗ FAILED"}</span></div></div>`;
+    })()}
     ${verbal ? `<div class="rv-assess-row"><span class="rv-assess-label">🎙️ Verbal Test</span><a href="${verbal}" target="_blank" style="color:var(--cyan);font-weight:700;font-size:12px;">View Recording</a></div>` : ""}
     ${notes ? `<div class="rv-assess-row rv-assess-row-full"><span class="rv-assess-label">💬 Interview Notes</span><span class="rv-assess-val" style="font-weight:400;color:var(--muted);">${notes}</span></div>` : ""}
     ${!hasScores && !completed ? `<div style="font-size:12px;color:var(--light);padding:4px 0;">No scores recorded yet.</div>` : ""}
@@ -3663,7 +2943,10 @@ document
 document.getElementById("btn-task-save").addEventListener("click", async () => {
   const name = document.getElementById("f-name").value.trim();
   if (!name) {
-    alert("Please enter the applicant's name.");
+    await uiAlert("Please enter the applicant's name.", {
+      icon: "⚠️",
+      title: "Name Required",
+    });
     return;
   }
   const newStatus = document.getElementById("f-status").value;
@@ -3677,7 +2960,7 @@ document.getElementById("btn-task-save").addEventListener("click", async () => {
       statusEl.style.display = "block";
       statusEl.textContent =
         "⚠️ A due date is required to sync to Google Calendar.";
-      statusEl.style.color = "#fa8231";
+      statusEl.style.color = "var(--orange)";
     }
     document.getElementById("f-due").focus();
     return;
@@ -3776,7 +3059,7 @@ document.getElementById("btn-task-save").addEventListener("click", async () => {
         if (statusEl) {
           statusEl.style.display = "block";
           statusEl.textContent = "✅ Synced to Google Calendar!";
-          statusEl.style.color = "#43e97b";
+          statusEl.style.color = "var(--green)";
         }
         await new Promise((r) => setTimeout(r, 600));
       } catch (err) {
@@ -3785,7 +3068,7 @@ document.getElementById("btn-task-save").addEventListener("click", async () => {
           statusEl.style.display = "block";
           statusEl.textContent =
             "⚠️ GCal sync failed — applicant saved locally.";
-          statusEl.style.color = "#fa8231";
+          statusEl.style.color = "var(--orange)";
         }
         await new Promise((r) => setTimeout(r, 1400));
       }
@@ -3821,7 +3104,14 @@ document
   .addEventListener("click", async () => {
     if (!taskEditId) return;
     const t = TASKS.find((x) => x.id === taskEditId);
-    if (confirm(`Delete "${t?.name}"?`)) {
+    if (
+      await uiConfirm("This applicant will be permanently deleted.", {
+        icon: "🗑️",
+        title: `Delete "${t?.name}"?`,
+        okText: "Delete",
+        okDanger: true,
+      })
+    ) {
       // Remove from GCal if synced
       if (t?.gcalEventId && gcalSignedIn && gapi?.client?.calendar) {
         try {
@@ -4009,14 +3299,7 @@ const DEFAULT_CHECKLIST = [
   "First-week check-in",
 ];
 
-// Default training modules
-const DEFAULT_TRAINING = [
-  { name: "Company Orientation", duration: "2 hrs" },
-  { name: "HR Policies & Code of Conduct", duration: "1 hr" },
-  { name: "Systems & Tools Training", duration: "3 hrs" },
-  { name: "Role-Specific Training", duration: "4 hrs" },
-  { name: "Customer Service Standards", duration: "2 hrs" },
-];
+/* DEFAULT_TRAINING removed */
 
 // Document types
 const DOC_TYPES = [
@@ -4027,23 +3310,47 @@ const DOC_TYPES = [
   { name: "Biodata / Resume", icon: "📝", color: "#ff6584" },
 ];
 
+/* Generate a placeholder Google Drive-style link for a doc */
+function autoGenDocLink(empName, docName) {
+  const slug = (empName + "-" + docName)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+  return `https://drive.google.com/drive/search?q=${encodeURIComponent(empName + " " + docName)}`;
+}
+
+function saveDocLink(empId, idx, link) {
+  const e = EMPLOYEES.find((x) => x.id === empId);
+  if (!e || !e.docs[idx]) return;
+  e.docs[idx].link = link.trim();
+  empPersistSave();
+  showToast("✅ Document link saved!");
+  openEmpDetail(empId);
+}
+
 // In-memory employees store
 const LS_EMP_KEY = "upstaff_employees";
 let EMPLOYEES = [];
 let empNextId = 1;
 
 function empPersistLoad() {
+  let hasSavedData = false;
   try {
     const raw = localStorage.getItem(LS_EMP_KEY);
     if (raw) {
+      hasSavedData = true;
       const d = JSON.parse(raw);
       EMPLOYEES = d.employees || [];
       empNextId =
         d.nextId ||
         (EMPLOYEES.length ? Math.max(...EMPLOYEES.map((e) => e.id)) + 1 : 1);
     }
-  } catch (e) {}
-  if (EMPLOYEES.length === 0) seedDemoEmployees();
+  } catch (e) {
+    dbg("[empPersistLoad] localStorage read failed:", e);
+  }
+  // Only seed mock data on first-ever load (no saved data in localStorage)
+  // If the user cleared employees manually, respect that — don't re-inject mock data
+  if (!hasSavedData) seedDemoEmployees();
 }
 
 function empPersistSave() {
@@ -4052,100 +3359,15 @@ function empPersistSave() {
       LS_EMP_KEY,
       JSON.stringify({ employees: EMPLOYEES, nextId: empNextId }),
     );
-  } catch (e) {}
+  } catch (e) {
+    dbg("[empPersistSave] localStorage write failed:", e);
+  }
 }
 
 function seedDemoEmployees() {
-  const demos = [
-    {
-      fname: "Maria",
-      lname: "Santos",
-      position: "Intake Caller",
-      dept: "Customer Service",
-      emptype: "Probationary",
-      start: "2026-02-15",
-      status: "Active",
-      email: "maria.santos@upstaff.com",
-      phone: "09171234567",
-      manager: "Ana Reyes",
-      notes: "Excellent candidate from referral program.",
-    },
-    {
-      fname: "John",
-      lname: "Cruz",
-      position: "CSR",
-      dept: "Customer Service",
-      emptype: "Regular",
-      start: "2026-01-10",
-      status: "Completed",
-      email: "john.cruz@upstaff.com",
-      phone: "09281234567",
-      manager: "Ana Reyes",
-      notes: "",
-    },
-    {
-      fname: "Karen",
-      lname: "Reyes",
-      position: "Google Ads Specialist",
-      dept: "Marketing",
-      emptype: "Regular",
-      start: "2026-03-01",
-      status: "In Training",
-      email: "karen.reyes@upstaff.com",
-      phone: "09351234567",
-      manager: "HR Team",
-      notes: "Background in digital marketing.",
-    },
-    {
-      fname: "James",
-      lname: "Bautista",
-      position: "HR Assistant",
-      dept: "HR",
-      emptype: "Contractual",
-      start: "2026-03-10",
-      status: "Pending",
-      email: "james.b@upstaff.com",
-      phone: "09451234567",
-      manager: "HR Panel",
-      notes: "Pending ID verification.",
-    },
-  ];
-  demos.forEach((d) => {
-    const checklist = DEFAULT_CHECKLIST.map((item, i) => ({
-      item,
-      done:
-        d.status === "Completed"
-          ? true
-          : d.status === "Active"
-            ? i < 5
-            : d.status === "In Training"
-              ? i < 3
-              : i < 1,
-    }));
-    const training = DEFAULT_TRAINING.map((tr, i) => ({
-      ...tr,
-      status:
-        d.status === "Completed"
-          ? "Completed"
-          : d.status === "Active"
-            ? i < 3
-              ? "Completed"
-              : i === 3
-                ? "In Progress"
-                : "Pending"
-            : d.status === "In Training"
-              ? i < 2
-                ? "Completed"
-                : "Pending"
-              : "Pending",
-    }));
-    const docs = DOC_TYPES.map((dt, i) => ({
-      ...dt,
-      uploaded:
-        d.status === "Completed" ? true : d.status === "Active" ? i < 3 : false,
-    }));
-    EMPLOYEES.push({ id: empNextId++, ...d, checklist, training, docs });
-  });
+  // No mock data — onboarding is populated only by hiring applicants through the pipeline
+  // This function is called only on first-ever load (no localStorage key present)
+  EMPLOYEES = [];
   empPersistSave();
 }
 
@@ -4153,16 +3375,17 @@ empPersistLoad();
 
 const EMP_STATUS_META = {
   Active: { color: "#43e97b", bg: "rgba(67,233,123,.12)", label: "Active" },
-  "In Training": {
-    color: "#fa8231",
-    bg: "rgba(250,130,49,.12)",
-    label: "In Training",
-  },
   Pending: { color: "#44d7e9", bg: "rgba(68,215,233,.12)", label: "Pending" },
   Completed: {
     color: "#6c63ff",
     bg: "rgba(108,99,255,.12)",
     label: "Completed",
+  },
+  // Legacy alias — "In Training" was removed from UI; maps to Active for old saved data
+  "In Training": {
+    color: "#43e97b",
+    bg: "rgba(67,233,123,.12)",
+    label: "Active",
   },
 };
 
@@ -4189,11 +3412,7 @@ function showOnboarding() {
   renderOnboarding();
 }
 
-function showHROps() {
-  // HR Ops section removed — redirect to Onboarding as fallback
-  showOnboarding();
-}
-
+// showHROps() removed — was dead redirect to showOnboarding()
 function renderOnboarding() {
   const filterStatus =
     document.getElementById("onboarding-filter-status")?.value || "";
@@ -4206,20 +3425,19 @@ function renderOnboarding() {
     const s = {
       total: EMPLOYEES.length,
       active: 0,
-      training: 0,
       pending: 0,
       completed: 0,
     };
     EMPLOYEES.forEach((e) => {
-      if (e.status === "Active") s.active++;
-      else if (e.status === "In Training") s.training++;
+      if (e.status === "Active" || e.status === "In Training")
+        s.active++; // In Training maps to Active
       else if (e.status === "Pending") s.pending++;
       else if (e.status === "Completed") s.completed++;
     });
     statsRow.innerHTML = `
       <div class="hr-stat-card"><div class="hr-stat-val">${s.total}</div><div class="hr-stat-label">Total Employees</div></div>
       <div class="hr-stat-card"><div class="hr-stat-val" style="color:#43e97b;">${s.active}</div><div class="hr-stat-label">Active</div><div class="hr-stat-badge" style="background:rgba(67,233,123,.1);color:#43e97b;">Onboarded</div></div>
-      <div class="hr-stat-card"><div class="hr-stat-val" style="color:#fa8231;">${s.training}</div><div class="hr-stat-label">In Training</div><div class="hr-stat-badge" style="background:rgba(250,130,49,.1);color:#fa8231;">In Progress</div></div>
+
       <div class="hr-stat-card"><div class="hr-stat-val" style="color:#44d7e9;">${s.pending}</div><div class="hr-stat-label">Pending Start</div></div>
       <div class="hr-stat-card"><div class="hr-stat-val" style="color:#6c63ff;">${s.completed}</div><div class="hr-stat-label">Completed</div><div class="hr-stat-badge" style="background:rgba(108,99,255,.1);color:#6c63ff;">✓ Done</div></div>
     `;
@@ -4231,7 +3449,13 @@ function renderOnboarding() {
     grid.innerHTML = `<div class="list-empty-state" style="grid-column:1/-1;padding:60px 20px;"><div class="list-empty-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div><div class="list-empty-title">No employees found</div><div class="list-empty-sub">Add a new hire to get started</div></div>`;
     return;
   }
-  grid.innerHTML = emps.map((e) => buildEmployeeCard(e)).join("");
+  grid.innerHTML =
+    '<div class="skeleton-list-wrap">' +
+    Array(4).fill('<div class="skeleton skeleton-card"></div>').join("") +
+    "</div>";
+  requestAnimationFrame(() => {
+    grid.innerHTML = emps.map((e) => buildEmployeeCard(e)).join("");
+  });
 }
 
 function buildEmployeeCard(e) {
@@ -4248,7 +3472,7 @@ function buildEmployeeCard(e) {
   const statusCls =
     {
       Active: "status-active",
-      "In Training": "status-training",
+      "In Training": "status-active", // legacy alias
       Pending: "status-pending",
       Completed: "status-completed",
     }[e.status] || "status-pending";
@@ -4256,8 +3480,8 @@ function buildEmployeeCard(e) {
     <div class="employee-card-top">
       <div class="employee-avatar-lg" style="background:${ac};">${initParts}</div>
       <div style="flex:1;min-width:0;">
-        <div class="employee-name">${e.fname} ${e.lname}</div>
-        <div class="employee-position">${e.position} · ${e.dept || "—"}</div>
+        <div class="employee-name">${sanitize(e.fname)} ${sanitize(e.lname)}</div>
+        <div class="employee-position">${sanitize(e.position)} · ${sanitize(e.dept) || "—"}</div>
         <div class="employee-start">Started: ${e.start ? new Date(e.start + "T00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—"}</div>
       </div>
       <div class="employee-status-badge" style="background:${sm.bg};color:${sm.color};">${sm.label}</div>
@@ -4271,7 +3495,7 @@ function buildEmployeeCard(e) {
           (c, i) => `
         <div class="checklist-item ${c.done ? "done" : ""}" onclick="event.stopPropagation();toggleChecklistItem(${e.id},${i})">
           <div class="checklist-item-check">${c.done ? `<svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>` : ""}</div>
-          <span class="checklist-item-text">${c.item}</span>
+          <span class="checklist-item-text">${sanitize(c.item)}</span>
         </div>`,
         )
         .join("")}
@@ -4288,32 +3512,29 @@ function toggleChecklistItem(empId, idx) {
   if (pct >= 1 && e.status !== "Completed") {
     e.status = "Completed";
     showToast("🎉 Onboarding completed!");
-  } else if (pct > 0 && e.status === "Pending") e.status = "In Training";
+  } else if (pct > 0 && e.status === "Pending") e.status = "Active";
   empPersistSave();
   renderOnboarding();
 }
 
-function renderHROps() {
+function renderHROps_REMOVED() {
   const statsRow = document.getElementById("hrops-stats-row");
   if (statsRow) {
     const total = EMPLOYEES.length;
     const active = EMPLOYEES.filter(
-      (e) => e.status === "Active" || e.status === "In Training",
+      (e) =>
+        e.status === "Active" ||
+        e.status === "In Training" || // legacy alias
+        e.status === "Pending",
     ).length;
     const docsPending = EMPLOYEES.reduce(
       (acc, e) => (e.docs || []).filter((d) => !d.uploaded).length + acc,
-      0,
-    );
-    const trainDone = EMPLOYEES.reduce(
-      (acc, e) =>
-        (e.training || []).filter((t) => t.status === "Completed").length + acc,
       0,
     );
     statsRow.innerHTML = `
       <div class="hr-stat-card"><div class="hr-stat-val">${total}</div><div class="hr-stat-label">Total Staff</div></div>
       <div class="hr-stat-card"><div class="hr-stat-val" style="color:#43e97b;">${active}</div><div class="hr-stat-label">Currently Active</div></div>
       <div class="hr-stat-card"><div class="hr-stat-val" style="color:#fa8231;">${docsPending}</div><div class="hr-stat-label">Documents Pending</div></div>
-      <div class="hr-stat-card"><div class="hr-stat-val" style="color:#6c63ff;">${trainDone}</div><div class="hr-stat-label">Training Modules Done</div></div>
     `;
   }
 
@@ -4326,7 +3547,7 @@ function renderHROps() {
     const allDocs = [];
     EMPLOYEES.forEach((e) =>
       (e.docs || []).forEach((d) =>
-        allDocs.push({ ...d, empName: `${e.fname} ${e.lname}` }),
+        allDocs.push({ ...d, empName: sanitize(`${e.fname} ${e.lname}`) }),
       ),
     );
     docList.innerHTML = allDocs
@@ -4334,67 +3555,19 @@ function renderHROps() {
         (d) => `
       <div class="doc-item">
         <div class="doc-item-icon" style="background:${d.color}22;color:${d.color};">${d.icon}</div>
-        <div class="doc-item-name">${d.name} <span style="font-size:10px;color:var(--light);font-weight:400;">— ${d.empName}</span></div>
+        <div class="doc-item-name">${sanitize(d.name)} <span style="font-size:10px;color:var(--light);font-weight:400;">— ${d.empName}</span></div>
         <span class="doc-item-status" style="cursor:pointer;background:${d.uploaded ? "rgba(67,233,123,.15)" : "rgba(250,130,49,.12)"};color:${d.uploaded ? "#43e97b" : "#fa8231"};">${d.uploaded ? "✓ Uploaded" : "Pending"}</span>
       </div>`,
       )
       .join("");
   }
 
-  const trainGrid = document.getElementById("hrops-training-grid");
-  if (trainGrid) {
-    const modules = {};
-    EMPLOYEES.forEach((e) =>
-      (e.training || []).forEach((tr) => {
-        if (!modules[tr.name])
-          modules[tr.name] = {
-            name: tr.name,
-            duration: tr.duration,
-            completed: 0,
-            inProgress: 0,
-            pending: 0,
-            total: 0,
-          };
-        modules[tr.name].total++;
-        if (tr.status === "Completed") modules[tr.name].completed++;
-        else if (tr.status === "In Progress") modules[tr.name].inProgress++;
-        else modules[tr.name].pending++;
-      }),
-    );
-    trainGrid.innerHTML = Object.values(modules)
-      .map(
-        (m) => `
-      <div style="background:var(--surface-1);border:1px solid var(--border);border-radius:14px;padding:16px 18px;box-shadow:var(--shadow-sm);">
-        <div style="font-size:14px;font-weight:700;font-family:'Syne',sans-serif;color:var(--text);margin-bottom:3px;">${m.name}</div>
-        <div style="font-size:11px;color:var(--muted);margin-bottom:10px;">Duration: ${m.duration}</div>
-        <div class="checklist-progress-bar" style="margin-bottom:8px;"><div class="checklist-progress-fill" style="width:${Math.round((m.completed / m.total) * 100)}%;"></div></div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;">
-          <span style="font-size:10px;font-weight:700;font-family:'Montserrat',sans-serif;padding:2px 8px;border-radius:99px;background:rgba(67,233,123,.12);color:#43e97b;">${m.completed} Done</span>
-          ${m.inProgress ? `<span style="font-size:10px;font-weight:700;font-family:'Montserrat',sans-serif;padding:2px 8px;border-radius:99px;background:rgba(250,130,49,.12);color:#fa8231;">${m.inProgress} In Progress</span>` : ""}
-          ${m.pending ? `<span style="font-size:10px;font-weight:700;font-family:'Montserrat',sans-serif;padding:2px 8px;border-radius:99px;background:var(--surface-4);color:var(--muted);">${m.pending} Pending</span>` : ""}
-        </div>
-      </div>`,
-      )
-      .join("");
-  }
+  /* hrops training grid removed */
 }
 
-function switchHRTab(tab) {
-  ["employees", "documents", "training"].forEach((t) => {
-    const el = document.getElementById(`hrops-tab-${t}`);
-    if (el) el.style.display = t === tab ? "" : "none";
-  });
-  document.querySelectorAll("[data-hrtab]").forEach((btn) => {
-    const isActive = btn.dataset.hrtab === tab;
-    btn.classList.toggle("active", isActive);
-    btn.style.color = isActive ? "var(--cyan)" : "";
-    btn.style.borderBottomColor = isActive ? "var(--cyan)" : "transparent";
-  });
-}
+// switchHRTab() removed — HR Ops tab section no longer in UI
 
-function filterOnboarding() {
-  showToast("🔧 Use the status dropdown above to filter!");
-}
+// filterOnboarding() removed — was a no-op toast placeholder
 
 /* ── New Hire Modal ── */
 function openHireModal() {
@@ -4429,6 +3602,43 @@ document
   });
 
 function saveNewHire() {
+  // ── Edit mode: update existing employee record ──
+  if (_empEditingId != null) {
+    const e = EMPLOYEES.find((x) => x.id === _empEditingId);
+    if (e) {
+      const fname = document.getElementById("hf-fname")?.value.trim();
+      const lname = document.getElementById("hf-lname")?.value.trim();
+      if (!fname || !lname) {
+        showToast("❌ Name is required.");
+        return;
+      }
+      e.fname = fname;
+      e.lname = lname;
+      e.email = document.getElementById("hf-email")?.value || "";
+      e.phone = document.getElementById("hf-phone")?.value || "";
+      e.address = document.getElementById("hf-address")?.value || "";
+      e.position =
+        document.getElementById("hf-position")?.value || JOB_POSITIONS[0];
+      e.dept = document.getElementById("hf-dept")?.value || "Customer Service";
+      e.emptype =
+        document.getElementById("hf-emptype")?.value || "Probationary";
+      e.start = document.getElementById("hf-start")?.value || "";
+      e.manager = document.getElementById("hf-manager")?.value || "HR Team";
+      e.status = document.getElementById("hf-status")?.value || "Pending";
+      e.notes = document.getElementById("hf-notes")?.value || "";
+      empPersistSave();
+      _empEditingId = null;
+      const titleEl = document.querySelector(".hire-modal-title");
+      if (titleEl) titleEl.textContent = "New Hire Information";
+      closeHireModal();
+      showToast(`✅ ${fname} ${lname} updated!`);
+      if (document.getElementById("view-onboarding").style.display !== "none")
+        renderOnboarding();
+      return;
+    }
+    _empEditingId = null;
+  }
+  // ── Create mode: add new employee ──
   const fname = document.getElementById("hf-fname")?.value.trim();
   const lname = document.getElementById("hf-lname")?.value.trim();
   if (!fname || !lname) {
@@ -4436,8 +3646,7 @@ function saveNewHire() {
     return;
   }
   const checklist = DEFAULT_CHECKLIST.map((item) => ({ item, done: false }));
-  const training = DEFAULT_TRAINING.map((tr) => ({ ...tr, status: "Pending" }));
-  const docs = DOC_TYPES.map((dt) => ({ ...dt, uploaded: false }));
+  const docs = DOC_TYPES.map((dt) => ({ ...dt, uploaded: false, link: "" }));
   EMPLOYEES.push({
     id: empNextId++,
     fname,
@@ -4455,7 +3664,6 @@ function saveNewHire() {
     status: document.getElementById("hf-status")?.value || "Pending",
     notes: document.getElementById("hf-notes")?.value || "",
     checklist,
-    training,
     docs,
   });
   empPersistSave();
@@ -4478,7 +3686,6 @@ function openEmpDetail(empId) {
     .join("")
     .toUpperCase();
   const checklist = e.checklist || [];
-  const training = e.training || [];
   const docs = e.docs || [];
   const doneCnt = checklist.filter((c) => c.done).length;
   const pct = checklist.length
@@ -4498,8 +3705,8 @@ function openEmpDetail(empId) {
     <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border);">
       <div style="width:56px;height:56px;border-radius:16px;background:${ac};display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:#fff;font-family:'Montserrat',sans-serif;">${initParts}</div>
       <div style="flex:1;">
-        <div style="font-size:16px;font-weight:800;font-family:'Syne',sans-serif;color:var(--text);">${e.fname} ${e.lname}</div>
-        <div style="font-size:12px;color:var(--muted);margin-top:2px;">${e.position} · ${e.dept || "—"}</div>
+        <div style="font-size:16px;font-weight:800;font-family:'Syne',sans-serif;color:var(--text);">${sanitize(e.fname)} ${sanitize(e.lname)}</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px;">${sanitize(e.position)} · ${sanitize(e.dept) || "—"}</div>
         <span style="display:inline-flex;margin-top:5px;padding:3px 10px;border-radius:99px;font-size:10px;font-weight:700;font-family:'Montserrat',sans-serif;background:${sm.bg};color:${sm.color};">${sm.label}</span>
       </div>
     </div>
@@ -4507,14 +3714,14 @@ function openEmpDetail(empId) {
     <div class="emp-detail-section">
       <div class="emp-detail-section-title">Employee Information</div>
       <div class="emp-info-grid">
-        <div class="emp-info-item"><div class="emp-info-label">Email</div><div class="emp-info-value" style="word-break:break-all;">${e.email || "—"}</div></div>
-        <div class="emp-info-item"><div class="emp-info-label">Phone</div><div class="emp-info-value">${e.phone || "—"}</div></div>
+        <div class="emp-info-item"><div class="emp-info-label">Email</div><div class="emp-info-value" style="word-break:break-all;">${sanitize(e.email) || "—"}</div></div>
+        <div class="emp-info-item"><div class="emp-info-label">Phone</div><div class="emp-info-value">${sanitize(e.phone) || "—"}</div></div>
         <div class="emp-info-item"><div class="emp-info-label">Start Date</div><div class="emp-info-value">${startFmt}</div></div>
-        <div class="emp-info-item"><div class="emp-info-label">Employment Type</div><div class="emp-info-value">${e.emptype || "—"}</div></div>
-        <div class="emp-info-item"><div class="emp-info-label">Manager</div><div class="emp-info-value">${e.manager || "—"}</div></div>
-        <div class="emp-info-item"><div class="emp-info-label">Department</div><div class="emp-info-value">${e.dept || "—"}</div></div>
+        <div class="emp-info-item"><div class="emp-info-label">Employment Type</div><div class="emp-info-value">${sanitize(e.emptype) || "—"}</div></div>
+        <div class="emp-info-item"><div class="emp-info-label">Manager</div><div class="emp-info-value">${sanitize(e.manager) || "—"}</div></div>
+        <div class="emp-info-item"><div class="emp-info-label">Department</div><div class="emp-info-value">${sanitize(e.dept) || "—"}</div></div>
       </div>
-      ${e.notes ? `<div style="margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--surface-3);font-size:12px;color:var(--muted);font-style:italic;">"${e.notes}"</div>` : ""}
+      ${e.notes ? `<div style="margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--surface-3);font-size:12px;color:var(--muted);font-style:italic;">"${sanitize(e.notes)}"</div>` : ""}
     </div>
 
     <div class="emp-detail-section">
@@ -4534,40 +3741,33 @@ function openEmpDetail(empId) {
       </div>
     </div>
 
-    <div class="emp-detail-section">
-      <div class="emp-detail-section-title">Training Status <span style="font-size:10px;color:var(--light);font-weight:400;">(click badge to update)</span></div>
-      ${training
-        .map((tr, i) => {
-          const tColor =
-            tr.status === "Completed"
-              ? "#43e97b"
-              : tr.status === "In Progress"
-                ? "#fa8231"
-                : "var(--light)";
-          const tBg =
-            tr.status === "Completed"
-              ? "rgba(67,233,123,.12)"
-              : tr.status === "In Progress"
-                ? "rgba(250,130,49,.12)"
-                : "var(--surface-4)";
-          return `<div class="training-item"><div><div class="training-name">${tr.name}</div><div style="font-size:11px;color:var(--light);">${tr.duration}</div></div>
-          <span class="training-status-badge" style="background:${tBg};color:${tColor};cursor:pointer;" onclick="cycleTrainingStatus(${e.id},${i})" title="Click to update">${tr.status}</span></div>`;
-        })
-        .join("")}
-    </div>
+
 
     <div class="emp-detail-section">
-      <div class="emp-detail-section-title">Documents <span style="font-size:10px;color:var(--light);font-weight:400;">(click status to toggle)</span></div>
+      <div class="emp-detail-section-title">Documents</div>
       <div class="doc-list">
         ${docs
-          .map(
-            (d, i) => `
-          <div class="doc-item">
-            <div class="doc-item-icon" style="background:${d.color}22;color:${d.color};">${d.icon}</div>
-            <div class="doc-item-name">${d.name}</div>
-            <span class="doc-item-status" style="background:${d.uploaded ? "rgba(67,233,123,.15)" : "rgba(250,130,49,.12)"};color:${d.uploaded ? "#43e97b" : "#fa8231"};cursor:pointer;" onclick="toggleDocUploaded(${e.id},${i})">${d.uploaded ? "✓ Uploaded" : "Pending"}</span>
-          </div>`,
-          )
+          .map((d, i) => {
+            const hasLink = d.link && d.link.trim();
+            return `<div class="doc-item" style="flex-direction:column;align-items:stretch;gap:8px;">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div class="doc-item-icon" style="background:${d.color}22;color:${d.color};">${d.icon}</div>
+              <div class="doc-item-name">${sanitize(d.name)}</div>
+              <span class="doc-item-status" style="background:${d.uploaded ? "rgba(67,233,123,.15)" : "rgba(250,130,49,.12)"};color:${d.uploaded ? "#43e97b" : "#fa8231"};cursor:pointer;flex-shrink:0;" onclick="toggleDocUploaded(${e.id},${i})" title="Click to toggle">${d.uploaded ? "✓ Uploaded" : "Pending"}</span>
+            </div>
+            <div style="display:flex;gap:6px;align-items:center;">
+              <input type="url" placeholder="Paste or auto-generate link…" value="${sanitize(d.link || "")}"
+                style="flex:1;border-radius:8px;border:1.5px solid var(--border);background:var(--surface-3);color:var(--text);font-size:11px;padding:6px 10px;font-family:'DM Sans',sans-serif;"
+                onchange="saveDocLink(${e.id},${i},this.value)"
+                onblur="saveDocLink(${e.id},${i},this.value)"/>
+              <button title="Auto-generate search link" style="flex-shrink:0;height:30px;padding:0 10px;border-radius:8px;border:1.5px solid var(--border);background:var(--surface-2);color:var(--muted);font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:'Montserrat',sans-serif;"
+                onclick="(function(){const inp=this.previousElementSibling;const link=autoGenDocLink('${sanitize(e.fname + " " + e.lname)}','${sanitize(d.name)}');inp.value=link;saveDocLink(${e.id},${i},link);}).call(this)">
+                🔍 Auto
+              </button>
+              ${hasLink ? `<a href="${d.link}" target="_blank" rel="noopener" title="Open document" style="flex-shrink:0;height:30px;width:30px;border-radius:8px;border:1.5px solid var(--border);background:var(--surface-2);display:flex;align-items:center;justify-content:center;color:var(--cyan);"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>` : ""}
+            </div>
+          </div>`;
+          })
           .join("")}
       </div>
     </div>
@@ -4584,19 +3784,12 @@ function toggleChecklistItemDetail(empId, idx) {
   if (pct >= 1) {
     e.status = "Completed";
     showToast("🎉 Onboarding completed!");
-  } else if (pct > 0 && e.status === "Pending") e.status = "In Training";
+  } else if (pct > 0 && e.status === "Pending") e.status = "Active";
   empPersistSave();
   openEmpDetail(empId);
 }
 
-function cycleTrainingStatus(empId, idx) {
-  const e = EMPLOYEES.find((x) => x.id === empId);
-  if (!e || !e.training[idx]) return;
-  const s = ["Pending", "In Progress", "Completed"];
-  e.training[idx].status = s[(s.indexOf(e.training[idx].status) + 1) % 3];
-  empPersistSave();
-  openEmpDetail(empId);
-}
+/* toggleTrainingItem removed — training checklist replaced */
 
 function toggleDocUploaded(empId, idx) {
   const e = EMPLOYEES.find((x) => x.id === empId);
@@ -4643,28 +3836,57 @@ function renderTable() {
   });
   const cols = [
     { key: "name", label: "Applicant" },
-    { key: "status", label: "Status" },
+    { key: "applicant_email", label: "Email" },
+    { key: "applicant_phone", label: "Phone" },
+    { key: "status", label: "Stage" },
     { key: "priority", label: "Priority" },
     { key: "position", label: "Position" },
-    { key: "assignee", label: "Assignee" },
-    { key: "start", label: "Start" },
+    { key: "assignee", label: "Assigned To" },
+    { key: "application_date", label: "Applied" },
     { key: "due", label: "Due Date" },
+    { key: "typing_score", label: "Typing" },
+    { key: "knowledge_score", label: "Knowledge" },
   ];
   const thead = `<thead><tr>${cols.map((c) => `<th onclick="sortTable('${c.key}')">${c.label} ${tableSort.col === c.key ? (tableSort.dir === 1 ? "↑" : "↓") : ""}</th>`).join("")}</tr></thead>`;
+  if (data.length === 0) {
+    document.getElementById("table-el").innerHTML = `
+      <tbody><tr><td colspan="11" style="text-align:center;padding:48px 24px;">
+        <div style="color:var(--muted);font-size:13px;display:flex;flex-direction:column;align-items:center;gap:8px;">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.4"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <span style="font-weight:600;">No applicants found</span>
+          <span style="font-size:11px;opacity:0.6;">Try a different search or add an applicant</span>
+        </div>
+      </td></tr></tbody>`;
+    return;
+  }
   const tbody = `<tbody>${data
     .map((t) => {
       const sm = STATUS_META[t.status] || { color: "#9ca3af", bg: "#f3f4f6" };
       const pc = PRIORITY_COLORS[t.priority] || "#ccc";
       const ac = avatarColor(t.assignee);
       const dc = dueCls(t.due);
+      const typScore = t.typing_score
+        ? `<span style="font-weight:600;color:#44d7e9;">${t.typing_score}</span>`
+        : `<span style="color:var(--muted);font-size:11px;">—</span>`;
+      const knwScore = t.knowledge_score
+        ? (() => {
+            const s = parseInt(t.knowledge_score);
+            const c = s >= 75 ? "#43e97b" : "#fa4d56";
+            return `<span style="font-weight:600;color:${c};">${s}%</span>`;
+          })()
+        : `<span style="color:var(--muted);font-size:11px;">—</span>`;
       return `<tr onclick="openTaskEdit(${t.id})">
-      <td style="font-weight:500;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${t.name}</td>
+      <td style="font-weight:500;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${sanitize(t.name)}</td>
+      <td style="font-size:12px;color:var(--muted);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${sanitize(t.applicant_email || "—")}</td>
+      <td style="font-size:12px;color:var(--muted);white-space:nowrap;">${sanitize(t.applicant_phone || "—")}</td>
       <td><span class="${statusPillClass(t.status)}">${t.status}</span></td>
       <td><span class="priority-pill" style="background:${pc}22;color:${pc};">${t.priority}</span></td>
-      <td>${t.position}</td>
-      <td><div class="assignee-chip"><div class="assignee-avatar" style="background:${ac};">${initials(t.assignee)}</div>${t.assignee}</div></td>
-      <td style="color:var(--muted);font-size:12px;">${fmtDue(t.start)}</td>
+      <td>${sanitize(t.position)}</td>
+      <td><div class="assignee-chip"><div class="assignee-avatar" style="background:${ac};">${initials(t.assignee)}</div>${sanitize(t.assignee)}</div></td>
+      <td style="color:var(--muted);font-size:12px;">${fmtDue(t.application_date || t.start)}</td>
       <td><span class="due-date ${dc}">${fmtDue(t.due)}</span></td>
+      <td style="text-align:center;">${typScore}</td>
+      <td style="text-align:center;">${knwScore}</td>
     </tr>`;
     })
     .join("")}</tbody>`;
@@ -4678,40 +3900,74 @@ function sortTable(col) {
   }
   renderTable();
 }
-document.getElementById("table-search").addEventListener("input", renderTable);
+document
+  .getElementById("table-search")
+  .addEventListener("input", debounce(renderTable, 200));
 
 /* ── Export CSV ── */
+function buildCSVDownload(rows, filename) {
+  const csv = rows
+    .map((r) =>
+      r.map((v) => `"${String(v || "").replace(/"/g, '""')}"`).join(","),
+    )
+    .join("\n");
+  const a = document.createElement("a");
+  a.href = "data:text/csv;charset=utf-8," + encodeURIComponent(csv);
+  a.download = filename;
+  a.click();
+}
+
 document.getElementById("export-csv-btn").addEventListener("click", () => {
-  const rows = [
-    [
-      "Task Name",
-      "Status",
-      "Priority",
-      "Position",
-      "Assignee",
-      "Start",
-      "Due Date",
-    ],
+  const headers = [
+    "ID",
+    "Applicant Name",
+    "Email",
+    "Phone",
+    "Stage",
+    "Priority",
+    "Position",
+    "Assigned To",
+    "Application Date",
+    "Start Date",
+    "Due Date",
+    "Typing Score",
+    "Knowledge Score",
+    "Assessment Result",
+    "Resume Link",
+    "Portfolio Link",
+    "Interview Notes",
+    "General Notes",
+    "Candidate Folder",
   ];
-  TASKS.forEach((t) =>
+  const rows = [headers];
+  TASKS.forEach((t) => {
+    const ks = t.knowledge_score ? parseInt(t.knowledge_score) : null;
+    const assessResult = ks !== null ? (ks >= 75 ? "PASSED" : "FAILED") : "";
     rows.push([
-      t.name,
+      t.id,
+      t.applicant_name || t.name,
+      t.applicant_email || "",
+      t.applicant_phone || "",
       t.status,
       t.priority,
       t.position,
       t.assignee,
-      t.start,
-      t.due,
-    ]),
-  );
-  const csv = rows
-    .map((r) => r.map((v) => `"${(v || "").replace(/"/g, '""')}"`).join(","))
-    .join("\n");
-  const a = document.createElement("a");
-  a.href = "data:text/csv," + encodeURIComponent(csv);
-  a.download = "upstaff-tasks.csv";
-  a.click();
-  showToast("📥 CSV exported!");
+      t.application_date || t.start || "",
+      t.start || "",
+      t.due || "",
+      t.typing_score || "",
+      t.knowledge_score ? t.knowledge_score + "%" : "",
+      assessResult,
+      t.resume_link || "",
+      t.portfolio_link || "",
+      t.interview_notes || "",
+      t.notes || "",
+      t.candidateFolder || "",
+    ]);
+  });
+  const date = new Date().toISOString().slice(0, 10);
+  buildCSVDownload(rows, `upstaff-applicants-${date}.csv`);
+  showToast("📥 CSV exported! " + (rows.length - 1) + " applicants.");
 });
 
 /* ══════════════════════════════════════════════
@@ -4766,7 +4022,7 @@ function renderMonth() {
         const ml = e.meeting_link || e.meetingLink || "";
         return `<div class="cal-event" style="background:${bg} !important;color:#0f172a !important;border:2px solid ${bg} !important;" onclick="event.stopPropagation();openEdit(${e.id})">
                 <div class="cal-event-dot" style="background:rgba(0,0,0,0.3);flex-shrink:0;"></div>
-        ${e.name.split(" ")[0]} ${fmtTime(e.time || e.start_time)}
+        ${sanitize(e.name.split(" ")[0])} ${fmtTime(e.time || e.start_time)}
         ${ml ? `<span style="margin-left:3px;opacity:.7;" title="Has meeting link">📹</span>` : ""}
       </div>`;
       })
@@ -4838,7 +4094,7 @@ function renderWeek() {
           const isDarkW =
             document.documentElement.getAttribute("data-theme") === "dark";
           const evColorW = isDarkW ? "#ffffff" : "#0f172a";
-          return `<div class="cal-week-event" style="top:${top}px;height:${HH}px;background:${bg};color:${evColorW};border:1px solid ${bg};" onclick="event.stopPropagation();openEdit(${e.id})">${fmtTime(e.time)} ${e.name.split(" ")[0]}</div>`;
+          return `<div class="cal-week-event" style="top:${top}px;height:${HH}px;background:${bg};color:${evColorW};border:1px solid ${bg};" onclick="event.stopPropagation();openEdit(${e.id})">${fmtTime(e.time)} ${sanitize(e.name.split(" ")[0])}</div>`;
         })
         .join("");
       return `<div class="cal-day-col" style="position:relative;">${blocks}${evts}</div>`;
@@ -4909,7 +4165,7 @@ function renderAgenda() {
   el.innerHTML = evts
     .map((e) => {
       const bg = getEventColor(e);
-      return `<div class="agenda-item" style="border-left-color:${bg};" onclick="openEdit(${e.id})"><div class="agenda-time">${fmtTime(e.time)}</div><div class="agenda-body"><div class="agenda-name">${e.name}</div><div class="agenda-meta">${e.position} · ${e.round}</div><div class="agenda-meta" style="margin-top:2px;">${e.type === "Virtual" ? "📹" : "🏢"} ${e.type} · <span style="color:${bg};font-weight:600;">${e.status}</span></div></div></div>`;
+      return `<div class="agenda-item" style="border-left-color:${bg};" onclick="openEdit(${e.id})"><div class="agenda-time">${fmtTime(e.time)}</div><div class="agenda-body"><div class="agenda-name">${sanitize(e.name)}</div><div class="agenda-meta">${sanitize(e.position)} · ${sanitize(e.round)}</div><div class="agenda-meta" style="margin-top:2px;">${e.type === "Virtual" ? "📹" : "🏢"} ${e.type} · <span style="color:${bg};font-weight:600;">${e.status}</span></div></div></div>`;
     })
     .join("");
 }
@@ -5131,7 +4387,7 @@ function updateCalSelectorDot() {
 function calCellClick(ds) {
   openNewAt(ds, "09:00");
 }
-function openNewAt(ds, ts) {
+function openNewAt(ds, ts, taskContext) {
   calEditId = null;
   document.getElementById("cal-modal-heading").textContent =
     "Schedule Interview";
@@ -5144,15 +4400,39 @@ function openNewAt(ds, ts) {
     calSel.value = prim.calendarId;
   }
   updateCalSelectorDot();
-  document.getElementById("cal-f-name").value = "";
-  document.getElementById("cal-f-position").value = "Intake Caller";
+
+  // Auto-fill from task context if provided
+  const t =
+    taskContext ||
+    (window._editingTaskId
+      ? TASKS.find((x) => x.id === window._editingTaskId)
+      : null);
+  document.getElementById("cal-f-name").value = t
+    ? t.applicant_name || t.name || ""
+    : "";
+  document.getElementById("cal-f-position").value = t
+    ? t.position || "Intake Caller"
+    : "Intake Caller";
+  document.getElementById("cal-f-interviewer").value = t
+    ? t.assignee || "HR Team"
+    : "HR Team";
+
+  // Auto-select stage from task status
+  const stageMap = {
+    Interview: "Initial Interview",
+    Screening: "HR Round",
+    Assessment: "Knowledge Assessment",
+    Review: "Final Interview",
+  };
+  const autoRound =
+    t && stageMap[t.status] ? stageMap[t.status] : "Initial Interview";
+  document.getElementById("cal-f-round").value = autoRound;
+
   document.getElementById("cal-f-date").value = ds || fmtDate(calDate);
   document.getElementById("cal-f-time").value = ts || "09:00";
   document.getElementById("cal-f-end-time").value = autoEndTime(ts || "09:00");
-  document.getElementById("cal-f-type").value = "Face-to-Face";
-  document.getElementById("cal-f-round").value = "Initial Interview";
+  document.getElementById("cal-f-type").value = "Virtual";
   document.getElementById("cal-f-status").value = "Scheduled";
-  document.getElementById("cal-f-interviewer").value = "HR Team";
   document.getElementById("cal-f-meeting-link").value = "";
   document.getElementById("meeting-link-preview").style.display = "none";
   document.getElementById("meeting-link-note").textContent =
@@ -5178,6 +4458,20 @@ function openEdit(id) {
   if (!e) return;
   calEditId = id;
   document.getElementById("cal-modal-heading").textContent = "Edit Interview";
+  // ── Append Google Calendar badge for synced events ──
+  setTimeout(() => {
+    if (e.isGoogleEvent) {
+      const heading = document.getElementById("cal-modal-heading");
+      if (heading && !heading.querySelector(".gcal-badge")) {
+        const badge = document.createElement("span");
+        badge.className = "gcal-badge";
+        badge.style.cssText =
+          'font-size:10px;font-weight:700;background:rgba(66,133,244,.12);color:#4285F4;border:1px solid rgba(66,133,244,.25);border-radius:6px;padding:2px 8px;margin-left:8px;font-family:"Montserrat",sans-serif;';
+        badge.textContent = getCalName(e.calendarId || e.sourceCalendar);
+        heading.appendChild(badge);
+      }
+    }
+  }, 0);
   // Restore calendar selector
   const calSel = document.getElementById("cal-f-calendar");
   if (calSel) {
@@ -5290,13 +4584,13 @@ function setMeetingPlatform(platform, btnEl) {
     noteEl.textContent =
       "Paste any video conferencing link (Teams, Webex, Whereby, etc.)";
   } else if (platform === "zoom") {
-    genBtn.textContent = "⚡ Generate Zoom placeholder";
+    genBtn.textContent = "⚡ Generate Zoom link";
     genBtn.style.display = "";
     openBtn.style.display = "";
-    openBtn.title = "Open zoom.us to create a new meeting";
+    openBtn.title = "Open zoom.us";
     input.placeholder = "https://zoom.us/j/123456789";
     noteEl.textContent =
-      "💡 Generate a placeholder, then replace it with your real Zoom link from zoom.us.";
+      "💡 Click Generate to create a real Zoom meeting instantly.";
   } else {
     genBtn.textContent = "⚡ Generate Meet placeholder";
     genBtn.style.display = "";
@@ -5308,29 +4602,60 @@ function setMeetingPlatform(platform, btnEl) {
   }
 }
 
-function generateMeetingLink() {
+async function generateMeetingLink() {
   const input = document.getElementById("cal-f-meeting-link");
   const preview = document.getElementById("meeting-link-preview");
   const anchor = document.getElementById("meeting-link-anchor");
+  const genBtn = document.getElementById("btn-gen-link");
   let url = "";
 
   if (_meetingPlatform === "zoom") {
-    // Generate a realistic Zoom placeholder (user must replace with real link)
-    const roomId = Math.floor(Math.random() * 9000000000 + 1000000000);
-    const pwd = Math.random().toString(36).slice(2, 8);
-    url = `https://zoom.us/j/${roomId}?pwd=${pwd}`;
-    showCalToast(
-      "⚡ Zoom placeholder generated — replace with your real Zoom link from zoom.us!",
-    );
-  } else {
-    // Generate a Google Meet-style placeholder
+    // Real Zoom meeting via Server-to-Server OAuth
+    if (genBtn) {
+      genBtn.disabled = true;
+      genBtn.textContent = "Creating…";
+    }
+    try {
+      const dateVal =
+        document.getElementById("cal-f-date")?.value ||
+        new Date().toISOString().slice(0, 10);
+      const timeVal = document.getElementById("cal-f-time")?.value || "09:00";
+      const startISO = `${dateVal}T${timeVal}:00`;
+      const nameVal =
+        document.getElementById("cal-f-name")?.value?.trim() || "Applicant";
+      const topic = `Interview – ${nameVal}`;
+      url = await zoomCreateMeeting({ topic, startISO });
+      showCalToast("✅ Real Zoom meeting created!");
+    } catch (err) {
+      console.error("[Zoom] ❌ Could not create meeting:", err);
+      showCalToast("❌ Zoom meeting creation failed — check console.");
+      if (genBtn) {
+        genBtn.disabled = false;
+        genBtn.textContent = "⚡ Generate Zoom link";
+      }
+      return;
+    }
+    if (genBtn) {
+      genBtn.disabled = false;
+      genBtn.textContent = "⚡ Generate Zoom link";
+    }
+  } else if (_meetingPlatform === "meet") {
+    if (gcalSignedIn) {
+      // Real Meet room will be auto-created when the event is saved to GCal
+      showCalToast(
+        "💡 A real Google Meet room will be created automatically when you save.",
+      );
+      return;
+    }
+    // Fallback placeholder if GCal not connected
     const rand = () => Math.random().toString(36).slice(2, 5).toLowerCase();
     url = `https://meet.google.com/${rand()}-${rand()}-${rand()}`;
     showCalToast(
-      "⚡ Google Meet link generated — remember to create this room in Google Meet!",
+      "⚡ Placeholder generated — connect Google Calendar to auto-create real rooms.",
     );
   }
 
+  if (!url) return;
   input.value = url;
   anchor.href = url;
   anchor.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M15 10l4.553-2.069A1 1 0 0 1 21 8.845v6.31a1 1 0 0 1-1.447.914L15 14"/><rect x="1" y="6" width="15" height="12" rx="2"/></svg> Join Meeting`;
@@ -5362,6 +4687,13 @@ function updateMeetingLinkNote(url) {
 }
 function closeModal() {
   document.getElementById("cal-modal-overlay").classList.remove("open");
+  // ── Clean up badge and meeting link preview ──
+  const badge = document.querySelector(".gcal-badge");
+  if (badge) badge.remove();
+  const preview = document.getElementById("meeting-link-preview");
+  if (preview) preview.style.display = "none";
+  const mlInput = document.getElementById("cal-f-meeting-link");
+  if (mlInput) mlInput.value = "";
 }
 document
   .getElementById("cal-modal-close-btn")
@@ -5378,7 +4710,10 @@ document
 document.getElementById("cal-btn-save").addEventListener("click", async () => {
   const name = document.getElementById("cal-f-name").value.trim();
   if (!name) {
-    alert("Please enter the applicant's name.");
+    await uiAlert("Please enter the applicant's name.", {
+      icon: "⚠️",
+      title: "Name Required",
+    });
     return;
   }
   const startTime = document.getElementById("cal-f-time").value;
@@ -5483,7 +4818,7 @@ function syncCalEventToTask(ev) {
 
   // Map calendar status → recruitment stage
   const CAL_TO_TASK_STATUS = {
-    Completed: "Hired",
+    Completed: "Review", // Interview done → move to Review, not auto-Hired
     Cancelled: "Cancelled",
     Rescheduled: "Screening",
     Scheduled: "Interview",
@@ -5587,7 +4922,14 @@ document
   .addEventListener("click", async () => {
     if (!calEditId) return;
     const e = calEvents.find((x) => x.id === calEditId);
-    if (confirm(`Delete interview with ${e?.name}?`)) {
+    if (
+      await uiConfirm("This interview will be permanently deleted.", {
+        icon: "🗑️",
+        title: `Delete interview with ${e?.name}?`,
+        okText: "Delete",
+        okDanger: true,
+      })
+    ) {
       // Remove from Google Calendar first if synced — use the event's own calendarId
       if (e && e.google_event_id && gcalSignedIn) {
         await gcalDeleteEvent(
@@ -5706,10 +5048,10 @@ function renderMembersList() {
     <div class="member-row">
       <div class="assignee-avatar" style="background:${m.color};width:36px;height:36px;font-size:12px;flex-shrink:0;">${initials(m.name)}</div>
       <div class="member-info">
-        <div class="member-name">${m.name}</div>
-        <div style="font-size:11px;color:var(--light);margin-top:1px;">${m.email}</div>
+        <div class="member-name">${sanitize(m.name)}</div>
+        <div style="font-size:11px;color:var(--light);margin-top:1px;">${sanitize(m.email)}</div>
       </div>
-      <span class="member-role-badge" style="background:${ROLE_COLORS[m.role] || "#9ca3af"}22;color:${ROLE_COLORS[m.role] || "#9ca3af"};">${m.role}</span>
+      <span class="member-role-badge" style="background:${ROLE_COLORS[m.role] || "#9ca3af"}22;color:${ROLE_COLORS[m.role] || "#9ca3af"};">${sanitize(m.role)}</span>
       <div class="member-actions">
         <button class="member-action-btn" onclick="showToast('✏️ Edit coming soon!')">Edit</button>
         <button class="member-action-btn" style="color:#ef4444;border-color:#fca5a5;" onclick="showToast('⚠️ Remove coming soon!')">Remove</button>
@@ -5725,15 +5067,25 @@ function renderPositionsList() {
     (p, i) => `
     <div class="member-row">
       <div style="width:32px;height:32px;border-radius:10px;background:var(--cyan-lt);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">💼</div>
-      <div class="member-info"><div class="member-name">${p}</div><div style="font-size:11px;color:var(--light);">Active position</div></div>
+      <div class="member-info"><div class="member-name">${sanitize(p)}</div><div style="font-size:11px;color:var(--light);">Active position</div></div>
       <div class="member-actions">
         <button class="member-action-btn" style="color:#ef4444;border-color:#fca5a5;" onclick="removePosition(${i})">Remove</button>
       </div>
     </div>`,
   ).join("");
 }
-function removePosition(i) {
-  if (confirm(`Remove position "${POSITIONS[i]}"?`)) {
+async function removePosition(i) {
+  if (
+    await uiConfirm(
+      `"${POSITIONS[i]}" will be removed from the positions list.`,
+      {
+        icon: "🗑️",
+        title: "Remove Position?",
+        okText: "Remove",
+        okDanger: true,
+      },
+    )
+  ) {
     POSITIONS.splice(i, 1);
     renderPositionsList();
     showToast("🗑️ Position removed.");
@@ -5749,8 +5101,359 @@ document.getElementById("add-position-btn").addEventListener("click", () => {
 });
 
 /* ── Reset demo data ── */
-function resetDemoData() {
-  if (!confirm("Reset all applicant data? (Calendar events will be cleared.)"))
+
+/* ══════════════════════════════════════════════
+   SETTINGS — data-action dispatcher
+   Handles all buttons in Settings panels
+   that use data-action attributes.
+══════════════════════════════════════════════ */
+(function () {
+  const LS_PROFILE = "upstaff_profile";
+  const LS_WORKSPACE = "upstaff_workspace";
+  const LS_NOTIFS = "upstaff_notifications";
+
+  // Repopulate Settings fields from localStorage
+  window._settingsLoad = function () {
+    // ── Profile ──
+    const profile = JSON.parse(localStorage.getItem(LS_PROFILE) || "{}");
+    const pInputs = document.querySelectorAll(
+      "#setting-profile .settings-input",
+    );
+    const pFields = ["firstName", "lastName", "email", "jobTitle"];
+    pFields.forEach((f, i) => {
+      if (pInputs[i] && profile[f]) pInputs[i].value = profile[f];
+    });
+    const pRole = document.querySelector("#setting-profile .settings-select");
+    if (pRole && profile.role) pRole.value = profile.role;
+
+    // ── Workspace ──
+    const ws = JSON.parse(localStorage.getItem(LS_WORKSPACE) || "{}");
+    const wsInputs = document.querySelectorAll(
+      "#setting-workspace .settings-input",
+    );
+    if (wsInputs[0] && ws.companyName) wsInputs[0].value = ws.companyName;
+    const wsSelects = document.querySelectorAll(
+      "#setting-workspace .settings-select",
+    );
+    if (wsSelects[0] && ws.industry) wsSelects[0].value = ws.industry;
+    if (wsSelects[1] && ws.companySize) wsSelects[1].value = ws.companySize;
+    if (wsSelects[2] && ws.timezone) wsSelects[2].value = ws.timezone;
+    if (wsSelects[3] && ws.dateFormat) wsSelects[3].value = ws.dateFormat;
+    const defView = document.querySelector(
+      "#setting-workspace select[style*='auto']",
+    );
+    if (defView && ws.defaultView) defView.value = ws.defaultView;
+    const wsToggles = document.querySelectorAll(
+      "#setting-workspace .toggle-switch input",
+    );
+    if (wsToggles[0] && ws.compactMode !== undefined)
+      wsToggles[0].checked = ws.compactMode;
+    if (wsToggles[1] && ws.showCompleted !== undefined)
+      wsToggles[1].checked = ws.showCompleted;
+    // Re-apply compact mode on load
+    document.body.classList.toggle("compact-mode", !!ws.compactMode);
+
+    // ── Notifications ──
+    const notifs = JSON.parse(localStorage.getItem(LS_NOTIFS) || "{}");
+    const nKeys = [
+      "taskAssigned",
+      "taskDueSoon",
+      "interviewScheduled",
+      "interviewChanged",
+      "newApplicant",
+      "emailDigest",
+    ];
+    const nToggles = document.querySelectorAll(
+      "#setting-notifications .toggle-switch input",
+    );
+    nToggles.forEach((t, i) => {
+      if (notifs[nKeys[i]] !== undefined) t.checked = notifs[nKeys[i]];
+    });
+  };
+
+  // Global click delegation for all Settings data-action buttons
+  const settingsPanel = document.getElementById("view-settings");
+  if (!settingsPanel) return;
+
+  settingsPanel.addEventListener("click", async function (e) {
+    const btn = e.target.closest("[data-action]");
+    if (!btn) return;
+    const action = btn.dataset.action;
+
+    // ── Profile: Change Photo ──
+    if (action === "toastPhotoUpload") {
+      showToast("📷 Photo upload coming soon!");
+
+      // ── Profile: Save Changes ──
+    } else if (action === "toastProfileSaved") {
+      const pInputs = document.querySelectorAll(
+        "#setting-profile .settings-input",
+      );
+      const pRole = document.querySelector("#setting-profile .settings-select");
+      const profile = {
+        firstName: pInputs[0]?.value.trim() || "",
+        lastName: pInputs[1]?.value.trim() || "",
+        email: pInputs[2]?.value.trim() || "",
+        jobTitle: pInputs[3]?.value.trim() || "",
+        role: pRole?.value || "Administrator",
+      };
+      if (!profile.firstName || !profile.email)
+        return showToast("⚠️ First name and email are required.");
+      localStorage.setItem(LS_PROFILE, JSON.stringify(profile));
+      // Update avatar initials in-panel
+      const avatarEl = document.querySelector(
+        "#setting-profile div[style*='border-radius:50%']",
+      );
+      const fullName = `${profile.firstName} ${profile.lastName}`.trim();
+      if (avatarEl && fullName) {
+        avatarEl.textContent = fullName
+          .split(" ")
+          .map((w) => w[0])
+          .join("")
+          .toUpperCase()
+          .slice(0, 2);
+      }
+      showToast("✅ Profile saved!");
+
+      // ── Profile: Update Password ──
+    } else if (action === "toastPasswordUpdated") {
+      const pwInputs = document.querySelectorAll(
+        "#setting-profile input[type='password']",
+      );
+      const current = pwInputs[0]?.value || "";
+      const newPw = pwInputs[1]?.value || "";
+      const confirm = pwInputs[2]?.value || "";
+      if (!current || !newPw || !confirm)
+        return showToast("⚠️ Please fill in all password fields.");
+      if (newPw.length < 6)
+        return showToast("⚠️ New password must be at least 6 characters.");
+      if (newPw !== confirm) return showToast("❌ Passwords do not match.");
+      // Store hashed indicator (not plain text — this is a demo-safe approach)
+      localStorage.setItem("upstaff_pw_set", "1");
+      pwInputs.forEach((i) => {
+        i.value = "";
+      });
+      showToast("🔐 Password updated!");
+
+      // ── Workspace: Save Changes ──
+    } else if (action === "toastWorkspaceSaved") {
+      const wsInputs = document.querySelectorAll(
+        "#setting-workspace .settings-input",
+      );
+      const wsSelects = document.querySelectorAll(
+        "#setting-workspace .settings-select",
+      );
+      const defView = document.querySelector(
+        "#setting-workspace select[style*='auto']",
+      );
+      const wsToggles = document.querySelectorAll(
+        "#setting-workspace .toggle-switch input",
+      );
+      const ws = {
+        companyName: wsInputs[0]?.value.trim() || "",
+        industry: wsSelects[0]?.value || "",
+        companySize: wsSelects[1]?.value || "",
+        timezone: wsSelects[2]?.value || "",
+        dateFormat: wsSelects[3]?.value || "",
+        defaultView: defView?.value || "List",
+        compactMode: wsToggles[0]?.checked || false,
+        showCompleted: wsToggles[1]?.checked !== false,
+      };
+      localStorage.setItem(LS_WORKSPACE, JSON.stringify(ws));
+      document.body.classList.toggle("compact-mode", ws.compactMode);
+      showToast("✅ Workspace settings saved!");
+
+      // ── Members: Invite ──
+    } else if (action === "toastInviteSent") {
+      showToast("📨 Invite sent! (Member management coming soon)");
+
+      // ── Notifications: Save ──
+    } else if (action === "toastNotifSaved") {
+      const nKeys = [
+        "taskAssigned",
+        "taskDueSoon",
+        "interviewScheduled",
+        "interviewChanged",
+        "newApplicant",
+        "emailDigest",
+      ];
+      const nToggles = document.querySelectorAll(
+        "#setting-notifications .toggle-switch input",
+      );
+      const notifs = {};
+      nKeys.forEach((k, i) => {
+        notifs[k] = nToggles[i]?.checked || false;
+      });
+      localStorage.setItem(LS_NOTIFS, JSON.stringify(notifs));
+      showToast("🔔 Notification preferences saved!");
+
+      // ── Danger: Clear All Tasks ──
+    } else if (action === "handleClearTasks") {
+      if (
+        !(await uiConfirm(
+          "This will permanently delete ALL tasks in the workspace.",
+          {
+            icon: "🗑️",
+            title: "Clear All Tasks?",
+            okText: "Clear Tasks",
+            okDanger: true,
+          },
+        ))
+      )
+        return;
+      TASKS = [];
+      taskNextId = 100;
+      persistSave();
+      refreshCurrentView();
+      showToast("🗑️ All tasks cleared.");
+
+      // ── Danger: Clear Interview Calendar ──
+    } else if (action === "handleClearCalendar") {
+      if (
+        !(await uiConfirm(
+          "This will remove all locally created calendar events. Google Calendar events are unaffected.",
+          {
+            icon: "📅",
+            title: "Clear Interview Calendar?",
+            okText: "Clear Calendar",
+            okDanger: true,
+          },
+        ))
+      )
+        return;
+      calEvents = calEvents.filter((ev) => ev.isGoogleEvent);
+      persistSave();
+      renderCalendar();
+      showToast("📅 Local calendar events cleared.");
+
+      // ── Danger: Wipe All Storage ──
+    } else if (action === "handleWipeStorage") {
+      if (
+        !(await uiConfirm(
+          "This wipes EVERYTHING — tasks, employees, events, and Google auth. The page will reload.",
+          {
+            icon: "⚠️",
+            title: "Wipe All Storage?",
+            okText: "Wipe Everything",
+            okDanger: true,
+          },
+        ))
+      )
+        return;
+      localStorage.clear();
+      location.reload();
+
+      // ── Backup: Export JSON ──
+    } else if (action === "exportDataJSON") {
+      exportDataJSON();
+
+      // ── Calendars: Subscribe External ──
+    } else if (action === "subscribeCustomExtCalendar") {
+      if (typeof subscribeCustomExtCalendar === "function")
+        subscribeCustomExtCalendar();
+    }
+  });
+})();
+
+/* ══════════════════════════════════════════════
+   DATA BACKUP — Export & Import JSON
+   Lets the user download all data as a .json
+   file and restore it from a previous export.
+══════════════════════════════════════════════ */
+function exportDataJSON() {
+  const data = {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    tasks: TASKS,
+    calEvents: calEvents.filter((e) => !e.isGoogleEvent),
+    employees: EMPLOYEES,
+    candidates: CANDIDATES,
+    todos: TODOS,
+    taskNextId,
+    calNextId,
+    empNextId,
+    todoNextId,
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], {
+    type: "application/json",
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `upstaff-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast("✅ Data exported successfully!");
+}
+
+async function importDataJSON(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (
+    !(await uiConfirm(
+      "This will overwrite all current tasks, employees, and events.",
+      {
+        icon: "⚠️",
+        title: "Import & Overwrite?",
+        okText: "Import",
+        okDanger: true,
+      },
+    ))
+  ) {
+    input.value = "";
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!data.version) throw new Error("Invalid backup file");
+      if (data.tasks) {
+        TASKS = data.tasks;
+        taskNextId = data.taskNextId || 100;
+      }
+      if (data.calEvents) {
+        calEvents = [...data.calEvents];
+        calNextId = data.calNextId || 200;
+      }
+      if (data.employees) {
+        EMPLOYEES = data.employees;
+        empNextId = data.empNextId || 1;
+      }
+      if (data.candidates) {
+        CANDIDATES = data.candidates;
+      }
+      if (data.todos) {
+        TODOS = data.todos;
+        todoNextId = data.todoNextId || 1;
+      }
+      persistSave();
+      empPersistSave();
+      saveCandidates();
+      todoSave();
+      refreshCurrentView();
+      showToast("✅ Data imported successfully!");
+    } catch (err) {
+      showToast("❌ Import failed — invalid file.");
+      console.error("[Import]", err);
+    }
+    input.value = "";
+  };
+  reader.readAsText(file);
+}
+
+async function resetDemoData() {
+  if (
+    !(await uiConfirm(
+      "All applicant data and calendar events will be permanently cleared.",
+      {
+        icon: "⚠️",
+        title: "Reset All Data?",
+        okText: "Reset Everything",
+        okDanger: true,
+      },
+    ))
+  )
     return;
   TASKS = [];
   calEvents = [];
@@ -5839,8 +5542,8 @@ function renderSearchResults(q) {
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="${sm.color}" stroke-width="2.5" stroke-linecap="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
         </div>
         <div class="search-result-body">
-          <div class="search-result-title">${highlightMatch(t.name, q)}</div>
-          <div class="search-result-meta">${t.position} · ${t.assignee} · Due ${fmtDue(t.due)}</div>
+          <div class="search-result-title">${highlightMatch(sanitize(t.name), q)}</div>
+          <div class="search-result-meta">${sanitize(t.position)} · ${sanitize(t.assignee)} · Due ${fmtDue(t.due)}</div>
         </div>
         <div class="search-result-badge">
           <span class="${statusPillClass(t.status)}" style="font-size:10px;">${t.status}</span>
@@ -5860,8 +5563,8 @@ function renderSearchResults(q) {
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="${bg}" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
         </div>
         <div class="search-result-body">
-          <div class="search-result-title">${highlightMatch(e.name, q)}</div>
-          <div class="search-result-meta">${e.position} · ${e.round} · ${fmtDue(e.date)} ${fmtTime(e.time)}</div>
+          <div class="search-result-title">${highlightMatch(sanitize(e.name), q)}</div>
+          <div class="search-result-meta">${sanitize(e.position)} · ${sanitize(e.round)} · ${fmtDue(e.date)} ${fmtTime(e.time)}</div>
         </div>
         <div class="search-result-badge">
           <span class="${calStatusPillClass(e.status)}" style="font-size:10px;">${e.status}</span>
@@ -5903,12 +5606,13 @@ document
   .addEventListener("click", function (e) {
     if (e.target === this) closeGlobalSearch();
   });
-document
-  .getElementById("global-search-input")
-  .addEventListener("input", function () {
+document.getElementById("global-search-input").addEventListener(
+  "input",
+  debounce(function () {
     searchFocusIdx = -1;
     renderSearchResults(this.value);
-  });
+  }, 200),
+);
 
 // Keyboard shortcut: Ctrl+K / Cmd+K to open; ESC to close
 document.addEventListener("keydown", (e) => {
@@ -5946,257 +5650,9 @@ document.addEventListener("keydown", (e) => {
    ANALYTICS — APPLICANT DATA & RENDER
 ══════════════════════════════════════════════ */
 
-/**
- * APPLICANT_DATA — representative sample dataset.
- * Each applicant has: choice1, choice2, choice3 (position strings),
- * employmentType, workSetup, workSchedule, education, tools (array),
- * skills (array), source (where they heard about us).
- *
- * This data is stored separately from TASKS/calEvents and is read-only
- * for the analytics view — it does NOT affect any other feature.
- */
-const APPLICANT_DATA = [
-  {
-    choice1: "Customer Service Representative",
-    choice2: "Administrative Assistant",
-    choice3: "Data Entry Specialist",
-    employmentType: "Full-Time",
-    workSetup: "Remote",
-    workSchedule: "Morning",
-    education: "College Graduate",
-    tools: ["MS Office", "Google Workspace", "Zoom / Teams"],
-    skills: ["Communication", "Customer Handling"],
-    source: "Facebook",
-  },
-  {
-    choice1: "Bookkeeper",
-    choice2: "General Ledger Accountant",
-    choice3: "Accountant",
-    employmentType: "Full-Time",
-    workSetup: "On-site",
-    workSchedule: "Morning",
-    education: "College Graduate",
-    tools: ["QuickBooks", "Xero", "MS Office"],
-    skills: ["Bookkeeping", "Accounting", "Data Entry"],
-    source: "LinkedIn",
-  },
-  {
-    choice1: "Graphic Designer",
-    choice2: "Video Editor",
-    choice3: "Ecommerce VA",
-    employmentType: "Part-Time",
-    workSetup: "Remote",
-    workSchedule: "Flexible",
-    education: "College Graduate",
-    tools: ["Canva", "Adobe Suite", "Notion"],
-    skills: ["Design", "Illustration", "Branding"],
-    source: "Instagram",
-  },
-  {
-    choice1: "Google Advertising Specialist",
-    choice2: "Meta Advertising Specialist",
-    choice3: "Ecommerce VA",
-    employmentType: "Full-Time",
-    workSetup: "Remote",
-    workSchedule: "Morning",
-    education: "College Graduate",
-    tools: ["Google Workspace", "Canva", "ChatGPT / AI tools"],
-    skills: ["Google Ads", "SEO", "Analytics"],
-    source: "JobStreet",
-  },
-  {
-    choice1: "Administrative Assistant",
-    choice2: "Admin Support",
-    choice3: "Data Entry Specialist",
-    employmentType: "Full-Time",
-    workSetup: "On-site",
-    workSchedule: "Morning",
-    education: "College Graduate",
-    tools: ["MS Office", "Google Workspace", "Trello / Asana"],
-    skills: ["Scheduling", "Filing", "Communication"],
-    source: "Indeed",
-  },
-  {
-    choice1: "Recruitment Officer",
-    choice2: "Administrative Assistant",
-    choice3: "Admin Support",
-    employmentType: "Full-Time",
-    workSetup: "Hybrid",
-    workSchedule: "Morning",
-    education: "College Graduate",
-    tools: ["Google Workspace", "Slack", "Zoom / Teams"],
-    skills: ["Sourcing", "Interviewing", "HR"],
-    source: "Referral",
-  },
-  {
-    choice1: "Ecommerce VA",
-    choice2: "Admin Support",
-    choice3: "Data Entry Specialist",
-    employmentType: "Contractual",
-    workSetup: "Remote",
-    workSchedule: "Night",
-    education: "College Undergraduate",
-    tools: ["Shopify", "Canva", "Google Workspace"],
-    skills: ["Product Listing", "Customer Service", "Research"],
-    source: "Facebook",
-  },
-  {
-    choice1: "BackEnd Web Developer",
-    choice2: "Data Entry Specialist",
-    choice3: "Admin Support",
-    employmentType: "Full-Time",
-    workSetup: "Remote",
-    workSchedule: "Flexible",
-    education: "College Graduate",
-    tools: ["Google Workspace", "Slack", "Notion"],
-    skills: ["Python", "Node.js", "MySQL"],
-    source: "Company Website",
-  },
-  {
-    choice1: "Patient Care Admin Associate",
-    choice2: "Administrative Assistant",
-    choice3: "Customer Service Representative",
-    employmentType: "Full-Time",
-    workSetup: "On-site",
-    workSchedule: "Morning",
-    education: "College Graduate",
-    tools: ["MS Office", "Zoom / Teams", "Google Workspace"],
-    skills: ["Medical Records", "Customer Service", "Data Entry"],
-    source: "Walk-in",
-  },
-  {
-    choice1: "Data Entry Specialist",
-    choice2: "Administrative Assistant",
-    choice3: "Admin Support",
-    employmentType: "Part-Time",
-    workSetup: "Remote",
-    workSchedule: "Mid-shift",
-    education: "Vocational / TESDA",
-    tools: ["MS Office", "Google Workspace"],
-    skills: ["Typing", "Data Encoding", "Accuracy"],
-    source: "Facebook",
-  },
-  {
-    choice1: "Meta Advertising Specialist",
-    choice2: "Google Advertising Specialist",
-    choice3: "Graphic Designer",
-    employmentType: "Full-Time",
-    workSetup: "Remote",
-    workSchedule: "Morning",
-    education: "College Graduate",
-    tools: ["Canva", "Adobe Suite", "ChatGPT / AI tools"],
-    skills: ["Meta Ads", "Copywriting", "Analytics"],
-    source: "LinkedIn",
-  },
-  {
-    choice1: "Accountant",
-    choice2: "Bookkeeper",
-    choice3: "General Ledger Accountant",
-    employmentType: "Full-Time",
-    workSetup: "On-site",
-    workSchedule: "Morning",
-    education: "Post Graduate",
-    tools: ["QuickBooks", "Xero", "MS Office"],
-    skills: ["Audit", "Tax", "Financial Reporting"],
-    source: "JobStreet",
-  },
-  {
-    choice1: "Video Editor",
-    choice2: "Graphic Designer",
-    choice3: "Ecommerce VA",
-    employmentType: "Project-Based",
-    workSetup: "Remote",
-    workSchedule: "Flexible",
-    education: "College Undergraduate",
-    tools: ["Adobe Suite", "Canva", "Notion"],
-    skills: ["Video Editing", "Color Grading", "Motion Graphics"],
-    source: "Instagram",
-  },
-  {
-    choice1: "Admin Support",
-    choice2: "Data Entry Specialist",
-    choice3: "Customer Service Representative",
-    employmentType: "Part-Time",
-    workSetup: "Hybrid",
-    workSchedule: "Weekends Only",
-    education: "High School Graduate",
-    tools: ["MS Office", "Google Workspace"],
-    skills: ["Filing", "Communication", "Multitasking"],
-    source: "Referral",
-  },
-  {
-    choice1: "General Ledger Accountant",
-    choice2: "Accountant",
-    choice3: "Bookkeeper",
-    employmentType: "Full-Time",
-    workSetup: "On-site",
-    workSchedule: "Morning",
-    education: "Post Graduate",
-    tools: ["Xero", "QuickBooks", "MS Office"],
-    skills: ["GL Reconciliation", "Financial Statements", "Tax Compliance"],
-    source: "Indeed",
-  },
-  {
-    choice1: "Customer Service Representative",
-    choice2: "Patient Care Admin Associate",
-    choice3: "Admin Support",
-    employmentType: "Full-Time",
-    workSetup: "On-site",
-    workSchedule: "Night",
-    education: "College Graduate",
-    tools: ["Zoom / Teams", "Google Workspace", "Slack"],
-    skills: ["Active Listening", "Problem Solving", "CRM"],
-    source: "Facebook",
-  },
-  {
-    choice1: "Graphic Designer",
-    choice2: "Video Editor",
-    choice3: "Meta Advertising Specialist",
-    employmentType: "Contractual",
-    workSetup: "Remote",
-    workSchedule: "Flexible",
-    education: "College Graduate",
-    tools: ["Adobe Suite", "Canva", "Figma"],
-    skills: ["Logo Design", "Social Media Graphics", "UI Design"],
-    source: "Company Website",
-  },
-  {
-    choice1: "Recruitment Officer",
-    choice2: "Admin Support",
-    choice3: "Administrative Assistant",
-    employmentType: "Full-Time",
-    workSetup: "Hybrid",
-    workSchedule: "Morning",
-    education: "College Graduate",
-    tools: ["Google Workspace", "Trello / Asana", "Zoom / Teams"],
-    skills: ["Talent Acquisition", "Onboarding", "HR Compliance"],
-    source: "LinkedIn",
-  },
-  {
-    choice1: "Ecommerce VA",
-    choice2: "Data Entry Specialist",
-    choice3: "Administrative Assistant",
-    employmentType: "Part-Time",
-    workSetup: "Remote",
-    workSchedule: "Mid-shift",
-    education: "College Undergraduate",
-    tools: ["Shopify", "Google Workspace", "Canva"],
-    skills: ["Order Processing", "Inventory", "Customer Support"],
-    source: "Facebook",
-  },
-  {
-    choice1: "BackEnd Web Developer",
-    choice2: "Admin Support",
-    choice3: "Ecommerce VA",
-    employmentType: "Full-Time",
-    workSetup: "Remote",
-    workSchedule: "Night",
-    education: "College Graduate",
-    tools: ["Slack", "Notion", "Google Workspace"],
-    skills: ["REST APIs", "PHP", "Laravel"],
-    source: "Indeed",
-  },
-];
+// APPLICANT_DATA removed — analytics now reads live data from TASKS.
+// Fields like source, employmentType, workSetup, workSchedule, education,
+// tools, and skills will be populated once the database integration is live.
 
 /* ── Colour palette for charts ── */
 const CHART_COLORS = [
@@ -6343,15 +5799,28 @@ function buildSourceList(container, data) {
 
 /* ── Main render function for the Analytics view ── */
 function renderAnalytics() {
-  const A = APPLICANT_DATA; // shorthand
+  const A = TASKS; // live data from pipeline
   const total = A.length;
 
   /* ── 1. KPI cards ── */
   const totalInterviews = calEvents.length;
-  const hiredCount = calEvents.filter((e) => e.status === "Completed").length;
-  const uniquePositions = [...new Set(A.map((a) => a.choice1))].length;
+  const hiredCount = TASKS.filter((t) => t.status === "Hired").length;
+  const uniquePositions = [...new Set(A.map((a) => a.position).filter(Boolean))]
+    .length;
 
-  document.getElementById("analytics-kpi-row").innerHTML = `
+  const _kpiEl = document.getElementById("analytics-kpi-row");
+  if (_kpiEl) {
+    _kpiEl.innerHTML =
+      '<div class="skeleton-list-wrap" style="display:flex;gap:12px">' +
+      Array(4)
+        .fill(
+          '<div class="skeleton skeleton-card" style="flex:1;height:80px"></div>',
+        )
+        .join("") +
+      "</div>";
+  }
+  requestAnimationFrame(() => {
+    _kpiEl.innerHTML = `
     <div class="analytics-stat-card">
       <div class="analytics-stat-icon" style="background:rgba(68,215,233,.12);">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#44d7e9" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>
@@ -6382,54 +5851,48 @@ function renderAnalytics() {
       </div>
       <div class="analytics-stat-value">${uniquePositions}</div>
       <div class="analytics-stat-label">Positions Applied</div>
-      <div class="analytics-stat-sub">Unique 1st-choice roles</div>
+         <div class="analytics-stat-sub">Unique 1st-choice roles</div>
     </div>`;
+  }); // end requestAnimationFrame
 
-  /* ── 2. Position choice summary table ── */
-  const ALL_POSITIONS = JOB_POSITIONS;
-  const c1 = countBy(A.map((a) => a.choice1));
-  const c2 = countBy(A.map((a) => a.choice2));
-  const c3 = countBy(A.map((a) => a.choice3));
-
-  const tableRows = ALL_POSITIONS.map((p) => {
-    const v1 = c1[p] || 0,
-      v2 = c2[p] || 0,
-      v3 = c3[p] || 0,
-      tot = v1 + v2 + v3;
-    if (tot === 0) return ""; // hide positions with zero applicants
-    return `<tr>
-      <td style="font-weight:600;">${p}</td>
-      <td>${v1 > 0 ? `<span class="choice-badge" style="background:rgba(68,215,233,.15);color:#44d7e9;">${v1}</span>` : '<span style="color:var(--light);">—</span>'}</td>
-      <td>${v2 > 0 ? `<span class="choice-badge" style="background:rgba(108,99,255,.15);color:#7c75ff;">${v2}</span>` : '<span style="color:var(--light);">—</span>'}</td>
-      <td>${v3 > 0 ? `<span class="choice-badge" style="background:rgba(250,130,49,.15);color:#fa8231;">${v3}</span>` : '<span style="color:var(--light);">—</span>'}</td>
-      <td><strong>${tot}</strong></td>
-    </tr>`;
-  }).join("");
+  /* ── 2. Position summary table (live from TASKS) ── */
+  const posCount = countBy(A.map((a) => a.position).filter(Boolean));
+  const posEntries = Object.entries(posCount).sort((a, b) => b[1] - a[1]);
+  const tableRows = posEntries
+    .map(
+      ([p, tot]) => `<tr>
+    <td style="font-weight:600;">${p}</td>
+    <td><span class="choice-badge" style="background:rgba(68,215,233,.15);color:#44d7e9;">${tot}</span></td>
+    <td><strong>${tot}</strong></td>
+  </tr>`,
+    )
+    .join("");
 
   document.getElementById("position-choice-table").innerHTML = `
     <thead><tr>
       <th>Position</th>
-      <th>1st Choice</th>
-      <th>2nd Choice</th>
-      <th>3rd Choice</th>
-      <th>Total Interest</th>
+      <th>Applicants</th>
+      <th>Total</th>
     </tr></thead>
-    <tbody>${tableRows}</tbody>`;
+    <tbody>${tableRows || '<tr><td colspan="3" style="color:var(--light);text-align:center;padding:16px;">No applicants yet</td></tr>'}</tbody>`;
 
-  /* ── 3. Applicants per position (1st choice bar chart) ── */
-  const posData = Object.entries(c1)
-    .map(([label, value]) => ({ label, value }))
-    .sort((a, b) => b.value - a.value);
+  /* ── 3. Applicants per position bar chart (live from TASKS) ── */
+  const posData = posEntries.map(([label, value]) => ({ label, value }));
   buildBarChart(
     document.getElementById("chart-position"),
     posData,
     CHART_COLORS,
   );
 
-  /* ── 4. Employment type donut ── */
-  const empCount = countBy(A.map((a) => a.employmentType));
+  /* ── 4–10. Extended fields — reads from TASKS if DB populates them,
+     shows "No data" gracefully until then ── */
+
+  // Employment type donut
   const empData = ["Full-Time", "Part-Time", "Contractual", "Project-Based"]
-    .map((l, i) => ({ label: l, value: empCount[l] || 0 }))
+    .map((l) => ({
+      label: l,
+      value: A.filter((t) => t.employmentType === l).length,
+    }))
     .filter((d) => d.value > 0);
   buildDonut(document.getElementById("chart-employment"), empData, [
     "#44d7e9",
@@ -6438,10 +5901,12 @@ function renderAnalytics() {
     "#43e97b",
   ]);
 
-  /* ── 5. Work setup donut ── */
-  const setupCount = countBy(A.map((a) => a.workSetup));
+  // Work setup donut
   const setupData = ["On-site", "Remote", "Hybrid"]
-    .map((l) => ({ label: l, value: setupCount[l] || 0 }))
+    .map((l) => ({
+      label: l,
+      value: A.filter((t) => t.workSetup === l).length,
+    }))
     .filter((d) => d.value > 0);
   buildDonut(document.getElementById("chart-setup"), setupData, [
     "#fa8231",
@@ -6449,8 +5914,7 @@ function renderAnalytics() {
     "#6c63ff",
   ]);
 
-  /* ── 6. Work schedule bar chart ── */
-  const schedCount = countBy(A.map((a) => a.workSchedule));
+  // Work schedule bar chart
   const schedData = [
     "Morning",
     "Mid-shift",
@@ -6458,7 +5922,10 @@ function renderAnalytics() {
     "Weekends Only",
     "Flexible",
   ]
-    .map((l) => ({ label: l, value: schedCount[l] || 0 }))
+    .map((l) => ({
+      label: l,
+      value: A.filter((t) => t.workSchedule === l).length,
+    }))
     .filter((d) => d.value > 0);
   buildBarChart(
     document.getElementById("chart-schedule"),
@@ -6466,8 +5933,7 @@ function renderAnalytics() {
     "#6c63ff",
   );
 
-  /* ── 7. Education level bar chart ── */
-  const eduCount = countBy(A.map((a) => a.education));
+  // Education bar chart
   const eduData = [
     "High School Graduate",
     "Vocational / TESDA",
@@ -6475,32 +5941,146 @@ function renderAnalytics() {
     "College Graduate",
     "Post Graduate",
   ]
-    .map((l) => ({ label: l, value: eduCount[l] || 0 }))
+    .map((l) => ({
+      label: l,
+      value: A.filter((t) => t.education === l).length,
+    }))
     .filter((d) => d.value > 0);
   buildBarChart(document.getElementById("chart-education"), eduData, "#43e97b");
 
-  /* ── 8. Source list ── */
-  const srcCount = countBy(A.map((a) => a.source));
-  const srcData = Object.entries(srcCount)
+  // Source list
+  const srcRaw = A.map((t) => t.source).filter(Boolean);
+  const srcData = Object.entries(countBy(srcRaw))
     .map(([label, value]) => ({ label, value }))
     .sort((a, b) => b.value - a.value);
   buildSourceList(document.getElementById("chart-source"), srcData);
 
-  /* ── 9. Tools tag cloud (aggregate all tool arrays) ── */
-  const allTools = A.flatMap((a) => a.tools || []);
-  const toolCount = countBy(allTools);
-  const toolData = Object.entries(toolCount)
-    .map(([label, value]) => ({ label, value }))
-    .sort((a, b) => b.value - a.value);
-  buildTagCloud(document.getElementById("chart-tools"), toolData);
+  // Tools tag cloud
+  const allTools = A.flatMap((t) => t.tools || []);
+  buildTagCloud(
+    document.getElementById("chart-tools"),
+    Object.entries(countBy(allTools))
+      .map(([label, value]) => ({ label, value }))
+      .sort((a, b) => b.value - a.value),
+  );
 
-  /* ── 10. Skills tag cloud ── */
-  const allSkills = A.flatMap((a) => a.skills || []);
-  const skillCount = countBy(allSkills);
-  const skillData = Object.entries(skillCount)
-    .map(([label, value]) => ({ label, value }))
-    .sort((a, b) => b.value - a.value);
-  buildTagCloud(document.getElementById("chart-skills"), skillData);
+  // Skills tag cloud
+  const allSkills = A.flatMap((t) => t.skills || []);
+  buildTagCloud(
+    document.getElementById("chart-skills"),
+    Object.entries(countBy(allSkills))
+      .map(([label, value]) => ({ label, value }))
+      .sort((a, b) => b.value - a.value),
+  );
+}
+
+/* ── Analytics CSV Export ── */
+function exportAnalyticsCSV() {
+  const A = TASKS;
+  const rows = [];
+
+  rows.push(["UPSTAFF — Analytics Export", new Date().toLocaleString()]);
+  rows.push([]);
+  rows.push(["=== PIPELINE SUMMARY ==="]);
+  rows.push(["Metric", "Value"]);
+  rows.push(["Total Applicants", TASKS.length]);
+  rows.push(["Applied", TASKS.filter((t) => t.status === "Applied").length]);
+  rows.push([
+    "Screening",
+    TASKS.filter((t) => t.status === "Screening").length,
+  ]);
+  rows.push([
+    "Interview",
+    TASKS.filter((t) => t.status === "Interview").length,
+  ]);
+  rows.push([
+    "Assessment",
+    TASKS.filter((t) => t.status === "Assessment").length,
+  ]);
+  rows.push(["Review", TASKS.filter((t) => t.status === "Review").length]);
+  rows.push(["Hired", TASKS.filter((t) => t.status === "Hired").length]);
+  rows.push(["Rejected", TASKS.filter((t) => t.status === "Rejected").length]);
+  rows.push([]);
+
+  rows.push(["=== ASSESSMENT RESULTS ==="]);
+  rows.push(["Metric", "Value"]);
+  const withKnowledge = TASKS.filter((t) => t.knowledge_score);
+  const passed = withKnowledge.filter(
+    (t) => parseInt(t.knowledge_score) >= 75,
+  ).length;
+  const failed = withKnowledge.filter(
+    (t) => parseInt(t.knowledge_score) < 75,
+  ).length;
+  const avgScore = withKnowledge.length
+    ? Math.round(
+        withKnowledge.reduce((s, t) => s + parseInt(t.knowledge_score), 0) /
+          withKnowledge.length,
+      )
+    : "N/A";
+  rows.push(["Assessments Taken", withKnowledge.length]);
+  rows.push(["Passed (≥75%)", passed]);
+  rows.push(["Failed (<75%)", failed]);
+  rows.push(["Average Score", withKnowledge.length ? avgScore + "%" : "N/A"]);
+  rows.push([]);
+
+  rows.push(["=== POSITION BREAKDOWN ==="]);
+  rows.push(["Position", "Total Applicants", "Hired", "Avg Knowledge Score"]);
+  const positions = [...new Set(TASKS.map((t) => t.position))].sort();
+  positions.forEach((pos) => {
+    const group = TASKS.filter((t) => t.position === pos);
+    const hired = group.filter((t) => t.status === "Hired").length;
+    const scored = group.filter((t) => t.knowledge_score);
+    const avg = scored.length
+      ? Math.round(
+          scored.reduce((s, t) => s + parseInt(t.knowledge_score), 0) /
+            scored.length,
+        ) + "%"
+      : "—";
+    rows.push([pos, group.length, hired, avg]);
+  });
+  rows.push([]);
+
+  // Source, Employment Type, Work Setup — auto-populated once DB fields are live
+  const liveSrc = A.map((t) => t.source).filter(Boolean);
+  if (liveSrc.length) {
+    rows.push(["=== APPLICANT SOURCE BREAKDOWN ==="]);
+    rows.push(["Source", "Count"]);
+    const srcMap = {};
+    liveSrc.forEach((s) => {
+      srcMap[s] = (srcMap[s] || 0) + 1;
+    });
+    Object.entries(srcMap)
+      .sort((a, b) => b[1] - a[1])
+      .forEach(([s, c]) => rows.push([s, c]));
+    rows.push([]);
+  }
+
+  const liveEmp = A.map((t) => t.employmentType).filter(Boolean);
+  if (liveEmp.length) {
+    rows.push(["=== EMPLOYMENT TYPE ==="]);
+    rows.push(["Type", "Count"]);
+    const empMap = {};
+    liveEmp.forEach((e) => {
+      empMap[e] = (empMap[e] || 0) + 1;
+    });
+    Object.entries(empMap).forEach(([k, v]) => rows.push([k, v]));
+    rows.push([]);
+  }
+
+  const liveSetup = A.map((t) => t.workSetup).filter(Boolean);
+  if (liveSetup.length) {
+    rows.push(["=== WORK SETUP ==="]);
+    rows.push(["Setup", "Count"]);
+    const setupMap = {};
+    liveSetup.forEach((s) => {
+      setupMap[s] = (setupMap[s] || 0) + 1;
+    });
+    Object.entries(setupMap).forEach(([k, v]) => rows.push([k, v]));
+  }
+
+  const date = new Date().toISOString().slice(0, 10);
+  buildCSVDownload(rows, `upstaff-analytics-${date}.csv`);
+  showToast("📊 Analytics CSV exported!");
 }
 
 /* ── Wire Analytics into showSettings / switchView pattern ── */
@@ -6645,16 +6225,33 @@ function renderCandidates() {
         .map((t) => candidateCardHTML(t, folderColors[folder]))
         .join("");
     });
-    container.innerHTML = html;
+    container.innerHTML =
+      '<div class="skeleton-list-wrap">' +
+      Array(4)
+        .fill('<div class="skeleton skeleton-candidate-card"></div>')
+        .join("") +
+      "</div>";
+    requestAnimationFrame(() => {
+      container.innerHTML = html;
+    });
   } else {
     const folderColors = {
       "Ready to Call": "#44d7e9",
       "Ready to Hire": "#43e97b",
       "Talent Pool / Shortlisted": "#fa8231",
     };
-    container.innerHTML = filtered
+    const _html = filtered
       .map((t) => candidateCardHTML(t, folderColors[_candidateFolderFilter]))
       .join("");
+    container.innerHTML =
+      '<div class="skeleton-list-wrap">' +
+      Array(4)
+        .fill('<div class="skeleton skeleton-candidate-card"></div>')
+        .join("") +
+      "</div>";
+    requestAnimationFrame(() => {
+      container.innerHTML = _html;
+    });
   }
 }
 
@@ -6670,9 +6267,9 @@ function candidateCardHTML(t, accentColor) {
   return `<div class="candidate-card" onclick="openTaskEdit(${t.id})">
     <div class="candidate-avatar-lg" style="background:${ac};">${initials(t.assignee)}</div>
     <div class="candidate-info">
-      <div class="candidate-name">${t.name}</div>
+      <div class="candidate-name">${sanitize(t.name)}</div>
       <div class="candidate-meta">
-        <span>${t.position}</span>
+        <span>${sanitize(t.position)}</span>
         <span>·</span>
         <span style="display:inline-flex;align-items:center;gap:4px;">
           <span class="${statusPillClass(t.status)}" style="font-size:10px;">${t.status}</span>
@@ -6794,11 +6391,19 @@ function _saveExtCalState() {
   );
 }
 
-function renderPublicCalendars() {
+/* ── Public Calendar page tracker ── */
+let _pubCalPage = 0;
+const PUB_CAL_PAGE_SIZE = 5;
+
+function renderPublicCalendars(page) {
   const el = document.getElementById("public-cal-list");
   if (!el) return;
 
-  // All defined calendars — plus any custom-added ones saved in localStorage
+  // Reset to page 0 on fresh renders (no argument passed)
+  if (page === undefined) page = _pubCalPage;
+  _pubCalPage = page;
+
+  // Load custom calendars from storage
   let customCals = [];
   try {
     customCals = JSON.parse(
@@ -6807,9 +6412,27 @@ function renderPublicCalendars() {
   } catch (e) {
     console.error("[ExtCal] ❌ Corrupted custom calendars:", e);
   }
-  const allCals = [...PUBLIC_CALENDARS, ...customCals];
+  // Filter out built-in calendars the user has deleted
+  let deletedBuiltins = [];
+  try {
+    deletedBuiltins = JSON.parse(
+      localStorage.getItem("upstaff_deleted_builtin_cals") || "[]",
+    );
+  } catch (e) {
+    dbg("[calendarInit] Failed to parse deleted built-in cals:", e);
+  }
+  const visibleBuiltins = PUBLIC_CALENDARS.filter(
+    (c) => !deletedBuiltins.includes(c.id),
+  );
+  const allCals = [...visibleBuiltins, ...customCals];
 
-  // Sign-in awareness banner
+  // Pagination math
+  const totalPages = Math.max(1, Math.ceil(allCals.length / PUB_CAL_PAGE_SIZE));
+  if (_pubCalPage >= totalPages) _pubCalPage = totalPages - 1;
+  const start = _pubCalPage * PUB_CAL_PAGE_SIZE;
+  const pageCals = allCals.slice(start, start + PUB_CAL_PAGE_SIZE);
+
+  // Sign-in banner
   const banner = gcalSignedIn
     ? `<div class="pub-cal-banner pub-cal-banner-ok">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
@@ -6820,7 +6443,8 @@ function renderPublicCalendars() {
         Sign in with Google first (click <strong>Sync Google Cal</strong>) to subscribe and load events automatically.
       </div>`;
 
-  const cards = allCals
+  // Build cards for current page
+  const cards = pageCals
     .map((cal) => {
       const isActive = _subscribedExtCalIds.includes(cal.id);
       const isUnsubbed = _unsubscribedExtCalIds.includes(cal.id);
@@ -6828,32 +6452,31 @@ function renderPublicCalendars() {
 
       let statusBadge = "";
       let actionBtns = "";
+      const safeId = cal.id.replace(/'/g, "\\'");
+      const safeName = cal.name.replace(/'/g, "\\'");
 
       if (isActive) {
         statusBadge = `<span class="pub-cal-status pub-cal-status-active">● Subscribed</span>`;
-        actionBtns = `
-        <button class="pub-cal-btn pub-cal-btn-unsub"
-                onclick="unsubscribeExtCalendar('${cal.id}','${cal.name.replace(/'/g, "\\'")}',null)">
+        actionBtns = `<button class="pub-cal-btn pub-cal-btn-unsub" onclick="unsubscribeExtCalendar('${safeId}','${safeName}',null)">
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          Unsubscribe
-        </button>`;
+          Unsubscribe</button>`;
       } else if (isUnsubbed) {
         statusBadge = `<span class="pub-cal-status pub-cal-status-unsub">○ Unsubscribed</span>`;
-        actionBtns = `
-        <button class="pub-cal-btn pub-cal-btn-resub"
-                onclick="resubscribeExtCalendar('${cal.id}','${cal.name.replace(/'/g, "\\'")}',null)">
+        actionBtns = `<button class="pub-cal-btn pub-cal-btn-resub" onclick="resubscribeExtCalendar('${safeId}','${safeName}',null)">
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.95"/></svg>
-          Resubscribe
-        </button>`;
+          Resubscribe</button>`;
       } else {
         statusBadge = `<span class="pub-cal-status pub-cal-status-none">— Not subscribed</span>`;
-        actionBtns = `
-        <button class="pub-cal-btn pub-cal-btn-sub"
-                onclick="subscribeExtCalendar('${cal.id}','${cal.name.replace(/'/g, "\\'")}',null)">
+        actionBtns = `<button class="pub-cal-btn pub-cal-btn-sub" onclick="subscribeExtCalendar('${safeId}','${safeName}',null)">
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Subscribe
-        </button>`;
+          Subscribe</button>`;
       }
+
+      // Delete button — shown for ALL calendars
+      const deleteBtn = `<button class="pub-cal-btn pub-cal-btn-delete" title="Delete this calendar"
+        onclick="deletePublicCalEntry('${safeId}','${safeName}',${isCustom})">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+        Delete</button>`;
 
       return `<div class="pub-cal-card ${isActive ? "pub-cal-card-active" : isUnsubbed ? "pub-cal-card-unsub" : ""}">
       <div class="pub-cal-icon">${cal.icon}</div>
@@ -6867,31 +6490,99 @@ function renderPublicCalendars() {
       </div>
       <div class="pub-cal-actions">
         ${actionBtns}
-        <button class="pub-cal-btn pub-cal-btn-copy"
-                onclick="copyExtCalId('${cal.id}',this)" title="Copy Calendar ID to clipboard">
+        <button class="pub-cal-btn pub-cal-btn-copy" onclick="copyExtCalId('${safeId}',this)" title="Copy Calendar ID">
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-          Copy ID
-        </button>
-        ${
-          isCustom
-            ? `
-        <button class="pub-cal-btn pub-cal-btn-remove"
-                onclick="removeCustomExtCal('${cal.id}')" title="Remove from list">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
-          Remove
-        </button>`
-            : ""
-        }
+          Copy ID</button>
+        ${deleteBtn}
       </div>
     </div>`;
     })
     .join("");
 
+  // Pagination controls
+  let pagination = "";
+  if (totalPages > 1) {
+    const prevDisabled = _pubCalPage === 0 ? "disabled" : "";
+    const nextDisabled = _pubCalPage >= totalPages - 1 ? "disabled" : "";
+    const pageButtons = Array.from(
+      { length: totalPages },
+      (_, i) =>
+        `<button class="pub-cal-page-btn ${i === _pubCalPage ? "pub-cal-page-active" : ""}"
+               onclick="renderPublicCalendars(${i})">${i + 1}</button>`,
+    ).join("");
+
+    pagination = `<div class="pub-cal-pagination">
+      <button class="pub-cal-page-btn pub-cal-page-nav" onclick="renderPublicCalendars(${_pubCalPage - 1})" ${prevDisabled}>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      ${pageButtons}
+      <button class="pub-cal-page-btn pub-cal-page-nav" onclick="renderPublicCalendars(${_pubCalPage + 1})" ${nextDisabled}>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+      <span class="pub-cal-page-info">Showing ${start + 1}–${Math.min(start + PUB_CAL_PAGE_SIZE, allCals.length)} of ${allCals.length}</span>
+    </div>`;
+  }
+
   el.innerHTML =
     banner +
     (allCals.length
-      ? cards
+      ? cards + pagination
       : `<div class="pub-cal-empty">No public calendars defined yet. Add a custom one below.</div>`);
+}
+
+/* ── Delete a calendar entry (built-in or custom) ── */
+async function deletePublicCalEntry(calId, calName, isCustom) {
+  if (
+    !(await uiConfirm(
+      `"${calName}" will be removed and unsubscribed if active.`,
+      {
+        icon: "🗑️",
+        title: "Remove Calendar?",
+        okText: "Remove",
+        okDanger: true,
+      },
+    ))
+  )
+    return;
+
+  // Unsubscribe first if active
+  if (_subscribedExtCalIds.includes(calId)) {
+    _subscribedExtCalIds = _subscribedExtCalIds.filter((id) => id !== calId);
+  }
+  _unsubscribedExtCalIds = _unsubscribedExtCalIds.filter((id) => id !== calId);
+
+  if (isCustom) {
+    // Remove from custom list in localStorage
+    try {
+      let customCals = JSON.parse(
+        localStorage.getItem("upstaff_custom_ext_cals") || "[]",
+      );
+      customCals = customCals.filter((c) => c.id !== calId);
+      localStorage.setItem(
+        "upstaff_custom_ext_cals",
+        JSON.stringify(customCals),
+      );
+    } catch (e) {
+      console.error("[ExtCal] delete error:", e);
+    }
+  } else {
+    // For built-in calendars: persist a "deleted" list so they stay hidden after reload
+    try {
+      let deleted = JSON.parse(
+        localStorage.getItem("upstaff_deleted_builtin_cals") || "[]",
+      );
+      if (!deleted.includes(calId)) deleted.push(calId);
+      localStorage.setItem(
+        "upstaff_deleted_builtin_cals",
+        JSON.stringify(deleted),
+      );
+    } catch (e) {
+      console.error("[ExtCal] delete built-in error:", e);
+    }
+  }
+
+  showToast(`🗑️ "${calName}" removed.`);
+  renderPublicCalendars();
 }
 
 /** Toggle subscribe/unsubscribe for a public calendar (legacy toggle, kept for back-compat) */
@@ -7055,7 +6746,7 @@ async function subscribeCustomExtCalendar() {
   if (!id) {
     if (statusEl) {
       statusEl.textContent = "⚠️ Please enter a Calendar ID.";
-      statusEl.style.color = "#fa8231";
+      statusEl.style.color = "var(--orange)";
     }
     return;
   }
@@ -7064,7 +6755,7 @@ async function subscribeCustomExtCalendar() {
   if (!id.includes("@") && !id.includes(".")) {
     if (statusEl) {
       statusEl.textContent = "⚠️ That doesn't look like a valid Calendar ID.";
-      statusEl.style.color = "#fa8231";
+      statusEl.style.color = "var(--orange)";
     }
     return;
   }
@@ -7093,7 +6784,7 @@ async function subscribeCustomExtCalendar() {
     statusEl.textContent = gcalSignedIn
       ? "✅ Subscribed — events loading…"
       : "📋 Calendar ID copied! Sign in to auto-load events.";
-    statusEl.style.color = gcalSignedIn ? "#43e97b" : "#44d7e9";
+    statusEl.style.color = gcalSignedIn ? "var(--green)" : "var(--cyan)";
     setTimeout(() => {
       if (statusEl) statusEl.textContent = "";
     }, 4000);
@@ -7134,1239 +6825,96 @@ function copyExtCalId(calendarId, btnEl) {
    SETUP — Fill in your credentials below:
 ══════════════════════════════════════════════ */
 
-const GCAL_CONFIG = {
-  // ─────────────────────────────────────────────────────────────────
-  // STEP 1: Your API Key
-  // Google Cloud Console → APIs & Services → Credentials → API Key
-  // ─────────────────────────────────────────────────────────────────
-  API_KEY: "AIzaSyCNxV5_0ymt6B2s1WEtSYI8586U6bcYHYI",
-
-  // ─────────────────────────────────────────────────────────────────
-  // STEP 2: Your OAuth 2.0 Client ID
-  // Google Cloud Console → Credentials → OAuth 2.0 Client ID
-  // Authorized origin: http://localhost:8080
-  // ─────────────────────────────────────────────────────────────────
-  CLIENT_ID:
-    "960820536270-rsnda80hpl03rmdm1tqki2p11b01svuv.apps.googleusercontent.com",
-
-  // Calendar IDs are discovered dynamically via gcalFetchCalendarList()
-  // No hardcoding needed — calendars are fetched from the Google API.
-
-  // How many months of events to fetch (before & after today)
-  MONTHS_RANGE: 2,
-
-  // Google API scopes — full read+write access for creating/updating/deleting events
-  SCOPES: "https://www.googleapis.com/auth/calendar",
-
-  // Google API discovery document for Calendar v3
-  DISCOVERY_DOC:
-    "https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest",
-
-  // ─────────────────────────────────────────────────────────────────
-  // REMINDER SETTINGS
-  // Set how many minutes before an interview to show a notification.
-  // You can add or remove values from this array.
-  // Default: notify 60 minutes before AND 10 minutes before.
-  // ─────────────────────────────────────────────────────────────────
-  REMINDER_MINUTES: [60, 30, 10],
-};
-
-// ── Calendar registry is declared earlier and populated by gcalFetchCalendarList() ──
-let gcalTokenClient = null; // Holds the OAuth token client
-let gcalSignedIn = false; // True once we have a valid access token
-let gcalSyncedIds = new Set(); // Track which events came from Google
-let remindersFired = new Set(); // Track reminders already shown (key: eventId+minutesBefore)
-let reminderTimer = null; // setInterval handle for reminder checks
-
 /* ══════════════════════════════════════════════
-   PART 1: GOOGLE CALENDAR SYNC
+   ZOOM SERVER-TO-SERVER CONFIG
+   Credentials from marketplace.zoom.us → Your App → App Credentials
+   ⚠️  Regenerate these after testing — do not commit to public repos
 ══════════════════════════════════════════════ */
-
-/* ──────────────────────────────────────────────
-   INIT — Initializes gapi + OAuth token client
-────────────────────────────────────────────── */
-function gcalInit() {
-  if (
-    GCAL_CONFIG.API_KEY === "YOUR_API_KEY_HERE" ||
-    GCAL_CONFIG.CLIENT_ID === "YOUR_CLIENT_ID_HERE.apps.googleusercontent.com"
-  ) {
-    console.warn(
-      "[Google Calendar] ⚠️  Please fill in your API_KEY and CLIENT_ID in GCAL_CONFIG.",
-    );
-    document.getElementById("gcal-sync-btn").title =
-      "Please configure your API_KEY and CLIENT_ID first";
-    return;
-  }
-
-  gcalTokenClient = google.accounts.oauth2.initTokenClient({
-    client_id: GCAL_CONFIG.CLIENT_ID,
-    scope: GCAL_CONFIG.SCOPES,
-    callback: (tokenResponse) => {
-      if (tokenResponse && tokenResponse.access_token) {
-        gcalSignedIn = true;
-        localStorage.setItem(LS_KEYS.GCAL_AUTH, "1");
-        // Step 1: discover all user calendars → Step 2: fetch events from each
-        gcalFetchCalendarList().then(() => gcalFetchAllCalendars());
-      } else if (tokenResponse?.error) {
-        console.warn("[GCal] Token error:", tokenResponse.error);
-        gcalSignedIn = false;
-        const _gcalErr = tokenResponse.error;
-        if (
-          _gcalErr === "popup_blocked_by_browser" ||
-          _gcalErr === "popup_failed_to_open"
-        ) {
-          updateSyncBtnState("Sync Google Cal", false);
-          showPopupBlockedBanner();
-        } else if (_gcalErr === "access_denied") {
-          localStorage.removeItem(LS_KEYS.GCAL_AUTH);
-          updateSyncBtnState("Sync Google Cal", false);
-          showCalToast("\u26a0\ufe0f Google Calendar access was denied.");
-        } else if (_gcalErr !== "user_cancelled") {
-          updateSyncBtnState("Sync Google Cal", false);
-          showCalToast("\u26a0\ufe0f Google sign-in failed. Please try again.");
-        } else {
-          updateSyncBtnState("Sync Google Cal", false);
-        }
-      }
-    },
-  });
-
-  gapi.load("client", async () => {
-    try {
-      await gapi.client.init({
-        apiKey: GCAL_CONFIG.API_KEY,
-        discoveryDocs: [GCAL_CONFIG.DISCOVERY_DOC],
-      });
-      console.log("[Google Calendar] ✅ gapi client ready");
-
-      // ── Silent re-auth on page load ─────────────────────────────────
-      // If the user previously granted access, try refreshing the token
-      // silently (no popup). This re-fetches Google events after a reload.
-      const wasPreviouslySignedIn =
-        localStorage.getItem(LS_KEYS.GCAL_AUTH) === "1";
-      if (wasPreviouslySignedIn) {
-        console.log("[GCal] 🔄 Attempting silent token refresh…");
-        updateSyncBtnState("Reconnecting…");
-        // prompt: '' = use existing session; never shows a UI popup
-        gcalTokenClient.requestAccessToken({ prompt: "" });
-      }
-    } catch (err) {
-      console.error("[GCal] ❌ gapi init error:", err);
-    }
-  });
-}
-
-/* -- Popup-blocked helper banner -- */
-function showPopupBlockedBanner() {
-  const existing = document.getElementById("gcal-popup-banner");
-  if (existing) existing.remove();
-  const banner = document.createElement("div");
-  banner.id = "gcal-popup-banner";
-  banner.style.cssText =
-    'position:fixed;top:68px;left:50%;transform:translateX(-50%);z-index:9999;background:#fff8e1;border:1.5px solid #fbbf24;border-radius:14px;padding:14px 20px;box-shadow:0 6px 24px rgba(0,0,0,.15);display:flex;align-items:center;gap:14px;max-width:520px;width:calc(100% - 40px);font-family:"DM Sans",sans-serif;animation:slideUp .3s ease;';
-  banner.innerHTML = `
-    <div style="font-size:24px;flex-shrink:0;">&#x1F512;</div>
-    <div style="flex:1;min-width:0;">
-      <div style="font-size:13px;font-weight:700;color:#92400e;margin-bottom:3px;">Popup Blocked by Browser</div>
-      <div style="font-size:12px;color:#78350f;line-height:1.5;">
-        Your browser blocked the Google sign-in popup. Click the <strong>blocked popup icon</strong>
-        in your address bar, choose <strong>"Always allow popups"</strong> for this site, then click
-        <strong>Sync Google Cal</strong> again.
-      </div>
-    </div>
-    <button onclick="document.getElementById('gcal-popup-banner').remove()"
-      style="all:unset;cursor:pointer;font-size:18px;color:#92400e;flex-shrink:0;padding:0 4px;line-height:1;">&times;</button>
-  `;
-  document.body.appendChild(banner);
-  setTimeout(() => {
-    if (banner.parentNode) banner.remove();
-  }, 12000);
-}
-
-/* ── Sync button state helper ─────────────────── */
-function updateSyncBtnState(label, isError = false) {
-  const btn = document.getElementById("gcal-sync-btn");
-  const lbl = document.getElementById("gcal-btn-label");
-  if (lbl) lbl.textContent = label;
-  if (btn) btn.style.borderColor = isError ? "rgba(220,38,38,.4)" : "";
-}
-
-/* ──────────────────────────────────────────────
-   SYNC BUTTON CLICK HANDLER
-────────────────────────────────────────────── */
-function handleGCalSync() {
-  if (GCAL_CONFIG.API_KEY === "YOUR_API_KEY_HERE") {
-    showCalToast("⚠️ Please configure your API_KEY and CLIENT_ID first!");
-    return;
-  }
-  if (!gcalTokenClient) {
-    // gapi not ready yet — give a clear message and retry hint
-    showCalToast(
-      "⚠️ Google API still loading. Please wait a moment and try again.",
-    );
-    return;
-  }
-  // Dismiss any previous popup-blocked banner
-  const prevBanner = document.getElementById("gcal-popup-banner");
-  if (prevBanner) prevBanner.remove();
-
-  updateSyncBtnState("Connecting…");
-  if (!gcalSignedIn) {
-    // Use 'select_account' so Google always shows the account picker without
-    // forcing re-consent — this keeps the popup smaller and less likely to be
-    // blocked. If this is the very first sign-in, Google auto-shows consent.
-    gcalTokenClient.requestAccessToken({ prompt: "select_account" });
-  } else {
-    gcalFetchAllCalendars();
-  }
-}
-
-/* ──────────────────────────────────────────────
-   GOOGLE API LAYER
-   All functions below talk directly to the Google Calendar API.
-   They do not touch the DOM — UI updates happen in the callers.
-────────────────────────────────────────────── */
-
-/* gcalFetchCalendarList
-   Fetches all calendars the signed-in user can write to.
-   Stores them in UPSTAFF_CALENDARS and persists to localStorage.
-   Called once after sign-in, then the list is used for all operations. */
-async function gcalFetchCalendarList() {
-  try {
-    // Use "reader" (not "writer" or "freeBusyReader") so that subscribed
-    // public/holiday calendars — which are read-only — are included in the list.
-    const resp = await gapi.client.calendar.calendarList.list({
-      minAccessRole: "reader",
-    });
-    const items = resp.result.items || [];
-
-    UPSTAFF_CALENDARS = items.map((cal, i) => ({
-      calendarId: cal.id,
-      calendarName: cal.summary || cal.id,
-      calendarType: cal.primary
-        ? "Primary"
-        : cal.summary?.toLowerCase().includes("holiday")
-          ? "Holiday"
-          : cal.summary?.toLowerCase().includes("interview")
-            ? "Interview"
-            : cal.summary?.toLowerCase().includes("todo") ||
-                cal.summary?.toLowerCase().includes("to-do")
-              ? "To-Do"
-              : cal.summary?.toLowerCase().includes("event")
-                ? "Event"
-                : "General",
-      color:
-        cal.backgroundColor ||
-        CALENDAR_COLOR_PALETTE[i % CALENDAR_COLOR_PALETTE.length],
-      icon: cal.primary
-        ? "🗓️"
-        : cal.summary?.toLowerCase().includes("holiday")
-          ? "🎉"
-          : cal.summary?.toLowerCase().includes("interview")
-            ? "📅"
-            : cal.summary?.toLowerCase().includes("todo") ||
-                cal.summary?.toLowerCase().includes("to-do")
-              ? "✅"
-              : "📋",
-      syncEnabled: true,
-    }));
-
-    localStorage.setItem(LS_KEYS.CALENDARS, JSON.stringify(UPSTAFF_CALENDARS));
-    console.log(
-      `[GCal] 📋 Discovered ${UPSTAFF_CALENDARS.length} calendar(s):`,
-      UPSTAFF_CALENDARS.map((c) => c.icon + " " + c.calendarName).join(", "),
-    );
-
-    populateCalendarSelectors();
-    renderCalendarSidebar();
-    return UPSTAFF_CALENDARS;
-  } catch (err) {
-    console.warn(
-      "[GCal] ⚠️ Could not fetch calendar list:",
-      err?.result?.error?.message || err,
-    );
-    return UPSTAFF_CALENDARS;
-  }
-}
-
-/* gcalCreateCalendar
-   Creates a brand-new calendar in the signed-in user's Google account.
-   Returns the new calendarId on success, null on failure.
-   After creation, re-fetches the calendar list so the new entry appears
-   in all dropdowns and the Settings panel immediately. */
-async function gcalCreateCalendar(name, description, calendarType) {
-  if (!gcalSignedIn || !gapi.client.calendar) {
-    throw new Error("Not signed in to Google Calendar");
-  }
-  if (!name || !name.trim()) {
-    throw new Error("Calendar name is required");
-  }
-
-  const resource = {
-    summary: name.trim(),
-    description: description?.trim() || "",
-    timeZone: "Asia/Manila",
-  };
-
-  const resp = await gapi.client.calendar.calendars.insert({ resource });
-  const newCalId = resp.result.id;
-
-  console.log(`[GCal] ✅ Created new calendar "${name}" → ${newCalId}`);
-
-  // Re-fetch the full calendar list so the new entry is included
-  await gcalFetchCalendarList();
-
-  // Optionally override the auto-detected type with the user's choice
-  const entry = UPSTAFF_CALENDARS.find((c) => c.calendarId === newCalId);
-  if (entry && calendarType) {
-    entry.calendarType = calendarType;
-    const typeIcons = {
-      Interview: "📅",
-      Event: "📋",
-      "To-Do": "✅",
-      General: "🗓️",
-      Holiday: "🎉",
-    };
-    entry.icon = typeIcons[calendarType] || "📋";
-    localStorage.setItem(LS_KEYS.CALENDARS, JSON.stringify(UPSTAFF_CALENDARS));
-  }
-
-  return newCalId;
-}
-
-/* handleCreateCalendar
-   Reads the Settings form and calls gcalCreateCalendar().
-   Shows inline status, updates dropdowns and the Settings list. */
-async function handleCreateCalendar() {
-  const btn = document.getElementById("create-cal-btn");
-  const status = document.getElementById("create-cal-status");
-  const name = document.getElementById("new-cal-name")?.value.trim();
-  const type = document.getElementById("new-cal-type")?.value || "General";
-  const desc = document.getElementById("new-cal-desc")?.value.trim();
-
-  if (!name) {
-    if (status) {
-      status.textContent = "⚠️ Please enter a calendar name.";
-      status.style.color = "#fa8231";
-    }
-    return;
-  }
-  if (!gcalSignedIn) {
-    if (status) {
-      status.textContent =
-        "⚠️ Sign in with Google first (click Sync Google Cal).";
-      status.style.color = "#fa8231";
-    }
-    return;
-  }
-
-  // Disable button while working
-  if (btn) {
-    btn.disabled = true;
-    btn.textContent = "Creating…";
-  }
-  if (status) {
-    status.textContent = "";
-  }
-
-  try {
-    const newCalId = await gcalCreateCalendar(name, desc, type);
-    if (status) {
-      status.textContent = `✅ Calendar created!`;
-      status.style.color = "#43e97b";
-    }
-    // Clear form
-    document.getElementById("new-cal-name").value = "";
-    document.getElementById("new-cal-desc").value = "";
-
-    // Refresh all calendar UI
-    populateCalendarSelectors();
-    renderSettingsCalendarList();
-    renderCalendarSidebar();
-    showCalToast(`✅ "${name}" calendar created!`);
-
-    console.log(`[UI] New calendar added: ${name} (${type}) → ${newCalId}`);
-  } catch (err) {
-    const msg = err?.result?.error?.message || err?.message || "Unknown error";
-    console.error("[GCal] ❌ Create calendar failed:", err);
-    if (status) {
-      status.textContent = `❌ Failed: ${msg}`;
-      status.style.color = "#ef4444";
-    }
-    showCalToast(
-      "❌ Could not create calendar. Check the console for details.",
-    );
-  } finally {
-    if (btn) {
-      btn.disabled = false;
-      btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Create Calendar`;
-    }
-    // Auto-clear success message after 4 s
-    setTimeout(() => {
-      if (status && status.textContent.startsWith("✅"))
-        status.textContent = "";
-    }, 4000);
-  }
-}
-
-/* handleDeleteCalendar
-   Deletes a calendar from Google and removes it from the local registry.
-   Primary calendar cannot be deleted. */
-async function handleDeleteCalendar(calendarId, calendarName, btnEl) {
-  if (!gcalSignedIn) {
-    showCalToast("⚠️ Sign in with Google first.");
-    return;
-  }
-  if (calendarId === "primary") {
-    showCalToast("⚠️ The primary calendar cannot be deleted.");
-    return;
-  }
-  if (
-    !confirm(`Delete the calendar "${calendarName}"?
-
-This will permanently delete it from your Google account and all its events. This cannot be undone.`)
-  )
-    return;
-
-  if (btnEl) {
-    btnEl.disabled = true;
-    btnEl.textContent = "Deleting…";
-  }
-
-  try {
-    await gapi.client.calendar.calendars.delete({ calendarId });
-    console.log(`[GCal] ✅ Deleted calendar "${calendarName}" (${calendarId})`);
-
-    // Remove from local registry
-    UPSTAFF_CALENDARS = UPSTAFF_CALENDARS.filter(
-      (c) => c.calendarId !== calendarId,
-    );
-    calEvents = calEvents.filter(
-      (e) => (e.calendarId || e.sourceCalendar) !== calendarId,
-    );
-    localStorage.setItem(LS_KEYS.CALENDARS, JSON.stringify(UPSTAFF_CALENDARS));
-    persistSave();
-
-    populateCalendarSelectors();
-    renderSettingsCalendarList();
-    renderCalendarSidebar();
-    renderCalendar();
-    showCalToast(`🗑️ "${calendarName}" deleted.`);
-  } catch (err) {
-    const msg = err?.result?.error?.message || err?.message || "Unknown error";
-    console.error("[GCal] ❌ Delete calendar failed:", err);
-    showCalToast(`❌ Could not delete: ${msg}`);
-    if (btnEl) {
-      btnEl.disabled = false;
-      btnEl.textContent = "🗑 Delete";
-    }
-  }
-}
-
-/* gcalFetchAllCalendars
-   Fetches events from every calendar in UPSTAFF_CALENDARS in parallel.
-   Calls gcalFetchCalendarList() first if the list is empty. */
-async function gcalFetchAllCalendars() {
-  try {
-    updateSyncBtnState("Syncing…");
-
-    if (UPSTAFF_CALENDARS.length === 0) {
-      console.log("[GCal] Calendar list empty — fetching first…");
-      await gcalFetchCalendarList();
-    }
-    if (UPSTAFF_CALENDARS.length === 0) {
-      showCalToast("⚠️ No calendars found in your Google account.");
-      updateSyncBtnState("Sync Google Cal", false);
-      return;
-    }
-
-    const now = new Date();
-    const start = new Date(now);
-    start.setMonth(start.getMonth() - GCAL_CONFIG.MONTHS_RANGE);
-    const end = new Date(now);
-    end.setMonth(end.getMonth() + GCAL_CONFIG.MONTHS_RANGE);
-
-    const calendarsToSync = UPSTAFF_CALENDARS.filter(
-      (c) => c.syncEnabled !== false,
-    );
-    console.log(
-      `[GCal] 🔄 Syncing ${calendarsToSync.length} calendar(s):`,
-      calendarsToSync.map((c) => c.icon + " " + c.calendarName).join(", "),
-    );
-
-    const allResults = await Promise.all(
-      calendarsToSync.map((cal) =>
-        gapi.client.calendar.events
-          .list({
-            calendarId: cal.calendarId,
-            timeMin: start.toISOString(),
-            timeMax: end.toISOString(),
-            showDeleted: false,
-            singleEvents: true,
-            maxResults: 250,
-            orderBy: "startTime",
-          })
-          .then((res) => ({
-            calendarId: cal.calendarId,
-            calendarName: cal.calendarName,
-            events: res.result.items || [],
-          }))
-          .catch((err) => {
-            console.warn(
-              `[GCal] ⚠️ Could not fetch "${cal.calendarName}" (${cal.calendarId}):`,
-              err.result?.error?.message || err,
-            );
-            return {
-              calendarId: cal.calendarId,
-              calendarName: cal.calendarName,
-              events: [],
-            };
-          }),
-      ),
-    );
-
-    const allEvents = allResults.flatMap(({ calendarId, events }) =>
-      events.map((e) => ({ ...e, _sourceCalendarId: calendarId })),
-    );
-
-    const totalCount = allEvents.length;
-    console.log(
-      `[GCal] ✅ Total events fetched: ${totalCount} across ${calendarsToSync.length} calendar(s)`,
-    );
-    allResults.forEach((r) =>
-      console.log(`  └─ ${r.calendarName}: ${r.events.length} event(s)`),
-    );
-
-    gcalInjectEvents(allEvents);
-
-    localStorage.setItem(LS_KEYS.GCAL_COUNT, String(totalCount));
-
-    const calCount = calendarsToSync.length;
-    updateSyncBtnState(`Synced (${totalCount})`);
-    document.getElementById("gcal-status-badge").style.display = "flex";
-    document.getElementById("gcal-status-text").textContent =
-      `${totalCount} events from ${calCount} calendar${calCount > 1 ? "s" : ""}`;
-
-    renderCalendar();
-    showCalToast(
-      `✅ Synced ${totalCount} events from ${calCount} calendar${calCount > 1 ? "s" : ""}!`,
-    );
-    startReminderChecker();
-  } catch (err) {
-    console.error("[GCal] ❌ Sync error:", err);
-    updateSyncBtnState("Sync Failed", true);
-    showCalToast(
-      "❌ Could not sync Google Calendar. Check the console for details.",
-    );
-    gcalSignedIn = false;
-    if (err?.status === 401 || err?.result?.error?.code === 401) {
-      localStorage.removeItem(LS_KEYS.GCAL_AUTH);
-      console.warn(
-        "[GCal] Token expired — cleared auth flag. User must re-authorise.",
-      );
-    }
-  }
-}
-
-/* ──────────────────────────────────────────────
-   INJECT EVENTS — Converts Google format → local format
-   Extracts title, date, time, description, meeting link
-────────────────────────────────────────────── */
-function gcalInjectEvents(googleEvents) {
-  // Remove previously synced Google events to avoid duplicates on re-sync
-  calEvents = calEvents.filter((e) => !gcalSyncedIds.has(e.id));
-  gcalSyncedIds.clear();
-
-  googleEvents.forEach((gEvent) => {
-    let eventDate = "",
-      eventTime = "09:00",
-      isAllDay = false;
-
-    if (gEvent.start) {
-      if (gEvent.start.dateTime) {
-        const dt = new Date(gEvent.start.dateTime);
-        eventDate = fmtDate(dt);
-        eventTime = `${String(dt.getHours()).padStart(2, "0")}:${String(dt.getMinutes()).padStart(2, "0")}`;
-      } else if (gEvent.start.date) {
-        eventDate = gEvent.start.date;
-        isAllDay = true;
-      }
-    }
-    if (!eventDate) return;
-
-    // Extract Zoom / Meet / Teams links
-    let meetingLink = "";
-    const searchText =
-      (gEvent.description || "") + " " + (gEvent.location || "");
-    const zoomMatch = searchText.match(
-      /https?:\/\/[a-z0-9.]*zoom\.us\/[^\s"<>]+/i,
-    );
-    const meetMatch = searchText.match(
-      /https?:\/\/meet\.google\.com\/[^\s"<>]+/i,
-    );
-    const teamsMatch = searchText.match(
-      /https?:\/\/teams\.microsoft\.com\/[^\s"<>]+/i,
-    );
-    const genericMatch = searchText.match(
-      /https?:\/\/[^\s"<>]+meeting[^\s"<>]*/i,
-    );
-    if (zoomMatch) meetingLink = zoomMatch[0];
-    else if (meetMatch) meetingLink = meetMatch[0];
-    else if (teamsMatch) meetingLink = teamsMatch[0];
-    else if (genericMatch) meetingLink = genericMatch[0];
-
-    // Clean description (strip HTML)
-    const cleanDesc = (gEvent.description || "")
-      .replace(/<[^>]+>/g, " ")
-      .replace(/\s+/g, " ")
-      .trim();
-    const notes = [
-      cleanDesc,
-      meetingLink ? `🔗 Meeting link: ${meetingLink}` : "",
-      gEvent.location ? `📍 Location: ${gEvent.location}` : "",
-      isAllDay ? "📅 All-day event" : "",
-      gEvent._sourceCalendarId !== "primary"
-        ? `📅 Calendar: ${gEvent._sourceCalendarId}`
-        : "",
-    ]
-      .filter(Boolean)
-      .join("\n");
-
-    const localId =
-      90000 + Math.abs(hashStr(gEvent.id || gEvent.summary || eventDate));
-
-    calEvents.push({
-      id: localId,
-      // ── Calendar identity ─────────────────────────────────────────
-      calendarId: gEvent._sourceCalendarId || "primary",
-      // ── Canonical event fields ─────────────────────────────────────
-      title: gEvent.summary || "(No Title)",
-      applicant_name: gEvent.summary || "(No Title)",
-      interview_stage: "Google Calendar Event",
-      start_time: eventTime,
-      end_time: gEvent.end?.dateTime
-        ? `${String(new Date(gEvent.end.dateTime).getHours()).padStart(2, "0")}:${String(new Date(gEvent.end.dateTime).getMinutes()).padStart(2, "0")}`
-        : autoEndTime(eventTime),
-      meeting_link: meetingLink,
-      google_event_id: gEvent.id || "",
-      // ── Legacy fields (rendering compatibility) ───────────────────
-      name: gEvent.summary || "(No Title)",
-      position: "Google Calendar",
-      date: eventDate,
-      time: eventTime,
-      type: meetingLink ? "Virtual" : "Face-to-Face",
-      round: "Google Calendar Event",
-      status: "Scheduled",
-      interviewer:
-        gEvent.organizer?.displayName ||
-        gEvent.organizer?.email ||
-        "Google Cal",
-      notes: notes,
-      meetingLink: meetingLink,
-      isGoogleEvent: true,
-      sourceCalendar: gEvent._sourceCalendarId || "primary",
-    });
-    gcalSyncedIds.add(localId);
-  });
-}
-
-/* ──────────────────────────────────────────────
-   CREATE EVENT IN GOOGLE CALENDAR
-   Called when a new interview is saved with sync enabled.
-   Returns the Google event ID (string) on success.
-────────────────────────────────────────────── */
-async function gcalCreateEvent(ev) {
-  if (!gcalSignedIn || !gapi.client.calendar) {
-    console.warn("[GCal] Not signed in or API not ready — skipping create");
-    return null;
-  }
-
-  // ── Duplicate prevention: if this event already has a google_event_id, update instead of insert ──
-  if (ev.google_event_id) {
-    console.log(
-      "[GCal] Event already has google_event_id — calling update instead of create to prevent duplicate.",
-    );
-    return await gcalUpdateEvent(ev);
-  }
-
-  // Use the event's saved calendarId — this is the key multi-calendar feature
-  const targetCalendarId = ev.calendarId || "primary";
-  const calConfig = getCalConfig(targetCalendarId);
-
-  const dateStr = ev.date;
-  const startISO = `${dateStr}T${ev.start_time || ev.time || "09:00"}:00`;
-  const endISO = `${dateStr}T${ev.end_time || autoEndTime(ev.time || "09:00")}:00`;
-
-  const resource = {
-    summary:
-      ev.title ||
-      `${ev.interview_stage || ev.round} – ${ev.applicant_name || ev.name}`,
-    description: [
-      `Applicant: ${ev.applicant_name || ev.name}`,
-      `Position: ${ev.position}`,
-      `Stage: ${ev.interview_stage || ev.round}`,
-      `Type: ${ev.type}`,
-      `Interviewer: ${ev.interviewer || ""}`,
-      calConfig
-        ? `Calendar: ${calConfig.calendarName} (${calConfig.calendarType})`
-        : "",
-      ev.meeting_link || ev.meetingLink
-        ? `Meeting Link: ${ev.meeting_link || ev.meetingLink}`
-        : "",
-      ev.notes ? `Notes: ${ev.notes}` : "",
-    ]
-      .filter(Boolean)
-      .join("\n"),
-    start: { dateTime: startISO, timeZone: "Asia/Manila" },
-    end: { dateTime: endISO, timeZone: "Asia/Manila" },
-    ...(ev.meeting_link || ev.meetingLink
-      ? { location: ev.meeting_link || ev.meetingLink }
-      : {}),
-    reminders: {
-      useDefault: false,
-      overrides: [
-        { method: "popup", minutes: 60 },
-        { method: "popup", minutes: 10 },
-        { method: "email", minutes: 60 },
-      ],
-    },
-  };
-
-  try {
-    const resp = await gapi.client.calendar.events.insert({
-      calendarId: targetCalendarId,
-      resource,
-    });
-    const gEventId = resp.result.id;
-    console.log(
-      `[GCal] ✅ Event created in "${calConfig?.calendarName || targetCalendarId}":`,
-      gEventId,
-    );
-    return gEventId;
-  } catch (err) {
-    console.error("[GCal] ❌ Create failed:", err);
-    throw err;
-  }
-}
-
-/* ──────────────────────────────────────────────
-   UPDATE EVENT IN GOOGLE CALENDAR
-   Called when an existing interview with a google_event_id is saved.
-────────────────────────────────────────────── */
-async function gcalUpdateEvent(ev) {
-  if (!gcalSignedIn || !ev.google_event_id) return;
-
-  const targetCalendarId = ev.calendarId || "primary";
-  const dateStr = ev.date;
-  const startISO = `${dateStr}T${ev.start_time || ev.time || "09:00"}:00`;
-  const endISO = `${dateStr}T${ev.end_time || autoEndTime(ev.time || "09:00")}:00`;
-
-  const resource = {
-    summary:
-      ev.title ||
-      `${ev.interview_stage || ev.round} – ${ev.applicant_name || ev.name}`,
-    description: [
-      `Applicant: ${ev.applicant_name || ev.name}`,
-      `Position: ${ev.position}`,
-      `Stage: ${ev.interview_stage || ev.round}`,
-      `Type: ${ev.type}`,
-      `Interviewer: ${ev.interviewer || ""}`,
-      ev.meeting_link || ev.meetingLink
-        ? `Meeting Link: ${ev.meeting_link || ev.meetingLink}`
-        : "",
-      ev.notes ? `Notes: ${ev.notes}` : "",
-    ]
-      .filter(Boolean)
-      .join("\n"),
-    start: { dateTime: startISO, timeZone: "Asia/Manila" },
-    end: { dateTime: endISO, timeZone: "Asia/Manila" },
-    ...(ev.meeting_link || ev.meetingLink
-      ? { location: ev.meeting_link || ev.meetingLink }
-      : {}),
-  };
-
-  try {
-    await gapi.client.calendar.events.update({
-      calendarId: targetCalendarId,
-      eventId: ev.google_event_id,
-      resource,
-    });
-    console.log(
-      `[GCal] ✅ Event updated in "${targetCalendarId}":`,
-      ev.google_event_id,
-    );
-  } catch (err) {
-    console.error("[GCal] ❌ Update failed:", err);
-    throw err;
-  }
-}
-
-/* ──────────────────────────────────────────────
-   DELETE EVENT FROM GOOGLE CALENDAR
-────────────────────────────────────────────── */
-async function gcalDeleteEvent(googleEventId, calendarId = "primary") {
-  if (!gcalSignedIn || !googleEventId) return;
-  try {
-    await gapi.client.calendar.events.delete({
-      calendarId: calendarId,
-      eventId: googleEventId,
-    });
-    console.log(`[GCal] ✅ Event deleted from "${calendarId}":`, googleEventId);
-  } catch (err) {
-    console.error("[GCal] ❌ Delete failed:", err);
-    throw err;
-  }
-}
-
-/* ──────────────────────────────────────────────
-   HELPER: stable string hash for local IDs
-────────────────────────────────────────────── */
-function hashStr(str) {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    hash = (Math.imul(31, hash) + str.charCodeAt(i)) | 0;
-  }
-  return Math.abs(hash) % 89999;
-}
-
-/* ──────────────────────────────────────────────
-   GOOGLE BADGE — shown in modal title for synced events
-   (openEdit already handles meeting link preview via the new UI)
-────────────────────────────────────────────── */
-const _origOpenEditForBadge = openEdit;
-window.openEdit = function (id) {
-  _origOpenEditForBadge(id);
-  const e = calEvents.find((x) => x.id === id);
-  if (e && e.isGoogleEvent) {
-    const heading = document.getElementById("cal-modal-heading");
-    if (heading && !heading.querySelector(".gcal-badge")) {
-      const badge = document.createElement("span");
-      badge.className = "gcal-badge";
-      badge.style.cssText =
-        'font-size:10px;font-weight:700;background:rgba(66,133,244,.12);color:#4285F4;border:1px solid rgba(66,133,244,.25);border-radius:6px;padding:2px 8px;margin-left:8px;font-family:"Montserrat",sans-serif;';
-      const calName = getCalName(e.calendarId || e.sourceCalendar);
-      badge.textContent = calName;
-      heading.appendChild(badge);
-    }
-  }
+const ZOOM_CONFIG = {
+  ACCOUNT_ID: "uNseO7ynQ5irlTqSXH71Mg",
+  CLIENT_ID: "0rjnb2o3S3DPVxCWEVRSw",
+  CLIENT_SECRET: "usYvn8IqJhFDZ8lTSRs1IX2Tni1UQsC0",
+  // Zoom OAuth token endpoint
+  TOKEN_URL: "https://zoom.us/oauth/token",
+  // Zoom API base
+  API_BASE: "https://api.zoom.us/v2",
+  // Default meeting duration in minutes
+  DEFAULT_DURATION: 60,
+  // Default timezone
+  TIMEZONE: "Asia/Manila",
 };
 
-const _origCloseModal = closeModal;
-window.closeModal = function () {
-  _origCloseModal();
-  const badge = document.querySelector(".gcal-badge");
-  if (badge) badge.remove();
-  // Reset meeting link preview
-  const preview = document.getElementById("meeting-link-preview");
-  if (preview) preview.style.display = "none";
-  const mlInput = document.getElementById("cal-f-meeting-link");
-  if (mlInput) mlInput.value = "";
-};
+// Cache the Zoom token so we don't re-fetch on every meeting creation
+let _zoomTokenCache = { token: null, expires: 0 };
 
-/* ══════════════════════════════════════════════
-   PART 2: INTERVIEW REMINDER NOTIFICATIONS
-   ──────────────────────────────────────────────
-   HOW IT WORKS:
-   • Every 60 seconds, we scan ALL calEvents (local + Google)
-   • If an interview is exactly 60 min or 10 min away → fire a reminder
-   • Shows a large in-app banner + a browser push notification
-   • Each reminder only fires ONCE per interview per threshold
-   • Persists through re-syncs using a Set of fired keys
-══════════════════════════════════════════════ */
-
-/* ──────────────────────────────────────────────
-   REMINDER BANNER HTML — injected into <body>
-   This is the large overlay that slides down
-   from the top of the screen when triggered
-────────────────────────────────────────────── */
-(function createReminderBanner() {
-  const banner = document.createElement("div");
-  banner.id = "reminder-banner";
-  banner.style.cssText = `
-    display:none; position:fixed; top:0; left:0; right:0; z-index:99999;
-    background:linear-gradient(135deg,#0f172a 0%,#1e3a5f 100%);
-    color:#fff; padding:0; box-shadow:0 8px 40px rgba(0,0,0,.5);
-    font-family:"DM Sans",sans-serif; animation:reminderSlideDown .4s ease;
-  `;
-  banner.innerHTML = `
-    <style>
-      @keyframes reminderSlideDown {
-        from { transform:translateY(-100%); opacity:0; }
-        to   { transform:translateY(0);    opacity:1; }
-      }
-      @keyframes reminderPulse {
-        0%,100% { box-shadow:0 0 0 0 rgba(68,215,233,.4); }
-        50%      { box-shadow:0 0 0 12px rgba(68,215,233,0); }
-      }
-      #reminder-banner-inner {
-        max-width:900px; margin:0 auto; padding:18px 24px;
-        display:flex; align-items:center; gap:18px;
-      }
-      #reminder-icon-wrap {
-        width:52px; height:52px; border-radius:16px; flex-shrink:0;
-        display:flex; align-items:center; justify-content:center;
-        animation: reminderPulse 1.8s infinite;
-      }
-      #reminder-content { flex:1; min-width:0; }
-      #reminder-label {
-        font-size:11px; font-weight:700; text-transform:uppercase;
-        letter-spacing:.08em; font-family:"Montserrat",sans-serif;
-        margin-bottom:3px; opacity:.75;
-      }
-      #reminder-name {
-        font-size:17px; font-weight:700; font-family:"Syne",sans-serif;
-        white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-      }
-      #reminder-meta {
-        font-size:12px; opacity:.7; margin-top:3px; font-weight:500;
-        display:flex; align-items:center; gap:10px; flex-wrap:wrap;
-      }
-      #reminder-actions { display:flex; align-items:center; gap:8px; flex-shrink:0; }
-      #reminder-join-btn {
-        display:none; padding:9px 18px; border-radius:10px;
-        background:var(--cyan); color:#0f172a; font-size:12px; font-weight:700;
-        font-family:"Montserrat",sans-serif; text-decoration:none; border:none;
-        cursor:pointer; white-space:nowrap; transition:background .15s;
-        align-items:center; gap:6px;
-      }
-      #reminder-join-btn:hover { background:#2cc5d6; }
-      #reminder-view-btn {
-        padding:9px 18px; border-radius:10px;
-        background:rgba(255,255,255,.1); color:#fff; font-size:12px; font-weight:700;
-        font-family:"Montserrat",sans-serif; border:1px solid rgba(255,255,255,.2);
-        cursor:pointer; white-space:nowrap; transition:background .15s;
-      }
-      #reminder-view-btn:hover { background:rgba(255,255,255,.18); }
-      #reminder-dismiss-btn {
-        width:32px; height:32px; border-radius:8px; border:none;
-        background:rgba(255,255,255,.08); color:rgba(255,255,255,.6);
-        cursor:pointer; display:flex; align-items:center; justify-content:center;
-        transition:background .15s; flex-shrink:0;
-      }
-      #reminder-dismiss-btn:hover { background:rgba(255,255,255,.15); color:#fff; }
-      #reminder-countdown {
-        font-size:11px; font-weight:700; font-family:"Montserrat",sans-serif;
-        padding:3px 10px; border-radius:6px; white-space:nowrap;
-      }
-    </style>
-    <div id="reminder-banner-inner">
-      <div id="reminder-icon-wrap">
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-          <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-        </svg>
-      </div>
-      <div id="reminder-content">
-        <div id="reminder-label">⏰ Upcoming Interview Reminder</div>
-        <div id="reminder-name">Interview with Applicant</div>
-        <div id="reminder-meta">
-          <span id="reminder-time-str"></span>
-          <span>•</span>
-          <span id="reminder-position"></span>
-          <span id="reminder-type-str"></span>
-        </div>
-      </div>
-      <div id="reminder-actions">
-        <span id="reminder-countdown"></span>
-        <a id="reminder-join-btn" target="_blank" rel="noopener noreferrer">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M15 10l4.553-2.069A1 1 0 0 1 21 8.845v6.31a1 1 0 0 1-1.447.914L15 14"/><rect x="1" y="6" width="15" height="12" rx="2"/></svg>
-          Join Meeting
-        </a>
-        <button id="reminder-view-btn" onclick="reminderViewEvent()">View Details</button>
-        <button id="reminder-dismiss-btn" onclick="dismissReminder()">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
-      </div>
-    </div>
-  `;
-  document.body.appendChild(banner);
-})();
-
-/* ──────────────────────────────────────────────
-   REQUEST BROWSER NOTIFICATION PERMISSION
-   Called once when the page loads.
-   The browser will show a one-time "Allow notifications?" popup.
-────────────────────────────────────────────── */
-function requestNotificationPermission() {
-  if ("Notification" in window && Notification.permission === "default") {
-    Notification.requestPermission().then((perm) => {
-      if (perm === "granted") {
-        console.log("[Reminders] ✅ Browser notifications allowed");
-      } else {
-        console.log(
-          "[Reminders] ℹ️  Browser notifications denied — in-app banner only",
-        );
-      }
-    });
+/* zoomGetToken
+   Fetches a Server-to-Server OAuth token from Zoom.
+   Caches it until 60s before expiry to avoid redundant requests. */
+async function zoomGetToken() {
+  const now = Date.now();
+  if (_zoomTokenCache.token && _zoomTokenCache.expires > now) {
+    return _zoomTokenCache.token;
   }
-}
-
-/* ──────────────────────────────────────────────
-   START REMINDER CHECKER
-   Runs every 60 seconds, checks all events.
-   Also runs immediately on first call.
-────────────────────────────────────────────── */
-function startReminderChecker() {
-  // Clear any previous timer (avoid duplicates on re-sync)
-  if (reminderTimer) clearInterval(reminderTimer);
-
-  // Run once immediately, then every 60 seconds
-  checkUpcomingReminders();
-  reminderTimer = setInterval(() => {
-    checkUpcomingReminders();
-    syncGCalCancellationsToRecruitment(); // ← reflect GCal cancellations back
-  }, 60 * 1000);
-  console.log("[Reminders] ✅ Reminder checker started");
-}
-
-/* ──────────────────────────────────────────────
-   SYNC GCAL CANCELLATIONS → RECRUITMENT SYSTEM
-   Checks all calEvents for status==='cancelled' (Google's own flag)
-   and mirrors that to the matching TASK so both stay in sync.
-────────────────────────────────────────────── */
-function syncGCalCancellationsToRecruitment() {
-  let changed = false;
-  calEvents.forEach((ev) => {
-    if (
-      (ev.status === "cancelled" || ev.status === "Cancelled") &&
-      ev.google_event_id
-    ) {
-      // Find the matching TASK by gcalEventId
-      const task = TASKS.find((t) => t.gcalEventId === ev.google_event_id);
-      if (task && task.status !== "Cancelled") {
-        task.status = "Cancelled";
-        changed = true;
-        console.log(
-          `[GCalSync] 🔄 Task "${task.name}" auto-cancelled because GCal event was cancelled.`,
-        );
-        showToast(
-          `📅 "${task.name}" cancelled — mirrored from Google Calendar.`,
-        );
-      }
-    }
-  });
-  if (changed) {
-    persistSave();
-    refreshCurrentView();
-  }
-}
-
-/* ──────────────────────────────────────────────
-   CHECK UPCOMING REMINDERS
-   Main logic: scans ALL calEvents and fires
-   a reminder if an interview is N minutes away.
-────────────────────────────────────────────── */
-function checkUpcomingReminders() {
-  const now = new Date();
-
-  calEvents.forEach((evt) => {
-    // Support both legacy `time` and new `start_time` field
-    const evtTime = evt.time || evt.start_time;
-    if (!evt.date || !evtTime) return;
-    if (evt.status === "Cancelled" || evt.status === "Completed") return;
-
-    // Build a Date object for the event start time
-    const [hours, minutes] = evtTime.split(":").map(Number);
-    const evtStart = new Date(evt.date);
-    evtStart.setHours(hours, minutes, 0, 0);
-
-    // How many minutes until this event?
-    const minutesUntil = (evtStart - now) / (1000 * 60);
-
-    // Check each configured reminder threshold (e.g. 60 min, 10 min)
-    GCAL_CONFIG.REMINDER_MINUTES.forEach((threshold) => {
-      // Fire if we're within ±1 minute of the threshold
-      if (minutesUntil > threshold - 1 && minutesUntil <= threshold + 1) {
-        const key = `${evt.id}-${threshold}`;
-        if (!remindersFired.has(key)) {
-          remindersFired.add(key);
-          fireReminder(evt, threshold);
-        }
-      }
-    });
-  });
-}
-
-/* ──────────────────────────────────────────────
-   FIRE A REMINDER
-   Shows both the in-app banner AND a browser push notification
-────────────────────────────────────────────── */
-let _reminderCurrentEventId = null; // Track which event the banner is showing
-
-function fireReminder(evt, minutesBefore) {
-  _reminderCurrentEventId = evt.id;
-
-  const label =
-    minutesBefore >= 60
-      ? `${minutesBefore / 60} hour${minutesBefore > 60 ? "s" : ""}`
-      : `${minutesBefore} minutes`;
-
-  const timeStr = fmtTime(evt.time || evt.start_time);
-  const stageName = evt.interview_stage || evt.round || "Interview";
-  const meetLink = evt.meeting_link || evt.meetingLink || "";
-  const countdownColor = minutesBefore <= 10 ? "#fa8231" : "#44d7e9";
-
-  // ── Helper: safe set text ──
-  const setText = (id, val) => {
-    const el = document.getElementById(id);
-    if (el) el.textContent = val;
-  };
-
-  // ── Update banner content ──
-  setText("reminder-name", `${evt.applicant_name || evt.name} — ${stageName}`);
-  setText("reminder-time-str", `⏰ ${timeStr}`);
-  setText("reminder-position", evt.position || "");
-  setText(
-    "reminder-type-str",
-    evt.type
-      ? `• ${evt.type === "Virtual" ? "📹 Virtual" : "🏢 Face-to-Face"}`
-      : "",
+  const credentials = btoa(
+    `${ZOOM_CONFIG.CLIENT_ID}:${ZOOM_CONFIG.CLIENT_SECRET}`,
   );
-  setText("reminder-countdown", `In ${label}`);
-
-  const countdown = document.getElementById("reminder-countdown");
-  if (countdown)
-    countdown.style.cssText = `font-size:11px;font-weight:700;font-family:"Montserrat",sans-serif;padding:3px 10px;border-radius:6px;white-space:nowrap;background:${countdownColor}22;color:${countdownColor};border:1px solid ${countdownColor}44;`;
-
-  // Color the icon based on urgency
-  const iconWrap = document.getElementById("reminder-icon-wrap");
-  if (iconWrap) {
-    iconWrap.style.background =
-      minutesBefore <= 10 ? "rgba(250,130,49,.2)" : "rgba(68,215,233,.15)";
-    iconWrap.style.color = minutesBefore <= 10 ? "#fa8231" : "#44d7e9";
-    iconWrap.style.border = `1.5px solid ${minutesBefore <= 10 ? "rgba(250,130,49,.3)" : "rgba(68,215,233,.3)"}`;
+  const resp = await fetch(
+    `${ZOOM_CONFIG.TOKEN_URL}?grant_type=account_credentials&account_id=${ZOOM_CONFIG.ACCOUNT_ID}`,
+    {
+      method: "POST",
+      headers: { Authorization: `Basic ${credentials}` },
+    },
+  );
+  if (!resp.ok) {
+    const err = await resp.text();
+    throw new Error(`[Zoom] Token fetch failed: ${err}`);
   }
+  const data = await resp.json();
+  _zoomTokenCache = {
+    token: data.access_token,
+    expires: now + (data.expires_in - 60) * 1000,
+  };
+  dbg("[Zoom] ✅ Token acquired, expires in", data.expires_in, "s");
+  return data.access_token;
+}
 
-  // Show/hide Join Meeting button
-  const joinBtn = document.getElementById("reminder-join-btn");
-  if (joinBtn) {
-    if (meetLink) {
-      joinBtn.href = meetLink;
-      joinBtn.style.display = "flex";
-    } else {
-      joinBtn.style.display = "none";
-    }
-  }
-
-  // Show the banner
-  const banner = document.getElementById("reminder-banner");
-  if (banner) {
-    banner.style.display = "block";
-    // Re-trigger animation on repeated reminders
-    banner.style.animation = "none";
-    setTimeout(() => {
-      banner.style.animation = "reminderSlideDown .4s ease";
-    }, 10);
-  }
-
-  // Auto-dismiss after 30 seconds (only for the 60-min warning; keep 10-min open longer)
-  const autoDismissMs = minutesBefore <= 10 ? 60000 : 30000;
-  setTimeout(() => dismissReminder(), autoDismissMs);
-
-  // ── Browser push notification (if permission granted) ──
-  if ("Notification" in window && Notification.permission === "granted") {
-    const notifBody = [
-      `${evt.applicant_name || evt.name} — ${stageName} starts in ${label}.`,
-      evt.position ? `Position: ${evt.position}` : "",
-      meetLink ? `Click here to join: ${meetLink}` : "",
-    ]
-      .filter(Boolean)
-      .join("\n");
-
-    const notif = new Notification(
-      `⏰ Interview Reminder: ${evt.applicant_name || evt.name}`,
-      {
-        body: notifBody,
-        icon: "https://fonts.gstatic.com/s/i/materialicons/event/v6/24px.svg",
-        tag: `interview-${evt.id}-${minutesBefore}`, // Prevents duplicate notifications
-        requireInteraction: minutesBefore <= 10, // Stays until clicked for 10-min alerts
+/* zoomCreateMeeting
+   Creates a real scheduled Zoom meeting via Server-to-Server OAuth.
+   Returns the join_url string on success, throws on failure. */
+async function zoomCreateMeeting({
+  topic,
+  startISO,
+  duration = ZOOM_CONFIG.DEFAULT_DURATION,
+}) {
+  const token = await zoomGetToken();
+  const resp = await fetch(`${ZOOM_CONFIG.API_BASE}/users/me/meetings`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      topic: topic || "Interview",
+      type: 2, // scheduled meeting
+      start_time: startISO, // e.g. "2026-04-01T10:00:00"
+      duration,
+      timezone: ZOOM_CONFIG.TIMEZONE,
+      settings: {
+        join_before_host: true, // interviewee can join before HR
+        waiting_room: false,
+        host_video: true,
+        participant_video: true,
+        mute_upon_entry: false,
       },
+    }),
+  });
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}));
+    throw new Error(
+      `[Zoom] Create meeting failed: ${err.message || resp.status}`,
     );
-    notif.onclick = () => {
-      window.focus();
-      dismissReminder();
-      // Switch to calendar view and open the event
-      switchView("calendar");
-      setTimeout(() => openEdit(evt.id), 300);
-    };
   }
-
-  console.log(
-    `[Reminders] 🔔 Fired reminder for "${evt.applicant_name || evt.name}" (${stageName}) — ${label} away`,
-  );
+  const data = await resp.json();
+  dbg("[Zoom] ✅ Meeting created:", data.join_url);
+  return data.join_url;
 }
-
-/* ──────────────────────────────────────────────
-   DISMISS BANNER
-────────────────────────────────────────────── */
-function dismissReminder() {
-  const banner = document.getElementById("reminder-banner");
-  if (!banner) return;
-  banner.style.transition = "opacity .3s";
-  banner.style.opacity = "0";
-  setTimeout(() => {
-    banner.style.display = "none";
-    banner.style.opacity = "1";
-    banner.style.transition = "";
-  }, 300);
-}
-
-/* ──────────────────────────────────────────────
-   VIEW EVENT from banner button
-────────────────────────────────────────────── */
-function reminderViewEvent() {
-  dismissReminder();
-  if (_reminderCurrentEventId !== null) {
-    switchView("calendar");
-    setTimeout(() => openEdit(_reminderCurrentEventId), 300);
-  }
-}
-
-/* ──────────────────────────────────────────────
-   PAGE LOAD BOOTSTRAP
-   ─────────────────────────────────────────────
-   Order of operations:
-   1. persistLoad() already ran above (data hydrated before first render)
-   2. Load GIS script → triggers gcalInit()
-   3. gcalInit() loads gapi + attempts silent OAuth re-auth if previously signed in
-   4. If silent re-auth succeeds → gcalFetchAllCalendars() merges Google events
-   5. If it fails → local events from localStorage are still shown
-────────────────────────────────────────────── */
-window.addEventListener("load", () => {
-  // Restore Google Calendar sync badge UI if user was previously synced
-  const lastCount = localStorage.getItem(LS_KEYS.GCAL_COUNT);
-  const wasSignedIn = localStorage.getItem(LS_KEYS.GCAL_AUTH) === "1";
-  if (wasSignedIn && lastCount) {
-    updateSyncBtnState(`Last synced (${lastCount})`);
-    document.getElementById("gcal-status-badge").style.display = "flex";
-    document.getElementById("gcal-status-text").textContent =
-      `${lastCount} events — reconnecting…`;
-  }
-
-  // Load Google Identity Services for OAuth
-  const gisScript = document.createElement("script");
-  gisScript.src = "https://accounts.google.com/gsi/client";
-  gisScript.onload = () => {
-    if (typeof gapi !== "undefined") gcalInit();
-    else setTimeout(gcalInit, 500);
-  };
-  gisScript.onerror = () => {
-    console.warn("[GCal] Could not load GIS script — offline or blocked?");
-    if (wasSignedIn) updateSyncBtnState("Offline — local events only", true);
-  };
-  document.head.appendChild(gisScript);
-
-  // Request browser notification permission
-  requestNotificationPermission();
-
-  // Start reminders immediately for persisted local calendar events
-  startReminderChecker();
-
-  console.log(
-    `[Bootstrap] ✅ Page loaded. ${calEvents.length} local event(s) from localStorage ready.`,
-  );
-});
-
-/* ══════════════════════════════════════════════
-   END OF GOOGLE CALENDAR + REMINDER SYSTEM
-══════════════════════════════════════════════ */

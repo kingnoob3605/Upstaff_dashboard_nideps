@@ -15,9 +15,7 @@
 ══════════════════════════════════════════════ -->
 <script src="https://apis.google.com/js/api.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-  <link rel="stylesheet" href="pm-ui-base.css">
-<link rel="stylesheet" href="pm-ui-components.css">
-<link rel="stylesheet" href="pm-ui-calendar.css">
+  <link rel="stylesheet" href="pm-ui.css"/>
 </head>
 <body>
 <div id="app">
@@ -27,7 +25,7 @@
 ════════════════════════════════════════ -->
 <aside id="sidebar">
 <div class="sidebar-logo">
-    <img src="Logo-Footer.png" alt="upstaff logo" style="height:32px;object-fit:contain;display:block"/>
+    <img src="Logo-Footer.png" alt="upstaff logo" style="height:32px;object-fit:contain;display:block;"/>
   </div>
 
   <div class="sidebar-section-label">Workspace</div>
@@ -40,7 +38,7 @@
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
       <span class="nav-label">Onboarding</span>
     </button>
-    <div class="sidebar-section-label" class="u-mt-8">Views</div>
+    <div class="sidebar-section-label" style="margin-top:8px;">Views</div>
     <button class="nav-item" data-space="analytics" aria-label="Analytics">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
       <span class="nav-label">Analytics</span>
@@ -66,13 +64,10 @@
   <div class="sidebar-footer">
     <button id="toggle-btn" aria-label="Collapse sidebar">
       <svg id="toggle-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
-      <span class="toggle-label" style="font-size:12px;font-weight:600;margin-left:8px">Collapse</span>
+      <span class="toggle-label" style="font-size:12px;font-family:'Montserrat',sans-serif;font-weight:600;margin-left:8px;">Collapse</span>
     </button>
   </div>
 </aside>
-
-<!-- Mobile sidebar backdrop -->
-<div id="sidebar-backdrop"></div>
 
 <!-- ════════════════════════════════════════
      MAIN
@@ -81,10 +76,6 @@
 
   <!-- Top Bar -->
   <div id="topbar">
-    <!-- Mobile hamburger — shown via CSS on ≤768px -->
-    <button id="mobile-menu-btn" aria-label="Open menu">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-    </button>
     <div class="topbar-breadcrumb">
       <span class="crumb-parent" id="crumb-parent">Recruitment</span>
       <span class="crumb-sep">›</span>
@@ -179,23 +170,23 @@
       </div>
 
       <!-- Active filter tags -->
-      <div id="list-active-tags" style="display:none;margin-bottom:12px" class="list-active-filters"></div>
+      <div id="list-active-tags" style="display:none;margin-bottom:12px;" class="list-active-filters"></div>
 
        <div id="list-sections"></div>
-      <div class="list-pagination" id="list-pagination" style="display:none">
-        <button class="pagination-btn" id="pagination-prev" data-action="listPageChange" data-arg="-1">← Prev</button>
+      <div class="list-pagination" id="list-pagination" style="display:none;">
+        <button class="pagination-btn" id="pagination-prev" onclick="listPageChange(-1)">← Prev</button>
         <span class="pagination-info" id="pagination-info"></span>
-        <button class="pagination-btn" id="pagination-next" data-action="listPageChange" data-arg="1">Next →</button>
+        <button class="pagination-btn" id="pagination-next" onclick="listPageChange(1)">Next →</button>
       </div>
     </div>
 
     <!-- ── BOARD VIEW ── -->
-    <div id="view-board" class="view-panel" style="display:none">
+    <div id="view-board" class="view-panel" style="display:none;">
   <div id="mobile-board-notice">
     <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
     <strong>Board view isn't available on mobile</strong>
     <span>Switch to <strong>List</strong> view for the best experience on smaller screens.</span>
-    <button data-action="switchView" data-arg="list" style="margin-top:8px;padding:9px 20px;border-radius:10px;background:var(--violet);color:#fff;border:none;font-size:12px;font-weight:700;cursor:pointer">Go to List View →</button>
+    <button onclick="switchView('list')" style="margin-top:8px;padding:9px 20px;border-radius:10px;background:var(--violet);color:#fff;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:'Montserrat',sans-serif;">Go to List View →</button>
   </div>
       <div class="filter-row">
         <button class="filter-btn">Group by: Status</button>
@@ -208,14 +199,14 @@
     
 
     <!-- ── CALENDAR VIEW ── (existing code unchanged) -->
-    <div id="view-calendar" class="view-panel" style="display:none">
-      <div style="display:flex;flex-direction:column;gap:18px">
-        <div style="background:var(--surface-1);border:1px solid var(--border);border-radius:14px;padding:16px 20px">
+    <div id="view-calendar" class="view-panel" style="display:none;">
+      <div style="display:flex;flex-direction:column;gap:18px;">
+        <div style="background:var(--surface-1);border:1px solid var(--border);border-radius:14px;padding:16px 20px;">
           <div class="cal-toolbar">
             <button class="cal-nav-btn" id="cal-prev"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg></button>
             <div class="cal-month-label" id="cal-month-label"></div>
             <button class="cal-nav-btn" id="cal-next"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></button>
-            <button class="cal-nav-btn" id="cal-today" style="width:auto;padding:0 12px;font-size:11px;font-weight:700">Today</button>
+            <button class="cal-nav-btn" id="cal-today" style="width:auto;padding:0 12px;font-size:11px;font-weight:700;font-family:'Montserrat',sans-serif;">Today</button>
             <div class="cal-view-tabs">
               <button class="cal-view-tab active" data-calview="month">Month</button>
               <button class="cal-view-tab" data-calview="week">Week</button>
@@ -226,14 +217,14 @@
               <span>Schedule Interview</span>
             </button>
             <!-- ── Google Calendar Sync Button ── -->
-            <button id="gcal-sync-btn" data-action="handleGCalSync" style="display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:11px;border:1.5px solid var(--border);background:var(--surface-1);font-size:12px;font-weight:700;color:var(--muted);cursor:pointer;transition:all .15s;white-space:nowrap" title="Sync events from Google Calendar">
+            <button id="gcal-sync-btn" onclick="handleGCalSync()" style="display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:11px;border:1.5px solid var(--border);background:var(--surface-1);font-size:12px;font-weight:700;font-family:'Montserrat',sans-serif;color:var(--muted);cursor:pointer;transition:all .15s;white-space:nowrap;" title="Sync events from Google Calendar">
               <!-- Google Calendar icon (SVG) -->
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><circle cx="8" cy="16" r="1" fill="currentColor"/><circle cx="12" cy="16" r="1" fill="currentColor"/></svg>
               <span id="gcal-btn-label">Sync Google Cal</span>
             </button>
           </div>
         </div>
-        <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between">
+        <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between;">
           <div class="cal-filters">
             <select class="cal-filter-select" id="cal-filter-calendar"><option value="">All Calendars</option></select>
             <select class="cal-filter-select" id="cal-filter-position"><option value="">All Positions</option><option>Intake Caller</option><option>CSR</option><option>Google Ads Specialist</option><option>HR Assistant</option><option>Team Leader</option><option>Google Calendar</option></select>
@@ -244,7 +235,7 @@
             <!-- populated by renderCalendarLegend() -->
           </div>
           <!-- Google Calendar sync status badge -->
-          <div id="gcal-status-badge" style="display:none;align-items:center;gap:6px;font-size:11px;font-weight:600;padding:5px 10px;border-radius:8px;background:rgba(66,133,244,.1);color:#4285F4;border:1px solid rgba(66,133,244,.2)">
+          <div id="gcal-status-badge" style="display:none;align-items:center;gap:6px;font-size:11px;font-weight:600;font-family:'Montserrat',sans-serif;padding:5px 10px;border-radius:8px;background:rgba(66,133,244,.1);color:#4285F4;border:1px solid rgba(66,133,244,.2);">
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span id="gcal-status-text">Synced</span>
           </div>
@@ -253,20 +244,20 @@
           <div id="cal-main-area"></div>
           <div class="card-sidebar">
             <!-- ── Calendars panel ── -->
-            <div class="u-mb-20">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-                <div class="card-sidebar-title" style="margin:0">Calendars</div>
-                <div style="display:flex;gap:5px">
-                  <button data-action="handleGCalSync" style="font-size:10px;font-weight:700;padding:3px 9px;border-radius:7px;border:1.5px solid var(--border);background:var(--surface-1);color:var(--muted);cursor:pointer" title="Sync all calendars from Google">⟳ Sync</button>
-                  <button data-action="navigateToCalendarsSettings" style="font-size:10px;font-weight:700;padding:3px 9px;border-radius:7px;border:1.5px solid var(--border);background:var(--surface-1);color:var(--muted);cursor:pointer" title="Manage calendars in Settings">⚙ Manage</button>
+            <div style="margin-bottom:20px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+                <div class="card-sidebar-title" style="margin:0;">Calendars</div>
+                <div style="display:flex;gap:5px;">
+                  <button onclick="handleGCalSync()" style="font-size:10px;font-weight:700;font-family:'Montserrat',sans-serif;padding:3px 9px;border-radius:7px;border:1.5px solid var(--border);background:var(--surface-1);color:var(--muted);cursor:pointer;" title="Sync all calendars from Google">⟳ Sync</button>
+                  <button onclick="navigateToCalendarsSettings()" style="font-size:10px;font-weight:700;font-family:'Montserrat',sans-serif;padding:3px 9px;border-radius:7px;border:1.5px solid var(--border);background:var(--surface-1);color:var(--muted);cursor:pointer;" title="Manage calendars in Settings">⚙ Manage</button>
                 </div>
               </div>
               <div id="cal-sidebar-list"></div>
             </div>
-            <div style="height:1px;background:var(--border);margin-bottom:16px"></div>
+            <div style="height:1px;background:var(--border);margin-bottom:16px;"></div>
             <!-- ── Today's schedule ── -->
             <div class="card-sidebar-title">Today's Schedule</div>
-            <div class="card-sidebar-sub" id="cal-today-label" style="margin-bottom:14px"></div>
+            <div class="card-sidebar-sub" id="cal-today-label" style="margin-bottom:14px;"></div>
             <div id="cal-today-agenda"></div>
           </div>
         </div>
@@ -275,22 +266,22 @@
 
 
     <!-- ── ONBOARDING VIEW ── -->
-    <div id="view-onboarding" class="view-panel" style="display:none">
+    <div id="view-onboarding" class="view-panel" style="display:none;">
       <div class="hr-view-header">
         <div>
           <div class="hr-view-title">Employee Onboarding</div>
           <div class="hr-view-sub">Track new hire progress and onboarding checklists</div>
         </div>
         <div class="hr-view-actions">
-          <button class="hr-btn" data-action="filterOnboarding">
+          <button class="hr-btn" onclick="filterOnboarding()">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
             Filter
           </button>
-          <select class="list-filter-select" id="onboarding-filter-status" onchange="renderOnboarding()" style="height:36px">
+          <select class="list-filter-select" id="onboarding-filter-status" onchange="renderOnboarding()" style="height:36px;">
             <option value="">All Statuses</option>
             <option>Active</option><option>Pending</option><option>Completed</option>
           </select>
-          <button class="hr-btn primary" data-action="openHireModal">
+          <button class="hr-btn primary" onclick="openHireModal()">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             Add New Hire
           </button>
@@ -305,13 +296,13 @@
     </div>
 
 <!-- ── MY TASKS VIEW (merged into Recruitment) ── -->
-    <div id="view-todos" class="view-panel" style="display:none">
+    <div id="view-todos" class="view-panel" style="display:none;">
       <div class="todo-page-header">
         <div>
           <div class="todo-page-title">My Tasks</div>
           <div class="todo-page-sub">Personal reminders & follow-ups — part of your Recruitment workspace</div>
         </div>
-        <button class="topbar-btn primary" data-action="openTodoModal" style="display:flex">
+        <button class="topbar-btn primary" onclick="openTodoModal(null)" style="display:flex;">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           New Task
         </button>
@@ -323,18 +314,18 @@
       <!-- Filters + Sort -->
       <div class="todo-top-controls">
         <div class="todo-filter-tabs" id="todo-filter-tabs">
-          <button class="todo-filter-tab active" data-action="setTodoFilter" data-arg="all">All</button>
-          <button class="todo-filter-tab" data-action="setTodoFilter" data-arg="active">Active</button>
-          <button class="todo-filter-tab" data-action="setTodoFilter" data-arg="overdue">Overdue</button>
-          <button class="todo-filter-tab" data-action="setTodoFilter" data-arg="today">Due Today</button>
-          <button class="todo-filter-tab" data-action="setTodoFilter" data-arg="completed">Done</button>
+          <button class="todo-filter-tab active" onclick="setTodoFilter('all',this)">All</button>
+          <button class="todo-filter-tab" onclick="setTodoFilter('active',this)">Active</button>
+          <button class="todo-filter-tab" onclick="setTodoFilter('overdue',this)">Overdue</button>
+          <button class="todo-filter-tab" onclick="setTodoFilter('today',this)">Due Today</button>
+          <button class="todo-filter-tab" onclick="setTodoFilter('completed',this)">Done</button>
         </div>
         <div class="todo-filter-right">
-          <select class="list-filter-select" id="todo-filter-priority" onchange="renderTodos()" style="height:32px">
+          <select class="list-filter-select" id="todo-filter-priority" onchange="renderTodos()" style="height:32px;">
             <option value="">All Priorities</option>
             <option>Low</option><option>Medium</option><option>High</option><option>Urgent</option>
           </select>
-          <select class="list-filter-select" id="todo-filter-category" onchange="renderTodos()" style="height:32px">
+          <select class="list-filter-select" id="todo-filter-category" onchange="renderTodos()" style="height:32px;">
             <option value="">All Categories</option>
             <option>Personal</option><option>Work</option><option>HR</option>
             <option>Recruitment</option><option>Meeting</option><option>Follow-up</option>
@@ -346,7 +337,7 @@
       <div id="todo-list-container"></div>
     </div>
 
-    <div id="view-table" class="view-panel" style="display:none">
+    <div id="view-table" class="view-panel" style="display:none;">
       <div class="filter-row">
         <button class="filter-btn">Columns</button>
         <button class="filter-btn" id="export-csv-btn">
@@ -365,7 +356,7 @@
     <!-- ══════════════════════════════════════════════
          SETTINGS VIEW  ← NEW
     ══════════════════════════════════════════════ -->
-    <div id="view-settings" class="view-panel" style="display:none">
+    <div id="view-settings" class="view-panel" style="display:none;">
       <div class="settings-layout">
 
         <!-- Settings Sidebar Navigation -->
@@ -408,12 +399,12 @@
             <div class="settings-card">
               <div class="settings-card-title">My Profile</div>
               <div class="settings-card-desc">Update your personal information and display preferences.</div>
-              <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px">
-                <div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--violet),var(--cyan));display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:#fff;flex-shrink:0">HR</div>
+              <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;">
+                <div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--violet),var(--cyan));display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:#fff;font-family:'Montserrat',sans-serif;flex-shrink:0;">HR</div>
                 <div>
-                  <div style="font-size:14px;font-weight:700;color:var(--text)">HR Admin</div>
-                  <div style="font-size:12px;color:var(--light);margin-top:2px">Administrator · upstaff</div>
-                  <button style="margin-top:8px;padding:5px 14px;border-radius:8px;border:1.5px solid var(--border);background:var(--surface-1);font-size:11px;font-weight:600;color:var(--muted);cursor:pointer" data-action="toastPhotoUpload">Change Photo</button>
+                  <div style="font-size:14px;font-weight:700;color:var(--text);">HR Admin</div>
+                  <div style="font-size:12px;color:var(--light);margin-top:2px;">Administrator · upstaff</div>
+                  <button style="margin-top:8px;padding:5px 14px;border-radius:8px;border:1.5px solid var(--border);background:var(--surface-1);font-size:11px;font-weight:600;font-family:'Montserrat',sans-serif;color:var(--muted);cursor:pointer;" onclick="showToast('📷 Photo upload coming soon!')">Change Photo</button>
                 </div>
               </div>
               <div class="settings-form-row">
@@ -425,7 +416,7 @@
               <div class="settings-form-group"><label class="settings-label">Role</label>
                 <select class="settings-select"><option selected>Administrator</option><option>HR Manager</option><option>Recruiter</option><option>Viewer</option></select>
               </div>
-              <button class="settings-save-btn" data-action="toastProfileSaved">
+              <button class="settings-save-btn" onclick="showToast('✅ Profile saved!')">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
                 Save Changes
               </button>
@@ -438,7 +429,7 @@
                 <div class="settings-form-group"><label class="settings-label">New Password</label><input class="settings-input" type="password" placeholder="New password"/></div>
                 <div class="settings-form-group"><label class="settings-label">Confirm Password</label><input class="settings-input" type="password" placeholder="Confirm password"/></div>
               </div>
-              <button class="settings-save-btn" data-action="toastPasswordUpdated">Update Password</button>
+              <button class="settings-save-btn" onclick="showToast('🔒 Password updated!')">Update Password</button>
             </div>
           </div>
 
@@ -464,18 +455,18 @@
                   <select class="settings-select"><option selected>MM/DD/YYYY</option><option>DD/MM/YYYY</option><option>YYYY-MM-DD</option></select>
                 </div>
               </div>
-              <button class="settings-save-btn" data-action="toastWorkspaceSaved">Save Changes</button>
+              <button class="settings-save-btn" onclick="showToast('✅ Workspace settings saved!')">Save Changes</button>
             </div>
             <div class="settings-card">
               <div class="settings-card-title">Default View</div>
               <div class="settings-card-desc">Choose which view opens by default when you log in.</div>
               <div class="settings-row">
                 <div><div class="settings-row-label">Default Board View</div><div class="settings-row-sub">What shows first when opening a project</div></div>
-                <select class="settings-select" style="width:auto">
+                <select class="settings-select" style="width:auto;">
                   <option selected>List</option><option>Board</option><option>Calendar</option><option>Table</option>
                 </select>
               </div>
-              <div class="settings-row" style="margin-top:12px">
+              <div class="settings-row" style="margin-top:12px;">
                 <div><div class="settings-row-label">Compact Mode</div><div class="settings-row-sub">Reduce spacing for more tasks on screen</div></div>
                 <label class="toggle-switch"><input type="checkbox"/><span class="toggle-slider"></span></label>
               </div>
@@ -489,12 +480,12 @@
           <!-- ── Team Members ── -->
           <div class="settings-panel" id="setting-members">
             <div class="settings-card">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
                 <div>
-                  <div class="settings-card-title" class="u-mb-2">Team Members</div>
-                  <div class="u-fs-12 u-light">Manage who has access to this workspace.</div>
+                  <div class="settings-card-title" style="margin-bottom:2px;">Team Members</div>
+                  <div style="font-size:12px;color:var(--light);">Manage who has access to this workspace.</div>
                 </div>
-                <button class="settings-save-btn" data-action="toastInviteSent">
+                <button class="settings-save-btn" onclick="showToast('📧 Invite sent!')">
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                   Invite Member
                 </button>
@@ -532,8 +523,8 @@
                 <div><div class="settings-row-label">Email Notifications</div><div class="settings-row-sub">Receive a daily digest via email</div></div>
                 <label class="toggle-switch"><input type="checkbox"/><span class="toggle-slider"></span></label>
               </div>
-              <div class="u-mt-16">
-                <button class="settings-save-btn" data-action="toastNotifSaved">Save Preferences</button>
+              <div style="margin-top:16px;">
+                <button class="settings-save-btn" onclick="showToast('🔔 Notification preferences saved!')">Save Preferences</button>
               </div>
             </div>
           </div>
@@ -541,10 +532,10 @@
           <!-- ── Positions ── -->
           <div class="settings-panel" id="setting-positions">
             <div class="settings-card">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
                 <div>
-                  <div class="settings-card-title" class="u-mb-2">Job Positions</div>
-                  <div class="u-fs-12 u-light">Manage the positions available in the recruitment pipeline.</div>
+                  <div class="settings-card-title" style="margin-bottom:2px;">Job Positions</div>
+                  <div style="font-size:12px;color:var(--light);">Manage the positions available in the recruitment pipeline.</div>
                 </div>
                 <button class="settings-save-btn" id="add-position-btn">
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -560,23 +551,23 @@
 
             <!-- ── Connected Calendars list ── -->
             <div class="settings-card">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
                 <div>
-                  <div class="settings-card-title" class="u-mb-2">Connected Calendars</div>
-                  <div class="u-fs-12 u-light">Calendars synced from your Google account. Sync to refresh.</div>
+                  <div class="settings-card-title" style="margin-bottom:2px;">Connected Calendars</div>
+                  <div style="font-size:12px;color:var(--light);">Calendars synced from your Google account. Sync to refresh.</div>
                 </div>
-                <button class="settings-save-btn" data-action="handleGCalSync">
+                <button class="settings-save-btn" onclick="handleGCalSync()">
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.95"/></svg>
                   Sync Google Cal
                 </button>
               </div>
-              <div id="settings-cal-list" style="margin-top:14px;display:flex;flex-direction:column;gap:8px"></div>
+              <div id="settings-cal-list" style="margin-top:14px;display:flex;flex-direction:column;gap:8px;"></div>
             </div>
 
             <!-- ── Create New Calendar ── -->
-            <div class="settings-card" class="u-mt-0">
-              <div class="settings-card-title" style="margin-bottom:4px">Create New Calendar</div>
-              <div style="font-size:12px;color:var(--light);margin-bottom:16px">Creates a new calendar directly in your Google account and adds it to the list above.</div>
+            <div class="settings-card" style="margin-top:0;">
+              <div class="settings-card-title" style="margin-bottom:4px;">Create New Calendar</div>
+              <div style="font-size:12px;color:var(--light);margin-bottom:16px;">Creates a new calendar directly in your Google account and adds it to the list above.</div>
               <div class="settings-form-row">
                 <div class="settings-form-group">
                   <label class="settings-label">Calendar Name</label>
@@ -594,29 +585,29 @@
                 </div>
               </div>
               <div class="settings-form-group">
-                <label class="settings-label">Description <span style="font-weight:400;color:var(--light)">(optional)</span></label>
+                <label class="settings-label">Description <span style="font-weight:400;color:var(--light);">(optional)</span></label>
                 <input class="settings-input" id="new-cal-desc" placeholder="Short description of this calendar"/>
               </div>
-              <div style="display:flex;align-items:center;gap:10px;margin-top:4px">
-                <button class="settings-save-btn" id="create-cal-btn" data-action="handleCreateCalendar">
+              <div style="display:flex;align-items:center;gap:10px;margin-top:4px;">
+                <button class="settings-save-btn" id="create-cal-btn" onclick="handleCreateCalendar()">
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                   Create Calendar
                 </button>
-                <span id="create-cal-status" style="font-size:12px;color:var(--muted)"></span>
+                <span id="create-cal-status" style="font-size:12px;color:var(--muted);"></span>
               </div>
             </div>
 
             <!-- ── Public Calendar Subscriptions ── -->
-            <div class="settings-card" class="u-mt-0">
-              <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+            <div class="settings-card" style="margin-top:0;">
+              <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
                 <div>
-                  <div class="settings-card-title" style="margin-bottom:3px">Subscribe to Public Calendars</div>
-                  <div class="u-fs-12 u-light">
+                  <div class="settings-card-title" style="margin-bottom:3px;">Subscribe to Public Calendars</div>
+                  <div style="font-size:12px;color:var(--light);">
                     Add public holiday and event calendars to your system calendar.
                     Sign in with Google to load events automatically.
                   </div>
                 </div>
-                <button class="settings-save-btn" data-action="renderPublicCalendars" title="Refresh list">
+                <button class="settings-save-btn" onclick="renderPublicCalendars()" title="Refresh list">
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.95"/></svg>
                   Refresh
                 </button>
@@ -631,46 +622,46 @@
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                   Add Custom Calendar
                 </div>
-                <div class="settings-form-row" style="margin-bottom:8px">
-                  <div class="settings-form-group" style="flex:2">
+                <div class="settings-form-row" style="margin-bottom:8px;">
+                  <div class="settings-form-group" style="flex:2;">
                     <label class="settings-label">Calendar ID</label>
                     <input class="settings-input" id="custom-ext-cal-id"
                       placeholder="e.g. en.christian#holiday@group.v.calendar.google.com"/>
                   </div>
-                  <div class="settings-form-group" class="u-flex-1">
+                  <div class="settings-form-group" style="flex:1;">
                     <label class="settings-label">Display Name</label>
                     <input class="settings-input" id="custom-ext-cal-name" placeholder="e.g. Company Holidays"/>
                   </div>
                 </div>
-                <div style="display:flex;align-items:center;gap:10px">
-                  <button class="settings-save-btn" data-action="subscribeCustomExtCalendar">
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <button class="settings-save-btn" onclick="subscribeCustomExtCalendar()">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                     Add &amp; Subscribe
                   </button>
-                  <span id="ext-cal-status" style="font-size:12px;color:var(--muted)"></span>
+                  <span id="ext-cal-status" style="font-size:12px;color:var(--muted);"></span>
                 </div>
               </div>
             </div>
 
             <!-- ── Calendar Type legend ── -->
-            <div class="settings-card" class="u-mt-0">
-              <div class="settings-card-title" class="u-mb-12">Calendar Types</div>
-              <div style="display:flex;flex-direction:column;gap:10px">
-                <div class="u-flex-row u-gap-12 u-align-start">
-                  <span class="u-fs-18 u-shrink-0">📅</span>
-                  <div><div class="u-fs-13 u-fw-600 u-text">Interview</div><div class="u-fs-12 u-light">Scheduled candidate interviews — tied to applicant records.</div></div>
+            <div class="settings-card" style="margin-top:0;">
+              <div class="settings-card-title" style="margin-bottom:12px;">Calendar Types</div>
+              <div style="display:flex;flex-direction:column;gap:10px;">
+                <div style="display:flex;gap:12px;align-items:flex-start;">
+                  <span style="font-size:18px;flex-shrink:0;">📅</span>
+                  <div><div style="font-size:13px;font-weight:600;color:var(--text);">Interview</div><div style="font-size:12px;color:var(--light);">Scheduled candidate interviews — tied to applicant records.</div></div>
                 </div>
-                <div class="u-flex-row u-gap-12 u-align-start">
-                  <span class="u-fs-18 u-shrink-0">📋</span>
-                  <div><div class="u-fs-13 u-fw-600 u-text">Event</div><div class="u-fs-12 u-light">Team meetings, company events, and all-hands sessions.</div></div>
+                <div style="display:flex;gap:12px;align-items:flex-start;">
+                  <span style="font-size:18px;flex-shrink:0;">📋</span>
+                  <div><div style="font-size:13px;font-weight:600;color:var(--text);">Event</div><div style="font-size:12px;color:var(--light);">Team meetings, company events, and all-hands sessions.</div></div>
                 </div>
-                <div class="u-flex-row u-gap-12 u-align-start">
-                  <span class="u-fs-18 u-shrink-0">✅</span>
-                  <div><div class="u-fs-13 u-fw-600 u-text">To-Do</div><div class="u-fs-12 u-light">Deadline-based tasks tracked as all-day calendar events.</div></div>
+                <div style="display:flex;gap:12px;align-items:flex-start;">
+                  <span style="font-size:18px;flex-shrink:0;">✅</span>
+                  <div><div style="font-size:13px;font-weight:600;color:var(--text);">To-Do</div><div style="font-size:12px;color:var(--light);">Deadline-based tasks tracked as all-day calendar events.</div></div>
                 </div>
-                <div class="u-flex-row u-gap-12 u-align-start">
-                  <span class="u-fs-18 u-shrink-0">🗓️</span>
-                  <div><div class="u-fs-13 u-fw-600 u-text">General</div><div class="u-fs-12 u-light">Catch-all for miscellaneous reminders and team activities.</div></div>
+                <div style="display:flex;gap:12px;align-items:flex-start;">
+                  <span style="font-size:18px;flex-shrink:0;">🗓️</span>
+                  <div><div style="font-size:13px;font-weight:600;color:var(--text);">General</div><div style="font-size:12px;color:var(--light);">Catch-all for miscellaneous reminders and team activities.</div></div>
                 </div>
               </div>
             </div>
@@ -681,7 +672,7 @@
           <div class="settings-panel" id="setting-emailjs">
             <div class="settings-card">
               <div class="settings-card-title">📧 EmailJS Integration</div>
-              <div class="settings-card-desc">Required for sending assessment invitation emails to applicants. Get your free keys at <a href="https://emailjs.com" target="_blank" style="color:var(--violet)">emailjs.com</a></div>
+              <div class="settings-card-desc">Required for sending assessment invitation emails to applicants. Get your free keys at <a href="https://emailjs.com" target="_blank" style="color:var(--violet);">emailjs.com</a></div>
               <div class="settings-row">
                 <div><div class="settings-row-label">Service ID</div><div class="settings-row-sub">Your EmailJS service identifier</div></div>
                 <input class="settings-input" id="s-emailjs-service" placeholder="service_xxxxxxx" oninput="saveEmailJSConfig()"/>
@@ -700,7 +691,7 @@
               </div>
               <div class="settings-row">
                 <div><div class="settings-row-label">Link Expiry</div><div class="settings-row-sub">Hours until assessment link expires</div></div>
-                <select class="form-select" id="s-assess-expiry" style="width:120px" onchange="saveEmailJSConfig()">
+                <select class="form-select" id="s-assess-expiry" style="width:120px;" onchange="saveEmailJSConfig()">
                   <option value="24">24 hours</option>
                   <option value="48">48 hours</option>
                   <option value="72" selected>72 hours</option>
@@ -711,50 +702,50 @@
 
           <!-- ── Danger Zone ── -->
           <div class="settings-panel" id="setting-danger">
-            <div class="settings-card" style="border-color:#fca5a5">
-              <div class="settings-card-title" style="color:#dc2626">⚠️ Danger Zone</div>
+            <div class="settings-card" style="border-color:#fca5a5;">
+              <div class="settings-card-title" style="color:#dc2626;">⚠️ Danger Zone</div>
               <div class="settings-card-desc">These actions are permanent and cannot be undone. Please proceed with caution.</div>
               <div class="settings-row">
                 <div><div class="settings-row-label">Clear All Tasks</div><div class="settings-row-sub">Permanently delete all tasks in this workspace</div></div>
-                <button class="settings-danger-btn" data-action="handleClearTasks">Clear Tasks</button>
+                <button class="settings-danger-btn" onclick="if(confirm('Delete ALL tasks? This cannot be undone.')){TASKS=[];persistSave();refreshCurrentView();showToast('🗑️ All tasks deleted.');}">Clear Tasks</button>
               </div>
               <div class="settings-row">
                 <div><div class="settings-row-label">Clear Interview Calendar</div><div class="settings-row-sub">Remove all scheduled interviews from the calendar</div></div>
-                <button class="settings-danger-btn" data-action="handleClearCalendar">Clear Calendar</button>
+                <button class="settings-danger-btn" onclick="if(confirm('Delete ALL calendar events? This cannot be undone.')){calEvents=[];UPSTAFF_CALENDARS=[];remindersFired.clear();persistClearCalendar();populateCalendarSelectors();renderCalendarSidebar();renderSettingsCalendarList();renderCalendar();showToast('🗑️ Calendar cleared.');}">Clear Calendar</button>
               </div>
               <div class="settings-row">
                 <div><div class="settings-row-label">Reset to Demo Data</div><div class="settings-row-sub">Restore the original sample tasks and calendar events</div></div>
-                <button class="settings-danger-btn" style="border-color:rgba(108,99,255,.2);color:var(--violet);background:rgba(108,99,255,.08)" data-action="resetDemoData">Reset Demo</button>
+                <button class="settings-danger-btn" style="border-color:rgba(108,99,255,.2);color:var(--violet);background:rgba(108,99,255,.08);" onclick="resetDemoData()">Reset Demo</button>
               </div>
-              <div class="settings-row" style="margin-top:4px">
+              <div class="settings-row" style="margin-top:4px;">
                 <div><div class="settings-row-label">Clear All Saved Data</div><div class="settings-row-sub">Wipes localStorage completely — tasks, events, and Google auth state</div></div>
-                <button class="settings-danger-btn" data-action="handleWipeStorage">Wipe Storage</button>
+                <button class="settings-danger-btn" onclick="if(confirm('Clear ALL saved data including Google auth? You will need to re-authorise Google Calendar.')){persistClearAll();calEvents=[];TASKS=[];UPSTAFF_CALENDARS=[];remindersFired.clear();gcalSignedIn=false;populateCalendarSelectors();renderCalendarSidebar();renderSettingsCalendarList();renderCalendar();refreshCurrentView();showToast('🗑️ All localStorage cleared.');}">Wipe Storage</button>
               </div>
             </div>
             <!-- ── Data Backup ── -->
-            <div class="settings-card" style="margin-top:16px;border-color:rgba(108,99,255,.25)">
+            <div class="settings-card" style="margin-top:16px;border-color:rgba(108,99,255,.25);">
               <div class="settings-card-title">💾 Data Backup</div>
               <div class="settings-card-desc">Export all your data as a JSON file to back it up, or import a previously exported file to restore.</div>
               <div class="settings-row">
                 <div><div class="settings-row-label">Export Data</div><div class="settings-row-sub">Download all tasks, events, and settings as a .json file</div></div>
-                <button class="settings-save-btn" data-action="exportDataJSON">Export JSON</button>
+                <button class="settings-save-btn" onclick="exportDataJSON()">Export JSON</button>
               </div>
               <div class="settings-row">
                 <div><div class="settings-row-label">Import Data</div><div class="settings-row-sub">Restore from a previously exported .json file</div></div>
-                <button class="settings-save-btn" data-action="importDataJSON">Import JSON</button>
-                <input type="file" id="import-data-file" accept=".json" style="display:none" onchange="importDataJSON(this)"/>
+                <button class="settings-save-btn" onclick="document.getElementById('import-data-file').click()">Import JSON</button>
+                <input type="file" id="import-data-file" accept=".json" style="display:none;" onchange="importDataJSON(this)"/>
               </div>
             </div>
             <!-- placeholder closing div for old card -->
-            <div style="display:none">
+            <div style="display:none;">
             </div>
             <!-- ── localStorage status ── -->
-            <div class="settings-card" class="u-mt-16">
+            <div class="settings-card" style="margin-top:16px;">
               <div class="settings-card-title">💾 Local Storage Status</div>
               <div class="settings-card-desc">Events and tasks are auto-saved to your browser's localStorage and restored on every page reload.</div>
-              <div id="storage-status-rows" style="margin-top:12px;display:flex;flex-direction:column;gap:8px"></div>
-              <div style="margin-top:14px">
-                <button class="settings-save-btn" data-action="refreshStorageStatus">Refresh Status</button>
+              <div id="storage-status-rows" style="margin-top:12px;display:flex;flex-direction:column;gap:8px;"></div>
+              <div style="margin-top:14px;">
+                <button class="settings-save-btn" onclick="refreshStorageStatus()">Refresh Status</button>
               </div>
             </div>
           </div>
@@ -766,11 +757,11 @@
     <!-- ══════════════════════════════════════════════
          ANALYTICS VIEW  ← NEW
     ══════════════════════════════════════════════ -->
-    <div id="view-analytics" class="view-panel" style="display:none">
+    <div id="view-analytics" class="view-panel" style="display:none;">
 
       <!-- ── Top KPI cards ── -->
-      <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
-        <button class="filter-btn" data-action="exportAnalyticsCSV" style="gap:6px">
+      <div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
+        <button class="filter-btn" onclick="exportAnalyticsCSV()" style="gap:6px;">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Export Analytics CSV
         </button>
@@ -778,16 +769,16 @@
       <div class="analytics-stat-row" id="analytics-kpi-row"></div>
 
       <!-- ── Position Choices Summary Table ── -->
-      <div class="u-mb-20">
+      <div style="margin-bottom:20px;">
         <div class="analytics-section-title">
           📋 Position Preferences Summary
           <span>— How many applicants listed each role as their 1st, 2nd, or 3rd choice</span>
         </div>
-        <div class="analytics-card" style="overflow-x:auto">
+        <div class="analytics-card" style="overflow-x:auto;">
           <div class="choice-legend">
-            <div class="choice-legend-item"><div class="choice-legend-dot" style="background:#44d7e9"></div>1st Choice</div>
-            <div class="choice-legend-item"><div class="choice-legend-dot" style="background:#6c63ff"></div>2nd Choice</div>
-            <div class="choice-legend-item"><div class="choice-legend-dot" style="background:#fa8231"></div>3rd Choice</div>
+            <div class="choice-legend-item"><div class="choice-legend-dot" style="background:#44d7e9;"></div>1st Choice</div>
+            <div class="choice-legend-item"><div class="choice-legend-dot" style="background:#6c63ff;"></div>2nd Choice</div>
+            <div class="choice-legend-item"><div class="choice-legend-dot" style="background:#fa8231;"></div>3rd Choice</div>
           </div>
           <table class="choice-table" id="position-choice-table"></table>
         </div>
@@ -830,7 +821,7 @@
       </div>
 
       <!-- ── Tools & Skills Tag Cloud ── -->
-      <div class="analytics-grid-2" style="margin-bottom:0">
+      <div class="analytics-grid-2" style="margin-bottom:0;">
         <div class="analytics-card">
           <div class="analytics-section-title">🛠️ Tools & Software Used</div>
           <div class="tag-cloud" id="chart-tools"></div>
@@ -844,16 +835,16 @@
     </div><!-- /view-analytics -->
 
     <!-- ── CANDIDATES FOLDER VIEW ── -->
-    <div id="view-candidates" class="view-panel" style="display:none">
-      <div class="filter-row" class="u-mb-20">
-        <div style="display:flex;gap:6px;flex-wrap:wrap" id="candidates-folder-tabs">
-          <button class="filter-btn active-folder" data-folder="all" data-action="switchCandidateFolder" data-arg="all">
+    <div id="view-candidates" class="view-panel" style="display:none;">
+      <div class="filter-row" style="margin-bottom:20px;">
+        <div style="display:flex;gap:6px;flex-wrap:wrap;" id="candidates-folder-tabs">
+          <button class="filter-btn active-folder" data-folder="all" onclick="switchCandidateFolder('all',this)">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>
             All Candidates
           </button>
-          <button class="filter-btn" data-folder="Ready to Call" data-action="switchCandidateFolder" data-arg="Ready to Call">📞 Ready to Call</button>
-          <button class="filter-btn" data-folder="Ready to Hire" data-action="switchCandidateFolder" data-arg="Ready to Hire">🎯 Ready to Hire</button>
-          <button class="filter-btn" data-folder="Talent Pool / Shortlisted" data-action="switchCandidateFolder" data-arg="Talent Pool / Shortlisted">⭐ Talent Pool</button>
+          <button class="filter-btn" data-folder="Ready to Call" onclick="switchCandidateFolder('Ready to Call',this)">📞 Ready to Call</button>
+          <button class="filter-btn" data-folder="Ready to Hire" onclick="switchCandidateFolder('Ready to Hire',this)">🎯 Ready to Hire</button>
+          <button class="filter-btn" data-folder="Talent Pool / Shortlisted" onclick="switchCandidateFolder('Talent Pool / Shortlisted',this)">⭐ Talent Pool</button>
         </div>
         <div class="filter-spacer"></div>
         <div class="search-wrap">
@@ -878,43 +869,43 @@
 
     <!-- Header -->
     <div class="modal-title">
-      <div style="display:flex;flex-direction:column;gap:2px;min-width:0">
-        <span id="task-modal-heading" class="u-fs-15 u-fw-700">New Applicant</span>
-        <div id="task-modal-subhead" style="font-size:11px;color:var(--muted);font-weight:500"></div>
+      <div style="display:flex;flex-direction:column;gap:2px;min-width:0;">
+        <span id="task-modal-heading" style="font-size:15px;font-weight:700;font-family:'Syne',sans-serif;">New Applicant</span>
+        <div id="task-modal-subhead" style="font-size:11px;color:var(--muted);font-weight:500;"></div>
       </div>
       <button class="modal-close" id="task-modal-close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
 
     <!-- Pipeline stage progress bar -->
-    <div id="task-stage-progress" class="u-mb-12"></div>
+    <div id="task-stage-progress" style="margin-bottom:12px;"></div>
 
     <!-- Pipeline action strip (shows when editing an active applicant) -->
-    <div id="task-pipeline-actions" style="display:none;margin-bottom:14px;padding:10px 12px;background:var(--surface-2);border-radius:10px;border:1px solid var(--border);display:none;flex-wrap:wrap;gap:6px;align-items:center">
-      <span style="font-size:11px;color:var(--muted);font-weight:600;margin-right:4px">Move:</span>
-      <button id="btn-advance-stage" class="pipeline-action-btn pipeline-btn-next" data-action="advanceStageAndClose">→ Next Stage</button>
-      <button id="btn-hire-now"      class="pipeline-action-btn pipeline-btn-hire" data-action="hireAndClose" style="display:none">✓ Hire</button>
-      <button id="btn-reject-now"    class="pipeline-action-btn pipeline-btn-reject" data-action="rejectAndClose">✗ Reject</button>
+    <div id="task-pipeline-actions" style="display:none;margin-bottom:14px;padding:10px 12px;background:var(--surface-2);border-radius:10px;border:1px solid var(--border);display:none;flex-wrap:wrap;gap:6px;align-items:center;">
+      <span style="font-size:11px;color:var(--muted);font-weight:600;margin-right:4px;">Move:</span>
+      <button id="btn-advance-stage" class="pipeline-action-btn pipeline-btn-next" onclick="if(window._editingTaskId) advanceToNextStage(window._editingTaskId), closeTaskModal()">→ Next Stage</button>
+      <button id="btn-hire-now"      class="pipeline-action-btn pipeline-btn-hire" onclick="if(window._editingTaskId) hireApplicant(window._editingTaskId), closeTaskModal()" style="display:none;">✓ Hire</button>
+      <button id="btn-reject-now"    class="pipeline-action-btn pipeline-btn-reject" onclick="if(window._editingTaskId) rejectApplicant(window._editingTaskId), closeTaskModal()">✗ Reject</button>
     </div>
 
     <!-- Tab Nav -->
     <div class="modal-tabs">
-      <button class="modal-tab active" data-tab="profile" data-action="switchModalTab" data-arg="profile">
+      <button class="modal-tab active" data-tab="profile" onclick="_switchModalTab('profile',this)">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>
         Profile
       </button>
-      <button class="modal-tab" data-tab="assessment" data-action="switchModalTab" data-arg="assessment">
+      <button class="modal-tab" data-tab="assessment" onclick="_switchModalTab('assessment',this)">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-        Assessment<span class="modal-tab-badge" id="assess-tab-badge" style="display:none"></span>
+        Assessment<span class="modal-tab-badge" id="assess-tab-badge" style="display:none;"></span>
       </button>
-      <button class="modal-tab" data-tab="recruit" data-action="switchModalTab" data-arg="recruit">
+      <button class="modal-tab" data-tab="recruit" onclick="_switchModalTab('recruit',this)">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
         Recruitment
       </button>
-      <button class="modal-tab" data-tab="interview-schedule" id="tab-btn-interview-schedule" data-action="switchModalTab" data-arg="interview-schedule" style="display:none">
+      <button class="modal-tab" data-tab="interview-schedule" id="tab-btn-interview-schedule" onclick="_switchModalTab('interview-schedule',this)" style="display:none;">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
         Interview
       </button>
-      <button class="modal-tab" data-tab="review" id="tab-btn-review" data-action="switchModalTab" data-arg="review" style="display:none">
+      <button class="modal-tab" data-tab="review" id="tab-btn-review" onclick="_switchModalTab('review',this)" style="display:none;">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         Review
       </button>
@@ -977,15 +968,15 @@
           <span class="assess-status-meta" id="assess-status-meta"></span>
         </div>
         <div class="assess-invite-actions">
-          <button class="assess-send-btn" id="assess-send-btn" data-action="sendAssessmentEmail">
+          <button class="assess-send-btn" id="assess-send-btn" onclick="sendAssessmentEmail()">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
             Send Assessment Link
           </button>
-          <button class="assess-resend-btn" id="assess-resend-btn" data-action="resendAssessmentEmail" style="display:none">
+          <button class="assess-resend-btn" id="assess-resend-btn" onclick="resendAssessmentEmail()" style="display:none;">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.95"/></svg>
             Resend
           </button>
-          <button class="assess-reset-btn" id="assess-reset-btn" data-action="resetAssessmentAttempt" style="display:none">
+          <button class="assess-reset-btn" id="assess-reset-btn" onclick="resetAssessmentAttempt()" style="display:none;">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
             Reset Attempt
           </button>
@@ -1002,7 +993,7 @@
           <div class="assess-import-banner-title" id="assess-import-banner-title">Assessment results available</div>
           <div class="assess-import-banner-sub" id="assess-import-banner-sub">New scores were submitted via the portal. Click Apply to fill them in.</div>
         </div>
-        <button class="assess-import-apply-btn" data-action="applyPendingAssessment">Apply Scores</button>
+        <button class="assess-import-apply-btn" onclick="applyPendingAssessment()">Apply Scores</button>
       </div>
 
       <!-- Fetch status feedback line -->
@@ -1015,7 +1006,7 @@
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label">WPM / Score <span class="u-light u-fw-400">(e.g. 75 or 75%)</span></label>
+            <label class="form-label">WPM / Score <span style="color:var(--light);font-weight:400;">(e.g. 75 or 75%)</span></label>
             <input type="text" class="form-input" id="f-typing-score" placeholder="e.g. 75"/>
           </div>
         </div>
@@ -1028,7 +1019,7 @@
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label">Score <span class="u-light u-fw-400">(out of 100)</span></label>
+            <label class="form-label">Score <span style="color:var(--light);font-weight:400;">(out of 100)</span></label>
             <input type="number" class="form-input" id="f-knowledge-score" placeholder="e.g. 82" min="0" max="100"/>
           </div>
         </div>
@@ -1043,7 +1034,7 @@
           <label class="form-label">Recording Link</label>
           <input type="url" class="form-input" id="f-verbal-link" placeholder="https://drive.google.com/verbal-recording…"/>
         </div>
-        <div id="verbal-link-preview" style="display:none;margin-top:4px">
+        <div id="verbal-link-preview" style="display:none;margin-top:4px;">
           <a id="verbal-link-open" href="#" target="_blank" rel="noopener" class="assessment-link-btn">
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
             Open Recording
@@ -1062,7 +1053,7 @@
       </div>
 
       <!-- Score summary card -->
-      <div id="score-summary" class="score-summary-card" style="display:none"></div>
+      <div id="score-summary" class="score-summary-card" style="display:none;"></div>
     </div>
 
     <!-- ── TAB: RECRUITMENT ── -->
@@ -1120,11 +1111,11 @@
         </div>
       </div>
       <!-- Google Calendar sync -->
-      <div class="form-group" style="display:flex;align-items:center;gap:10px;margin-top:4px">
+      <div class="form-group" style="display:flex;align-items:center;gap:10px;margin-top:4px;">
         <label class="toggle-switch"><input type="checkbox" id="f-task-gcal-sync"/><span class="toggle-slider"></span></label>
-        <span style="font-size:12px;color:var(--muted);font-weight:500">Sync to Google Calendar on save</span>
+        <span style="font-size:12px;color:var(--muted);font-weight:500;">Sync to Google Calendar on save</span>
       </div>
-      <div id="f-task-gcal-status" style="font-size:11px;color:var(--muted);margin-top:-4px;display:none"></div>
+      <div id="f-task-gcal-status" style="font-size:11px;color:var(--muted);margin-top:-4px;display:none;"></div>
     </div>
 
     <!-- ── TAB: INTERVIEW SCHEDULE ── -->
@@ -1182,46 +1173,46 @@
 
       <!-- Meeting Link — with platform toggle + generate -->
       <div class="form-group">
-        <label class="form-label" class="u-flex-row u-gap-6">
+        <label class="form-label" style="display:flex;align-items:center;gap:6px;">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M15 10l4.553-2.069A1 1 0 0 1 21 8.845v6.31a1 1 0 0 1-1.447.914L15 14"/><rect x="1" y="6" width="15" height="12" rx="2"/></svg>
           Meeting Link
         </label>
         <!-- Platform toggle -->
         <div class="meeting-platform-row" id="iv-platform-row">
-          <button type="button" class="meeting-platform-btn active" data-ivplatform="meet" data-action="setIvPlatform" data-arg="meet">
+          <button type="button" class="meeting-platform-btn active" data-ivplatform="meet" onclick="setIvPlatform('meet',this)">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M15 10l4.553-2.069A1 1 0 0 1 21 8.845v6.31a1 1 0 0 1-1.447.914L15 14"/><rect x="1" y="6" width="15" height="12" rx="2"/></svg>
             Google Meet
           </button>
-          <button type="button" class="meeting-platform-btn" data-ivplatform="zoom" data-action="setIvPlatform" data-arg="zoom">
+          <button type="button" class="meeting-platform-btn" data-ivplatform="zoom" onclick="setIvPlatform('zoom',this)">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M15 10l4 2-4 2V10z"/><rect x="4" y="9" width="11" height="6" rx="1"/></svg>
             Zoom
           </button>
-          <button type="button" class="meeting-platform-btn" data-ivplatform="custom" data-action="setIvPlatform" data-arg="custom">
+          <button type="button" class="meeting-platform-btn" data-ivplatform="custom" onclick="setIvPlatform('custom',this)">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
             Custom
           </button>
         </div>
         <!-- Quick-action buttons -->
         <div class="meeting-actions-row" id="iv-actions-row">
-          <button type="button" class="meeting-action-btn" id="iv-btn-gen-link" data-action="generateIvMeetingLink">
+          <button type="button" class="meeting-action-btn" id="iv-btn-gen-link" onclick="generateIvMeetingLink()">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
             Generate link
           </button>
-          <button type="button" class="meeting-action-btn" id="iv-btn-open-link" data-action="openIvPlatform" style="display:none">
+          <button type="button" class="meeting-action-btn" id="iv-btn-open-link" onclick="openIvPlatform()" style="display:none;">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
             Open platform
           </button>
         </div>
-        <input type="url" class="form-input" id="iv-meeting-link" placeholder="https://meet.google.com/xxx-xxxx-xxx" class="u-mt-8"/>
+        <input type="url" class="form-input" id="iv-meeting-link" placeholder="https://meet.google.com/xxx-xxxx-xxx" style="margin-top:8px;"/>
         <!-- Join preview -->
-        <div id="iv-link-preview" style="display:none;margin-top:6px">
+        <div id="iv-link-preview" style="display:none;margin-top:6px;">
           <a id="iv-link-anchor" href="#" target="_blank" rel="noopener noreferrer"
-            style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:10px;background:rgba(68,215,233,.1);color:var(--cyan);font-size:12px;font-weight:700;text-decoration:none;border:1px solid rgba(68,215,233,.25)">
+            style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:10px;background:rgba(68,215,233,.1);color:var(--cyan);font-size:12px;font-weight:700;font-family:'Montserrat',sans-serif;text-decoration:none;border:1px solid rgba(68,215,233,.25);">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M15 10l4.553-2.069A1 1 0 0 1 21 8.845v6.31a1 1 0 0 1-1.447.914L15 14"/><rect x="1" y="6" width="15" height="12" rx="2"/></svg>
             Join Meeting
           </a>
         </div>
-        <div id="iv-link-note" style="font-size:11px;color:var(--muted);margin-top:5px;line-height:1.5">💡 Choose a platform and generate a link, or paste your own.</div>
+        <div id="iv-link-note" style="font-size:11px;color:var(--muted);margin-top:5px;line-height:1.5;">💡 Choose a platform and generate a link, or paste your own.</div>
       </div>
 
       <!-- Notes -->
@@ -1231,16 +1222,16 @@
       </div>
 
       <!-- Add Button -->
-      <div class="u-mb-20">
-        <button class="btn-save" style="width:100%" data-action="saveInterviewSchedule">
+      <div style="margin-bottom:20px;">
+        <button class="btn-save" style="width:100%;" onclick="saveInterviewSchedule()">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           Add to Schedule
         </button>
       </div>
 
       <!-- Saved Interviews List -->
-      <hr style="border:none;border-top:1px solid var(--border);margin:0 0 14px"/>
-      <div class="review-section-header" style="margin-bottom:10px">
+      <hr style="border:none;border-top:1px solid var(--border);margin:0 0 14px;"/>
+      <div class="review-section-header" style="margin-bottom:10px;">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
         Scheduled Interviews
       </div>
@@ -1256,18 +1247,18 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
         Scheduled Interviews
       </div>
-      <div id="rv-scheduled-list" class="u-mb-16"></div>
+      <div id="rv-scheduled-list" style="margin-bottom:16px;"></div>
 
-      <hr style="border:none;border-top:1px solid var(--border);margin:0 0 16px"/>
+      <hr style="border:none;border-top:1px solid var(--border);margin:0 0 16px;"/>
 
       <!-- Assessment Results -->
       <div class="review-section-header">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
         Assessment Results
       </div>
-      <div id="rv-assessment-summary" class="rv-assess-grid" class="u-mb-16"></div>
+      <div id="rv-assessment-summary" class="rv-assess-grid" style="margin-bottom:16px;"></div>
 
-      <hr style="border:none;border-top:1px solid var(--border);margin:0 0 16px"/>
+      <hr style="border:none;border-top:1px solid var(--border);margin:0 0 16px;"/>
 
       <!-- Applicant Summary -->
       <div class="review-section-header">
@@ -1280,8 +1271,8 @@
 
     <!-- Footer -->
     <div class="form-actions">
-      <button class="btn-delete" id="btn-task-delete" style="display:none">Delete</button>
-      <div class="u-flex-1"></div>
+      <button class="btn-delete" id="btn-task-delete" style="display:none;">Delete</button>
+      <div style="flex:1;"></div>
       <button class="btn-cancel" id="task-modal-cancel">Cancel</button>
       <button class="btn-save" id="btn-task-save">Save Applicant</button>
     </div>
@@ -1294,11 +1285,11 @@
 <!-- ════════════════════════════════════════
      TODO MODAL
 ════════════════════════════════════════ -->
-<div id="todo-modal-overlay" role="dialog" aria-modal="true" aria-label="Todo task">
+<div id="todo-modal-overlay">
   <div id="todo-modal">
     <div class="todo-modal-title">
       <span id="todo-modal-heading">New Task</span>
-      <button class="todo-modal-close-btn" data-action="closeTodoModal">
+      <button class="todo-modal-close-btn" onclick="closeTodoModal()">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
     </div>
@@ -1321,29 +1312,29 @@
     </div>
     <div class="form-row">
       <div class="form-group"><label class="form-label">Due Date</label><input type="date" class="form-input" id="td-due"/></div>
-      <div class="form-group"><label class="form-label">Due Time <span class="u-light u-fw-400">(optional)</span></label><input type="time" class="form-input" id="td-time"/></div>
+      <div class="form-group"><label class="form-label">Due Time <span style="color:var(--light);font-weight:400;">(optional)</span></label><input type="time" class="form-input" id="td-time"/></div>
     </div>
     <div class="form-group"><label class="form-label">Notes</label><textarea class="form-textarea" id="td-notes" placeholder="Add notes or details…" rows="3"></textarea></div>
-    <div class="form-group" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:var(--surface-3);border:1px solid var(--border)">
+    <div class="form-group" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:var(--surface-3);border:1px solid var(--border);">
       <label class="toggle-switch"><input type="checkbox" id="td-gcal-sync"/><span class="toggle-slider"></span></label>
-      <div class="u-flex-1">
-        <div style="font-size:12px;font-weight:600;color:var(--text)">Sync to Google Calendar</div>
-        <div style="font-size:11px;color:var(--light)">Creates or updates an event on the due date (requires Google sign-in &amp; a due date)</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:12px;font-weight:600;color:var(--text);">Sync to Google Calendar</div>
+        <div style="font-size:11px;color:var(--light);">Creates or updates an event on the due date (requires Google sign-in &amp; a due date)</div>
       </div>
     </div>
     <!-- Inline sync feedback: spinner → ✅ success | ⚠️ error | 💡 info -->
     <div id="td-gcal-status"></div>
     <div class="form-actions">
-      <button class="btn-delete" id="btn-todo-delete" style="display:none">Delete</button>
-      <button class="btn-cancel" data-action="closeTodoModal">Cancel</button>
-      <button class="btn-save" data-action="saveTodo">Save Task</button>
+      <button class="btn-delete" id="btn-todo-delete" style="display:none;">Delete</button>
+      <button class="btn-cancel" onclick="closeTodoModal()">Cancel</button>
+      <button class="btn-save" onclick="saveTodo()">Save Task</button>
     </div>
   </div>
 </div>
 
 <div id="hire-modal-overlay" role="dialog" aria-modal="true" aria-label="New hire form">
   <div id="hire-modal">
-    <button class="hire-modal-close" data-action="closeHireModal">
+    <button class="hire-modal-close" onclick="closeHireModal()">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
     <div class="hire-modal-title">New Hire Information</div>
@@ -1398,21 +1389,21 @@
     <!-- Documents Needed -->
     <div class="hire-form-section">
       <div class="hire-form-section-title">Documents Required</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px" id="hf-docs-checklist">
-        <label class="u-flex-row u-gap-8 u-fs-12 u-text"><input type="checkbox" checked id="hf-doc-contract"/> Employment Contract</label>
-        <label class="u-flex-row u-gap-8 u-fs-12 u-text"><input type="checkbox" id="hf-doc-id"/> Valid Government ID</label>
-        <label class="u-flex-row u-gap-8 u-fs-12 u-text"><input type="checkbox" id="hf-doc-biodata"/> Biodata / Resume</label>
-        <label class="u-flex-row u-gap-8 u-fs-12 u-text"><input type="checkbox" id="hf-doc-sss"/> SSS Number</label>
-        <label class="u-flex-row u-gap-8 u-fs-12 u-text"><input type="checkbox" id="hf-doc-philhealth"/> PhilHealth Number</label>
-        <label class="u-flex-row u-gap-8 u-fs-12 u-text"><input type="checkbox" id="hf-doc-pagibig"/> Pag-IBIG Number</label>
-        <label class="u-flex-row u-gap-8 u-fs-12 u-text"><input type="checkbox" id="hf-doc-tin"/> TIN Number</label>
-        <label class="u-flex-row u-gap-8 u-fs-12 u-text"><input type="checkbox" id="hf-doc-nbi"/> NBI / Police Clearance</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;" id="hf-docs-checklist">
+        <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text);cursor:pointer;"><input type="checkbox" checked id="hf-doc-contract"/> Employment Contract</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text);cursor:pointer;"><input type="checkbox" id="hf-doc-id"/> Valid Government ID</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text);cursor:pointer;"><input type="checkbox" id="hf-doc-biodata"/> Biodata / Resume</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text);cursor:pointer;"><input type="checkbox" id="hf-doc-sss"/> SSS Number</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text);cursor:pointer;"><input type="checkbox" id="hf-doc-philhealth"/> PhilHealth Number</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text);cursor:pointer;"><input type="checkbox" id="hf-doc-pagibig"/> Pag-IBIG Number</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text);cursor:pointer;"><input type="checkbox" id="hf-doc-tin"/> TIN Number</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text);cursor:pointer;"><input type="checkbox" id="hf-doc-nbi"/> NBI / Police Clearance</label>
       </div>
     </div>
 
     <div class="hire-modal-actions">
-      <button class="hire-btn-cancel" data-action="closeHireModal">Cancel</button>
-      <button class="hire-btn-save" data-action="saveNewHire">
+      <button class="hire-btn-cancel" onclick="closeHireModal()">Cancel</button>
+      <button class="hire-btn-save" onclick="saveNewHire()">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
         Save & Start Onboarding
       </button>
@@ -1423,11 +1414,11 @@
 <!-- ════════════════════════════════════════
      EMPLOYEE DETAIL SIDE PANEL
 ════════════════════════════════════════ -->
-<div id="emp-detail-overlay" role="dialog" aria-modal="true" aria-label="Employee details" onclick="closeEmpDetail(event)">
+<div id="emp-detail-overlay" onclick="closeEmpDetail(event)">
   <div id="emp-detail-panel">
     <div class="emp-detail-topbar">
       <div class="emp-detail-title" id="emp-detail-name">Employee Details</div>
-      <button class="emp-detail-close" data-action="closeEmpDetailDirect">
+      <button class="emp-detail-close" onclick="closeEmpDetailDirect()">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
     </div>
@@ -1435,10 +1426,10 @@
       <!-- Dynamic content -->
     </div>
     <div class="emp-detail-footer">
-      <button class="emp-footer-btn" data-action="closeEmpDetailDirect">Close</button>
-      <button class="emp-footer-btn" data-action="toastEmailSent">Send Email</button>
-      <button class="emp-footer-btn" style="border-color:var(--cyan);color:var(--cyan)" data-action="openEmpEdit">✏️ Edit Employee</button>
-      <button class="emp-footer-btn primary" data-action="saveEmpDetailChanges">Save Changes</button>
+      <button class="emp-footer-btn" onclick="closeEmpDetailDirect()">Close</button>
+      <button class="emp-footer-btn" onclick="showToast('📧 Welcome email sent!')">Send Email</button>
+      <button class="emp-footer-btn" style="border-color:var(--cyan);color:var(--cyan);" onclick="openEmpEdit(_empDetailId)">✏️ Edit Employee</button>
+      <button class="emp-footer-btn primary" onclick="saveEmpDetailChanges()">Save Changes</button>
     </div>
   </div>
 </div>
@@ -1449,9 +1440,9 @@
 
     <!-- ── Header (matches task-modal style) ── -->
     <div class="modal-title">
-      <div style="display:flex;flex-direction:column;gap:2px;min-width:0">
-        <span id="cal-modal-heading" class="u-fs-15 u-fw-700">Schedule Interview</span>
-        <div id="cal-modal-subhead" style="font-size:11px;color:var(--muted);font-weight:500">Fill in the interview details below</div>
+      <div style="display:flex;flex-direction:column;gap:2px;min-width:0;">
+        <span id="cal-modal-heading" style="font-size:15px;font-weight:700;font-family:'Syne',sans-serif;">Schedule Interview</span>
+        <div id="cal-modal-subhead" style="font-size:11px;color:var(--muted);font-weight:500;">Fill in the interview details below</div>
       </div>
       <button class="modal-close" id="cal-modal-close-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
@@ -1461,13 +1452,13 @@
 
       <!-- Calendar selector -->
       <div class="cal-form-group">
-        <label class="cal-form-label" class="u-flex-row u-gap-6">
+        <label class="cal-form-label" style="display:flex;align-items:center;gap:6px;">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
           Calendar
-          <span id="cal-selector-color-dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#44D7E9;margin-left:2px;transition:background .2s"></span>
+          <span id="cal-selector-color-dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#44D7E9;margin-left:2px;transition:background .2s;"></span>
         </label>
         <select class="cal-form-select" id="cal-f-calendar" onchange="updateCalSelectorDot()"></select>
-        <div id="cal-selector-meta" style="font-size:11px;color:var(--muted);margin-top:4px"></div>
+        <div id="cal-selector-meta" style="font-size:11px;color:var(--muted);margin-top:4px;"></div>
       </div>
 
       <!-- Applicant + Position row -->
@@ -1504,43 +1495,43 @@
 
       <!-- Meeting Link -->
       <div class="cal-form-group" id="meeting-link-group">
-        <label class="cal-form-label" class="u-flex-row u-gap-6">
+        <label class="cal-form-label" style="display:flex;align-items:center;gap:6px;">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M15 10l4.553-2.069A1 1 0 0 1 21 8.845v6.31a1 1 0 0 1-1.447.914L15 14"/><rect x="1" y="6" width="15" height="12" rx="2"/></svg>
           Meeting Link
         </label>
         <div class="meeting-platform-row" id="meeting-platform-row">
-          <button type="button" class="meeting-platform-btn active" data-platform="meet" data-action="setMeetingPlatform" data-arg="meet">
+          <button type="button" class="meeting-platform-btn active" data-platform="meet" onclick="setMeetingPlatform('meet',this)">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M15 10l4.553-2.069A1 1 0 0 1 21 8.845v6.31a1 1 0 0 1-1.447.914L15 14"/><rect x="1" y="6" width="15" height="12" rx="2"/></svg>
             Google Meet
           </button>
-          <button type="button" class="meeting-platform-btn" data-platform="zoom" data-action="setMeetingPlatform" data-arg="zoom">
+          <button type="button" class="meeting-platform-btn" data-platform="zoom" onclick="setMeetingPlatform('zoom',this)">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M15 10l4 2-4 2V10z"/><rect x="4" y="9" width="11" height="6" rx="1"/></svg>
             Zoom
           </button>
-          <button type="button" class="meeting-platform-btn" data-platform="custom" data-action="setMeetingPlatform" data-arg="custom">
+          <button type="button" class="meeting-platform-btn" data-platform="custom" onclick="setMeetingPlatform('custom',this)">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
             Custom
           </button>
         </div>
         <div class="meeting-actions-row" id="meeting-actions-row">
-          <button type="button" class="meeting-action-btn" id="btn-gen-link" data-action="generateMeetingLink">
+          <button type="button" class="meeting-action-btn" id="btn-gen-link" onclick="generateMeetingLink()">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
             Generate link
           </button>
-          <button type="button" class="meeting-action-btn" id="btn-open-link" data-action="openMeetingPlatform" style="display:none">
+          <button type="button" class="meeting-action-btn" id="btn-open-link" onclick="openMeetingPlatform()" style="display:none;">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
             Open platform
           </button>
         </div>
-        <input type="url" class="cal-form-input" id="cal-f-meeting-link" placeholder="https://meet.google.com/xxx-xxxx-xxx" class="u-mt-8"/>
-        <div id="meeting-link-preview" style="display:none;margin-top:6px">
+        <input type="url" class="cal-form-input" id="cal-f-meeting-link" placeholder="https://meet.google.com/xxx-xxxx-xxx" style="margin-top:8px;"/>
+        <div id="meeting-link-preview" style="display:none;margin-top:6px;">
           <a id="meeting-link-anchor" href="#" target="_blank" rel="noopener noreferrer"
-            style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:10px;background:rgba(68,215,233,.1);color:var(--cyan);font-size:12px;font-weight:700;text-decoration:none;border:1px solid rgba(68,215,233,.25);transition:background .15s">
+            style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:10px;background:rgba(68,215,233,.1);color:var(--cyan);font-size:12px;font-weight:700;font-family:'Montserrat',sans-serif;text-decoration:none;border:1px solid rgba(68,215,233,.25);transition:background .15s;">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M15 10l4.553-2.069A1 1 0 0 1 21 8.845v6.31a1 1 0 0 1-1.447.914L15 14"/><rect x="1" y="6" width="15" height="12" rx="2"/></svg>
             Join Meeting
           </a>
         </div>
-        <div id="meeting-link-note" style="font-size:11px;color:var(--muted);margin-top:5px;line-height:1.5"></div>
+        <div id="meeting-link-note" style="font-size:11px;color:var(--muted);margin-top:5px;line-height:1.5;"></div>
       </div>
 
       <!-- Interviewer -->
@@ -1550,17 +1541,17 @@
       <div class="cal-form-group"><label class="cal-form-label">Notes</label><textarea class="cal-form-textarea" id="cal-f-notes" placeholder="Any additional notes…"></textarea></div>
 
       <!-- GCal Sync toggle -->
-      <div class="cal-form-group" style="display:flex;align-items:center;gap:10px;padding-bottom:4px">
+      <div class="cal-form-group" style="display:flex;align-items:center;gap:10px;padding-bottom:4px;">
         <label class="toggle-switch"><input type="checkbox" id="cal-f-notify" checked/><span class="toggle-slider"></span></label>
-        <span style="font-size:12px;color:var(--muted);font-weight:500">Sync to Google Calendar (requires OAuth)</span>
+        <span style="font-size:12px;color:var(--muted);font-weight:500;">Sync to Google Calendar (requires OAuth)</span>
       </div>
 
     </div><!-- /cal-modal-body -->
 
     <!-- ── Sticky Footer (matches task-modal) ── -->
     <div class="cal-modal-footer">
-      <button class="cal-btn-delete" id="cal-btn-delete" style="display:none">Delete</button>
-      <div style="display:flex;gap:8px;margin-left:auto">
+      <button class="cal-btn-delete" id="cal-btn-delete" style="display:none;">Delete</button>
+      <div style="display:flex;gap:8px;margin-left:auto;">
         <button class="btn-cancel" id="cal-modal-cancel-btn">Cancel</button>
         <button class="btn-primary" id="cal-btn-save">Save Interview</button>
       </div>
@@ -1589,29 +1580,29 @@
 <!-- ════════════════════════════════════════
      INTERVIEW REMINDER BANNER
 ════════════════════════════════════════ -->
-<div id="reminder-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9998;background:var(--surface-1);border-bottom:2px solid var(--cyan);box-shadow:0 4px 24px rgba(0,0,0,.18);padding:10px 20px;animation:reminderSlideDown .4s ease">
-  <div style="display:flex;align-items:center;gap:14px;max-width:900px;margin:0 auto">
-    <div id="reminder-icon-wrap" style="width:38px;height:38px;border-radius:10px;background:rgba(68,215,233,.15);border:1.5px solid rgba(68,215,233,.3);display:flex;align-items:center;justify-content:center;color:#44d7e9;flex-shrink:0">
+<div id="reminder-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9998;background:var(--surface-1);border-bottom:2px solid var(--cyan);box-shadow:0 4px 24px rgba(0,0,0,.18);padding:10px 20px;animation:reminderSlideDown .4s ease;">
+  <div style="display:flex;align-items:center;gap:14px;max-width:900px;margin:0 auto;">
+    <div id="reminder-icon-wrap" style="width:38px;height:38px;border-radius:10px;background:rgba(68,215,233,.15);border:1.5px solid rgba(68,215,233,.3);display:flex;align-items:center;justify-content:center;color:#44d7e9;flex-shrink:0;">
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
     </div>
-    <div class="u-flex-1">
-      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-        <span id="reminder-name" style="font-size:13px;font-weight:700;color:var(--text)"></span>
-        <span id="reminder-countdown" style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:6px"></span>
+    <div style="flex:1;min-width:0;">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <span id="reminder-name" style="font-size:13px;font-weight:700;font-family:'Syne',sans-serif;color:var(--text);"></span>
+        <span id="reminder-countdown" style="font-size:11px;font-weight:700;font-family:'Montserrat',sans-serif;padding:3px 10px;border-radius:6px;"></span>
       </div>
-      <div style="display:flex;align-items:center;gap:8px;margin-top:2px;flex-wrap:wrap">
-        <span id="reminder-time-str" style="font-size:12px;color:var(--muted);font-weight:600"></span>
-        <span id="reminder-position" style="font-size:11px;color:var(--light);font-weight:500"></span>
-        <span id="reminder-type-str" style="font-size:11px;color:var(--light)"></span>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:2px;flex-wrap:wrap;">
+        <span id="reminder-time-str" style="font-size:12px;color:var(--muted);font-weight:600;"></span>
+        <span id="reminder-position" style="font-size:11px;color:var(--light);font-weight:500;"></span>
+        <span id="reminder-type-str" style="font-size:11px;color:var(--light);"></span>
       </div>
     </div>
-    <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
-      <a id="reminder-join-btn" href="#" target="_blank" rel="noopener noreferrer" style="display:none;align-items:center;gap:5px;padding:7px 14px;border-radius:9px;background:var(--cyan);color:#fff;font-size:11px;font-weight:700;text-decoration:none;transition:background .15s">
+    <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+      <a id="reminder-join-btn" href="#" target="_blank" rel="noopener noreferrer" style="display:none;align-items:center;gap:5px;padding:7px 14px;border-radius:9px;background:var(--cyan);color:#fff;font-size:11px;font-weight:700;font-family:'Montserrat',sans-serif;text-decoration:none;transition:background .15s;">
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M15 10l4.553-2.069A1 1 0 0 1 21 8.845v6.31a1 1 0 0 1-1.447.914L15 14"/><rect x="1" y="6" width="15" height="12" rx="2"/></svg>
         Join
       </a>
-      <button data-action="reminderViewEvent" style="padding:7px 12px;border-radius:9px;border:1.5px solid var(--border);background:var(--surface-2);font-size:11px;font-weight:700;color:var(--muted);cursor:pointer">View</button>
-      <button data-action="dismissReminder" style="width:28px;height:28px;border-radius:7px;border:1.5px solid var(--border);background:var(--surface-2);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--muted)">
+      <button onclick="reminderViewEvent()" style="padding:7px 12px;border-radius:9px;border:1.5px solid var(--border);background:var(--surface-2);font-size:11px;font-weight:700;font-family:'Montserrat',sans-serif;color:var(--muted);cursor:pointer;">View</button>
+      <button onclick="dismissReminder()" style="width:28px;height:28px;border-radius:7px;border:1.5px solid var(--border);background:var(--surface-2);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--muted);">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
     </div>
@@ -1623,57 +1614,18 @@
 <div class="toast" id="toast"></div>
 
 <!-- Custom Dialog (replaces all alert/confirm calls) -->
-<div id="upstaff-dialog" style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.55);backdrop-filter:blur(3px);align-items:center;justify-content:center">
-  <div id="upstaff-dialog-box" style="background:var(--surface-1);border:1px solid var(--border);border-radius:14px;padding:28px 28px 22px;min-width:320px;max-width:460px;width:90%;box-shadow:0 8px 40px rgba(0,0,0,.3);font-family:inherit">
-    <div id="upstaff-dialog-icon" style="font-size:28px;margin-bottom:10px"></div>
-    <div id="upstaff-dialog-title" style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:8px"></div>
-    <div id="upstaff-dialog-msg" style="font-size:13.5px;color:var(--light);line-height:1.55;margin-bottom:22px"></div>
-    <div style="display:flex;gap:10px;justify-content:flex-end">
-      <button id="upstaff-dialog-cancel" style="display:none;padding:8px 18px;border-radius:8px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);font-size:13px;font-weight:600;cursor:pointer">Cancel</button>
-      <button id="upstaff-dialog-ok" style="padding:8px 20px;border-radius:8px;border:none;background:var(--cyan);color:#fff;font-size:13px;font-weight:700;cursor:pointer">OK</button>
+<div id="upstaff-dialog" style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.55);backdrop-filter:blur(3px);align-items:center;justify-content:center;">
+  <div id="upstaff-dialog-box" style="background:var(--surface-1);border:1px solid var(--border);border-radius:14px;padding:28px 28px 22px;min-width:320px;max-width:460px;width:90%;box-shadow:0 8px 40px rgba(0,0,0,.3);font-family:var(--font);">
+    <div id="upstaff-dialog-icon" style="font-size:28px;margin-bottom:10px;"></div>
+    <div id="upstaff-dialog-title" style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:8px;"></div>
+    <div id="upstaff-dialog-msg" style="font-size:13.5px;color:var(--light);line-height:1.55;margin-bottom:22px;"></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button id="upstaff-dialog-cancel" style="display:none;padding:8px 18px;border-radius:8px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);font-size:13px;font-weight:600;cursor:pointer;">Cancel</button>
+      <button id="upstaff-dialog-ok" style="padding:8px 20px;border-radius:8px;border:none;background:var(--cyan);color:#fff;font-size:13px;font-weight:700;cursor:pointer;">OK</button>
     </div>
   </div>
 </div>
 
-<script src="pm-ui-core.js"></script>
-<script src="pm-ui-views.js"></script>
-<script src="pm-ui-gcal.js"></script>
-```
-
-<script>
-/* ══ MOBILE SIDEBAR TOGGLE ══ */
-(function() {
-  const btn      = document.getElementById('mobile-menu-btn');
-  const sidebar  = document.getElementById('sidebar');
-  const backdrop = document.getElementById('sidebar-backdrop');
-  if (!btn || !sidebar || !backdrop) return;
-
-  function openSidebar() {
-    sidebar.classList.add('mobile-open');
-    backdrop.classList.add('visible');
-    document.body.style.overflow = 'hidden';
-  }
-  function closeSidebar() {
-    sidebar.classList.remove('mobile-open');
-    backdrop.classList.remove('visible');
-    document.body.style.overflow = '';
-  }
-
-  btn.addEventListener('click', openSidebar);
-  backdrop.addEventListener('click', closeSidebar);
-
-  // Close sidebar when a nav item is tapped on mobile
-  sidebar.querySelectorAll('.nav-item').forEach(function(item) {
-    item.addEventListener('click', function() {
-      if (window.innerWidth <= 768) closeSidebar();
-    });
-  });
-
-  // Close on resize back to desktop
-  window.addEventListener('resize', function() {
-    if (window.innerWidth > 768) closeSidebar();
-  });
-})();
-</script>
+<script src="pm-ui.js"></script>
 </body>
 </html>
