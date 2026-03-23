@@ -46,7 +46,7 @@ async function _gcalWithRetry(fn, maxRetries = 3) {
       // Don't retry auth errors
       if (status === 401 || status === 403) {
         gcalSignedIn = false;
-        localStorage.removeItem(LS_KEYS.GCAL_AUTH);
+        localStorage.removeItem(getUserGcalAuthKey());
         showCalToast("⚠️ Google Calendar session expired — please reconnect.");
         throw err;
       }
@@ -107,7 +107,7 @@ function gcalInit() {
     callback: (tokenResponse) => {
       if (tokenResponse && tokenResponse.access_token) {
         gcalSignedIn = true;
-        localStorage.setItem(LS_KEYS.GCAL_AUTH, "1");
+        localStorage.setItem(getUserGcalAuthKey(), "1");
         // Step 1: wait for gapi.client.calendar to be ready (resolves instantly if already loaded)
         // Step 2: discover all user calendars → Step 3: fetch events from each
         (window._gapiReadyPromise || Promise.resolve())
@@ -127,7 +127,7 @@ function gcalInit() {
           updateSyncBtnState("Sync Google Cal", false);
           showPopupBlockedBanner();
         } else if (_gcalErr === "access_denied") {
-          localStorage.removeItem(LS_KEYS.GCAL_AUTH);
+          localStorage.removeItem(getUserGcalAuthKey());
           updateSyncBtnState("Sync Google Cal", false);
           showCalToast("\u26a0\ufe0f Google Calendar access was denied.");
         } else if (_gcalErr !== "user_cancelled") {
@@ -162,7 +162,7 @@ function gcalInit() {
       // If the user previously granted access, try refreshing the token
       // silently (no popup). This re-fetches Google events after a reload.
       const wasPreviouslySignedIn =
-        localStorage.getItem(LS_KEYS.GCAL_AUTH) === "1";
+        localStorage.getItem(getUserGcalAuthKey()) === "1";
       if (wasPreviouslySignedIn) {
         dbg("[GCal] 🔄 Attempting silent token refresh…");
         updateSyncBtnState("Reconnecting…");
@@ -297,7 +297,7 @@ async function gcalFetchCalendarList() {
       syncEnabled: true,
     }));
 
-    localStorage.setItem(LS_KEYS.CALENDARS, JSON.stringify(UPSTAFF_CALENDARS));
+    localStorage.setItem(getUserCalendarsKey(), JSON.stringify(UPSTAFF_CALENDARS));
     dbg(
       `[GCal] 📋 Discovered ${UPSTAFF_CALENDARS.length} calendar(s):`,
       UPSTAFF_CALENDARS.map((c) => c.icon + " " + c.calendarName).join(", "),
@@ -353,7 +353,7 @@ async function gcalCreateCalendar(name, description, calendarType) {
       Holiday: "🎉",
     };
     entry.icon = typeIcons[calendarType] || "📋";
-    localStorage.setItem(LS_KEYS.CALENDARS, JSON.stringify(UPSTAFF_CALENDARS));
+    localStorage.setItem(getUserCalendarsKey(), JSON.stringify(UPSTAFF_CALENDARS));
   }
 
   return newCalId;
@@ -475,7 +475,7 @@ async function handleDeleteCalendar(calendarId, calendarName, btnEl) {
     calEvents = calEvents.filter(
       (e) => (e.calendarId || e.sourceCalendar) !== calendarId,
     );
-    localStorage.setItem(LS_KEYS.CALENDARS, JSON.stringify(UPSTAFF_CALENDARS));
+    localStorage.setItem(getUserCalendarsKey(), JSON.stringify(UPSTAFF_CALENDARS));
     persistSave();
 
     populateCalendarSelectors();
@@ -567,7 +567,7 @@ async function gcalFetchAllCalendars() {
 
     gcalInjectEvents(allEvents);
 
-    localStorage.setItem(LS_KEYS.GCAL_COUNT, String(totalCount));
+    localStorage.setItem(getUserGcalCountKey(), String(totalCount));
 
     const calCount = calendarsToSync.length;
     updateSyncBtnState(`Synced (${totalCount})`);
@@ -588,7 +588,7 @@ async function gcalFetchAllCalendars() {
     );
     gcalSignedIn = false;
     if (err?.status === 401 || err?.result?.error?.code === 401) {
-      localStorage.removeItem(LS_KEYS.GCAL_AUTH);
+      localStorage.removeItem(getUserGcalAuthKey());
       console.warn(
         "[GCal] Token expired — cleared auth flag. User must re-authorise.",
       );
@@ -1266,8 +1266,8 @@ function reminderViewEvent() {
 ────────────────────────────────────────────── */
 window.addEventListener("load", () => {
   // Restore Google Calendar sync badge UI if user was previously synced
-  const lastCount = localStorage.getItem(LS_KEYS.GCAL_COUNT);
-  const wasSignedIn = localStorage.getItem(LS_KEYS.GCAL_AUTH) === "1";
+  const lastCount = localStorage.getItem(getUserGcalCountKey());
+  const wasSignedIn = localStorage.getItem(getUserGcalAuthKey()) === "1";
   if (wasSignedIn && lastCount) {
     updateSyncBtnState(`Last synced (${lastCount})`);
     document.getElementById("gcal-status-badge").style.display = "flex";

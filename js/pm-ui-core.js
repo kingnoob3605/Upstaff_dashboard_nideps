@@ -305,6 +305,85 @@ function saveCandidates() {
 /* ── Drag state ── */
 let _dragTaskId = null;
 
+/* ── Bulk selection state ── */
+let selectedTaskIds = new Set();
+
+function _updateBulkToolbar() {
+  const tb = document.getElementById("bulk-toolbar");
+  const label = document.getElementById("bulk-count-label");
+  if (!tb) return;
+  if (selectedTaskIds.size > 0) {
+    tb.style.display = "flex";
+    if (label) label.textContent = `${selectedTaskIds.size} selected`;
+  } else {
+    tb.style.display = "none";
+  }
+}
+
+function toggleBulkSelect(taskId, checkboxEl) {
+  if (selectedTaskIds.has(taskId)) {
+    selectedTaskIds.delete(taskId);
+    if (checkboxEl) checkboxEl.checked = false;
+  } else {
+    selectedTaskIds.add(taskId);
+    if (checkboxEl) checkboxEl.checked = true;
+  }
+  _updateBulkToolbar();
+}
+
+function clearBulkSelection() {
+  selectedTaskIds.clear();
+  _updateBulkToolbar();
+  refreshCurrentView();
+}
+
+async function bulkAdvanceStage() {
+  if (!selectedTaskIds.size) return;
+  const ids = [...selectedTaskIds];
+  const confirmed = await uiConfirm(
+    `Advance ${ids.length} applicant(s) to their next pipeline stage?`,
+    { icon: "⏩", title: "Advance Stage", okText: "Advance" }
+  );
+  if (!confirmed) return;
+  ids.forEach((id) => {
+    const t = TASKS.find((x) => x.id === id);
+    if (!t) return;
+    const next = getNextStage(t.status);
+    if (next) moveApplicantToStage(id, next, { silent: true });
+  });
+  selectedTaskIds.clear();
+  refreshCurrentView();
+  _updateBulkToolbar();
+  showToast(`✅ ${ids.length} applicant(s) advanced.`);
+}
+
+async function bulkReject() {
+  if (!selectedTaskIds.size) return;
+  const ids = [...selectedTaskIds].filter((id) => {
+    const t = TASKS.find((x) => x.id === id);
+    return t && !TERMINAL_STAGES.includes(t.status);
+  });
+  if (!ids.length) { showToast("No eligible applicants to reject."); return; }
+  const reason = await _pickRejectionReason();
+  if (reason === null) return;
+  const confirmed = await uiConfirm(
+    `Reject ${ids.length} applicant(s)? Reason: "${reason}". They will be archived.`,
+    { icon: "🚫", title: "Bulk Reject", okText: "Reject All", okDanger: true }
+  );
+  if (!confirmed) return;
+  ids.forEach((id) => {
+    const t = TASKS.find((x) => x.id === id);
+    if (t) {
+      t.rejection_reason = reason;
+      moveApplicantToStage(id, "Rejected", { silent: true });
+    }
+  });
+  selectedTaskIds.clear();
+  refreshCurrentView();
+  _updateBulkToolbar();
+  showToast(`🚫 ${ids.length} applicant(s) rejected.`);
+}
+
 /* ── Seed task data ── */
 const _SEED_TASKS_UNUSED_REMOVED = [
   {
@@ -583,6 +662,20 @@ const LS_KEYS = {
   CALENDARS: "upstaff_calendars",
 };
 
+/* ── Active user email — used to scope per-user gcal data ── */
+function getActiveUserEmail() {
+  try {
+    const p = JSON.parse(localStorage.getItem("upstaff_profile") || "{}");
+    return (p.email || "default").toLowerCase().replace(/[^a-z0-9@._-]/g, "_");
+  } catch (_) {
+    return "default";
+  }
+}
+/* Per-user localStorage key helpers — each user's gcal data is isolated */
+function getUserGcalAuthKey()  { return `upstaff_gcal_signed_${getActiveUserEmail()}`; }
+function getUserCalendarsKey() { return `upstaff_calendars_${getActiveUserEmail()}`; }
+function getUserGcalCountKey() { return `upstaff_gcal_count_${getActiveUserEmail()}`; }
+
 /* ── Save to localStorage ───────────────────── */
 function persistSave() {
   try {
@@ -594,7 +687,7 @@ function persistSave() {
     localStorage.setItem(LS_KEYS.TASK_ID, String(taskNextId));
     if (UPSTAFF_CALENDARS.length)
       localStorage.setItem(
-        LS_KEYS.CALENDARS,
+        getUserCalendarsKey(),
         JSON.stringify(UPSTAFF_CALENDARS),
       );
     dbg(
@@ -616,7 +709,7 @@ function persistLoad() {
     const rawTasks = localStorage.getItem(LS_KEYS.TASKS);
     const rawCalId = localStorage.getItem(LS_KEYS.CAL_ID);
     const rawTaskId = localStorage.getItem(LS_KEYS.TASK_ID);
-    const rawCals = localStorage.getItem(LS_KEYS.CALENDARS);
+    const rawCals = localStorage.getItem(getUserCalendarsKey());
 
     try {
       if (rawCal) calEvents = JSON.parse(rawCal);
@@ -637,6 +730,7 @@ function persistLoad() {
       if (!t.comments) t.comments = [];
       if (!t.activity) t.activity = [];
       if (!t.attachments) t.attachments = [];
+      if (!t.stage_history) t.stage_history = [];
     });
 
     dbg(
@@ -654,8 +748,8 @@ function persistClearCalendar() {
   try {
     localStorage.removeItem(LS_KEYS.CAL);
     localStorage.removeItem(LS_KEYS.CAL_ID);
-    localStorage.removeItem(LS_KEYS.GCAL_COUNT);
-    localStorage.removeItem(LS_KEYS.CALENDARS);
+    localStorage.removeItem(getUserGcalCountKey());
+    localStorage.removeItem(getUserCalendarsKey());
   } catch (e) {
     console.warn("[Persist] ⚠️ Could not clear calendar storage:", e);
   }
@@ -665,6 +759,10 @@ function persistClearCalendar() {
 /* ── Wipe everything from localStorage ──────── */
 function persistClearAll() {
   Object.values(LS_KEYS).forEach((k) => localStorage.removeItem(k));
+  // Also wipe user-scoped gcal keys for the current user
+  localStorage.removeItem(getUserGcalAuthKey());
+  localStorage.removeItem(getUserCalendarsKey());
+  localStorage.removeItem(getUserGcalCountKey());
 }
 
 /* ── Hydrate on script parse (before first render) ── */
@@ -755,6 +853,16 @@ function moveApplicantToStage(taskId, newStage, opts = {}) {
   const t = TASKS.find((x) => x.id === taskId);
   if (!t) return;
   const oldStage = t.status;
+
+  // Stage history audit log
+  if (!t.stage_history) t.stage_history = [];
+  let _histBy = "HR Admin";
+  try {
+    const _p = JSON.parse(localStorage.getItem("upstaff_profile") || "{}");
+    if (_p.firstName) _histBy = (_p.firstName + " " + (_p.lastName || "")).trim();
+  } catch (_) {}
+  t.stage_history.push({ from: oldStage, to: newStage, at: new Date().toISOString(), by: _histBy });
+
   t.status = newStage;
   t.stage_changed_at = new Date().toISOString();
 
@@ -798,7 +906,7 @@ function moveApplicantToStage(taskId, newStage, opts = {}) {
   logActivity(taskId, "stage_change", `${oldStage} → ${newStage}`);
   pushNotif("stage", `${t.applicant_name || t.name} moved to ${newStage}`, taskId);
   persistSave();
-  refreshCurrentView();
+  if (!opts.silent) refreshCurrentView();
   dbg(`[Pipeline] Task #${taskId} "${t.name}": ${oldStage} → ${newStage}`);
 }
 
@@ -826,8 +934,10 @@ async function hireApplicant(taskId) {
 }
 
 async function rejectApplicant(taskId) {
+  const reason = await _pickRejectionReason();
+  if (reason === null) return;
   if (
-    !(await uiConfirm("They will be archived.", {
+    !(await uiConfirm(`Reason: "${reason}". They will be archived.`, {
       icon: "🚫",
       title: "Reject Applicant?",
       okText: "Reject",
@@ -835,6 +945,8 @@ async function rejectApplicant(taskId) {
     }))
   )
     return;
+  const t = TASKS.find((x) => x.id === taskId);
+  if (t) t.rejection_reason = reason;
   moveApplicantToStage(taskId, "Rejected");
 }
 
@@ -1083,6 +1195,56 @@ function uiConfirm(
   { icon = "❓", title = "Confirm", okText = "Confirm", okDanger = false } = {},
 ) {
   return _showDialog({ icon, title, msg, okText, okDanger, showCancel: true });
+}
+
+/* ── Rejection Reason Picker ─────────────────── */
+const REJECTION_REASONS = [
+  "Failed Assessment",
+  "Salary Mismatch",
+  "No-show",
+  "Overqualified",
+  "Position Closed",
+  "Other",
+];
+
+function _pickRejectionReason() {
+  return new Promise((resolve) => {
+    const overlay = document.createElement("div");
+    overlay.style.cssText = "position:fixed;inset:0;z-index:99998;background:rgba(0,0,0,.55);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;";
+    overlay.innerHTML = `
+      <div style="background:var(--surface-1);border:1px solid var(--border);border-radius:14px;padding:24px 24px 20px;min-width:320px;max-width:420px;width:90%;box-shadow:0 8px 40px rgba(0,0,0,.3);font-family:'Montserrat',sans-serif;">
+        <div style="font-size:22px;margin-bottom:8px;">🚫</div>
+        <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px;">Rejection Reason</div>
+        <div style="font-size:12.5px;color:var(--muted);margin-bottom:16px;line-height:1.5;">Select a reason before archiving this applicant.</div>
+        <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:18px;">
+          ${REJECTION_REASONS.map((r) =>
+            `<button class="rr-option" data-reason="${r}" style="text-align:left;padding:9px 14px;border-radius:9px;border:1px solid var(--border);background:var(--surface-3);color:var(--text);font-size:12.5px;font-weight:500;cursor:pointer;font-family:'Montserrat',sans-serif;transition:background 0.15s,border-color 0.15s;">${r}</button>`
+          ).join("")}
+        </div>
+        <div style="display:flex;gap:10px;justify-content:flex-end;">
+          <button id="rr-cancel" style="padding:8px 18px;border-radius:8px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);font-size:13px;font-weight:600;cursor:pointer;font-family:'Montserrat',sans-serif;">Cancel</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    overlay.querySelectorAll(".rr-option").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        overlay.querySelectorAll(".rr-option").forEach((b) => {
+          b.style.background = "var(--surface-3)";
+          b.style.borderColor = "var(--border)";
+          b.style.color = "var(--text)";
+        });
+        btn.style.background = "var(--cyan)";
+        btn.style.borderColor = "var(--cyan)";
+        btn.style.color = "#fff";
+        const reason = btn.dataset.reason;
+        setTimeout(() => { document.body.removeChild(overlay); resolve(reason); }, 220);
+      });
+    });
+    overlay.querySelector("#rr-cancel").addEventListener("click", () => {
+      document.body.removeChild(overlay);
+      resolve(null);
+    });
+  });
 }
 
 /* ── Storage quota check ─────────────────────── */

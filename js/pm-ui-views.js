@@ -8,6 +8,12 @@ const PROJECT_VIEWS = ["list", "board", "calendar", "table", "mytasks"];
  * Called by the view-tab buttons and by the sidebar Calendar link.
  */
 function switchView(v) {
+  // Clear any active bulk selection when switching views
+  if (typeof selectedTaskIds !== "undefined") {
+    selectedTaskIds.clear();
+    const tb = document.getElementById("bulk-toolbar");
+    if (tb) tb.style.display = "none";
+  }
   // Show view bar, hide settings, analytics, candidates, todos
   document.getElementById("view-bar").style.display = "";
   document.getElementById("view-settings").style.display = "none";
@@ -96,7 +102,7 @@ function refreshStorageStatus() {
 
   const localCount = calEvents.filter((e) => !e.isGoogleEvent).length;
   const googleCount = calEvents.filter((e) => e.isGoogleEvent).length;
-  const wasSignedIn = localStorage.getItem(LS_KEYS.GCAL_AUTH) === "1";
+  const wasSignedIn = localStorage.getItem(getUserGcalAuthKey()) === "1";
 
   function statusRow(icon, label, value, ok = true) {
     return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:10px;background:var(--surface-3);border:1px solid var(--border);">
@@ -395,6 +401,7 @@ function renderList() {
       <div class="list-section-body">
       <table class="list-table">
         <thead><tr>
+          <th class="col-bulk"></th>
           <th class="col-name" onclick="cycleSort('name')">Applicant ${f.sort.startsWith("name") ? sortIcons[f.sort] : ""}</th>
           <th class="col-position">Position</th>
           <th class="col-recruiter">Recruiter</th>
@@ -406,7 +413,7 @@ function renderList() {
         <tbody>
           ${
             stTasks.length === 0
-              ? `<tr><td colspan="7"><div class="list-empty-state">
+              ? `<tr><td colspan="8"><div class="list-empty-state">
             <div class="list-empty-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
             <div class="list-empty-title">No matching applicants</div>
             <div class="list-empty-sub">Try adjusting your filters</div>
@@ -497,6 +504,7 @@ function renderList() {
                           : "";
                     const pc = PRIORITY_COLORS[t.priority] || "#9ca3af";
                     return `<tr class="${rowCls}" onclick="openTaskEdit(${t.id})">
+              <td class="col-bulk" onclick="event.stopPropagation();"><input type="checkbox" class="bulk-cb" ${typeof selectedTaskIds !== 'undefined' && selectedTaskIds.has(t.id) ? "checked" : ""} onchange="toggleBulkSelect(${t.id},this)"></td>
               <td><div class="task-name-cell">
                 <div class="task-check ${TERMINAL_STAGES.includes(t.status) ? "checked" : ""}" onclick="event.stopPropagation();toggleDone(${t.id})" title="Advance stage">
                   ${TERMINAL_STAGES.includes(t.status) ? `<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>` : ""}
@@ -517,6 +525,7 @@ function renderList() {
               <td class="col-intdate">${intDateHTML}</td>
               <td>
                 <span class="${statusPillClass(t.status)}">${t.status}</span>
+                ${t.rejection_reason && t.status === "Rejected" ? `<span style="display:block;margin-top:3px;font-size:9px;padding:1px 6px;border-radius:99px;background:#fee2e2;color:#ef4444;font-weight:600;font-family:'Montserrat',sans-serif;">${sanitize(t.rejection_reason)}</span>` : ""}
                 ${stageMini}
               </td>
               <td class="col-scores"><div class="list-scores-cell">${scoresHTML || `<span style="font-size:11px;color:var(--light);">—</span>`}</div></td>
@@ -561,7 +570,7 @@ function renderList() {
                   })
                   .join("")
           }
-          <tr class="add-task-row"><td colspan="7">
+          <tr class="add-task-row"><td colspan="8">
             <button class="add-task-btn" onclick="openTaskNew('${st}')">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                Add applicant in ${st}
@@ -1502,6 +1511,7 @@ function renderBoard() {
             ondragstart="boardDragStart(event,${t.id})"
             ondragend="boardDragEnd(event)"
             onclick="openTaskEdit(${t.id})">
+            <label class="bulk-cb-wrap" onclick="event.stopPropagation();"><input type="checkbox" class="bulk-cb" ${typeof selectedTaskIds !== 'undefined' && selectedTaskIds.has(t.id) ? "checked" : ""} onchange="toggleBulkSelect(${t.id},this)"></label>
             <div class="board-card-name">${sanitize(t.applicant_name || t.name)}</div>
             <div class="board-card-meta">
               <span class="board-card-pos">${sanitize(t.position)}</span>
@@ -1572,6 +1582,7 @@ function renderBoard() {
             <span class="board-card-pos">${sanitize(t.position)}</span>
             <span class="${statusPillClass(t.status)}" style="font-size:9px;">${t.status}</span>
           </div>
+          ${t.rejection_reason ? `<div style="margin-top:4px;font-size:9px;padding:2px 7px;border-radius:99px;background:#fee2e2;color:#ef4444;font-weight:600;display:inline-block;font-family:'Montserrat',sans-serif;">${sanitize(t.rejection_reason)}</div>` : ""}
         </div>`,
           )
           .join("")}
@@ -1679,11 +1690,12 @@ function _switchModalTab(tabName, btnEl) {
     const task = taskEditId ? TASKS.find((x) => x.id === taskEditId) : null;
     _updateImportBanner(task);
   }
-  // Render activity/files tabs on switch
-  if (tabName === "activity" || tabName === "files") {
+  // Render activity/files/history tabs on switch
+  if (tabName === "activity" || tabName === "files" || tabName === "history") {
     const task = taskEditId ? TASKS.find((x) => x.id === taskEditId) : null;
     if (task && tabName === "activity") renderActivityTab(task);
     if (task && tabName === "files") renderFilesTab(task);
+    if (task && tabName === "history") renderHistoryTab(task);
   }
 }
 
@@ -2487,6 +2499,17 @@ function openTaskEdit(id, goToAssessment = false) {
     }
   }
   document.getElementById("btn-task-delete").style.display = "inline-flex";
+  // Rejection reason banner
+  const rrDisplay = document.getElementById("rejection-reason-display");
+  const rrText = document.getElementById("rejection-reason-text");
+  if (rrDisplay && rrText) {
+    if (t.rejection_reason && t.status === "Rejected") {
+      rrText.textContent = t.rejection_reason;
+      rrDisplay.style.display = "block";
+    } else {
+      rrDisplay.style.display = "none";
+    }
+  }
   // Switch tab — go to Assessment tab if requested (e.g. "View Scores" action)
   _switchModalTab(goToAssessment ? "assessment" : "profile");
   document.getElementById("task-modal-overlay").classList.add("open");
@@ -3098,14 +3121,18 @@ document.getElementById("btn-task-save").addEventListener("click", async () => {
       newStatus !== existing?.status
         ? new Date().toISOString()
         : existing?.stage_changed_at,
-    // Preserve activity, comments, attachments
+    // Preserve activity, comments, attachments, and new fields
     comments: existing?.comments || [],
     activity: existing?.activity || [],
     attachments: existing?.attachments || [],
+    stage_history: existing?.stage_history || [],
+    rejection_reason: existing?.rejection_reason || "",
   };
   // Log activity for status change
   if (taskEditId && existing && newStatus !== existing.status) {
-    t.activity.push({ id: Date.now(), action: "stage_change", by: (() => { try { const p = JSON.parse(localStorage.getItem("upstaff_profile")||"{}"); return p.firstName ? (p.firstName+" "+(p.lastName||"")).trim() : "HR Admin"; } catch(_){return "HR Admin";} })(), at: new Date().toISOString(), detail: `${existing.status} → ${newStatus}` });
+    const _histByFn = () => { try { const p = JSON.parse(localStorage.getItem("upstaff_profile")||"{}"); return p.firstName ? (p.firstName+" "+(p.lastName||"")).trim() : "HR Admin"; } catch(_){return "HR Admin";} };
+    t.activity.push({ id: Date.now(), action: "stage_change", by: _histByFn(), at: new Date().toISOString(), detail: `${existing.status} → ${newStatus}` });
+    t.stage_history.push({ from: existing.status, to: newStatus, at: new Date().toISOString(), by: _histByFn() });
     pushNotif("stage", `${t.applicant_name || t.name} moved to ${newStatus}`, t.id);
   }
 
@@ -4344,7 +4371,17 @@ function renderSettingsCalendarList() {
     Primary: "🗓️",
   };
 
-  el.innerHTML = UPSTAFF_CALENDARS.map((cal) => {
+  const primaryCal = UPSTAFF_CALENDARS.find(c => c.calendarType === "Primary");
+  const connectedHeader = primaryCal
+    ? `<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;padding:8px 12px;
+           border-radius:8px;background:var(--surface-3);border:1px solid var(--border);">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2.5" stroke-linecap="round"><path d="M9 12l2 2 4-4m6 2a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>
+        <span style="font-size:11px;color:var(--muted);">Status:</span>
+        <span style="font-size:11px;font-weight:700;color:var(--cyan);">Google Calendar Connected</span>
+      </div>`
+    : "";
+
+  el.innerHTML = connectedHeader + UPSTAFF_CALENDARS.map((cal) => {
     const count = calEvents.filter(
       (e) => (e.calendarId || e.sourceCalendar) === cal.calendarId,
     ).length;
@@ -4370,8 +4407,6 @@ function renderSettingsCalendarList() {
           </span>
           <span>·</span>
           <span>${count} event${count !== 1 ? "s" : ""}</span>
-          <span>·</span>
-          <span style="font-family:monospace;font-size:10px;opacity:.6;overflow:hidden;text-overflow:ellipsis;max-width:180px;">${cal.calendarId}</span>
         </div>
       </div>
       <!-- Actions -->
@@ -5251,6 +5286,32 @@ function renderFilesTab(task) {
       <a class="file-download" href="${a.dataUrl}" download="${sanitize(a.name)}" title="Download">↓</a>
       <button class="file-delete" data-action="deleteAttachment" data-arg="${a.id}" title="Delete">🗑️</button>
     </div>`).join("") : `<div style="padding:20px;text-align:center;color:var(--muted);font-size:12px;">No files attached yet</div>`;
+}
+
+/* ── Render History (Stage Audit Log) tab ── */
+function renderHistoryTab(task) {
+  const el = document.getElementById("tab-history-timeline");
+  if (!el) return;
+  const history = task.stage_history || [];
+  if (!history.length) {
+    el.innerHTML = `<div style="padding:24px;text-align:center;color:var(--muted);font-size:12px;font-family:'Montserrat',sans-serif;">No stage transitions recorded yet.</div>`;
+    return;
+  }
+  el.innerHTML = [...history].reverse().map((entry, i) => {
+    const sm = (typeof STATUS_META !== "undefined" && STATUS_META[entry.to]) || { color: "var(--cyan)" };
+    const dateStr = new Date(entry.at).toLocaleString("en-PH", {
+      month: "short", day: "numeric", year: "numeric",
+      hour: "2-digit", minute: "2-digit"
+    });
+    return `<div class="sh-entry">
+      <div class="sh-dot" style="background:${sm.color};${i === 0 ? "box-shadow:0 0 0 3px " + sm.color + "33;" : ""}"></div>
+      <div class="sh-content">
+        <div class="sh-stage" style="color:${sm.color};">${sanitize(entry.to)}</div>
+        <div class="sh-meta">from <strong>${sanitize(entry.from)}</strong> &nbsp;·&nbsp; ${sanitize(entry.by)}</div>
+        <div class="sh-date">${dateStr}</div>
+      </div>
+    </div>`;
+  }).join("");
 }
 
 /* ── Positions render ── */

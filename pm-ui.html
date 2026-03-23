@@ -941,10 +941,19 @@
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
         Files
       </button>
+      <button class="modal-tab" data-tab="history" data-action="switchModalTab" data-arg="history">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>
+        History
+      </button>
     </div>
 
     <!-- ── TAB: PROFILE ── -->
     <div class="modal-tab-panel active" id="tab-profile">
+      <!-- Rejection reason banner (shown only for rejected applicants) -->
+      <div id="rejection-reason-display" style="display:none;margin-bottom:14px;padding:10px 14px;border-radius:10px;background:#fee2e2;border:1px solid #fca5a5;">
+        <div style="font-size:11px;font-weight:700;color:#ef4444;margin-bottom:3px;font-family:'Montserrat',sans-serif;">Rejection Reason</div>
+        <div id="rejection-reason-text" style="font-size:12.5px;color:#dc2626;font-family:'Montserrat',sans-serif;"></div>
+      </div>
       <div class="form-group">
         <label class="form-label">Full Name <span class="req">*</span></label>
         <input type="text" class="form-input" id="f-name" placeholder="e.g. Maria Santos"/>
@@ -1326,6 +1335,11 @@
       </div>
     </div>
 
+    <!-- ── TAB: HISTORY ── -->
+    <div class="modal-tab-panel" id="tab-history">
+      <div id="tab-history-timeline" class="stage-history-timeline"></div>
+    </div>
+
     <!-- Footer -->
     <div class="form-actions">
       <button class="btn-delete" id="btn-task-delete" style="display:none">Delete</button>
@@ -1669,6 +1683,14 @@
 <!-- Toast notifications -->
 <div class="cal-toast" id="cal-toast"></div>
 <div class="toast" id="toast"></div>
+
+<!-- Bulk Action Toolbar -->
+<div id="bulk-toolbar" style="display:none;position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:9000;background:var(--surface-1);border:1px solid var(--border);border-radius:14px;padding:10px 16px;box-shadow:0 8px 32px rgba(0,0,0,.25);align-items:center;gap:10px;font-family:'Montserrat',sans-serif;white-space:nowrap;">
+  <span id="bulk-count-label" style="font-size:12px;font-weight:700;color:var(--text);min-width:60px;"></span>
+  <button onclick="bulkAdvanceStage()" style="padding:7px 14px;border-radius:8px;border:none;background:var(--cyan);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:'Montserrat',sans-serif;">Advance Stage</button>
+  <button onclick="bulkReject()" style="padding:7px 14px;border-radius:8px;border:none;background:#ef4444;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:'Montserrat',sans-serif;">Reject Selected</button>
+  <button onclick="clearBulkSelection()" style="padding:7px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);font-size:12px;font-weight:600;cursor:pointer;font-family:'Montserrat',sans-serif;">Clear Selection</button>
+</div>
 
 <!-- Custom Dialog (replaces all alert/confirm calls) -->
 <div id="upstaff-dialog" style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.55);backdrop-filter:blur(3px);align-items:center;justify-content:center">
