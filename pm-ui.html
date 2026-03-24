@@ -90,6 +90,7 @@
       <span class="crumb-sep">›</span>
       <span class="crumb-current" id="crumb-current">Interview Pipeline</span>
     </div>
+    <span id="last-saved-indicator" title="Last save time"></span>
     <div class="topbar-spacer"></div>
     <button class="topbar-btn" id="topbar-filter-btn" aria-label="Filter">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="20" y2="12"/><line x1="12" y1="18" x2="20" y2="18"/></svg>
@@ -442,7 +443,7 @@
               </div>
               <button class="settings-save-btn" data-action="toastProfileSaved">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-                Save Changes
+                Save
               </button>
             </div>
             <div class="settings-card">
@@ -479,7 +480,7 @@
                   <select class="settings-select"><option selected>MM/DD/YYYY</option><option>DD/MM/YYYY</option><option>YYYY-MM-DD</option></select>
                 </div>
               </div>
-              <button class="settings-save-btn" data-action="toastWorkspaceSaved">Save Changes</button>
+              <button class="settings-save-btn" data-action="toastWorkspaceSaved">Save</button>
             </div>
             <div class="settings-card">
               <div class="settings-card-title">Default View</div>
@@ -548,7 +549,7 @@
                 <label class="toggle-switch"><input type="checkbox"/><span class="toggle-slider"></span></label>
               </div>
               <div class="u-mt-16">
-                <button class="settings-save-btn" data-action="toastNotifSaved">Save Preferences</button>
+                <button class="settings-save-btn" data-action="toastNotifSaved">Save</button>
               </div>
             </div>
           </div>
@@ -556,15 +557,33 @@
           <!-- ── Positions ── -->
           <div class="settings-panel" id="setting-positions">
             <div class="settings-card">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+              <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px">
                 <div>
-                  <div class="settings-card-title" class="u-mb-2">Job Positions</div>
-                  <div class="u-fs-12 u-light">Manage the positions available in the recruitment pipeline.</div>
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <div class="settings-card-title">Job Positions</div>
+                    <span class="position-count" id="position-count">0</span>
+                  </div>
+                  <div class="settings-card-desc" style="margin-bottom:0">Define the roles available when adding applicants to the pipeline.</div>
                 </div>
                 <button class="settings-save-btn" id="add-position-btn">
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                   Add Position
                 </button>
+              </div>
+              <!-- Inline add input -->
+              <div class="position-add-row" id="position-add-row">
+                <input type="text" class="position-add-input" id="position-add-input" placeholder="Enter new position name…" autocomplete="off" />
+                <button class="position-add-confirm" id="position-add-confirm" title="Add">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                </button>
+                <button class="position-add-cancel" id="position-add-cancel" title="Cancel">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+              </div>
+              <!-- Search -->
+              <div class="position-search-wrap">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" class="position-search" id="position-search" placeholder="Search positions…" autocomplete="off" />
               </div>
               <div id="positions-list"></div>
             </div>
@@ -913,6 +932,7 @@
 
     <!-- Tab Nav -->
     <div class="modal-tabs">
+      <div class="modal-tabs-inner">
       <button class="modal-tab active" data-tab="profile" data-action="switchModalTab" data-arg="profile">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>
         Profile
@@ -945,6 +965,7 @@
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>
         History
       </button>
+      </div>
     </div>
 
     <!-- ── TAB: PROFILE ── -->
@@ -1398,7 +1419,7 @@
     <div class="form-actions">
       <button class="btn-delete" id="btn-todo-delete" style="display:none">Delete</button>
       <button class="btn-cancel" data-action="closeTodoModal">Cancel</button>
-      <button class="btn-save" data-action="saveTodo">Save Task</button>
+      <button class="btn-save" data-action="saveTodo">Save</button>
     </div>
   </div>
 </div>
@@ -1500,7 +1521,7 @@
       <button class="emp-footer-btn" data-action="closeEmpDetailDirect">Close</button>
       <button class="emp-footer-btn" data-action="toastEmailSent">Send Email</button>
       <button class="emp-footer-btn" style="border-color:var(--cyan);color:var(--cyan)" data-action="openEmpEdit">✏️ Edit Employee</button>
-      <button class="emp-footer-btn primary" data-action="saveEmpDetailChanges">Save Changes</button>
+      <button class="emp-footer-btn primary" data-action="saveEmpDetailChanges">Save</button>
     </div>
   </div>
 </div>
@@ -1509,8 +1530,8 @@
 <div id="cal-modal-overlay" role="dialog" aria-modal="true" aria-label="Interview event">
   <div id="cal-modal">
 
-    <!-- ── Header (matches task-modal style) ── -->
-    <div class="modal-title">
+    <!-- ── Header ── -->
+    <div id="cal-modal-header">
       <div style="display:flex;flex-direction:column;gap:2px;min-width:0">
         <span id="cal-modal-heading" class="u-fs-15 u-fw-700">Schedule Interview</span>
         <div id="cal-modal-subhead" style="font-size:11px;color:var(--muted);font-weight:500">Fill in the interview details below</div>
@@ -1624,7 +1645,7 @@
       <button class="cal-btn-delete" id="cal-btn-delete" style="display:none">Delete</button>
       <div style="display:flex;gap:8px;margin-left:auto">
         <button class="btn-cancel" id="cal-modal-cancel-btn">Cancel</button>
-        <button class="btn-primary" id="cal-btn-save">Save Interview</button>
+        <button class="btn-save" id="cal-btn-save">Save Interview</button>
       </div>
     </div>
 

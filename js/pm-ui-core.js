@@ -693,12 +693,22 @@ function persistSave() {
     dbg(
       `[Persist] 💾 Saved ${localOnly.length} events, ${TASKS.length} tasks, ${UPSTAFF_CALENDARS.length} calendar(s)`,
     );
+    // Update last-saved timestamp in UI
+    const savedEl = document.getElementById("last-saved-indicator");
+    if (savedEl) savedEl.textContent = "Saved at " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
     checkStorageQuota();
   } catch (e) {
     console.warn(
       "[Persist] ⚠️ localStorage write failed (storage full or blocked):",
       e,
     );
+    if (e && (e.name === "QuotaExceededError" || e.code === 22)) {
+      showToast("⚠️ Storage is full! Export your data now to avoid losing changes.", 8000);
+    }
+    // Update last-saved indicator with error state
+    const savedEl = document.getElementById("last-saved-indicator");
+    if (savedEl) savedEl.textContent = "Save failed — storage full";
+    return;
   }
 }
 
@@ -769,15 +779,14 @@ function persistClearAll() {
 persistLoad();
 
 /* ══════════════════════════════════════════════
-   AUTO STATUS PROGRESSION
-   Checks each applicant's due date against today.
-   If the due date has passed and the task is still
-   active (not Done / Cancelled), marks it Done.
+   OVERDUE FLAG — _markOverdueTasks  (formerly autoProgressStatuses)
+   NOTE: This function does NOT change pipeline stages.
+   It only sets t._overdue = true on tasks whose due date
+   has passed. Stage advancement (Applied → Screening → …)
+   is always recruiter-driven and never happens automatically.
    Safe to call before every render — runs in O(n).
 ══════════════════════════════════════════════ */
-function autoProgressStatuses() {
-  // In the recruitment pipeline we do NOT auto-advance stages — stage progression
-  // is intentional (recruiter-driven). We only auto-flag severely overdue active tasks.
+function _markOverdueTasks() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   TASKS.forEach((t) => {
@@ -787,6 +796,8 @@ function autoProgressStatuses() {
     if (due < today) t._overdue = true;
   });
 }
+// Legacy alias so any existing call sites keep working
+function autoProgressStatuses() { _markOverdueTasks(); }
 
 /* ══════════════════════════════════════════════
    STAGE PROGRESS BAR HELPER
@@ -1418,7 +1429,12 @@ const AppState = (() => {
    Extracted from inline HTML onclick handlers
 ══════════════════════════════════════════════ */
 function handleClearTasks() {
-  if (!confirm("Delete ALL tasks? This cannot be undone.")) return;
+  const typed = prompt('This will permanently delete ALL applicants and tasks.\nType DELETE to confirm:');
+  if (typed === null) return; // cancelled
+  if (typed.trim().toUpperCase() !== "DELETE") {
+    showToast("Cancelled — you must type DELETE to confirm.");
+    return;
+  }
   TASKS = [];
   persistSave();
   refreshCurrentView();
@@ -1426,7 +1442,12 @@ function handleClearTasks() {
 }
 
 function handleClearCalendar() {
-  if (!confirm("Delete ALL calendar events? This cannot be undone.")) return;
+  const typed = prompt('This will permanently delete ALL calendar events.\nType DELETE to confirm:');
+  if (typed === null) return;
+  if (typed.trim().toUpperCase() !== "DELETE") {
+    showToast("Cancelled — you must type DELETE to confirm.");
+    return;
+  }
   calEvents = [];
   UPSTAFF_CALENDARS = [];
   remindersFired.clear();
@@ -1439,12 +1460,14 @@ function handleClearCalendar() {
 }
 
 function handleWipeStorage() {
-  if (
-    !confirm(
-      "Clear ALL saved data including Google auth? You will need to re-authorise Google Calendar.",
-    )
-  )
+  const typed = prompt(
+    "This will permanently delete ALL data — applicants, calendar events, settings, and Google auth.\nThis CANNOT be undone.\n\nType DELETE to confirm:"
+  );
+  if (typed === null) return;
+  if (typed.trim().toUpperCase() !== "DELETE") {
+    showToast("Cancelled — you must type DELETE to confirm.");
     return;
+  }
   persistClearAll();
   calEvents = [];
   TASKS = [];
@@ -1815,6 +1838,20 @@ function postComment() {
 ══════════════════════════════════════════════ */
 const MAX_FILE_SIZE_MB = 1;
 const MAX_FILES_PER_TASK = 5;
+// localStorage quota safety threshold (4.5 MB — leaves headroom for other data)
+const LS_QUOTA_SAFETY_BYTES = 4.5 * 1024 * 1024;
+
+function _getLocalStorageUsedBytes() {
+  let total = 0;
+  try {
+    for (const k in localStorage) {
+      if (Object.prototype.hasOwnProperty.call(localStorage, k)) {
+        total += (localStorage[k].length + k.length) * 2; // UTF-16 chars = 2 bytes each
+      }
+    }
+  } catch (_) {}
+  return total;
+}
 
 function handleFileAttach(input) {
   const taskId = window._editingTaskId;
@@ -1831,6 +1868,12 @@ function handleFileAttach(input) {
   files.forEach((file) => {
     if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
       showToast(`⚠️ "${file.name}" exceeds ${MAX_FILE_SIZE_MB} MB limit — skipped.`);
+      return;
+    }
+    // Pre-flight quota check: base64 encoding inflates size by ~1.37x
+    const estimatedBase64Bytes = Math.ceil(file.size * 1.37);
+    if (_getLocalStorageUsedBytes() + estimatedBase64Bytes > LS_QUOTA_SAFETY_BYTES) {
+      showToast(`⚠️ Storage nearly full — cannot attach "${file.name}". Export your data to free space.`, 7000);
       return;
     }
     const reader = new FileReader();
@@ -1864,3 +1907,82 @@ async function deleteAttachment(attachId) {
   if (typeof renderFilesTab === "function") renderFilesTab(t);
   showToast("🗑️ File deleted.");
 }
+
+/* ══════════════════════════════════════════════
+   KEYBOARD SHORTCUTS
+   Esc  → close the topmost open modal
+   Enter → save the active modal form (when focus is not in a textarea)
+══════════════════════════════════════════════ */
+document.addEventListener("keydown", function (e) {
+  // Esc: close topmost visible modal
+  if (e.key === "Escape") {
+    const modalIds = [
+      { id: "task-modal-overlay",   closeFn: "closeTaskModal" },
+      { id: "todo-modal-overlay",   closeFn: "closeTodoModal" },
+      { id: "hire-modal-overlay",   closeFn: "closeHireModal" },
+      { id: "cal-modal-overlay",    closeFn: null, btnId: "cal-modal-cancel-btn" },
+      { id: "search-modal-overlay", closeFn: null, btnId: "search-modal-close" },
+    ];
+    for (const m of modalIds) {
+      const el = document.getElementById(m.id);
+      if (el && el.classList.contains("open")) {
+        if (m.closeFn && typeof window[m.closeFn] === "function") {
+          window[m.closeFn]();
+        } else if (m.btnId) {
+          const btn = document.getElementById(m.btnId);
+          if (btn) btn.click();
+        }
+        e.preventDefault();
+        break;
+      }
+    }
+    // Also close settings panel if open
+    const settingsOverlay = document.getElementById("settings-overlay");
+    if (settingsOverlay && settingsOverlay.classList.contains("open")) {
+      settingsOverlay.classList.remove("open");
+      e.preventDefault();
+    }
+  }
+
+  // Enter: save active modal form (not when in textarea/select/input[type=text] that isn't a search)
+  if (e.key === "Enter" && !e.shiftKey) {
+    const tag = document.activeElement && document.activeElement.tagName;
+    if (tag === "TEXTAREA") return; // allow newlines in textareas
+    if (tag === "SELECT") return;   // allow select navigation
+
+    // Applicant modal save
+    const taskModal = document.getElementById("task-modal-overlay");
+    if (taskModal && taskModal.classList.contains("open")) {
+      const saveBtn = document.getElementById("btn-task-save");
+      if (saveBtn) { saveBtn.click(); e.preventDefault(); }
+      return;
+    }
+    // Todo modal save
+    const todoModal = document.getElementById("todo-modal-overlay");
+    if (todoModal && todoModal.classList.contains("open")) {
+      const saveBtn = todoModal.querySelector(".btn-save");
+      if (saveBtn) { saveBtn.click(); e.preventDefault(); }
+      return;
+    }
+  }
+});
+
+/* ══════════════════════════════════════════════
+   MULTI-TAB CONFLICT DETECTION
+   Warns the user if Upstaff is already open in
+   another browser tab to prevent data overwrites.
+══════════════════════════════════════════════ */
+(function _initTabGuard() {
+  try {
+    if (typeof BroadcastChannel === "undefined") return;
+    const _tabChannel = new BroadcastChannel("upstaff_tab_guard");
+    // Listen for other tabs announcing themselves
+    _tabChannel.onmessage = function (e) {
+      if (e.data === "tab_opened") {
+        showToast("⚠️ Upstaff is already open in another tab. Close it to avoid data conflicts.", 7000);
+      }
+    };
+    // Announce this tab to any existing ones
+    _tabChannel.postMessage("tab_opened");
+  } catch (_) {}
+})();

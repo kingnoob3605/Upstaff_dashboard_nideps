@@ -1,5 +1,35 @@
+/**
+ * pm-ui-views.js — All UI rendering for the Upstaff Dashboard.
+ *
+ * SECTION MAP (search for the tag to jump directly):
+ *  [SECTION: VIEW-SWITCH]    switchView, showSettings
+ *  [SECTION: LIST-VIEW]      renderList, renderListStatusTabs, getListFilters, pagination, sorting
+ *  [SECTION: QUICK-ADD]      quickAddApplicant, listCancelApplicant, listAdvanceStage
+ *  [SECTION: TODO-VIEW]      renderTodos, openTodoModal, saveTodo, toggleTodoDone
+ *  [SECTION: BOARD-VIEW]     renderBoard, boardDragStart, boardDragEnd, boardDrop
+ *  [SECTION: MODAL-TABS]     _switchModalTab, tab population helpers
+ *  [SECTION: MODAL-OPEN]     openTaskNew, openTaskEdit
+ *  [SECTION: MODAL-SAVE]     saveTaskForm, status transitions, hire/reject
+ *  [SECTION: INTERVIEW]      _populateInterviewScheduleTab, saveInterviewSchedule
+ *  [SECTION: REVIEW-TAB]     _populateReviewTab, _renderReviewScheduledList
+ *  [SECTION: ASSESSMENT]     _updateAssessmentPanel, sendAssessmentEmail
+ *  [SECTION: CALENDAR]       renderCalendar, renderMonth, renderWeek, renderDay, renderAgenda
+ *  [SECTION: EMPLOYEE]       openEmpDetail, saveEmpDetailChanges
+ *  [SECTION: HIRE-MODAL]     openHireModal, saveNewHire
+ *  [SECTION: ANALYTICS]      renderAnalytics, exportAnalyticsCSV
+ *  [SECTION: SETTINGS-UI]    renderSettingsCalendarList, renderSettingsMembers
+ *  [SECTION: NOTIF-UI]       renderNotifPanel
+ *  [SECTION: ACTIVITY-UI]    renderActivityTab, renderFilesTab
+ *  [SECTION: UTILITIES]      sanitize wrappers, avatarColor, initials, fmtDue, dueCls
+ *
+ * NOTE: This file is a candidate for splitting into separate ES modules.
+ * Until a build system is added, keep all utilities in this file as they
+ * are shared across all sections. Splitting requires resolving cross-section
+ * function dependencies first.
+ */
+
 /* ══════════════════════════════════════════════
-   VIEW SWITCHING  — project views + settings
+   [SECTION: VIEW-SWITCH] — project views + settings
 ══════════════════════════════════════════════ */
 const PROJECT_VIEWS = ["list", "board", "calendar", "table", "mytasks"];
 
@@ -157,8 +187,11 @@ function refreshStorageStatus() {
     const bytes = new Blob([JSON.stringify(localStorage)]).size;
     const MB = bytes / (1024 * 1024);
     const pct = Math.min(Math.round((MB / 5) * 100), 100);
-    const barColor = pct > 85 ? "#ef4444" : pct > 65 ? "#fa8231" : "var(--cyan)";
-    el.insertAdjacentHTML("afterend", `
+    const barColor =
+      pct > 85 ? "#ef4444" : pct > 65 ? "#fa8231" : "var(--cyan)";
+    el.insertAdjacentHTML(
+      "afterend",
+      `
       <div style="margin-top:12px;">
         <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px;">
           <span>Storage Usage</span>
@@ -167,7 +200,8 @@ function refreshStorageStatus() {
         <div style="height:6px;border-radius:99px;background:var(--border);overflow:hidden;">
           <div id="storage-usage-bar" style="height:100%;width:${pct}%;background:${barColor};border-radius:99px;transition:width 0.3s;"></div>
         </div>
-      </div>`);
+      </div>`,
+    );
   } catch (_) {}
 }
 
@@ -226,17 +260,14 @@ function listPageChange(dir) {
   renderList();
 }
 
+/* ══════════════════════════════════════════════
+   [SECTION: LIST-VIEW]
+══════════════════════════════════════════════ */
 function renderListStatusTabs() {
-  const allStatuses = [
-    "Applied",
-    "Screening",
-    "Assessment",
-    "Interview",
-    "Review",
-    "Hired",
-    "Rejected",
-    "Cancelled",
-  ];
+  // STATUS STRINGS — sourced from STATUS_META keys (defined in pm-ui-core.js)
+  const allStatuses = Object.keys(STATUS_META).filter(
+    (s) => !["To Do", "In Progress", "In Review", "Done"].includes(s)
+  );
   const tabsEl = document.getElementById("list-status-tabs");
   if (!tabsEl) return;
   const tabs = [
@@ -420,7 +451,8 @@ function renderList() {
           </div></td></tr>`
               : stTasks
                   .map((t) => {
-                    const _assignees = t.assignees || (t.assignee ? [t.assignee] : ["HR"]);
+                    const _assignees =
+                      t.assignees || (t.assignee ? [t.assignee] : ["HR"]);
                     const ac = avatarColor(_assignees[0] || "HR");
                     const folderTag = t.candidateFolder
                       ? `<span class="folder-tag">${t.candidateFolder === "Ready to Hire" ? "🎯" : t.candidateFolder === "Ready to Call" ? "📞" : "⭐"} ${t.candidateFolder}</span>`
@@ -504,7 +536,7 @@ function renderList() {
                           : "";
                     const pc = PRIORITY_COLORS[t.priority] || "#9ca3af";
                     return `<tr class="${rowCls}" onclick="openTaskEdit(${t.id})">
-              <td class="col-bulk" onclick="event.stopPropagation();"><input type="checkbox" class="bulk-cb" ${typeof selectedTaskIds !== 'undefined' && selectedTaskIds.has(t.id) ? "checked" : ""} onchange="toggleBulkSelect(${t.id},this)"></td>
+              <td class="col-bulk" onclick="event.stopPropagation();"><input type="checkbox" class="bulk-cb" ${typeof selectedTaskIds !== "undefined" && selectedTaskIds.has(t.id) ? "checked" : ""} onchange="toggleBulkSelect(${t.id},this)"></td>
               <td><div class="task-name-cell">
                 <div class="task-check ${TERMINAL_STAGES.includes(t.status) ? "checked" : ""}" onclick="event.stopPropagation();toggleDone(${t.id})" title="Advance stage">
                   ${TERMINAL_STAGES.includes(t.status) ? `<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>` : ""}
@@ -521,7 +553,15 @@ function renderList() {
                 </div>
               </div></td>
               <td><span style="font-size:12px;color:var(--text);font-weight:500;line-height:1.4;">${sanitize(t.position) || "—"}</span></td>
-              <td class="col-recruiter"><div class="assignee-chip">${_assignees.slice(0,3).map((a,i) => `<div class="assignee-avatar" style="background:${avatarColor(a)};margin-left:${i>0?"-6px":"0"};z-index:${3-i};" title="${sanitize(a)}">${initials(a)}</div>`).join("")}${_assignees.length > 3 ? `<span style="font-size:10px;color:var(--muted);margin-left:4px;">+${_assignees.length-3}</span>` : ""}<span style="font-size:12px;margin-left:4px;">${sanitize(_assignees[0]) || "—"}</span></div></td>
+              <td class="col-recruiter"><div class="assignee-chip">${_assignees
+                .slice(0, 3)
+                .map(
+                  (a, i) =>
+                    `<div class="assignee-avatar" style="background:${avatarColor(a)};margin-left:${i > 0 ? "-6px" : "0"};z-index:${3 - i};" title="${sanitize(a)}">${initials(a)}</div>`,
+                )
+                .join(
+                  "",
+                )}${_assignees.length > 3 ? `<span style="font-size:10px;color:var(--muted);margin-left:4px;">+${_assignees.length - 3}</span>` : ""}<span style="font-size:12px;margin-left:4px;">${sanitize(_assignees[0]) || "—"}</span></div></td>
               <td class="col-intdate">${intDateHTML}</td>
               <td>
                 <span class="${statusPillClass(t.status)}">${t.status}</span>
@@ -583,11 +623,11 @@ function renderList() {
   });
 
   if (!anySection)
-    html = `<div class="list-empty-state" style="padding:60px 20px;">
-    <div class="list-empty-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
-    <div class="list-empty-title">No applicants found</div>
-      <div class="list-empty-sub">No applicants yet — click <strong>+ Add Applicant</strong> in the top right to get started.</div>
-  </div>`;
+    html = `<div class="empty-state">
+      <div class="empty-state-icon">👥</div>
+      <div class="empty-state-title">${TASKS.length === 0 ? "No applicants yet" : "No applicants match your filters"}</div>
+      <div class="empty-state-subtitle">${TASKS.length === 0 ? 'Click <strong>+ Add Applicant</strong> in the top right to get started.' : 'Try adjusting or clearing your filters.'}</div>
+    </div>`;
 
   // Render the fully-built html into the DOM
   const _listEl = document.getElementById("list-sections");
@@ -846,7 +886,7 @@ document
   });
 
 /* ══════════════════════════════════════════════
-   TODO SYSTEM — Personal Task Manager
+   [SECTION: TODO-VIEW] — Personal Task Manager
    Persisted separately from recruitment TASKS.
 ══════════════════════════════════════════════ */
 const TODO_CAT_COLORS = {
@@ -1465,7 +1505,7 @@ function saveEmpDetailChanges() {
 /* saveNewHire patch removed — edit logic merged into original function above */
 
 /* ══════════════════════════════════════════════
-   BOARD VIEW — Drag & Drop Kanban
+   [SECTION: BOARD-VIEW] — Drag & Drop Kanban
 ══════════════════════════════════════════════ */
 function renderBoard() {
   autoProgressStatuses();
@@ -1492,7 +1532,8 @@ function renderBoard() {
           .map((t) => {
             const pc = PRIORITY_COLORS[t.priority] || "#ccc";
             const dc = dueCls(t.due);
-            const _boardAssignees = t.assignees || (t.assignee ? [t.assignee] : ["HR"]);
+            const _boardAssignees =
+              t.assignees || (t.assignee ? [t.assignee] : ["HR"]);
             const ac = avatarColor(_boardAssignees[0] || "HR");
             const nextStg = getNextStage(t.status);
             const isActive = ACTIVE_STAGES.includes(t.status);
@@ -1511,12 +1552,20 @@ function renderBoard() {
             ondragstart="boardDragStart(event,${t.id})"
             ondragend="boardDragEnd(event)"
             onclick="openTaskEdit(${t.id})">
-            <label class="bulk-cb-wrap" onclick="event.stopPropagation();"><input type="checkbox" class="bulk-cb" ${typeof selectedTaskIds !== 'undefined' && selectedTaskIds.has(t.id) ? "checked" : ""} onchange="toggleBulkSelect(${t.id},this)"></label>
+            <label class="bulk-cb-wrap" onclick="event.stopPropagation();"><input type="checkbox" class="bulk-cb" ${typeof selectedTaskIds !== "undefined" && selectedTaskIds.has(t.id) ? "checked" : ""} onchange="toggleBulkSelect(${t.id},this)"></label>
             <div class="board-card-name">${sanitize(t.applicant_name || t.name)}</div>
             <div class="board-card-meta">
               <span class="board-card-pos">${sanitize(t.position)}</span>
               <span class="priority-pill" style="background:${pc}22;color:${pc};font-size:10px;">${t.priority}</span>
-              <div style="display:flex;margin-left:auto;">${_boardAssignees.slice(0,2).map((a,i) => `<div class="assignee-avatar" style="background:${avatarColor(a)};margin-left:${i>0?"-4px":"0"};z-index:${2-i};" title="${sanitize(a)}">${initials(a)}</div>`).join("")}${_boardAssignees.length>2?`<span style="font-size:9px;color:var(--muted);margin-left:2px;">+${_boardAssignees.length-2}</span>`:""}</div>
+              <div style="display:flex;margin-left:auto;">${_boardAssignees
+                .slice(0, 2)
+                .map(
+                  (a, i) =>
+                    `<div class="assignee-avatar" style="background:${avatarColor(a)};margin-left:${i > 0 ? "-4px" : "0"};z-index:${2 - i};" title="${sanitize(a)}">${initials(a)}</div>`,
+                )
+                .join(
+                  "",
+                )}${_boardAssignees.length > 2 ? `<span style="font-size:9px;color:var(--muted);margin-left:2px;">+${_boardAssignees.length - 2}</span>` : ""}</div>
             </div>
             ${t.due ? `<div style="margin-top:4px;"><span class="due-date ${dc}" style="font-size:10px;">📅 ${fmtDue(t.due)}</span></div>` : ""}
             ${scoreTag}
@@ -1592,6 +1641,14 @@ function renderBoard() {
 
   const _boardEl = document.getElementById("board-wrap");
   if (_boardEl) {
+    if (TASKS.length === 0) {
+      _boardEl.innerHTML = `<div class="empty-state" style="width:100%;">
+        <div class="empty-state-icon">📋</div>
+        <div class="empty-state-title">No applicants yet</div>
+        <div class="empty-state-subtitle">Click <strong>+ Add Applicant</strong> in the top right to add your first candidate to the pipeline.</div>
+      </div>`;
+      return;
+    }
     _boardEl.innerHTML =
       '<div class="u-flex u-gap-12">' +
       Array(4)
@@ -1655,12 +1712,18 @@ function _setField(id, value) {
 /** Switch the applicant modal tab */
 /* ── Helper: get/set multi-assignees from checkbox list ── */
 function _getAssignees() {
-  return Array.from(document.querySelectorAll("#assignee-checkbox-list input[name='f-assignees']:checked")).map((cb) => cb.value);
+  return Array.from(
+    document.querySelectorAll(
+      "#assignee-checkbox-list input[name='f-assignees']:checked",
+    ),
+  ).map((cb) => cb.value);
 }
 function _setAssignees(arr) {
-  document.querySelectorAll("#assignee-checkbox-list input[name='f-assignees']").forEach((cb) => {
-    cb.checked = arr.includes(cb.value);
-  });
+  document
+    .querySelectorAll("#assignee-checkbox-list input[name='f-assignees']")
+    .forEach((cb) => {
+      cb.checked = arr.includes(cb.value);
+    });
   _updateAssigneeDropdownLabel();
 }
 function _updateAssigneeDropdownLabel() {
@@ -2392,7 +2455,7 @@ async function resetAssessmentAttempt() {
 }
 
 /* ══════════════════════════════════════════════
-   TASK MODAL
+   [SECTION: MODAL-OPEN] — Task/Applicant Modal
 ══════════════════════════════════════════════ */
 function openTaskNew(status = "Applied") {
   taskEditId = null;
@@ -2541,7 +2604,7 @@ function _updateReviewTab(status) {
 }
 
 /* ══════════════════════════════════════════════
-   INTERVIEW SCHEDULE TAB
+   [SECTION: INTERVIEW] — Interview Schedule Tab
 ══════════════════════════════════════════════ */
 
 /** Show the Interview tab only when stage is Interview */
@@ -2660,10 +2723,10 @@ function _renderIvSavedList(task) {
         <div class="u-text-base u-text-muted u-flex-wrap u-gap-10">
           <span>📅 ${e.date || "—"}</span>
           <span>⏰ ${startFmt}${endFmt}</span>
-          ${e.interviewer ? `<span>👤 ${e.interviewer}</span>` : ""}
+          ${e.interviewer ? `<span>👤 ${sanitize(e.interviewer)}</span>` : ""}
           ${ml ? `<a href="${ml}" target="_blank" style="color:var(--cyan);font-weight:700;">🔗 Join</a>` : ""}
         </div>
-        ${e.notes ? `<div style="font-size:11px;color:var(--light);margin-top:6px;padding-top:6px;border-top:1px solid var(--border);">${e.notes}</div>` : ""}
+        ${e.notes ? `<div style="font-size:11px;color:var(--light);margin-top:6px;padding-top:6px;border-top:1px solid var(--border);">${sanitize(e.notes)}</div>` : ""}
       </div>
     `;
     })
@@ -2767,12 +2830,11 @@ async function generateIvMeetingLink() {
       );
       return;
     }
-    // Fallback placeholder if not connected to GCal
-    const r = () => Math.random().toString(36).slice(2, 5).toLowerCase();
-    url = `https://meet.google.com/${r()}-${r()}-${r()}`;
-    showToast(
-      "⚡ Placeholder generated — connect Google Calendar to auto-create real rooms.",
-    );
+    // Can't generate a real Meet link without GCal OAuth — open meet.google.com/new
+    // so the user can create a real room and paste the link
+    window.open("https://meet.google.com/new", "_blank", "noopener");
+    showToast("📋 Copy the link from Google Meet and paste it below.");
+    return;
   }
 
   if (!url) return;
@@ -2947,7 +3009,7 @@ function _renderReviewAssessmentSummary(task) {
       return `<div class="rv-assess-row"><span class="rv-assess-label">📝 Knowledge Test</span><div style="display:flex;align-items:center;gap:6px;"><span class="rv-assess-val">${knowledge} / 100</span><span style="font-size:10px;font-weight:800;font-family:'Montserrat',sans-serif;padding:2px 8px;border-radius:99px;background:${rb};color:${rc};">${passed ? "✓ PASSED" : "✗ FAILED"}</span></div></div>`;
     })()}
     ${verbal ? `<div class="rv-assess-row"><span class="rv-assess-label">🎙️ Verbal Test</span><a href="${verbal}" target="_blank" style="color:var(--cyan);font-weight:700;font-size:12px;">View Recording</a></div>` : ""}
-    ${notes ? `<div class="rv-assess-row rv-assess-row-full"><span class="rv-assess-label">💬 Interview Notes</span><span class="rv-assess-val" style="font-weight:400;color:var(--muted);">${notes}</span></div>` : ""}
+    ${notes ? `<div class="rv-assess-row rv-assess-row-full"><span class="rv-assess-label">💬 Interview Notes</span><span class="rv-assess-val" style="font-weight:400;color:var(--muted);">${sanitize(notes)}</span></div>` : ""}
     ${!hasScores && !completed ? `<div style="font-size:12px;color:var(--light);padding:4px 0;">No scores recorded yet.</div>` : ""}
   `;
 }
@@ -2964,14 +3026,14 @@ function _renderReviewOverallSummary(task) {
   const portfolio = task.portfolio_link || "";
 
   el.innerHTML = `
-    <div class="rv-summary-row"><span class="rv-summary-label">Position</span><span class="rv-summary-val">${task.position || "—"}</span></div>
-    <div class="rv-summary-row"><span class="rv-summary-label">Stage</span><span class="rv-summary-val">${task.status || "—"}</span></div>
-    <div class="rv-summary-row"><span class="rv-summary-label">Priority</span><span class="rv-summary-val" style="color:${priorityColor};font-weight:700;">${task.priority || "—"}</span></div>
-    <div class="rv-summary-row"><span class="rv-summary-label">Assignee</span><span class="rv-summary-val">${task.assignee || "—"}</span></div>
-    <div class="rv-summary-row"><span class="rv-summary-label">Applied Date</span><span class="rv-summary-val">${task.application_date || task.start || "—"}</span></div>
-    <div class="rv-summary-row"><span class="rv-summary-label">Folder</span><span class="rv-summary-val">${task.candidateFolder || "—"}</span></div>
-    <div class="rv-summary-row"><span class="rv-summary-label">Email</span><span class="rv-summary-val">${task.applicant_email || "—"}</span></div>
-    <div class="rv-summary-row"><span class="rv-summary-label">Phone</span><span class="rv-summary-val">${task.applicant_phone || "—"}</span></div>
+    <div class="rv-summary-row"><span class="rv-summary-label">Position</span><span class="rv-summary-val">${sanitize(task.position) || "—"}</span></div>
+    <div class="rv-summary-row"><span class="rv-summary-label">Stage</span><span class="rv-summary-val">${sanitize(task.status) || "—"}</span></div>
+    <div class="rv-summary-row"><span class="rv-summary-label">Priority</span><span class="rv-summary-val" style="color:${priorityColor};font-weight:700;">${sanitize(task.priority) || "—"}</span></div>
+    <div class="rv-summary-row"><span class="rv-summary-label">Assignee</span><span class="rv-summary-val">${sanitize(task.assignee) || "—"}</span></div>
+    <div class="rv-summary-row"><span class="rv-summary-label">Applied Date</span><span class="rv-summary-val">${sanitize(task.application_date || task.start) || "—"}</span></div>
+    <div class="rv-summary-row"><span class="rv-summary-label">Folder</span><span class="rv-summary-val">${sanitize(task.candidateFolder) || "—"}</span></div>
+    <div class="rv-summary-row"><span class="rv-summary-label">Email</span><span class="rv-summary-val">${sanitize(task.applicant_email) || "—"}</span></div>
+    <div class="rv-summary-row"><span class="rv-summary-label">Phone</span><span class="rv-summary-val">${sanitize(task.applicant_phone) || "—"}</span></div>
     ${resume ? `<div class="rv-summary-row"><span class="rv-summary-label">Resume</span><a href="${resume}" target="_blank" style="color:var(--cyan);font-size:12px;font-weight:700;">View Resume</a></div>` : ""}
     ${portfolio ? `<div class="rv-summary-row"><span class="rv-summary-label">Portfolio</span><a href="${portfolio}" target="_blank" style="color:var(--cyan);font-size:12px;font-weight:700;">View Portfolio</a></div>` : ""}
   `;
@@ -3130,10 +3192,34 @@ document.getElementById("btn-task-save").addEventListener("click", async () => {
   };
   // Log activity for status change
   if (taskEditId && existing && newStatus !== existing.status) {
-    const _histByFn = () => { try { const p = JSON.parse(localStorage.getItem("upstaff_profile")||"{}"); return p.firstName ? (p.firstName+" "+(p.lastName||"")).trim() : "HR Admin"; } catch(_){return "HR Admin";} };
-    t.activity.push({ id: Date.now(), action: "stage_change", by: _histByFn(), at: new Date().toISOString(), detail: `${existing.status} → ${newStatus}` });
-    t.stage_history.push({ from: existing.status, to: newStatus, at: new Date().toISOString(), by: _histByFn() });
-    pushNotif("stage", `${t.applicant_name || t.name} moved to ${newStatus}`, t.id);
+    const _histByFn = () => {
+      try {
+        const p = JSON.parse(localStorage.getItem("upstaff_profile") || "{}");
+        return p.firstName
+          ? (p.firstName + " " + (p.lastName || "")).trim()
+          : "HR Admin";
+      } catch (_) {
+        return "HR Admin";
+      }
+    };
+    t.activity.push({
+      id: Date.now(),
+      action: "stage_change",
+      by: _histByFn(),
+      at: new Date().toISOString(),
+      detail: `${existing.status} → ${newStatus}`,
+    });
+    t.stage_history.push({
+      from: existing.status,
+      to: newStatus,
+      at: new Date().toISOString(),
+      by: _histByFn(),
+    });
+    pushNotif(
+      "stage",
+      `${t.applicant_name || t.name} moved to ${newStatus}`,
+      t.id,
+    );
   }
 
   if (taskEditId) {
@@ -3852,7 +3938,7 @@ function openEmpDetail(empId) {
             (c, i) => `
           <div class="checklist-item ${c.done ? "done" : ""}" onclick="toggleChecklistItemDetail(${e.id},${i})">
             <div class="checklist-item-check">${c.done ? `<svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>` : ""}</div>
-            <span class="checklist-item-text">${c.item}</span>
+            <span class="checklist-item-text">${sanitize(c.item)}</span>
           </div>`,
           )
           .join("")}
@@ -4001,7 +4087,15 @@ function renderTable() {
       <td><span class="${statusPillClass(t.status)}">${t.status}</span></td>
       <td><span class="priority-pill" style="background:${pc}22;color:${pc};">${t.priority}</span></td>
       <td>${sanitize(t.position)}</td>
-      <td><div class="assignee-chip">${_tblAssignees.slice(0,2).map((a,i)=>`<div class="assignee-avatar" style="background:${avatarColor(a)};margin-left:${i>0?"-5px":"0"};" title="${sanitize(a)}">${initials(a)}</div>`).join("")}<span style="font-size:11px;margin-left:4px;">${sanitize(_tblAssignees[0])}</span>${_tblAssignees.length>1?`<span style="font-size:10px;color:var(--muted);">+${_tblAssignees.length-1}</span>`:""}</div></td>
+      <td><div class="assignee-chip">${_tblAssignees
+        .slice(0, 2)
+        .map(
+          (a, i) =>
+            `<div class="assignee-avatar" style="background:${avatarColor(a)};margin-left:${i > 0 ? "-5px" : "0"};" title="${sanitize(a)}">${initials(a)}</div>`,
+        )
+        .join(
+          "",
+        )}<span style="font-size:11px;margin-left:4px;">${sanitize(_tblAssignees[0])}</span>${_tblAssignees.length > 1 ? `<span style="font-size:10px;color:var(--muted);">+${_tblAssignees.length - 1}</span>` : ""}</div></td>
       <td style="color:var(--muted);font-size:12px;">${fmtDue(t.application_date || t.start)}</td>
       <td><span class="due-date ${dc}">${fmtDue(t.due)}</span></td>
       <td style="text-align:center;">${typScore}</td>
@@ -4090,7 +4184,7 @@ document.getElementById("export-csv-btn").addEventListener("click", () => {
 });
 
 /* ══════════════════════════════════════════════
-   CALENDAR VIEW  (original logic — unchanged)
+   [SECTION: CALENDAR] — Calendar Views (Month/Week/Day/Agenda)
 ══════════════════════════════════════════════ */
 function getFiltered() {
   const calFilter = document.getElementById("cal-filter-calendar").value;
@@ -4157,11 +4251,11 @@ function renderMonth() {
   }
   html += `</div></div>`;
   // Show empty-state hint if no events at all
-  if (calEvents.length === 0) {
-    html += `<div style="text-align:center;padding:20px;color:var(--light);font-size:13px;border-top:1px solid var(--border);">
-      <div style="font-size:28px;margin-bottom:8px;">📅</div>
-      <div style="font-weight:600;color:var(--muted);margin-bottom:4px;">No interviews scheduled yet</div>
-      <div>Click <strong>Schedule Interview</strong> to add one, or sync from <strong>Google Calendar</strong>.</div>
+  if (calEvents.filter(e => !e.isGoogleEvent).length === 0) {
+    html += `<div class="empty-state">
+      <div class="empty-state-icon">📅</div>
+      <div class="empty-state-title">No interviews scheduled yet</div>
+      <div class="empty-state-subtitle">Click <strong>Schedule Interview</strong> to add one, or sync from Google Calendar.</div>
     </div>`;
   }
   document.getElementById("cal-main-area").innerHTML = html;
@@ -4258,7 +4352,7 @@ function renderDay() {
       const isDarkD =
         document.documentElement.getAttribute("data-theme") === "dark";
       const evColorD = isDarkD ? "#ffffff" : "#0f172a";
-      return `<div class="cal-day-event" style="top:${top}px;height:${HH}px;background:${bg};color:${evColorD};border:1px solid ${bg};" onclick="event.stopPropagation();openEdit(${e.id})"><strong>${fmtTime(e.time)}</strong> — ${e.name} (${e.position})<br><span style="font-size:10px;opacity:.85;">${e.round} · ${e.type}</span></div>`;
+      return `<div class="cal-day-event" style="top:${top}px;height:${HH}px;background:${bg};color:${evColorD};border:1px solid ${bg};" onclick="event.stopPropagation();openEdit(${e.id})"><strong>${fmtTime(e.time)}</strong> — ${sanitize(e.name)} (${sanitize(e.position)})<br><span style="font-size:10px;opacity:.85;">${sanitize(e.round)} · ${sanitize(e.type)}</span></div>`;
     })
     .join("");
   document.getElementById("cal-main-area").innerHTML =
@@ -4347,7 +4441,7 @@ function renderCalendarSidebar() {
 }
 
 /* ──────────────────────────────────────────────
-   SETTINGS CALENDAR LIST
+   [SECTION: SETTINGS-UI] — Settings Calendar List
    Renders the full calendar list inside Settings → Calendars,
    with type badge, color swatch, event count, and a delete button.
 ────────────────────────────────────────────── */
@@ -4371,7 +4465,9 @@ function renderSettingsCalendarList() {
     Primary: "🗓️",
   };
 
-  const primaryCal = UPSTAFF_CALENDARS.find(c => c.calendarType === "Primary");
+  const primaryCal = UPSTAFF_CALENDARS.find(
+    (c) => c.calendarType === "Primary",
+  );
   const connectedHeader = primaryCal
     ? `<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;padding:8px 12px;
            border-radius:8px;background:var(--surface-3);border:1px solid var(--border);">
@@ -4381,14 +4477,16 @@ function renderSettingsCalendarList() {
       </div>`
     : "";
 
-  el.innerHTML = connectedHeader + UPSTAFF_CALENDARS.map((cal) => {
-    const count = calEvents.filter(
-      (e) => (e.calendarId || e.sourceCalendar) === cal.calendarId,
-    ).length;
-    const icon = TYPE_ICONS[cal.calendarType] || "📋";
-    const isPrimary =
-      cal.calendarId === "primary" || cal.calendarType === "Primary";
-    return `
+  el.innerHTML =
+    connectedHeader +
+    UPSTAFF_CALENDARS.map((cal) => {
+      const count = calEvents.filter(
+        (e) => (e.calendarId || e.sourceCalendar) === cal.calendarId,
+      ).length;
+      const icon = TYPE_ICONS[cal.calendarType] || "📋";
+      const isPrimary =
+        cal.calendarId === "primary" || cal.calendarType === "Primary";
+      return `
     <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;
          background:var(--surface-3);border:1px solid var(--border);">
       <!-- Color swatch -->
@@ -4436,7 +4534,7 @@ function renderSettingsCalendarList() {
         }
       </div>
     </div>`;
-  }).join("");
+    }).join("");
 }
 
 /* ── Toggle calendar visibility ── */
@@ -4774,12 +4872,11 @@ async function generateMeetingLink() {
       );
       return;
     }
-    // Fallback placeholder if GCal not connected
-    const rand = () => Math.random().toString(36).slice(2, 5).toLowerCase();
-    url = `https://meet.google.com/${rand()}-${rand()}-${rand()}`;
-    showCalToast(
-      "⚡ Placeholder generated — connect Google Calendar to auto-create real rooms.",
-    );
+    // Can't generate a real Meet link without GCal OAuth — open meet.google.com/new
+    // so the user can create a real room and paste the link
+    window.open("https://meet.google.com/new", "_blank", "noopener");
+    showCalToast("📋 Copy the link from Google Meet and paste it below.");
+    return;
   }
 
   if (!url) return;
@@ -5171,8 +5268,9 @@ function renderMembersList() {
     Interviewer: "#ff6584",
     Admin: "#9ca3af",
   };
-  el.innerHTML = MEMBERS.map(
-    (m, i) => `
+  el.innerHTML =
+    MEMBERS.map(
+      (m, i) => `
     <div class="member-row">
       <div class="assignee-avatar" style="background:${m.color};width:36px;height:36px;font-size:12px;flex-shrink:0;">${initials(m.name)}</div>
       <div class="member-info">
@@ -5185,20 +5283,23 @@ function renderMembersList() {
         <button class="member-action-btn" style="color:#ef4444;border-color:#fca5a5;" data-action="removeMember" data-arg="${i}">Remove</button>
       </div>
     </div>`,
-  ).join("") + `<button class="btn-add-member" data-action="addMember" style="margin-top:10px;width:100%;padding:8px;border:1.5px dashed var(--border);border-radius:10px;background:transparent;color:var(--muted);cursor:pointer;font-size:12px;font-weight:600;">+ Add Member</button>`;
+    ).join("") +
+    `<button class="btn-add-member" data-action="addMember" style="margin-top:10px;width:100%;padding:8px;border:1.5px dashed var(--border);border-radius:10px;background:transparent;color:var(--muted);cursor:pointer;font-size:12px;font-weight:600;">+ Add Member</button>`;
 }
 
 /* ── Rebuild assignee options in modal ── */
 function _rebuildAssigneeOptions() {
   const list = document.getElementById("assignee-checkbox-list");
   if (!list) return;
-  list.innerHTML = MEMBERS.map((m) => `
+  list.innerHTML = MEMBERS.map(
+    (m) => `
     <label class="assignee-check-item">
       <input type="checkbox" name="f-assignees" value="${sanitize(m.name)}"/>
       <div class="assignee-avatar" style="background:${m.color};width:22px;height:22px;font-size:9px;flex-shrink:0;">${initials(m.name)}</div>
       <span style="font-size:12px;">${sanitize(m.name)}</span>
       <span style="font-size:10px;color:var(--muted);margin-left:auto;">${sanitize(m.role)}</span>
-    </label>`).join("");
+    </label>`,
+  ).join("");
 }
 
 /* ── Render notification panel ── */
@@ -5209,8 +5310,15 @@ function renderNotifPanel() {
     el.innerHTML = `<div style="padding:24px;text-align:center;color:var(--muted);font-size:12px;">No notifications yet</div>`;
     return;
   }
-  const typeIcon = { stage: "📋", overdue: "⚠️", comment: "💬", attachment: "📎", attachment_deleted: "🗑️" };
-  el.innerHTML = NOTIFS.map((n) => `
+  const typeIcon = {
+    stage: "📋",
+    overdue: "⚠️",
+    comment: "💬",
+    attachment: "📎",
+    attachment_deleted: "🗑️",
+  };
+  el.innerHTML = NOTIFS.map(
+    (n) => `
     <div class="notif-item${n.read ? "" : " notif-unread"}">
       <span class="notif-icon">${typeIcon[n.type] || "🔔"}</span>
       <div class="notif-body">
@@ -5218,7 +5326,8 @@ function renderNotifPanel() {
         <div class="notif-time">${_relTime(n.createdAt)}</div>
       </div>
       <button class="notif-dismiss" data-action="dismissNotif" data-arg="${n.id}" title="Dismiss">×</button>
-    </div>`).join("");
+    </div>`,
+  ).join("");
 }
 function _relTime(iso) {
   const diff = Date.now() - new Date(iso).getTime();
@@ -5237,12 +5346,21 @@ function renderActivityTab(task) {
   const all = [
     ...(task.activity || []).map((a) => ({ ...a, _isAct: true })),
     ...(task.comments || []).map((c) => ({ ...c, _isComment: true })),
-  ].sort((a, b) => new Date(a.at || a.createdAt) - new Date(b.at || b.createdAt));
+  ].sort(
+    (a, b) => new Date(a.at || a.createdAt) - new Date(b.at || b.createdAt),
+  );
 
-  const actLabel = { stage_change: "moved to stage", comment: "commented", attachment: "attached a file", attachment_deleted: "deleted a file" };
-  el.innerHTML = all.length ? all.map((item) => {
-    if (item._isComment) {
-      return `<div class="activity-item activity-comment">
+  const actLabel = {
+    stage_change: "moved to stage",
+    comment: "commented",
+    attachment: "attached a file",
+    attachment_deleted: "deleted a file",
+  };
+  el.innerHTML = all.length
+    ? all
+        .map((item) => {
+          if (item._isComment) {
+            return `<div class="activity-item activity-comment">
         <div class="activity-avatar">${initials(item.author || "?")}</div>
         <div class="activity-content">
           <div class="activity-author">${sanitize(item.author)}</div>
@@ -5250,8 +5368,8 @@ function renderActivityTab(task) {
           <div class="activity-time">${_relTime(item.createdAt)}</div>
         </div>
       </div>`;
-    }
-    return `<div class="activity-item">
+          }
+          return `<div class="activity-item">
       <div class="activity-dot"></div>
       <div class="activity-content">
         <span class="activity-author">${sanitize(item.by)}</span>
@@ -5260,7 +5378,9 @@ function renderActivityTab(task) {
         <div class="activity-time">${_relTime(item.at)}</div>
       </div>
     </div>`;
-  }).join("") : `<div style="padding:20px;text-align:center;color:var(--muted);font-size:12px;">No activity yet</div>`;
+        })
+        .join("")
+    : `<div style="padding:20px;text-align:center;color:var(--muted);font-size:12px;">No activity yet</div>`;
 }
 
 /* ── Render Files tab ── */
@@ -5275,8 +5395,14 @@ function renderFilesTab(task) {
     if (type.includes("sheet") || type.includes("excel")) return "📊";
     return "📎";
   };
-  const fmtSize = (b) => b > 1024 * 1024 ? (b / (1024 * 1024)).toFixed(1) + " MB" : (b / 1024).toFixed(0) + " KB";
-  el.innerHTML = atts.length ? atts.map((a) => `
+  const fmtSize = (b) =>
+    b > 1024 * 1024
+      ? (b / (1024 * 1024)).toFixed(1) + " MB"
+      : (b / 1024).toFixed(0) + " KB";
+  el.innerHTML = atts.length
+    ? atts
+        .map(
+          (a) => `
     <div class="file-item">
       <span class="file-icon">${fileIcon(a.type)}</span>
       <div class="file-info">
@@ -5285,7 +5411,10 @@ function renderFilesTab(task) {
       </div>
       <a class="file-download" href="${a.dataUrl}" download="${sanitize(a.name)}" title="Download">↓</a>
       <button class="file-delete" data-action="deleteAttachment" data-arg="${a.id}" title="Delete">🗑️</button>
-    </div>`).join("") : `<div style="padding:20px;text-align:center;color:var(--muted);font-size:12px;">No files attached yet</div>`;
+    </div>`,
+        )
+        .join("")
+    : `<div style="padding:20px;text-align:center;color:var(--muted);font-size:12px;">No files attached yet</div>`;
 }
 
 /* ── Render History (Stage Audit Log) tab ── */
@@ -5297,13 +5426,19 @@ function renderHistoryTab(task) {
     el.innerHTML = `<div style="padding:24px;text-align:center;color:var(--muted);font-size:12px;font-family:'Montserrat',sans-serif;">No stage transitions recorded yet.</div>`;
     return;
   }
-  el.innerHTML = [...history].reverse().map((entry, i) => {
-    const sm = (typeof STATUS_META !== "undefined" && STATUS_META[entry.to]) || { color: "var(--cyan)" };
-    const dateStr = new Date(entry.at).toLocaleString("en-PH", {
-      month: "short", day: "numeric", year: "numeric",
-      hour: "2-digit", minute: "2-digit"
-    });
-    return `<div class="sh-entry">
+  el.innerHTML = [...history]
+    .reverse()
+    .map((entry, i) => {
+      const sm = (typeof STATUS_META !== "undefined" &&
+        STATUS_META[entry.to]) || { color: "var(--cyan)" };
+      const dateStr = new Date(entry.at).toLocaleString("en-PH", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+      return `<div class="sh-entry">
       <div class="sh-dot" style="background:${sm.color};${i === 0 ? "box-shadow:0 0 0 3px " + sm.color + "33;" : ""}"></div>
       <div class="sh-content">
         <div class="sh-stage" style="color:${sm.color};">${sanitize(entry.to)}</div>
@@ -5311,23 +5446,73 @@ function renderHistoryTab(task) {
         <div class="sh-date">${dateStr}</div>
       </div>
     </div>`;
-  }).join("");
+    })
+    .join("");
 }
 
 /* ── Positions render ── */
-function renderPositionsList() {
+function renderPositionsList(filter) {
   const el = document.getElementById("positions-list");
-  el.innerHTML = POSITIONS.map(
-    (p, i) => `
-    <div class="member-row">
-      <div style="width:32px;height:32px;border-radius:10px;background:var(--cyan-lt);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">💼</div>
-      <div class="member-info"><div class="member-name">${sanitize(p)}</div><div style="font-size:11px;color:var(--light);">Active position</div></div>
-      <div class="member-actions">
-        <button class="member-action-btn" style="color:#ef4444;border-color:#fca5a5;" onclick="removePosition(${i})">Remove</button>
+  const countEl = document.getElementById("position-count");
+  if (countEl) countEl.textContent = POSITIONS.length;
+
+  const q = (filter || "").toLowerCase();
+  const filtered = POSITIONS.map((p, i) => ({ name: p, idx: i })).filter(
+    (item) => !q || item.name.toLowerCase().includes(q),
+  );
+
+  if (filtered.length === 0) {
+    el.innerHTML = `
+      <div class="position-empty">
+        <svg class="position-empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="7" width="20" height="14" rx="2"/>
+          <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+          <line x1="12" y1="12" x2="12" y2="16"/>
+          <line x1="10" y1="14" x2="14" y2="14"/>
+        </svg>
+        <div>${q ? "No positions match your search." : "No positions yet. Click <strong>Add Position</strong> to get started."}</div>
+      </div>`;
+    return;
+  }
+
+  // Sort alphabetically
+  filtered.sort((a, b) =>
+    a.name.localeCompare(b.name, undefined, { sensitivity: "base" }),
+  );
+
+  // Group by first letter
+  const groups = {};
+  for (const item of filtered) {
+    const letter = item.name[0].toUpperCase();
+    if (!groups[letter]) groups[letter] = [];
+    groups[letter].push(item);
+  }
+
+  const sortedLetters = Object.keys(groups).sort();
+
+  el.innerHTML = sortedLetters
+    .map(
+      (letter) => `
+    <div class="position-group">
+      <div class="position-group-header">${letter}</div>
+      <div class="position-grid">
+        ${groups[letter]
+          .map(
+            (item) => `
+          <div class="position-chip">
+            <span>${sanitize(item.name)}</span>
+            <button class="position-chip-remove" onclick="removePosition(${item.idx})" title="Remove">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>`,
+          )
+          .join("")}
       </div>
     </div>`,
-  ).join("");
+    )
+    .join("");
 }
+
 async function removePosition(i) {
   if (
     await uiConfirm(
@@ -5341,23 +5526,62 @@ async function removePosition(i) {
     )
   ) {
     POSITIONS.splice(i, 1);
-    renderPositionsList();
+    renderPositionsList(
+      document.getElementById("position-search")?.value || "",
+    );
     showToast("🗑️ Position removed.");
   }
 }
+
+/* ── Position add (inline) ── */
 document.getElementById("add-position-btn").addEventListener("click", () => {
-  const name = prompt("Enter new position name:");
-  if (name && name.trim()) {
-    POSITIONS.push(name.trim());
-    renderPositionsList();
+  const row = document.getElementById("position-add-row");
+  const inp = document.getElementById("position-add-input");
+  row.classList.add("visible");
+  inp.value = "";
+  inp.focus();
+});
+
+function confirmAddPosition() {
+  const inp = document.getElementById("position-add-input");
+  const name = inp.value.trim();
+  if (name) {
+    POSITIONS.push(name);
+    renderPositionsList(
+      document.getElementById("position-search")?.value || "",
+    );
     showToast("✅ Position added!");
   }
+  inp.value = "";
+  document.getElementById("position-add-row").classList.remove("visible");
+}
+
+document
+  .getElementById("position-add-confirm")
+  .addEventListener("click", confirmAddPosition);
+document.getElementById("position-add-cancel").addEventListener("click", () => {
+  document.getElementById("position-add-row").classList.remove("visible");
+  document.getElementById("position-add-input").value = "";
+});
+document
+  .getElementById("position-add-input")
+  .addEventListener("keydown", (e) => {
+    if (e.key === "Enter") confirmAddPosition();
+    if (e.key === "Escape") {
+      document.getElementById("position-add-row").classList.remove("visible");
+      document.getElementById("position-add-input").value = "";
+    }
+  });
+
+/* ── Position search ── */
+document.getElementById("position-search").addEventListener("input", (e) => {
+  renderPositionsList(e.target.value);
 });
 
 /* ── Assignee dropdown toggle ── */
-document.addEventListener("click", function(e) {
+document.addEventListener("click", function (e) {
   const toggle = e.target.closest("#assignee-dropdown-toggle");
-  const panel  = document.getElementById("assignee-dropdown-panel");
+  const panel = document.getElementById("assignee-dropdown-panel");
   if (!panel) return;
   if (toggle) {
     panel.style.display = panel.style.display === "block" ? "none" : "block";
@@ -5365,7 +5589,7 @@ document.addEventListener("click", function(e) {
     panel.style.display = "none";
   }
 });
-document.addEventListener("change", function(e) {
+document.addEventListener("change", function (e) {
   if (e.target.name === "f-assignees") _updateAssigneeDropdownLabel();
 });
 
@@ -5916,7 +6140,7 @@ document.addEventListener("keydown", (e) => {
 });
 
 /* ══════════════════════════════════════════════
-   ANALYTICS — APPLICANT DATA & RENDER
+   [SECTION: ANALYTICS] — Applicant Analytics & Charts
 ══════════════════════════════════════════════ */
 
 // APPLICANT_DATA removed — analytics now reads live data from TASKS.
@@ -7190,15 +7414,19 @@ async function zoomCreateMeeting({
 /* ══════════════════════════════════════════════
    FILE DROPZONE DRAG-AND-DROP SETUP
 ══════════════════════════════════════════════ */
-document.addEventListener("dragover", function(e) {
+document.addEventListener("dragover", function (e) {
   const zone = e.target.closest("#file-dropzone");
-  if (zone) { e.preventDefault(); zone.classList.add("dragover"); }
+  if (zone) {
+    e.preventDefault();
+    zone.classList.add("dragover");
+  }
 });
-document.addEventListener("dragleave", function(e) {
+document.addEventListener("dragleave", function (e) {
   const zone = e.target.closest("#file-dropzone");
-  if (zone && !zone.contains(e.relatedTarget)) zone.classList.remove("dragover");
+  if (zone && !zone.contains(e.relatedTarget))
+    zone.classList.remove("dragover");
 });
-document.addEventListener("drop", function(e) {
+document.addEventListener("drop", function (e) {
   const zone = e.target.closest("#file-dropzone");
   if (!zone) return;
   e.preventDefault();
@@ -7215,7 +7443,7 @@ document.addEventListener("drop", function(e) {
 /* ══════════════════════════════════════════════
    CLOSE NOTIF PANEL ON OUTSIDE CLICK
 ══════════════════════════════════════════════ */
-document.addEventListener("click", function(e) {
+document.addEventListener("click", function (e) {
   const panel = document.getElementById("notif-panel");
   if (!panel || !panel.classList.contains("open")) return;
   if (!e.target.closest("#notif-wrapper")) panel.classList.remove("open");

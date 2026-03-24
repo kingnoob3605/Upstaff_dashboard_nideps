@@ -18,11 +18,11 @@ const GCAL_CONFIG = {
   // How many months of events to fetch (before & after today)
   MONTHS_RANGE: 2,
 
-  // Google API scopes — full read+write access for creating/updating/deleting events
-  SCOPES: "",
+  // Google API scopes — read-only access to fetch calendar events
+  SCOPES: "https://www.googleapis.com/auth/calendar.readonly",
 
   // Google API discovery document for Calendar v3
-  DISCOVERY_DOC: "",
+  DISCOVERY_DOC: "https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest",
 
   // ─────────────────────────────────────────────────────────────────
   // REMINDER SETTINGS
@@ -96,8 +96,13 @@ function gcalInit() {
     console.warn(
       "[Google Calendar] ⚠️  Please fill in your API_KEY and CLIENT_ID in GCAL_CONFIG.",
     );
-    document.getElementById("gcal-sync-btn").title =
-      "Please configure your API_KEY and CLIENT_ID first";
+    const _unconfigBtn = document.getElementById("gcal-sync-btn");
+    if (_unconfigBtn) {
+      _unconfigBtn.title = "GCal not configured — add API_KEY and CLIENT_ID in js/pm-ui-gcal.js";
+      _unconfigBtn.setAttribute("data-unconfigured", "true");
+      _unconfigBtn.style.opacity = "0.45";
+      _unconfigBtn.style.cursor = "not-allowed";
+    }
     return;
   }
 
@@ -207,15 +212,20 @@ function updateSyncBtnState(label, isError = false) {
   const btn = document.getElementById("gcal-sync-btn");
   const lbl = document.getElementById("gcal-btn-label");
   if (lbl) lbl.textContent = label;
-  if (btn) btn.style.borderColor = isError ? "rgba(220,38,38,.4)" : "";
+  if (btn) {
+    btn.style.borderColor = isError ? "rgba(220,38,38,.4)" : "";
+    // Show spinner while connecting/syncing, remove when done or errored
+    const isBusy = label === "Connecting…" || label === "Syncing…" || label === "Reconnecting…";
+    btn.classList.toggle("gcal-syncing", isBusy);
+  }
 }
 
 /* ──────────────────────────────────────────────
    SYNC BUTTON CLICK HANDLER
 ────────────────────────────────────────────── */
 function handleGCalSync() {
-  if (GCAL_CONFIG.API_KEY === "YOUR_API_KEY_HERE") {
-    showCalToast("⚠️ Please configure your API_KEY and CLIENT_ID first!");
+  if (!GCAL_CONFIG.API_KEY || !GCAL_CONFIG.CLIENT_ID) {
+    showCalToast("⚠️ Google Calendar is not configured. Add your API_KEY and CLIENT_ID inside js/pm-ui-gcal.js to enable sync.");
     return;
   }
   if (!gcalTokenClient) {

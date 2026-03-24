@@ -201,7 +201,7 @@ body {
   transition: opacity 0.2s;
 }
 .logo-text span {
-  color: var(#fff);
+  color: #fff;
 }
 #sidebar.collapsed .logo-text {
   opacity: 0;
@@ -1866,4 +1866,64 @@ select:focus-visible {
 /* Cursor */
 .u-pointer {
   cursor: pointer;
+}
+
+/* ── GCal sync button spinner ── */
+@keyframes _upstaff-spin {
+  to { transform: rotate(360deg); }
+}
+#gcal-sync-btn.gcal-syncing {
+  pointer-events: none;
+  opacity: 0.8;
+}
+#gcal-sync-btn.gcal-syncing::before {
+  content: "";
+  display: inline-block;
+  width: 11px;
+  height: 11px;
+  border: 2px solid var(--muted);
+  border-top-color: var(--cyan);
+  border-radius: 50%;
+  animation: _upstaff-spin 0.65s linear infinite;
+  margin-right: 5px;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+/* ── Empty state ── */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 64px 24px;
+  gap: 10px;
+  color: var(--muted);
+  text-align: center;
+}
+.empty-state-icon {
+  font-size: 40px;
+  line-height: 1;
+  margin-bottom: 4px;
+  opacity: 0.5;
+}
+.empty-state-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-2);
+}
+.empty-state-subtitle {
+  font-size: 13px;
+  color: var(--muted);
+  max-width: 280px;
+  line-height: 1.5;
+}
+
+/* ── Last saved indicator ── */
+#last-saved-indicator {
+  font-size: 11px;
+  color: var(--muted);
+  opacity: 0.7;
+  white-space: nowrap;
+  transition: opacity 0.3s;
 }
