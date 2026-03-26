@@ -582,6 +582,19 @@ function renderList() {
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
                     Advance Stage
                   </button>
+                  ${(() => {
+                    const _curIdx = STAGE_ORDER.indexOf(t.status);
+                    const _fwd = _curIdx >= 0 ? STAGE_ORDER.slice(_curIdx + 1).filter(s => !TERMINAL_STAGES.includes(s)) : [];
+                    if (!_fwd.length) return '';
+                    return `<div class="lam-item lam-has-sub" onmouseenter="this.querySelector('.lam-sub').style.display='block'" onmouseleave="this.querySelector('.lam-sub').style.display='none'" style="position:relative;display:flex;align-items:center;gap:8px;cursor:pointer;">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>
+                      Move to Stage
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="margin-left:auto;"><polyline points="9 18 15 12 9 6"/></svg>
+                      <div class="lam-sub" style="display:none;position:absolute;left:100%;top:0;background:var(--surface-1);border:1.5px solid var(--border);border-radius:10px;padding:4px;box-shadow:0 8px 24px rgba(0,0,0,.25);z-index:9200;min-width:140px;">
+                        ${_fwd.map(st => `<button class="lam-item" onclick="moveApplicantToStage(${t.id},'${st}');closeAllListMenus()">${st}</button>`).join('')}
+                      </div>
+                    </div>`;
+                  })()}
                   ${
                     getPrevStage(t.status)
                       ? `<button class="lam-item" onclick="listRevertStage(${t.id})">
@@ -873,7 +886,7 @@ function toggleDone(id) {
 }
 document
   .getElementById("list-search")
-  .addEventListener("input", debounce(renderList, 200));
+  ?.addEventListener("input", debounce(renderList, 200));
 document
   .getElementById("list-quickadd-input")
   ?.addEventListener("keydown", (e) => {
@@ -1587,6 +1600,12 @@ function renderBoard() {
               isActive && nextStg
                 ? `<div class="board-card-actions" onclick="event.stopPropagation();">
               <button class="bca-btn bca-next" onclick="advanceToNextStage(${t.id})" title="Move to ${nextStg}">→ ${nextStg}</button>
+              ${(() => {
+                const _bi = STAGE_ORDER.indexOf(t.status);
+                const _bfwd = _bi >= 0 ? STAGE_ORDER.slice(_bi + 1).filter(s => !TERMINAL_STAGES.includes(s)) : [];
+                if (_bfwd.length < 2) return '';
+                return `<select class="bca-btn bca-skip" title="Skip to stage" onchange="if(this.value){moveApplicantToStage(${t.id},this.value);this.value=''}" onclick="event.stopPropagation()"><option value="">⤸ Skip</option>${_bfwd.map(s => `<option value="${s}">${s}</option>`).join('')}</select>`;
+              })()}
               ${t.status === "Review" ? `<button class="bca-btn bca-hire" onclick="hireApplicant(${t.id})">✓ Hire</button>` : ""}
               <button class="bca-btn bca-reject" onclick="rejectApplicant(${t.id})">✗</button>
             </div>`
@@ -3055,10 +3074,10 @@ document
   });
 document
   .getElementById("btn-add-task")
-  .addEventListener("click", () => openTaskNew());
+  ?.addEventListener("click", () => openTaskNew());
 
 // Live-update stage progress bar when user changes the status dropdown
-document.getElementById("f-status").addEventListener("change", function () {
+document.getElementById("f-status")?.addEventListener("change", function () {
   document.getElementById("task-stage-progress").innerHTML = buildStageProgress(
     this.value,
   );
@@ -3079,7 +3098,7 @@ document
     _updateVerbalPreview(this.value);
   });
 
-document.getElementById("btn-task-save").addEventListener("click", async () => {
+document.getElementById("btn-task-save")?.addEventListener("click", async () => {
   const name = document.getElementById("f-name").value.trim();
   if (!name) {
     await uiAlert("Please enter the applicant's name.", {
@@ -3495,7 +3514,7 @@ const DOC_TYPES = [
   { name: "Government ID Copy", icon: "🪪", color: "#44d7e9" },
   { name: "SSS / PhilHealth / TIN", icon: "📋", color: "#43e97b" },
   { name: "NBI Clearance", icon: "🔏", color: "#fa8231" },
-  { name: "Biodata / Resume", icon: "📝", color: "#ff6584" },
+  { name: "Upstaff Resume", icon: "📝", color: "#ff6584" },
 ];
 
 /* Generate a placeholder Google Drive-style link for a doc */
@@ -3514,6 +3533,20 @@ function saveDocLink(empId, idx, link) {
   empPersistSave();
   showToast("✅ Document link saved!");
   openEmpDetail(empId);
+}
+
+function docToFilename(name) {
+  return name
+    .replace(/\s*\/\s*/g, '_')
+    .replace(/\s+/g, '_')
+    .replace(/[^a-zA-Z0-9_\-]/g, '');
+}
+
+function saveDriveLink(empId, link) {
+  const e = EMPLOYEES.find((x) => x.id === empId);
+  if (!e) return;
+  e.driveLink = link.trim();
+  empPersistSave();
 }
 
 // In-memory employees store
@@ -3755,7 +3788,9 @@ function renderHROps_REMOVED() {
 
 // switchHRTab() removed — HR Ops tab section no longer in UI
 
-// filterOnboarding() removed — was a no-op toast placeholder
+function filterOnboarding() {
+  // Filter button on onboarding view — no-op (filtering handled by #onboarding-filter-status dropdown)
+}
 
 /* ── New Hire Modal ── */
 function openHireModal() {
@@ -3948,31 +3983,51 @@ function openEmpDetail(empId) {
 
 
     <div class="emp-detail-section">
-      <div class="emp-detail-section-title">Documents</div>
-      <div class="doc-list">
-        ${docs
-          .map((d, i) => {
-            const hasLink = d.link && d.link.trim();
-            return `<div class="doc-item u-flex-col" style="align-items:stretch;gap:8px;">
-            <div class="u-flex-center u-gap-10">
-              <div class="doc-item-icon" style="background:${d.color}22;color:${d.color};">${d.icon}</div>
-              <div class="doc-item-name">${sanitize(d.name)}</div>
-              <span class="doc-item-status" style="background:${d.uploaded ? "rgba(67,233,123,.15)" : "rgba(250,130,49,.12)"};color:${d.uploaded ? "#43e97b" : "#fa8231"};cursor:pointer;flex-shrink:0;" onclick="toggleDocUploaded(${e.id},${i})" title="Click to toggle">${d.uploaded ? "✓ Uploaded" : "Pending"}</span>
-            </div>
-            <div class="u-flex-center u-gap-6">
-              <input type="url" placeholder="Paste or auto-generate link…" value="${sanitize(d.link || "")}"
-                style="flex:1;border-radius:8px;border:1.5px solid var(--border);background:var(--surface-3);color:var(--text);font-size:11px;padding:6px 10px;font-family:'DM Sans',sans-serif;"
-                onchange="saveDocLink(${e.id},${i},this.value)"
-                onblur="saveDocLink(${e.id},${i},this.value)"/>
-              <button title="Auto-generate search link" style="flex-shrink:0;height:30px;padding:0 10px;border-radius:8px;border:1.5px solid var(--border);background:var(--surface-2);color:var(--muted);font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:'Montserrat',sans-serif;"
-                onclick="(function(){const inp=this.previousElementSibling;const link=autoGenDocLink('${sanitize(e.fname + " " + e.lname)}','${sanitize(d.name)}');inp.value=link;saveDocLink(${e.id},${i},link);}).call(this)">
-                🔍 Auto
-              </button>
-              ${hasLink ? `<a href="${d.link}" target="_blank" rel="noopener" title="Open document" style="flex-shrink:0;height:30px;width:30px;border-radius:8px;border:1.5px solid var(--border);background:var(--surface-2);display:flex;align-items:center;justify-content:center;color:var(--cyan);"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>` : ""}
-            </div>
-          </div>`;
-          })
-          .join("")}
+      <div class="emp-detail-section-title" style="display:flex;align-items:center;justify-content:space-between;">
+        <span>Documents</span>
+        <span style="font-size:10px;font-weight:600;color:var(--muted);">${docs.filter(d=>d.uploaded).length}/${docs.length} received</span>
+      </div>
+
+      <!-- Naming Convention Guide -->
+      <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Naming Convention Guide</div>
+      <table style="width:100%;border-collapse:collapse;font-size:10px;margin-bottom:14px;">
+        <thead>
+          <tr>
+            <th style="text-align:left;padding:4px 6px;color:var(--muted);font-weight:600;border-bottom:1px solid var(--border);">Document</th>
+            <th style="text-align:left;padding:4px 6px;color:var(--muted);font-weight:600;border-bottom:1px solid var(--border);">File Should Be Named</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${DOC_TYPES.map(dt => `<tr>
+            <td style="padding:3px 6px;color:var(--text);border-bottom:1px solid var(--border);">${sanitize(dt.name)}</td>
+            <td style="padding:3px 6px;font-family:monospace;color:var(--cyan);border-bottom:1px solid var(--border);">${docToFilename(dt.name)}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+
+      <!-- Drive Folder Link -->
+      <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Applicant's Drive Folder</div>
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:14px;">
+        <input type="url" id="drive-link-${e.id}" placeholder="Paste applicant's Drive folder link…"
+          value="${sanitize(e.driveLink || '')}"
+          style="flex:1;border-radius:8px;border:1.5px solid var(--border);background:var(--surface-3);color:var(--text);font-size:11px;padding:6px 10px;font-family:'DM Sans',sans-serif;"
+          onchange="saveDriveLink(${e.id},this.value)"
+          onblur="saveDriveLink(${e.id},this.value)"/>
+        <button onclick="(function(){const inp=document.getElementById('drive-link-${e.id}');const url=inp?inp.value.trim():'';if(!url){showToast('⚠️ No folder link saved yet.');return;}try{window.open(url,'_blank','noopener');}catch(_){navigator.clipboard?.writeText(url).catch(()=>{const ta=document.createElement('textarea');ta.value=url;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();});showToast('📋 Link copied to clipboard!');}})();"
+          style="flex-shrink:0;height:32px;padding:0 12px;border-radius:8px;border:1.5px solid var(--border);background:var(--surface-2);color:var(--text);font-size:10px;font-weight:700;cursor:pointer;font-family:'Montserrat',sans-serif;white-space:nowrap;">
+          Open Folder
+        </button>
+      </div>
+
+      <!-- Received Checkboxes -->
+      <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Received Confirmation</div>
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        ${docs.map((d, i) => `
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:5px 6px;border-radius:7px;background:${d.uploaded ? 'rgba(67,233,123,.06)' : 'transparent'};">
+            <input type="checkbox" ${d.uploaded ? 'checked' : ''} onchange="toggleDocUploaded(${e.id},${i})"
+              style="accent-color:#43e97b;width:14px;height:14px;cursor:pointer;flex-shrink:0;"/>
+            <span style="font-size:11px;color:${d.uploaded ? '#43e97b' : 'var(--text)'};">${sanitize(d.name)} received</span>
+          </label>`).join('')}
       </div>
     </div>
   `;
@@ -4130,7 +4185,7 @@ function buildCSVDownload(rows, filename) {
   a.click();
 }
 
-document.getElementById("export-csv-btn").addEventListener("click", () => {
+document.getElementById("export-csv-btn")?.addEventListener("click", () => {
   const headers = [
     "ID",
     "Applicant Name",

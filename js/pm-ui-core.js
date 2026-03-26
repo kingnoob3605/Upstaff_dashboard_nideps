@@ -318,6 +318,13 @@ function _updateBulkToolbar() {
   } else {
     tb.style.display = "none";
   }
+  const _bmBtn = document.getElementById('bulk-move-stage-btn');
+  if (_bmBtn) {
+    const _statuses = [...new Set([...selectedTaskIds].map(id => TASKS.find(t => t.id === id)?.status).filter(Boolean))];
+    const _mixed = _statuses.length > 1;
+    _bmBtn.style.opacity = _mixed ? '0.45' : '1';
+    _bmBtn.title = _mixed ? 'Select applicants from the same stage only.' : '';
+  }
 }
 
 function toggleBulkSelect(taskId, checkboxEl) {
@@ -332,6 +339,8 @@ function toggleBulkSelect(taskId, checkboxEl) {
 }
 
 function clearBulkSelection() {
+  const _bmsm = document.getElementById('bulk-move-stage-menu');
+  if (_bmsm) _bmsm.style.display = 'none';
   selectedTaskIds.clear();
   _updateBulkToolbar();
   refreshCurrentView();
@@ -355,6 +364,49 @@ async function bulkAdvanceStage() {
   refreshCurrentView();
   _updateBulkToolbar();
   showToast(`✅ ${ids.length} applicant(s) advanced.`);
+}
+
+function toggleBulkMoveStageMenu(e) {
+  if (e) e.stopPropagation();
+  const menu = document.getElementById('bulk-move-stage-menu');
+  if (!menu) return;
+  if (menu.style.display !== 'none') { menu.style.display = 'none'; return; }
+
+  const ids = [...selectedTaskIds];
+  const statuses = [...new Set(ids.map(id => TASKS.find(t => t.id === id)?.status).filter(Boolean))];
+
+  if (statuses.length !== 1) {
+    menu.innerHTML = `<div style="padding:8px 12px;font-size:12px;font-weight:600;font-family:'Montserrat',sans-serif;color:#f59e0b;white-space:normal;max-width:200px;">Select applicants from the same stage only.</div>`;
+  } else {
+    const idx = STAGE_ORDER.indexOf(statuses[0]);
+    const fwd = idx >= 0 ? STAGE_ORDER.slice(idx + 1).filter(s => !TERMINAL_STAGES.includes(s)) : [];
+    if (!fwd.length) {
+      menu.innerHTML = `<div style="padding:8px 12px;font-size:12px;font-weight:600;font-family:'Montserrat',sans-serif;color:var(--muted);">No forward stages available.</div>`;
+    } else {
+      menu.innerHTML = fwd.map(stage =>
+        `<button onclick="bulkMoveToStage('${stage}')" style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:8px;font-size:12px;font-weight:600;font-family:'Montserrat',sans-serif;color:var(--muted);cursor:pointer;background:transparent;border:none;width:100%;text-align:left;white-space:nowrap;" onmouseover="this.style.background='var(--surface-3)';this.style.color='var(--text)'" onmouseout="this.style.background='transparent';this.style.color='var(--muted)'">${stage}</button>`
+      ).join('');
+    }
+  }
+  menu.style.display = 'block';
+  setTimeout(() => {
+    document.addEventListener('click', function _close() {
+      const m = document.getElementById('bulk-move-stage-menu');
+      if (m) m.style.display = 'none';
+      document.removeEventListener('click', _close);
+    });
+  }, 0);
+}
+
+function bulkMoveToStage(targetStage) {
+  const ids = [...selectedTaskIds];
+  if (!ids.length) return;
+  const menu = document.getElementById('bulk-move-stage-menu');
+  if (menu) menu.style.display = 'none';
+  ids.forEach(id => moveApplicantToStage(id, targetStage, { silent: true }));
+  clearBulkSelection();
+  refreshCurrentView();
+  showToast(`✅ Moved ${ids.length} applicant${ids.length !== 1 ? 's' : ''} to ${targetStage}`);
 }
 
 async function bulkReject() {
@@ -1372,7 +1424,7 @@ function todayStr() {
 /* ══════════════════════════════════════════════
    SIDEBAR COLLAPSE
 ══════════════════════════════════════════════ */
-document.getElementById("toggle-btn").addEventListener("click", () => {
+document.getElementById("toggle-btn")?.addEventListener("click", () => {
   const sb = document.getElementById("sidebar");
   sb.classList.toggle("collapsed");
   const icon = document.getElementById("toggle-icon");

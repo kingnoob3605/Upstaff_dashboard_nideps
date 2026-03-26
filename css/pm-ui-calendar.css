@@ -2147,6 +2147,16 @@
 .bca-reject:hover {
   background: rgba(239, 68, 68, 0.16);
 }
+.bca-skip {
+  background: var(--surface-3);
+  color: var(--muted);
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+}
+.bca-skip:hover {
+  color: var(--text);
+}
 [data-theme="dark"] .bca-next {
   color: #44d7e9;
 }
