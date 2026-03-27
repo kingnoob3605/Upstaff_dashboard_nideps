@@ -171,6 +171,17 @@ const STATUS_META = {
   "In Progress": { color: "#44d7e9", bg: "#e0fafb" },
   "In Review": { color: "#a855f7", bg: "#f3e8ff" },
   Done: { color: "#43e97b", bg: "#e8fdf1" },
+  // ── Partner statuses (from Supabase / Google Sheets) ──
+  "For Interview":            { color: "#0369a1", bg: "#e0f2fe" },
+  "Interviewed":              { color: "#059669", bg: "#d1fae5" },
+  "For Client Endorsement":   { color: "#7c3aed", bg: "#ede9fe" },
+  "Hired - Resigned":         { color: "#ea580c", bg: "#ffedd5" },
+  "Open for other roles":     { color: "#2563eb", bg: "#dbeafe" },
+  "Could be Revisited":       { color: "#0284c7", bg: "#e0f2fe" },
+  "For Future Consideration": { color: "#475569", bg: "#f1f5f9" },
+  "No Show":                  { color: "#a16207", bg: "#fef9c3" },
+  "Not Qualified":            { color: "#64748b", bg: "#f1f5f9" },
+  "Duplicate Lead":           { color: "#a21caf", bg: "#fae8ff" },
 };
 
 /** Returns the CSS class for a status pill — theme-aware, always readable */
@@ -971,6 +982,17 @@ function moveApplicantToStage(taskId, newStage, opts = {}) {
   persistSave();
   if (!opts.silent) refreshCurrentView();
   dbg(`[Pipeline] Task #${taskId} "${t.name}": ${oldStage} → ${newStage}`);
+  // Sync status back to partner API (fire-and-forget)
+  if (window.UpstaffAPI && t._source === "api") {
+    UpstaffAPI.syncStatusToApi(t, newStage).then((resolvedPartnerStatus) => {
+      if (resolvedPartnerStatus) {
+        // Update partner_status locally so badge and future syncs stay consistent
+        t.partner_status = resolvedPartnerStatus;
+        persistSave();
+        dbg(`[API] Status synced: ${t.name} → ${resolvedPartnerStatus}`);
+      }
+    });
+  }
 }
 
 function advanceToNextStage(taskId) {

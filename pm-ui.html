@@ -119,7 +119,20 @@
         <div id="notif-panel-list" style="max-height:340px;overflow-y:auto;"></div>
       </div>
     </div>
-    <div class="topbar-avatar" title="HR Admin">HR</div>
+    <!-- Avatar + logout dropdown -->
+    <div id="avatar-wrapper" style="position:relative">
+      <div class="topbar-avatar" title="Account" onclick="toggleAvatarMenu()" style="cursor:pointer">HR</div>
+      <div id="avatar-menu" style="display:none;position:absolute;right:0;top:calc(100% + 8px);min-width:170px;background:var(--surface-1);border:1px solid var(--border);border-radius:11px;box-shadow:0 8px 24px rgba(0,0,0,.18);z-index:9999;overflow:hidden">
+        <div style="padding:10px 14px 8px;border-bottom:1px solid var(--border)">
+          <div style="font-size:12px;font-weight:700;color:var(--text)" id="avatar-name-label">HR Admin</div>
+          <div style="font-size:11px;color:var(--muted)" id="avatar-email-label">Not connected</div>
+        </div>
+        <button onclick="handleLogout()" style="display:flex;align-items:center;gap:8px;width:100%;padding:10px 14px;background:none;border:none;color:#ef4444;font-size:12px;font-weight:600;cursor:pointer;text-align:left;font-family:inherit" onmouseover="this.style.background='rgba(239,68,68,.07)'" onmouseout="this.style.background='none'">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          Log Out
+        </button>
+      </div>
+    </div>
     <!-- Dark / Light mode toggle -->
     <button id="theme-toggle" title="Toggle dark mode" aria-label="Toggle dark mode">
       <svg class="icon-moon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z"/></svg>
@@ -148,6 +161,10 @@
     <button class="view-tab" data-view="mytasks">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
       My Tasks
+    </button>
+    <button class="view-tab" data-view="jobs">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+      Jobs
     </button>
   </div>
 
@@ -743,6 +760,37 @@
             </div>
           </div>
 
+          <!-- ── Partner API Integration ── -->
+          <div class="settings-panel" id="setting-partner-api">
+            <div class="settings-card">
+              <div class="settings-card-title">🔗 Partner API (Google Sheets / Supabase)</div>
+              <div class="settings-card-desc">Connect to your partner's applicant database. Once connected, applicants will be loaded live from the shared database.</div>
+              <div class="settings-row">
+                <div><div class="settings-row-label">Web App URL</div><div class="settings-row-sub">The deployed Google Apps Script Web App URL</div></div>
+                <input class="settings-input" id="s-api-url" placeholder="https://script.google.com/macros/s/..." oninput="saveApiConfig()"/>
+              </div>
+              <div class="settings-row">
+                <div><div class="settings-row-label">Admin Email</div><div class="settings-row-sub">Admin login email</div></div>
+                <input class="settings-input" id="s-api-email" type="email" placeholder="admin@example.com" oninput="saveApiConfig()"/>
+              </div>
+              <div class="settings-row">
+                <div><div class="settings-row-label">Password</div><div class="settings-row-sub">Admin login password</div></div>
+                <input class="settings-input" id="s-api-password" type="password" placeholder="••••••••" oninput="saveApiConfig()"/>
+              </div>
+              <div class="settings-row" style="margin-top:4px">
+                <div>
+                  <div class="settings-row-label">Connection Status</div>
+                  <div class="settings-row-sub" id="api-status-text">Not connected</div>
+                </div>
+                <button class="settings-save-btn" onclick="connectToApi()">Connect &amp; Test</button>
+              </div>
+              <div class="settings-row" style="margin-top:4px">
+                <div><div class="settings-row-label">Sync Applicants</div><div class="settings-row-sub">Manually pull the latest applicants from the database</div></div>
+                <button class="settings-save-btn" onclick="syncApplicantsFromApi()">Sync Now</button>
+              </div>
+            </div>
+          </div>
+
           <!-- ── Danger Zone ── -->
           <div class="settings-panel" id="setting-danger">
             <div class="settings-card" style="border-color:#fca5a5">
@@ -898,6 +946,25 @@
       <div id="candidates-list"></div>
     </div><!-- /view-candidates -->
 
+    <!-- ── JOBS VIEW ── -->
+    <div id="view-jobs" class="view-panel" style="display:none">
+      <div style="max-width:700px;margin:0 auto;padding:20px 0">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+          <div>
+            <div style="font-size:18px;font-weight:700;color:var(--text)">Job Listings</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:2px">Synced from partner database</div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="settings-save-btn" onclick="loadJobsView()">Refresh</button>
+            <button class="settings-save-btn" style="background:var(--cyan)" onclick="openAddJobModal()">+ Add Job</button>
+          </div>
+        </div>
+        <div id="jobs-list" style="display:flex;flex-direction:column;gap:10px">
+          <div style="text-align:center;padding:40px;color:var(--muted);font-size:13px">Loading jobs…</div>
+        </div>
+      </div>
+    </div><!-- /view-jobs -->
+
   </div><!-- /content -->
 </div><!-- /main -->
 
@@ -926,6 +993,9 @@
     <div id="task-pipeline-actions" style="display:none;margin-bottom:14px;padding:10px 12px;background:var(--surface-2);border-radius:10px;border:1px solid var(--border);display:none;flex-wrap:wrap;gap:6px;align-items:center">
       <span style="font-size:11px;color:var(--muted);font-weight:600;margin-right:4px">Move:</span>
       <button id="btn-advance-stage" class="pipeline-action-btn pipeline-btn-next" data-action="advanceStageAndClose">→ Next Stage</button>
+      <select id="btn-move-stage" class="pipeline-action-btn pipeline-btn-move" style="display:none" onchange="if(this.value){moveApplicantToStage(window._editingTaskId,this.value);closeTaskModal();this.value=''}">
+        <option value="">⤸ Move to...</option>
+      </select>
       <button id="btn-hire-now"      class="pipeline-action-btn pipeline-btn-hire" data-action="hireAndClose" style="display:none">✓ Hire</button>
       <button id="btn-reject-now"    class="pipeline-action-btn pipeline-btn-reject" data-action="rejectAndClose">✗ Reject</button>
     </div>
@@ -1124,14 +1194,28 @@
         <div class="form-group">
           <label class="form-label">Pipeline Stage</label>
           <select class="form-select" id="f-status">
-            <option value="Applied">Applied</option>
-            <option value="Screening">Screening</option>
-            <option value="Assessment">Assessment</option>
-            <option value="Interview">Interview</option>
-            <option value="Review">Review</option>
-            <option value="Hired">Hired</option>
-            <option value="Rejected">Rejected</option>
-            <option value="Cancelled">Cancelled</option>
+            <optgroup label="Pipeline Stages">
+              <option value="Applied">Applied</option>
+              <option value="Screening">Screening</option>
+              <option value="Assessment">Assessment</option>
+              <option value="Interview">Interview</option>
+              <option value="Review">Review</option>
+              <option value="Hired">Hired</option>
+              <option value="Rejected">Rejected</option>
+              <option value="Cancelled">Cancelled</option>
+            </optgroup>
+            <optgroup label="Partner Statuses">
+              <option value="For Interview">For Interview</option>
+              <option value="Interviewed">Interviewed</option>
+              <option value="For Client Endorsement">For Client Endorsement</option>
+              <option value="Hired - Resigned">Hired - Resigned</option>
+              <option value="Open for other roles">Open for other roles</option>
+              <option value="Could be Revisited">Could be Revisited</option>
+              <option value="For Future Consideration">For Future Consideration</option>
+              <option value="No Show">No Show</option>
+              <option value="Not Qualified">Not Qualified</option>
+              <option value="Duplicate Lead">Duplicate Lead</option>
+            </optgroup>
           </select>
         </div>
         <div class="form-group">
@@ -1249,10 +1333,6 @@
           <button type="button" class="meeting-platform-btn active" data-ivplatform="meet" data-action="setIvPlatform" data-arg="meet">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M15 10l4.553-2.069A1 1 0 0 1 21 8.845v6.31a1 1 0 0 1-1.447.914L15 14"/><rect x="1" y="6" width="15" height="12" rx="2"/></svg>
             Google Meet
-          </button>
-          <button type="button" class="meeting-platform-btn" data-ivplatform="zoom" data-action="setIvPlatform" data-arg="zoom">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M15 10l4 2-4 2V10z"/><rect x="4" y="9" width="11" height="6" rx="1"/></svg>
-            Zoom
           </button>
           <button type="button" class="meeting-platform-btn" data-ivplatform="custom" data-action="setIvPlatform" data-arg="custom">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
@@ -1596,10 +1676,6 @@
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M15 10l4.553-2.069A1 1 0 0 1 21 8.845v6.31a1 1 0 0 1-1.447.914L15 14"/><rect x="1" y="6" width="15" height="12" rx="2"/></svg>
             Google Meet
           </button>
-          <button type="button" class="meeting-platform-btn" data-platform="zoom" data-action="setMeetingPlatform" data-arg="zoom">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M15 10l4 2-4 2V10z"/><rect x="4" y="9" width="11" height="6" rx="1"/></svg>
-            Zoom
-          </button>
           <button type="button" class="meeting-platform-btn" data-platform="custom" data-action="setMeetingPlatform" data-arg="custom">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
             Custom
@@ -1730,6 +1806,7 @@
   </div>
 </div>
 
+<script src="js/pm-ui-api.js"></script>
 <script src="js/pm-ui-core.js"></script>
 <script src="js/pm-ui-views.js"></script>
 <script src="js/pm-ui-gcal.js"></script>
@@ -1767,6 +1844,18 @@
   // Close on resize back to desktop
   window.addEventListener('resize', function() {
     if (window.innerWidth > 768) closeSidebar();
+  });
+})();
+</script>
+
+<script>
+/* ══ AUTO-SYNC FROM PARTNER API ON LOAD ══ */
+(function() {
+  // Wait for all scripts to finish, then sync if API is configured
+  window.addEventListener('DOMContentLoaded', function() {
+    if (window.UpstaffAPI && UpstaffAPI.isConfigured()) {
+      syncApplicantsFromApi();
+    }
   });
 })();
 </script>

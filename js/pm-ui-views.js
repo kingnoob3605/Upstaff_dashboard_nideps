@@ -31,7 +31,7 @@
 /* ══════════════════════════════════════════════
    [SECTION: VIEW-SWITCH] — project views + settings
 ══════════════════════════════════════════════ */
-const PROJECT_VIEWS = ["list", "board", "calendar", "table", "mytasks"];
+const PROJECT_VIEWS = ["list", "board", "calendar", "table", "mytasks", "jobs"];
 
 /**
  * switchView(v) — switches between the 5 project board views.
@@ -65,6 +65,10 @@ function switchView(v) {
     if (el) el.style.display = id === v ? "block" : "none";
   });
 
+  // Hide jobs panel when not active (it's not in the main panels list)
+  const jobsEl = document.getElementById("view-jobs");
+  if (jobsEl) jobsEl.style.display = v === "jobs" ? "block" : "none";
+
   // Update topbar breadcrumb
   const labels = {
     list: "Interview Pipeline",
@@ -72,6 +76,7 @@ function switchView(v) {
     calendar: "Interview Calendar",
     table: "Data Table",
     mytasks: "My Tasks",
+    jobs: "Job Listings",
   };
   document.getElementById("crumb-current").textContent = labels[v] || v;
   document.getElementById("crumb-parent").textContent = "Recruitment";
@@ -86,6 +91,7 @@ function switchView(v) {
   else if (v === "calendar") renderCalendar();
   else if (v === "table") renderTable();
   else if (v === "mytasks") renderTodos();
+  else if (v === "jobs") loadJobsView();
 }
 
 /**
@@ -122,6 +128,7 @@ function showSettings() {
   renderSettingsCalendarList();
   renderPublicCalendars();
   populateEmailJSSettings();
+  populateApiSettings();
   if (window._settingsLoad) window._settingsLoad();
 }
 
@@ -266,7 +273,7 @@ function listPageChange(dir) {
 function renderListStatusTabs() {
   // STATUS STRINGS — sourced from STATUS_META keys (defined in pm-ui-core.js)
   const allStatuses = Object.keys(STATUS_META).filter(
-    (s) => !["To Do", "In Progress", "In Review", "Done"].includes(s)
+    (s) => !["To Do", "In Progress", "In Review", "Done"].includes(s),
   );
   const tabsEl = document.getElementById("list-status-tabs");
   if (!tabsEl) return;
@@ -384,7 +391,7 @@ function renderList() {
             (
               tag,
             ) => `<span class="list-filter-tag" onclick="clearListFilter('${tag.key}')">
-          ${tag.label} <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          ${sanitize(tag.label)} <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </span>`,
           )
           .join("") +
@@ -565,6 +572,7 @@ function renderList() {
               <td class="col-intdate">${intDateHTML}</td>
               <td>
                 <span class="${statusPillClass(t.status)}">${t.status}</span>
+                ${t.partner_status ? `<span style="display:block;margin-top:3px;font-size:9px;padding:1px 6px;border-radius:99px;background:rgba(62,207,223,.12);color:#3ecfdf;font-weight:600;font-family:'Montserrat',sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px;" title="${sanitize(t.partner_status)}">${sanitize(t.partner_status)}</span>` : ""}
                 ${t.rejection_reason && t.status === "Rejected" ? `<span style="display:block;margin-top:3px;font-size:9px;padding:1px 6px;border-radius:99px;background:#fee2e2;color:#ef4444;font-weight:600;font-family:'Montserrat',sans-serif;">${sanitize(t.rejection_reason)}</span>` : ""}
                 ${stageMini}
               </td>
@@ -584,14 +592,19 @@ function renderList() {
                   </button>
                   ${(() => {
                     const _curIdx = STAGE_ORDER.indexOf(t.status);
-                    const _fwd = _curIdx >= 0 ? STAGE_ORDER.slice(_curIdx + 1).filter(s => !TERMINAL_STAGES.includes(s)) : [];
-                    if (!_fwd.length) return '';
+                    const _fwd =
+                      _curIdx >= 0
+                        ? STAGE_ORDER.slice(_curIdx + 1).filter(
+                            (s) => !TERMINAL_STAGES.includes(s),
+                          )
+                        : [];
+                    if (!_fwd.length) return "";
                     return `<div class="lam-item lam-has-sub" onmouseenter="this.querySelector('.lam-sub').style.display='block'" onmouseleave="this.querySelector('.lam-sub').style.display='none'" style="position:relative;display:flex;align-items:center;gap:8px;cursor:pointer;">
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>
                       Move to Stage
                       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="margin-left:auto;"><polyline points="9 18 15 12 9 6"/></svg>
                       <div class="lam-sub" style="display:none;position:absolute;left:100%;top:0;background:var(--surface-1);border:1.5px solid var(--border);border-radius:10px;padding:4px;box-shadow:0 8px 24px rgba(0,0,0,.25);z-index:9200;min-width:140px;">
-                        ${_fwd.map(st => `<button class="lam-item" onclick="moveApplicantToStage(${t.id},'${st}');closeAllListMenus()">${st}</button>`).join('')}
+                        ${_fwd.map((st) => `<button class="lam-item" onclick="moveApplicantToStage(${t.id},'${st}');closeAllListMenus()">${st}</button>`).join("")}
                       </div>
                     </div>`;
                   })()}
@@ -639,7 +652,7 @@ function renderList() {
     html = `<div class="empty-state">
       <div class="empty-state-icon">👥</div>
       <div class="empty-state-title">${TASKS.length === 0 ? "No applicants yet" : "No applicants match your filters"}</div>
-      <div class="empty-state-subtitle">${TASKS.length === 0 ? 'Click <strong>+ Add Applicant</strong> in the top right to get started.' : 'Try adjusting or clearing your filters.'}</div>
+      <div class="empty-state-subtitle">${TASKS.length === 0 ? "Click <strong>+ Add Applicant</strong> in the top right to get started." : "Try adjusting or clearing your filters."}</div>
     </div>`;
 
   // Render the fully-built html into the DOM
@@ -671,6 +684,8 @@ function renderList() {
       paginationEl.style.display = "flex";
       prevBtn.disabled = listCurrentPage <= 1;
       nextBtn.disabled = listCurrentPage >= totalPages;
+      prevBtn.title = listCurrentPage <= 1 ? "You are on the first page" : "Previous page";
+      nextBtn.title = listCurrentPage >= totalPages ? "You are on the last page" : "Next page";
       infoEl.textContent = `Page ${listCurrentPage} of ${totalPages} (${allFiltered.length} applicants)`;
     } else {
       paginationEl.style.display = "none";
@@ -1567,6 +1582,7 @@ function renderBoard() {
             onclick="openTaskEdit(${t.id})">
             <label class="bulk-cb-wrap" onclick="event.stopPropagation();"><input type="checkbox" class="bulk-cb" ${typeof selectedTaskIds !== "undefined" && selectedTaskIds.has(t.id) ? "checked" : ""} onchange="toggleBulkSelect(${t.id},this)"></label>
             <div class="board-card-name">${sanitize(t.applicant_name || t.name)}</div>
+            ${t.partner_status ? `<div style="margin-bottom:4px;"><span style="font-size:9px;padding:1px 7px;border-radius:99px;background:rgba(62,207,223,.13);color:#3ecfdf;font-weight:600;font-family:'Montserrat',sans-serif;white-space:nowrap;">${sanitize(t.partner_status)}</span></div>` : ""}
             <div class="board-card-meta">
               <span class="board-card-pos">${sanitize(t.position)}</span>
               <span class="priority-pill" style="background:${pc}22;color:${pc};font-size:10px;">${t.priority}</span>
@@ -1602,9 +1618,14 @@ function renderBoard() {
               <button class="bca-btn bca-next" onclick="advanceToNextStage(${t.id})" title="Move to ${nextStg}">→ ${nextStg}</button>
               ${(() => {
                 const _bi = STAGE_ORDER.indexOf(t.status);
-                const _bfwd = _bi >= 0 ? STAGE_ORDER.slice(_bi + 1).filter(s => !TERMINAL_STAGES.includes(s)) : [];
-                if (_bfwd.length < 2) return '';
-                return `<select class="bca-btn bca-skip" title="Skip to stage" onchange="if(this.value){moveApplicantToStage(${t.id},this.value);this.value=''}" onclick="event.stopPropagation()"><option value="">⤸ Skip</option>${_bfwd.map(s => `<option value="${s}">${s}</option>`).join('')}</select>`;
+                const _bfwd =
+                  _bi >= 0
+                    ? STAGE_ORDER.slice(_bi + 1).filter(
+                        (s) => !TERMINAL_STAGES.includes(s),
+                      )
+                    : [];
+                if (_bfwd.length < 2) return "";
+                return `<select class="bca-btn bca-skip" title="Skip to stage" onchange="if(this.value){moveApplicantToStage(${t.id},this.value);this.value=''}" onclick="event.stopPropagation()"><option value="">⤸ Skip</option>${_bfwd.map((s) => `<option value="${s}">${s}</option>`).join("")}</select>`;
               })()}
               ${t.status === "Review" ? `<button class="bca-btn bca-hire" onclick="hireApplicant(${t.id})">✓ Hire</button>` : ""}
               <button class="bca-btn bca-reject" onclick="rejectApplicant(${t.id})">✗</button>
@@ -1826,10 +1847,11 @@ function _updateVerbalPreview(url) {
 /** Show/hide pipeline action strip and update button labels */
 function _updatePipelineActions(taskId, status) {
   window._editingTaskId = taskId;
-  const strip = document.getElementById("task-pipeline-actions");
+  const strip   = document.getElementById("task-pipeline-actions");
   const btnNext = document.getElementById("btn-advance-stage");
   const btnHire = document.getElementById("btn-hire-now");
-  const btnRej = document.getElementById("btn-reject-now");
+  const btnRej  = document.getElementById("btn-reject-now");
+  const btnMove = document.getElementById("btn-move-stage");
   if (!strip) return;
 
   // Hide Assessment tab for early stages where it hasn't happened yet
@@ -1863,6 +1885,21 @@ function _updatePipelineActions(taskId, status) {
   if (btnHire)
     btnHire.style.display = status === "Review" ? "inline-flex" : "none";
   if (btnRej) btnRej.style.display = "inline-flex";
+
+  // Populate "Move to" dropdown with all non-terminal stages except the current one
+  if (btnMove) {
+    const moveable = STAGE_ORDER.filter(
+      (s) => s !== status && !TERMINAL_STAGES.includes(s)
+    );
+    if (moveable.length > 0) {
+      btnMove.innerHTML =
+        `<option value="">⤸ Move to...</option>` +
+        moveable.map((s) => `<option value="${s}">${s}</option>`).join("");
+      btnMove.style.display = "";
+    } else {
+      btnMove.style.display = "none";
+    }
+  }
 }
 
 /** Refresh the score summary card in the assessment tab */
@@ -2296,6 +2333,258 @@ function populateEmailJSSettings() {
   set("s-assess-portal-url", c.portalUrl);
   const expEl = document.getElementById("s-assess-expiry");
   if (expEl && c.expiryHours) expEl.value = String(c.expiryHours);
+}
+
+/* ══════════════════════════════════════════════
+   PARTNER API — Config UI + Sync
+══════════════════════════════════════════════ */
+
+function saveApiConfig() {
+  const cfg = UpstaffAPI.getConfig();
+  cfg.webAppUrl = (document.getElementById("s-api-url")?.value || "").trim();
+  cfg.email = (document.getElementById("s-api-email")?.value || "").trim();
+  // Password is never stored — read from DOM at login time only
+  UpstaffAPI.saveConfig(cfg);
+}
+
+/* ══════════════════════════════════════════════
+   AVATAR MENU + LOGOUT
+══════════════════════════════════════════════ */
+
+function toggleAvatarMenu() {
+  const menu = document.getElementById("avatar-menu");
+  if (!menu) return;
+  const isOpen = menu.style.display !== "none";
+  menu.style.display = isOpen ? "none" : "block";
+
+  // Update labels from profile + API config
+  if (!isOpen) {
+    const profile = (() => {
+      try {
+        return JSON.parse(localStorage.getItem("upstaff_profile") || "{}");
+      } catch {
+        return {};
+      }
+    })();
+    const nameLbl = document.getElementById("avatar-name-label");
+    const emailLbl = document.getElementById("avatar-email-label");
+    if (nameLbl && (profile.firstName || profile.lastName))
+      nameLbl.textContent = [profile.firstName, profile.lastName]
+        .filter(Boolean)
+        .join(" ");
+    if (emailLbl) {
+      const apiCfg = window.UpstaffAPI ? UpstaffAPI.getConfig() : {};
+      emailLbl.textContent = apiCfg.email || profile.email || "Not connected";
+    }
+  }
+
+  // Close when clicking outside
+  if (!isOpen) {
+    setTimeout(() => {
+      document.addEventListener("click", _closeAvatarMenu, { once: true });
+    }, 0);
+  }
+}
+
+function _closeAvatarMenu(e) {
+  const wrapper = document.getElementById("avatar-wrapper");
+  if (wrapper && !wrapper.contains(e.target)) {
+    const menu = document.getElementById("avatar-menu");
+    if (menu) menu.style.display = "none";
+  }
+}
+
+async function handleLogout() {
+  const menu = document.getElementById("avatar-menu");
+  if (menu) menu.style.display = "none";
+
+  const confirmed = await upstaffConfirm(
+    "Log Out",
+    "Are you sure you want to log out? Your local data will stay saved.",
+    "⚠️",
+  );
+  if (!confirmed) return;
+
+  // Clear API token
+  if (window.UpstaffAPI) UpstaffAPI.logout();
+
+  // Clear Google Calendar auth
+  if (typeof getUserGcalAuthKey === "function") {
+    localStorage.removeItem(getUserGcalAuthKey());
+  }
+
+  showToast("Logged out.");
+
+  // Reload after short delay so toast is visible
+  setTimeout(() => location.reload(), 800);
+}
+
+function populateApiSettings() {
+  const cfg = UpstaffAPI.getConfig();
+  const set = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.value = val || "";
+  };
+  set("s-api-url", cfg.webAppUrl);
+  set("s-api-email", cfg.email);
+  // Password intentionally not repopulated — user must re-enter to reconnect
+
+  const statusEl = document.getElementById("api-status-text");
+  if (statusEl) {
+    statusEl.textContent = cfg.token ? "Connected ✅" : "Not connected";
+    statusEl.style.color = cfg.token ? "var(--green)" : "";
+  }
+}
+
+async function connectToApi() {
+  saveApiConfig();
+  const cfg = UpstaffAPI.getConfig();
+  // Read password from DOM only — never from stored config
+  const password = (document.getElementById("s-api-password")?.value || "").trim();
+  const statusEl = document.getElementById("api-status-text");
+
+  if (!cfg.webAppUrl) {
+    showToast("Enter the Web App URL first.");
+    return;
+  }
+  if (!cfg.email || !password) {
+    showToast("Enter admin email and password.");
+    return;
+  }
+
+  if (statusEl) {
+    statusEl.textContent = "Connecting…";
+    statusEl.style.color = "";
+  }
+
+  try {
+    await UpstaffAPI.login(cfg.email, password);
+    if (statusEl) {
+      statusEl.textContent = "Connected ✅";
+      statusEl.style.color = "var(--green)";
+    }
+    showToast("✅ Connected to partner API!");
+    await syncApplicantsFromApi();
+  } catch (e) {
+    if (statusEl) {
+      statusEl.textContent = "Failed: " + e.message;
+      statusEl.style.color = "var(--red,#ef4444)";
+    }
+    showToast("❌ Connection failed: " + e.message);
+  }
+}
+
+async function syncApplicantsFromApi() {
+  if (!window.UpstaffAPI || !UpstaffAPI.isConfigured()) return;
+
+  try {
+    showToast("Syncing applicants…");
+    const res = await UpstaffAPI.getApplicants({ limit: 500 });
+    if (!res.data || !res.data.length) {
+      showToast("No applicants found in database.");
+      return;
+    }
+
+    // Remove previously API-sourced tasks and re-import fresh
+    const localTasks = TASKS.filter((t) => t._source !== "api");
+
+    // Assign local IDs starting after existing max
+    let nextId = Math.max(taskNextId, ...TASKS.map((t) => t.id || 0)) + 1;
+    const apiTasks = res.data.map((r) => {
+      const mapped = UpstaffAPI.mapApplicant(r, nextId++);
+      return mapped;
+    });
+
+    TASKS.length = 0;
+    localTasks.forEach((t) => TASKS.push(t));
+    apiTasks.forEach((t) => TASKS.push(t));
+    taskNextId = nextId;
+    persistSave();
+    refreshCurrentView();
+    showToast(`✅ Synced ${apiTasks.length} applicants from database.`);
+  } catch (e) {
+    showToast("❌ Sync failed: " + e.message);
+    console.error("[API Sync]", e);
+  }
+}
+
+/* ══════════════════════════════════════════════
+   JOBS VIEW
+══════════════════════════════════════════════ */
+
+async function loadJobsView() {
+  const el = document.getElementById("jobs-list");
+  if (!el) return;
+
+  if (!window.UpstaffAPI || !UpstaffAPI.isConfigured()) {
+    el.innerHTML = `<div style="text-align:center;padding:40px;color:var(--muted);font-size:13px">
+      Connect to the partner API first in <strong>Settings → Partner API</strong>.
+    </div>`;
+    return;
+  }
+
+  el.innerHTML = `<div style="text-align:center;padding:40px;color:var(--muted);font-size:13px">Loading…</div>`;
+
+  try {
+    const res = await UpstaffAPI.getJobs();
+    const jobs = res.data || [];
+
+    if (!jobs.length) {
+      el.innerHTML = `<div style="text-align:center;padding:40px;color:var(--muted);font-size:13px">No jobs found.</div>`;
+      return;
+    }
+
+    el.innerHTML = jobs
+      .map(
+        (job) => `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;background:var(--surface-1);border:1px solid var(--border);border-radius:10px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${job.active ? "var(--green)" : "#9ca3af"}"></span>
+          <span style="font-size:14px;font-weight:600;color:var(--text)">${sanitize(job.title)}</span>
+          <span style="font-size:11px;padding:2px 8px;border-radius:99px;background:${job.active ? "#dcfce7" : "#f1f5f9"};color:${job.active ? "#16a34a" : "#64748b"};font-weight:600">
+            ${job.active ? "Active" : "Inactive"}
+          </span>
+        </div>
+        <button
+          onclick="toggleJobItem(${job.index})"
+          style="font-size:11px;padding:5px 12px;border-radius:7px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);cursor:pointer;font-weight:600"
+        >${job.active ? "Deactivate" : "Activate"}</button>
+      </div>
+    `,
+      )
+      .join("");
+  } catch (e) {
+    el.innerHTML = `<div style="text-align:center;padding:40px;color:var(--red,#ef4444);font-size:13px">Failed to load jobs: ${e.message}</div>`;
+  }
+}
+
+async function toggleJobItem(index) {
+  try {
+    await UpstaffAPI.toggleJob(index);
+    await loadJobsView();
+  } catch (e) {
+    showToast("❌ Failed to toggle job: " + e.message);
+  }
+}
+
+function openAddJobModal() {
+  const title = prompt("Enter job title:");
+  if (!title || !title.trim()) return;
+  addJobItem(title.trim());
+}
+
+async function addJobItem(title) {
+  if (!window.UpstaffAPI || !UpstaffAPI.isConfigured()) {
+    showToast("Connect to partner API first.");
+    return;
+  }
+  try {
+    await UpstaffAPI.addJob(title);
+    showToast("✅ Job added!");
+    await loadJobsView();
+  } catch (e) {
+    showToast("❌ Failed to add job: " + e.message);
+  }
 }
 
 /* ── Generate a unique token for this assessment invite ── */
@@ -2780,14 +3069,6 @@ function setIvPlatform(platform, btnEl) {
     if (noteEl)
       noteEl.textContent =
         "Paste any video conferencing link (Teams, Webex, etc.)";
-  } else if (platform === "zoom") {
-    genBtn.textContent = "⚡ Generate Zoom link";
-    genBtn.style.display = "";
-    openBtn.style.display = "";
-    if (input) input.placeholder = "https://zoom.us/j/123456789";
-    if (noteEl)
-      noteEl.textContent =
-        "💡 Click Generate to create a real Zoom meeting instantly.";
   } else {
     genBtn.textContent = "⚡ Generate Meet link";
     genBtn.style.display = "";
@@ -2808,39 +3089,8 @@ async function generateIvMeetingLink() {
   let url = "";
 
   if (_ivPlatform === "zoom") {
-    // Real Zoom meeting via Server-to-Server OAuth
-    if (genBtn) {
-      genBtn.disabled = true;
-      genBtn.textContent = "Creating…";
-    }
-    try {
-      // Build start time from the date/time fields if available
-      const dateVal =
-        document.getElementById("iv-date")?.value ||
-        new Date().toISOString().slice(0, 10);
-      const timeVal =
-        document.getElementById("iv-start-time")?.value || "09:00";
-      const startISO = `${dateVal}T${timeVal}:00`;
-      const taskId = window._editingTaskId;
-      const task = TASKS.find((x) => x.id === taskId);
-      const topic = task
-        ? `Interview – ${task.applicant_name || task.name}`
-        : "Interview";
-      url = await zoomCreateMeeting({ topic, startISO });
-      showToast("✅ Real Zoom meeting created!");
-    } catch (err) {
-      console.error("[Zoom] ❌ Could not create meeting:", err);
-      showToast("❌ Zoom meeting creation failed — check console.");
-      if (genBtn) {
-        genBtn.disabled = false;
-        genBtn.textContent = "⚡ Generate Zoom link";
-      }
-      return;
-    }
-    if (genBtn) {
-      genBtn.disabled = false;
-      genBtn.textContent = "⚡ Generate Zoom link";
-    }
+    showToast("Zoom integration is not available. Paste a link manually.");
+    return;
   } else if (_ivPlatform === "meet") {
     if (gcalSignedIn) {
       // Real Meet room will be auto-created when the event is saved to GCal
@@ -2866,11 +3116,7 @@ async function generateIvMeetingLink() {
 }
 
 function openIvPlatform() {
-  const url =
-    _ivPlatform === "zoom"
-      ? "https://zoom.us/meeting/schedule"
-      : "https://meet.google.com/new";
-  window.open(url, "_blank", "noopener");
+  window.open("https://meet.google.com/new", "_blank", "noopener");
 }
 
 /** Save a new interview from the Interview tab form into calEvents */
@@ -3098,213 +3344,218 @@ document
     _updateVerbalPreview(this.value);
   });
 
-document.getElementById("btn-task-save")?.addEventListener("click", async () => {
-  const name = document.getElementById("f-name").value.trim();
-  if (!name) {
-    await uiAlert("Please enter the applicant's name.", {
-      icon: "⚠️",
-      title: "Name Required",
-    });
-    return;
-  }
-  // Validate optional fields format
-  const formOk = validateForm([
-    { id: "f-email", type: "email", label: "Email" },
-    { id: "f-phone", type: "phone", label: "Phone" },
-    { id: "f-resume", type: "url", label: "Resume Link" },
-    { id: "f-portfolio", type: "url", label: "Portfolio Link" },
-  ]);
-  if (!formOk) {
-    showToast("⚠️ Please fix the highlighted fields.");
-    return;
-  }
-  const newStatus = document.getElementById("f-status").value;
-  const dueDate = document.getElementById("f-due").value;
-  const sync = document.getElementById("f-task-gcal-sync")?.checked;
-  const statusEl = document.getElementById("f-task-gcal-status");
-
-  // Guard: GCal sync requires a due date
-  if (sync && !dueDate) {
-    if (statusEl) {
-      statusEl.style.display = "block";
-      statusEl.textContent =
-        "⚠️ A due date is required to sync to Google Calendar.";
-      statusEl.style.color = "var(--orange)";
+document
+  .getElementById("btn-task-save")
+  ?.addEventListener("click", async () => {
+    const name = document.getElementById("f-name").value.trim();
+    if (!name) {
+      await uiAlert("Please enter the applicant's name.", {
+        icon: "⚠️",
+        title: "Name Required",
+      });
+      return;
     }
-    document.getElementById("f-due").focus();
-    return;
-  }
+    // Validate optional fields format
+    const formOk = validateForm([
+      { id: "f-email", type: "email", label: "Email" },
+      { id: "f-phone", type: "phone", label: "Phone" },
+      { id: "f-resume", type: "url", label: "Resume Link" },
+      { id: "f-portfolio", type: "url", label: "Portfolio Link" },
+    ]);
+    if (!formOk) {
+      showToast("⚠️ Please fix the highlighted fields.");
+      return;
+    }
+    const newStatus = document.getElementById("f-status").value;
+    const dueDate = document.getElementById("f-due").value;
+    const sync = document.getElementById("f-task-gcal-sync")?.checked;
+    const statusEl = document.getElementById("f-task-gcal-status");
 
-  const existing = taskEditId ? TASKS.find((x) => x.id === taskEditId) : null;
-  const applicantName = document.getElementById("f-name").value.trim();
-  const t = {
-    id: taskEditId || taskNextId++,
-    name: applicantName,
-    applicant_name: applicantName,
-    status: newStatus,
-    priority: document.getElementById("f-priority").value,
-    position: document.getElementById("f-position").value,
-    assignees: _getAssignees().length ? _getAssignees() : ["HR Team"],
-    assignee: _getAssignees()[0] || existing?.assignee || "HR Team",
-    start: document.getElementById("f-start").value,
-    due: dueDate,
-    notes: document.getElementById("f-notes").value,
-    candidateFolder: document.getElementById("f-folder").value || undefined,
-    gcalEventId: existing?.gcalEventId || null,
-    // Applicant profile
-    applicant_email:
-      document.getElementById("f-email")?.value?.trim() ||
-      existing?.applicant_email ||
-      "",
-    applicant_phone:
-      document.getElementById("f-phone")?.value?.trim() ||
-      existing?.applicant_phone ||
-      "",
-    resume_link:
-      document.getElementById("f-resume")?.value?.trim() ||
-      existing?.resume_link ||
-      "",
-    portfolio_link:
-      document.getElementById("f-portfolio")?.value?.trim() ||
-      existing?.portfolio_link ||
-      "",
-    application_date:
-      document.getElementById("f-app-date")?.value ||
-      existing?.application_date ||
-      "",
-    // Assessment scores
-    typing_score:
-      document.getElementById("f-typing-score")?.value ||
-      existing?.typing_score ||
-      "",
-    knowledge_score:
-      document.getElementById("f-knowledge-score")?.value ||
-      existing?.knowledge_score ||
-      "",
-    verbal_link:
-      document.getElementById("f-verbal-link")?.value?.trim() ||
-      existing?.verbal_link ||
-      "",
-    interview_notes:
-      document.getElementById("f-interview-notes")?.value ||
-      existing?.interview_notes ||
-      "",
-    // Preserve pipeline timestamps
-    hired_at:
-      existing?.hired_at ||
-      (newStatus === "Hired" ? new Date().toISOString() : ""),
-    rejected_at:
-      existing?.rejected_at ||
-      (newStatus === "Rejected" ? new Date().toISOString() : ""),
-    archived:
-      existing?.archived || ["Rejected", "Cancelled"].includes(newStatus),
-    stage_changed_at:
-      newStatus !== existing?.status
-        ? new Date().toISOString()
-        : existing?.stage_changed_at,
-    // Preserve activity, comments, attachments, and new fields
-    comments: existing?.comments || [],
-    activity: existing?.activity || [],
-    attachments: existing?.attachments || [],
-    stage_history: existing?.stage_history || [],
-    rejection_reason: existing?.rejection_reason || "",
-  };
-  // Log activity for status change
-  if (taskEditId && existing && newStatus !== existing.status) {
-    const _histByFn = () => {
-      try {
-        const p = JSON.parse(localStorage.getItem("upstaff_profile") || "{}");
-        return p.firstName
-          ? (p.firstName + " " + (p.lastName || "")).trim()
-          : "HR Admin";
-      } catch (_) {
-        return "HR Admin";
-      }
-    };
-    t.activity.push({
-      id: Date.now(),
-      action: "stage_change",
-      by: _histByFn(),
-      at: new Date().toISOString(),
-      detail: `${existing.status} → ${newStatus}`,
-    });
-    t.stage_history.push({
-      from: existing.status,
-      to: newStatus,
-      at: new Date().toISOString(),
-      by: _histByFn(),
-    });
-    pushNotif(
-      "stage",
-      `${t.applicant_name || t.name} moved to ${newStatus}`,
-      t.id,
-    );
-  }
-
-  if (taskEditId) {
-    const i = TASKS.findIndex((x) => x.id === taskEditId);
-    if (i > -1) TASKS[i] = t;
-    showToast("✅ Task updated!");
-  } else {
-    TASKS.push(t);
-    showToast("✅ Task added!");
-  }
-  persistSave();
-
-  // ── Optional GCal sync ──
-  if (sync && dueDate) {
-    if (!gcalSignedIn) {
-      showToast("💡 Connect Google Calendar first to sync applicants.");
-    } else {
+    // Guard: GCal sync requires a due date
+    if (sync && !dueDate) {
       if (statusEl) {
         statusEl.style.display = "block";
-        statusEl.textContent = "Syncing to Google Calendar…";
-        statusEl.style.color = "var(--cyan)";
+        statusEl.textContent =
+          "⚠️ A due date is required to sync to Google Calendar.";
+        statusEl.style.color = "var(--orange)";
       }
-      try {
-        await _taskSyncToGcal(t);
-        if (statusEl) {
-          statusEl.style.display = "block";
-          statusEl.textContent = "✅ Synced to Google Calendar!";
-          statusEl.style.color = "var(--green)";
-        }
-        await new Promise((r) => setTimeout(r, 600));
-      } catch (err) {
-        console.error("[GCal Task Sync]", err);
-        if (statusEl) {
-          statusEl.style.display = "block";
-          statusEl.textContent =
-            "⚠️ GCal sync failed — applicant saved locally.";
-          statusEl.style.color = "var(--orange)";
-        }
-        await new Promise((r) => setTimeout(r, 1400));
-      }
+      document.getElementById("f-due").focus();
+      return;
     }
-  }
 
-  // ── If status changed to Cancelled and event is in GCal, mark the GCal event as cancelled ──
-  if (
-    newStatus === "Cancelled" &&
-    t.gcalEventId &&
-    gcalSignedIn &&
-    gapi?.client?.calendar
-  ) {
-    try {
-      const calId = UPSTAFF_CALENDARS[0]?.calendarId || "primary";
-      await gapi.client.calendar.events.patch({
-        calendarId: calId,
-        eventId: t.gcalEventId,
-        resource: { status: "cancelled", summary: `❌ [Cancelled] ${t.name}` },
+    const existing = taskEditId ? TASKS.find((x) => x.id === taskEditId) : null;
+    const applicantName = document.getElementById("f-name").value.trim();
+    const t = {
+      id: taskEditId || taskNextId++,
+      name: applicantName,
+      applicant_name: applicantName,
+      status: newStatus,
+      priority: document.getElementById("f-priority").value,
+      position: document.getElementById("f-position").value,
+      assignees: _getAssignees().length ? _getAssignees() : ["HR Team"],
+      assignee: _getAssignees()[0] || existing?.assignee || "HR Team",
+      start: document.getElementById("f-start").value,
+      due: dueDate,
+      notes: document.getElementById("f-notes").value,
+      candidateFolder: document.getElementById("f-folder").value || undefined,
+      gcalEventId: existing?.gcalEventId || null,
+      // Applicant profile
+      applicant_email:
+        document.getElementById("f-email")?.value?.trim() ||
+        existing?.applicant_email ||
+        "",
+      applicant_phone:
+        document.getElementById("f-phone")?.value?.trim() ||
+        existing?.applicant_phone ||
+        "",
+      resume_link:
+        document.getElementById("f-resume")?.value?.trim() ||
+        existing?.resume_link ||
+        "",
+      portfolio_link:
+        document.getElementById("f-portfolio")?.value?.trim() ||
+        existing?.portfolio_link ||
+        "",
+      application_date:
+        document.getElementById("f-app-date")?.value ||
+        existing?.application_date ||
+        "",
+      // Assessment scores
+      typing_score:
+        document.getElementById("f-typing-score")?.value ||
+        existing?.typing_score ||
+        "",
+      knowledge_score:
+        document.getElementById("f-knowledge-score")?.value ||
+        existing?.knowledge_score ||
+        "",
+      verbal_link:
+        document.getElementById("f-verbal-link")?.value?.trim() ||
+        existing?.verbal_link ||
+        "",
+      interview_notes:
+        document.getElementById("f-interview-notes")?.value ||
+        existing?.interview_notes ||
+        "",
+      // Preserve pipeline timestamps
+      hired_at:
+        existing?.hired_at ||
+        (newStatus === "Hired" ? new Date().toISOString() : ""),
+      rejected_at:
+        existing?.rejected_at ||
+        (newStatus === "Rejected" ? new Date().toISOString() : ""),
+      archived:
+        existing?.archived || ["Rejected", "Cancelled"].includes(newStatus),
+      stage_changed_at:
+        newStatus !== existing?.status
+          ? new Date().toISOString()
+          : existing?.stage_changed_at,
+      // Preserve activity, comments, attachments, and new fields
+      comments: existing?.comments || [],
+      activity: existing?.activity || [],
+      attachments: existing?.attachments || [],
+      stage_history: existing?.stage_history || [],
+      rejection_reason: existing?.rejection_reason || "",
+    };
+    // Log activity for status change
+    if (taskEditId && existing && newStatus !== existing.status) {
+      const _histByFn = () => {
+        try {
+          const p = JSON.parse(localStorage.getItem("upstaff_profile") || "{}");
+          return p.firstName
+            ? (p.firstName + " " + (p.lastName || "")).trim()
+            : "HR Admin";
+        } catch (_) {
+          return "HR Admin";
+        }
+      };
+      t.activity.push({
+        id: Date.now(),
+        action: "stage_change",
+        by: _histByFn(),
+        at: new Date().toISOString(),
+        detail: `${existing.status} → ${newStatus}`,
       });
-      showToast("☁️ Google Calendar event marked cancelled.");
-    } catch (e) {
-      console.warn("[GCal] Could not cancel GCal event:", e);
+      t.stage_history.push({
+        from: existing.status,
+        to: newStatus,
+        at: new Date().toISOString(),
+        by: _histByFn(),
+      });
+      pushNotif(
+        "stage",
+        `${t.applicant_name || t.name} moved to ${newStatus}`,
+        t.id,
+      );
     }
-  }
 
-  closeTaskModal();
-  refreshCurrentView();
-});
+    if (taskEditId) {
+      const i = TASKS.findIndex((x) => x.id === taskEditId);
+      if (i > -1) TASKS[i] = t;
+      showToast("✅ Task updated!");
+    } else {
+      TASKS.push(t);
+      showToast("✅ Task added!");
+    }
+    persistSave();
+
+    // ── Optional GCal sync ──
+    if (sync && dueDate) {
+      if (!gcalSignedIn) {
+        showToast("💡 Connect Google Calendar first to sync applicants.");
+      } else {
+        if (statusEl) {
+          statusEl.style.display = "block";
+          statusEl.textContent = "Syncing to Google Calendar…";
+          statusEl.style.color = "var(--cyan)";
+        }
+        try {
+          await _taskSyncToGcal(t);
+          if (statusEl) {
+            statusEl.style.display = "block";
+            statusEl.textContent = "✅ Synced to Google Calendar!";
+            statusEl.style.color = "var(--green)";
+          }
+          await new Promise((r) => setTimeout(r, 600));
+        } catch (err) {
+          console.error("[GCal Task Sync]", err);
+          if (statusEl) {
+            statusEl.style.display = "block";
+            statusEl.textContent =
+              "⚠️ GCal sync failed — applicant saved locally.";
+            statusEl.style.color = "var(--orange)";
+          }
+          await new Promise((r) => setTimeout(r, 1400));
+        }
+      }
+    }
+
+    // ── If status changed to Cancelled and event is in GCal, mark the GCal event as cancelled ──
+    if (
+      newStatus === "Cancelled" &&
+      t.gcalEventId &&
+      gcalSignedIn &&
+      gapi?.client?.calendar
+    ) {
+      try {
+        const calId = UPSTAFF_CALENDARS[0]?.calendarId || "primary";
+        await gapi.client.calendar.events.patch({
+          calendarId: calId,
+          eventId: t.gcalEventId,
+          resource: {
+            status: "cancelled",
+            summary: `❌ [Cancelled] ${t.name}`,
+          },
+        });
+        showToast("☁️ Google Calendar event marked cancelled.");
+      } catch (e) {
+        console.warn("[GCal] Could not cancel GCal event:", e);
+      }
+    }
+
+    closeTaskModal();
+    refreshCurrentView();
+  });
 
 document
   .getElementById("btn-task-delete")
@@ -3537,9 +3788,9 @@ function saveDocLink(empId, idx, link) {
 
 function docToFilename(name) {
   return name
-    .replace(/\s*\/\s*/g, '_')
-    .replace(/\s+/g, '_')
-    .replace(/[^a-zA-Z0-9_\-]/g, '');
+    .replace(/\s*\/\s*/g, "_")
+    .replace(/\s+/g, "_")
+    .replace(/[^a-zA-Z0-9_\-]/g, "");
 }
 
 function saveDriveLink(empId, link) {
@@ -3985,7 +4236,7 @@ function openEmpDetail(empId) {
     <div class="emp-detail-section">
       <div class="emp-detail-section-title" style="display:flex;align-items:center;justify-content:space-between;">
         <span>Documents</span>
-        <span style="font-size:10px;font-weight:600;color:var(--muted);">${docs.filter(d=>d.uploaded).length}/${docs.length} received</span>
+        <span style="font-size:10px;font-weight:600;color:var(--muted);">${docs.filter((d) => d.uploaded).length}/${docs.length} received</span>
       </div>
 
       <!-- Naming Convention Guide -->
@@ -3998,10 +4249,12 @@ function openEmpDetail(empId) {
           </tr>
         </thead>
         <tbody>
-          ${DOC_TYPES.map(dt => `<tr>
+          ${DOC_TYPES.map(
+            (dt) => `<tr>
             <td style="padding:3px 6px;color:var(--text);border-bottom:1px solid var(--border);">${sanitize(dt.name)}</td>
             <td style="padding:3px 6px;font-family:monospace;color:var(--cyan);border-bottom:1px solid var(--border);">${docToFilename(dt.name)}</td>
-          </tr>`).join('')}
+          </tr>`,
+          ).join("")}
         </tbody>
       </table>
 
@@ -4009,7 +4262,7 @@ function openEmpDetail(empId) {
       <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Applicant's Drive Folder</div>
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:14px;">
         <input type="url" id="drive-link-${e.id}" placeholder="Paste applicant's Drive folder link…"
-          value="${sanitize(e.driveLink || '')}"
+          value="${sanitize(e.driveLink || "")}"
           style="flex:1;border-radius:8px;border:1.5px solid var(--border);background:var(--surface-3);color:var(--text);font-size:11px;padding:6px 10px;font-family:'DM Sans',sans-serif;"
           onchange="saveDriveLink(${e.id},this.value)"
           onblur="saveDriveLink(${e.id},this.value)"/>
@@ -4022,12 +4275,16 @@ function openEmpDetail(empId) {
       <!-- Received Checkboxes -->
       <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Received Confirmation</div>
       <div style="display:flex;flex-direction:column;gap:4px;">
-        ${docs.map((d, i) => `
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:5px 6px;border-radius:7px;background:${d.uploaded ? 'rgba(67,233,123,.06)' : 'transparent'};">
-            <input type="checkbox" ${d.uploaded ? 'checked' : ''} onchange="toggleDocUploaded(${e.id},${i})"
+        ${docs
+          .map(
+            (d, i) => `
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:5px 6px;border-radius:7px;background:${d.uploaded ? "rgba(67,233,123,.06)" : "transparent"};">
+            <input type="checkbox" ${d.uploaded ? "checked" : ""} onchange="toggleDocUploaded(${e.id},${i})"
               style="accent-color:#43e97b;width:14px;height:14px;cursor:pointer;flex-shrink:0;"/>
-            <span style="font-size:11px;color:${d.uploaded ? '#43e97b' : 'var(--text)'};">${sanitize(d.name)} received</span>
-          </label>`).join('')}
+            <span style="font-size:11px;color:${d.uploaded ? "#43e97b" : "var(--text)"};">${sanitize(d.name)} received</span>
+          </label>`,
+          )
+          .join("")}
       </div>
     </div>
   `;
@@ -4306,7 +4563,7 @@ function renderMonth() {
   }
   html += `</div></div>`;
   // Show empty-state hint if no events at all
-  if (calEvents.filter(e => !e.isGoogleEvent).length === 0) {
+  if (calEvents.filter((e) => !e.isGoogleEvent).length === 0) {
     html += `<div class="empty-state">
       <div class="empty-state-icon">📅</div>
       <div class="empty-state-title">No interviews scheduled yet</div>
@@ -4863,14 +5120,6 @@ function setMeetingPlatform(platform, btnEl) {
     input.placeholder = "https://your-meeting-link.com/join";
     noteEl.textContent =
       "Paste any video conferencing link (Teams, Webex, Whereby, etc.)";
-  } else if (platform === "zoom") {
-    genBtn.textContent = "⚡ Generate Zoom link";
-    genBtn.style.display = "";
-    openBtn.style.display = "";
-    openBtn.title = "Open zoom.us";
-    input.placeholder = "https://zoom.us/j/123456789";
-    noteEl.textContent =
-      "💡 Click Generate to create a real Zoom meeting instantly.";
   } else {
     genBtn.textContent = "⚡ Generate Meet placeholder";
     genBtn.style.display = "";
@@ -4890,35 +5139,8 @@ async function generateMeetingLink() {
   let url = "";
 
   if (_meetingPlatform === "zoom") {
-    // Real Zoom meeting via Server-to-Server OAuth
-    if (genBtn) {
-      genBtn.disabled = true;
-      genBtn.textContent = "Creating…";
-    }
-    try {
-      const dateVal =
-        document.getElementById("cal-f-date")?.value ||
-        new Date().toISOString().slice(0, 10);
-      const timeVal = document.getElementById("cal-f-time")?.value || "09:00";
-      const startISO = `${dateVal}T${timeVal}:00`;
-      const nameVal =
-        document.getElementById("cal-f-name")?.value?.trim() || "Applicant";
-      const topic = `Interview – ${nameVal}`;
-      url = await zoomCreateMeeting({ topic, startISO });
-      showCalToast("✅ Real Zoom meeting created!");
-    } catch (err) {
-      console.error("[Zoom] ❌ Could not create meeting:", err);
-      showCalToast("❌ Zoom meeting creation failed — check console.");
-      if (genBtn) {
-        genBtn.disabled = false;
-        genBtn.textContent = "⚡ Generate Zoom link";
-      }
-      return;
-    }
-    if (genBtn) {
-      genBtn.disabled = false;
-      genBtn.textContent = "⚡ Generate Zoom link";
-    }
+    showCalToast("Zoom integration is not available. Paste a link manually.");
+    return;
   } else if (_meetingPlatform === "meet") {
     if (gcalSignedIn) {
       // Real Meet room will be auto-created when the event is saved to GCal
@@ -4943,11 +5165,7 @@ async function generateMeetingLink() {
 }
 
 function openMeetingPlatform() {
-  const url =
-    _meetingPlatform === "zoom"
-      ? "https://zoom.us/meeting/schedule"
-      : "https://meet.google.com/new";
-  window.open(url, "_blank", "noopener");
+  window.open("https://meet.google.com/new", "_blank", "noopener");
 }
 
 function updateMeetingLinkNote(url) {
@@ -6073,7 +6291,7 @@ function renderSearchResults(q) {
     .slice(0, 4);
 
   if (!taskHits.length && !calHits.length) {
-    el.innerHTML = `<div class="search-empty">No results for "<strong>${q}</strong>"</div>`;
+    el.innerHTML = `<div class="search-empty">No results for "<strong>${sanitize(q)}</strong>"</div>`;
     return;
   }
 
@@ -6656,6 +6874,54 @@ function showAnalytics() {
   document.getElementById("btn-add-task").style.display = "none";
 
   renderAnalytics();
+  _renderApiCountsBanner();
+}
+
+/* ── Fetch live counts from partner API and show in analytics ── */
+async function _renderApiCountsBanner() {
+  const analyticsEl = document.getElementById("view-analytics");
+  if (!analyticsEl) return;
+
+  // Remove any previous banner
+  const old = document.getElementById("api-counts-banner");
+  if (old) old.remove();
+
+  if (!window.UpstaffAPI || !UpstaffAPI.isConfigured()) return;
+
+  // Insert placeholder
+  const banner = document.createElement("div");
+  banner.id = "api-counts-banner";
+  banner.style.cssText =
+    "margin:0 0 20px;padding:16px 20px;background:var(--surface-1);border:1px solid var(--border);border-radius:12px;";
+  banner.innerHTML = `<div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px">🔗 Live Database Counts</div>
+    <div style="color:var(--muted);font-size:12px">Loading…</div>`;
+  analyticsEl.prepend(banner);
+
+  try {
+    const res = await UpstaffAPI.getCounts();
+    const counts = res.counts || {};
+    const statusKeys = Object.keys(counts).filter((k) => k !== "total");
+
+    banner.innerHTML = `
+      <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px">
+        🔗 Live Database Counts
+        <span style="font-size:11px;font-weight:400;color:var(--muted);margin-left:8px">Total: ${counts.total || 0} applicants</span>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">
+        ${statusKeys
+          .map((s) =>
+            counts[s] > 0
+              ? `
+          <span style="font-size:11px;padding:4px 10px;border-radius:99px;background:var(--surface-2);border:1px solid var(--border);color:var(--text);font-weight:600">
+            ${sanitize(s)}: <strong>${counts[s]}</strong>
+          </span>`
+              : "",
+          )
+          .join("")}
+      </div>`;
+  } catch (e) {
+    banner.innerHTML = `<div style="font-size:12px;color:var(--muted)">🔗 Could not load live counts: ${e.message}</div>`;
+  }
 }
 
 /* ══════════════════════════════════════════════
@@ -7372,99 +7638,7 @@ function copyExtCalId(calendarId, btnEl) {
    SETUP — Fill in your credentials below:
 ══════════════════════════════════════════════ */
 
-/* ══════════════════════════════════════════════
-   ZOOM SERVER-TO-SERVER CONFIG
-   Credentials from marketplace.zoom.us → Your App → App Credentials
-   ⚠️  Regenerate these after testing — do not commit to public repos
-══════════════════════════════════════════════ */
-const ZOOM_CONFIG = {
-  ACCOUNT_ID: "uNseO7ynQ5irlTqSXH71Mg",
-  CLIENT_ID: "0rjnb2o3S3DPVxCWEVRSw",
-  CLIENT_SECRET: "usYvn8IqJhFDZ8lTSRs1IX2Tni1UQsC0",
-  // Zoom OAuth token endpoint
-  TOKEN_URL: "https://zoom.us/oauth/token",
-  // Zoom API base
-  API_BASE: "https://api.zoom.us/v2",
-  // Default meeting duration in minutes
-  DEFAULT_DURATION: 60,
-  // Default timezone
-  TIMEZONE: "Asia/Manila",
-};
-
-// Cache the Zoom token so we don't re-fetch on every meeting creation
-let _zoomTokenCache = { token: null, expires: 0 };
-
-/* zoomGetToken
-   Fetches a Server-to-Server OAuth token from Zoom.
-   Caches it until 60s before expiry to avoid redundant requests. */
-async function zoomGetToken() {
-  const now = Date.now();
-  if (_zoomTokenCache.token && _zoomTokenCache.expires > now) {
-    return _zoomTokenCache.token;
-  }
-  const credentials = btoa(
-    `${ZOOM_CONFIG.CLIENT_ID}:${ZOOM_CONFIG.CLIENT_SECRET}`,
-  );
-  const resp = await fetch(
-    `${ZOOM_CONFIG.TOKEN_URL}?grant_type=account_credentials&account_id=${ZOOM_CONFIG.ACCOUNT_ID}`,
-    {
-      method: "POST",
-      headers: { Authorization: `Basic ${credentials}` },
-    },
-  );
-  if (!resp.ok) {
-    const err = await resp.text();
-    throw new Error(`[Zoom] Token fetch failed: ${err}`);
-  }
-  const data = await resp.json();
-  _zoomTokenCache = {
-    token: data.access_token,
-    expires: now + (data.expires_in - 60) * 1000,
-  };
-  dbg("[Zoom] ✅ Token acquired, expires in", data.expires_in, "s");
-  return data.access_token;
-}
-
-/* zoomCreateMeeting
-   Creates a real scheduled Zoom meeting via Server-to-Server OAuth.
-   Returns the join_url string on success, throws on failure. */
-async function zoomCreateMeeting({
-  topic,
-  startISO,
-  duration = ZOOM_CONFIG.DEFAULT_DURATION,
-}) {
-  const token = await zoomGetToken();
-  const resp = await fetch(`${ZOOM_CONFIG.API_BASE}/users/me/meetings`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      topic: topic || "Interview",
-      type: 2, // scheduled meeting
-      start_time: startISO, // e.g. "2026-04-01T10:00:00"
-      duration,
-      timezone: ZOOM_CONFIG.TIMEZONE,
-      settings: {
-        join_before_host: true, // interviewee can join before HR
-        waiting_room: false,
-        host_video: true,
-        participant_video: true,
-        mute_upon_entry: false,
-      },
-    }),
-  });
-  if (!resp.ok) {
-    const err = await resp.json().catch(() => ({}));
-    throw new Error(
-      `[Zoom] Create meeting failed: ${err.message || resp.status}`,
-    );
-  }
-  const data = await resp.json();
-  dbg("[Zoom] ✅ Meeting created:", data.join_url);
-  return data.join_url;
-}
+// Zoom integration removed.
 
 /* ══════════════════════════════════════════════
    FILE DROPZONE DRAG-AND-DROP SETUP

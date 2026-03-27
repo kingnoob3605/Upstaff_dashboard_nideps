@@ -1,16 +1,28 @@
 const GCAL_CONFIG = {
-  // ─────────────────────────────────────────────────────────────────
-  // STEP 1: Your API Key
-  // Google Cloud Console → APIs & Services → Credentials → API Key
-  // ─────────────────────────────────────────────────────────────────
+  // ══════════════════════════════════════════════════════════════════
+  // ⚙️  DEPLOYMENT SETUP — Fill these in before going live
+  // ══════════════════════════════════════════════════════════════════
+  //
+  // STEP 1 — Create a Google Cloud Project
+  //   https://console.cloud.google.com/
+  //   → New Project → Enable "Google Calendar API"
+  //
+  // STEP 2 — Get your API Key
+  //   Google Cloud Console → APIs & Services → Credentials
+  //   → Create Credentials → API Key
+  //   → Restrict it to "Google Calendar API" only
+  //
   API_KEY: "",
 
-  // ─────────────────────────────────────────────────────────────────
-  // STEP 2: Your OAuth 2.0 Client ID
-  // Google Cloud Console → Credentials → OAuth 2.0 Client ID
-  // Authorized origin: http://localhost:8080
-  // ─────────────────────────────────────────────────────────────────
+  // STEP 3 — Get your OAuth 2.0 Client ID
+  //   Google Cloud Console → Credentials
+  //   → Create Credentials → OAuth 2.0 Client ID
+  //   → Application type: Web application
+  //   → Authorized JavaScript origins: add your deployed URL
+  //     (e.g. https://yourdomain.com  OR  http://localhost:8080 for local)
+  //
   CLIENT_ID: "",
+  // ══════════════════════════════════════════════════════════════════
 
   // Calendar IDs are discovered dynamically via gcalFetchCalendarList()
   // No hardcoding needed — calendars are fetched from the Google API.
@@ -211,12 +223,34 @@ function showPopupBlockedBanner() {
 function updateSyncBtnState(label, isError = false) {
   const btn = document.getElementById("gcal-sync-btn");
   const lbl = document.getElementById("gcal-btn-label");
+
+  // If resetting to neutral label and user is not signed in, show "Connect to Google" instead
+  const isNeutral = label === "Sync Google Cal";
+  const notSignedIn = !gcalSignedIn && localStorage.getItem(getUserGcalAuthKey()) !== "1";
+  if (isNeutral && notSignedIn) {
+    label = "Connect to Google";
+  }
+
   if (lbl) lbl.textContent = label;
   if (btn) {
-    btn.style.borderColor = isError ? "rgba(220,38,38,.4)" : "";
-    // Show spinner while connecting/syncing, remove when done or errored
+    const isConnectPrompt = label === "Connect to Google";
     const isBusy = label === "Connecting…" || label === "Syncing…" || label === "Reconnecting…";
     btn.classList.toggle("gcal-syncing", isBusy);
+
+    if (isError) {
+      btn.style.borderColor = "rgba(220,38,38,.4)";
+      btn.style.color = "";
+      btn.style.background = "";
+    } else if (isConnectPrompt) {
+      btn.style.borderColor = "rgba(66,133,244,.5)";
+      btn.style.color = "#4285f4";
+      btn.style.background = "rgba(66,133,244,.07)";
+    } else {
+      // Connected/synced state — reset to default styling
+      btn.style.borderColor = "";
+      btn.style.color = "";
+      btn.style.background = "";
+    }
   }
 }
 
@@ -225,7 +259,7 @@ function updateSyncBtnState(label, isError = false) {
 ────────────────────────────────────────────── */
 function handleGCalSync() {
   if (!GCAL_CONFIG.API_KEY || !GCAL_CONFIG.CLIENT_ID) {
-    showCalToast("⚠️ Google Calendar is not configured. Add your API_KEY and CLIENT_ID inside js/pm-ui-gcal.js to enable sync.");
+    showCalToast("⚠️ Google Calendar is not set up yet. Open js/pm-ui-gcal.js and fill in your API_KEY and CLIENT_ID to enable sync.");
     return;
   }
   if (!gcalTokenClient) {
@@ -1283,6 +1317,16 @@ window.addEventListener("load", () => {
     document.getElementById("gcal-status-badge").style.display = "flex";
     document.getElementById("gcal-status-text").textContent =
       `${lastCount} events — reconnecting…`;
+  } else if (!wasSignedIn) {
+    // Not connected — prompt the manager to connect
+    const btn = document.getElementById("gcal-sync-btn");
+    const lbl = document.getElementById("gcal-btn-label");
+    if (lbl) lbl.textContent = "Connect to Google";
+    if (btn) {
+      btn.style.borderColor = "rgba(66,133,244,.5)";
+      btn.style.color = "#4285f4";
+      btn.style.background = "rgba(66,133,244,.07)";
+    }
   }
 
   // Load Google Identity Services for OAuth

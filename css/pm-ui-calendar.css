@@ -2060,6 +2060,16 @@
 .pipeline-btn-reject:hover {
   background: rgba(239, 68, 68, 0.14);
 }
+.pipeline-btn-move {
+  background: rgba(139, 92, 246, 0.08);
+  border-color: rgba(139, 92, 246, 0.35);
+  color: #7c3aed;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+.pipeline-btn-move:hover {
+  background: rgba(139, 92, 246, 0.16);
+}
 [data-theme="dark"] .pipeline-btn-next {
   color: #44d7e9;
 }
@@ -2068,6 +2078,15 @@
 }
 [data-theme="dark"] .pipeline-btn-reject {
   color: #f87171;
+}
+[data-theme="dark"] .pipeline-btn-move {
+  background: rgba(167, 139, 250, 0.1);
+  border-color: rgba(167, 139, 250, 0.3);
+  color: #a78bfa;
+}
+[data-theme="dark"] .pipeline-btn-move option {
+  background: #1e1e2e;
+  color: #e2e8f0;
 }
 
 /* ══════════════════════════════════════════════
