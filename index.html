@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<link rel="icon" type="image/png" href="css/Logo-NavBar.png"/>
 <!-- Required for Google OAuth popup to communicate back via window.opener -->
 <meta http-equiv="Cross-Origin-Opener-Policy" content="unsafe-none"/>
 <title>upstaff — Project Board</title>
@@ -14,6 +15,7 @@
      which lets us connect to Google Calendar.
 ══════════════════════════════════════════════ -->
 <script src="https://apis.google.com/js/api.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
   <link rel="stylesheet" href="css/pm-ui-base.css">
 <link rel="stylesheet" href="css/pm-ui-components.css">
@@ -162,10 +164,6 @@
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
       My Tasks
     </button>
-    <button class="view-tab" data-view="jobs">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
-      Jobs
-    </button>
   </div>
 
   <!-- Content Area -->
@@ -192,7 +190,7 @@
         </select>
         <select class="list-filter-select" id="list-filter-assignee" onchange="renderList()">
           <option value="">All Assignees</option>
-          <option>HR Team</option><option>Ana Reyes</option><option>Marketing</option><option>CEO Office</option><option>HR Panel</option>
+          <option>Assistant</option><option>Manager</option>
         </select>
         <div class="list-filter-sep"></div>
         <span class="filter-label">Sort</span>
@@ -407,19 +405,11 @@
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>
             My Profile
           </button>
-          <button class="settings-nav-item" data-setting="workspace">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
-            Workspace
-          </button>
-          <button class="settings-nav-item" data-setting="members">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-            Team Members
-          </button>
           <button class="settings-nav-item" data-setting="notifications">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
             Notifications
           </button>
-          <button class="settings-nav-item" data-setting="positions">
+          <button class="settings-nav-item" data-setting="positions" data-role-hide="hr">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
             Positions
           </button>
@@ -427,7 +417,11 @@
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
             Calendars
           </button>
-          <button class="settings-nav-item" data-setting="danger">
+          <button class="settings-nav-item" data-setting="partner-api">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+            Partner API
+          </button>
+          <button class="settings-nav-item" data-setting="danger" data-role-hide="hr">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
             Danger Zone
           </button>
@@ -440,99 +434,39 @@
           <div class="settings-panel active" id="setting-profile">
             <div class="settings-card">
               <div class="settings-card-title">My Profile</div>
-              <div class="settings-card-desc">Update your personal information and display preferences.</div>
+              <div class="settings-card-desc">Update your personal information shown across the dashboard.</div>
               <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px">
-                <div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--violet),var(--cyan));display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:#fff;flex-shrink:0">HR</div>
+                <div id="profile-avatar-circle" style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--violet),var(--cyan));display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:#fff;flex-shrink:0">HR</div>
                 <div>
-                  <div style="font-size:14px;font-weight:700;color:var(--text)">HR Admin</div>
-                  <div style="font-size:12px;color:var(--light);margin-top:2px">Administrator · upstaff</div>
-                  <button style="margin-top:8px;padding:5px 14px;border-radius:8px;border:1.5px solid var(--border);background:var(--surface-1);font-size:11px;font-weight:600;color:var(--muted);cursor:pointer" data-action="toastPhotoUpload">Change Photo</button>
+                  <div id="profile-display-name" style="font-size:14px;font-weight:700;color:var(--text)">HR Admin</div>
+                  <div id="profile-display-role" style="font-size:12px;color:var(--light);margin-top:2px">Administrator · upstaff</div>
                 </div>
               </div>
               <div class="settings-form-row">
-                <div class="settings-form-group"><label class="settings-label">First Name</label><input class="settings-input" value="HR" placeholder="First name"/></div>
-                <div class="settings-form-group"><label class="settings-label">Last Name</label><input class="settings-input" value="Admin" placeholder="Last name"/></div>
+                <div class="settings-form-group"><label class="settings-label">First Name</label><input class="settings-input" id="s-profile-firstname" placeholder="First name"/></div>
+                <div class="settings-form-group"><label class="settings-label">Last Name</label><input class="settings-input" id="s-profile-lastname" placeholder="Last name"/></div>
               </div>
-              <div class="settings-form-group"><label class="settings-label">Email Address</label><input class="settings-input" type="email" value="hr@upstaff.com" placeholder="email@company.com"/></div>
-              <div class="settings-form-group"><label class="settings-label">Job Title</label><input class="settings-input" value="HR Manager" placeholder="e.g. HR Manager"/></div>
-              <div class="settings-form-group"><label class="settings-label">Role</label>
-                <select class="settings-select"><option selected>Administrator</option><option>HR Manager</option><option>Recruiter</option><option>Viewer</option></select>
-              </div>
-              <button class="settings-save-btn" data-action="toastProfileSaved">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-                Save
-              </button>
-            </div>
-            <div class="settings-card">
-              <div class="settings-card-title">Change Password</div>
-              <div class="settings-card-desc">Keep your account secure by using a strong password.</div>
-              <div class="settings-form-group"><label class="settings-label">Current Password</label><input class="settings-input" type="password" placeholder="Enter current password"/></div>
-              <div class="settings-form-row">
-                <div class="settings-form-group"><label class="settings-label">New Password</label><input class="settings-input" type="password" placeholder="New password"/></div>
-                <div class="settings-form-group"><label class="settings-label">Confirm Password</label><input class="settings-input" type="password" placeholder="Confirm password"/></div>
-              </div>
-              <button class="settings-save-btn" data-action="toastPasswordUpdated">Update Password</button>
-            </div>
-          </div>
-
-          <!-- ── Workspace ── -->
-          <div class="settings-panel" id="setting-workspace">
-            <div class="settings-card">
-              <div class="settings-card-title">Workspace Settings</div>
-              <div class="settings-card-desc">Configure your company and workspace preferences.</div>
-              <div class="settings-form-group"><label class="settings-label">Company Name</label><input class="settings-input" value="upstaff Inc." placeholder="Company name"/></div>
-              <div class="settings-form-row">
-                <div class="settings-form-group"><label class="settings-label">Industry</label>
-                  <select class="settings-select"><option selected>Human Resources</option><option>Technology</option><option>Finance</option><option>Healthcare</option><option>Education</option></select>
-                </div>
-                <div class="settings-form-group"><label class="settings-label">Company Size</label>
-                  <select class="settings-select"><option>1–10</option><option selected>11–50</option><option>51–200</option><option>201–500</option><option>500+</option></select>
-                </div>
+              <div class="settings-form-group"><label class="settings-label">Email Address <span style="font-weight:400;color:var(--muted);font-size:10px;">(display only — login uses Partner API email)</span></label><input class="settings-input" id="s-profile-email" type="email" placeholder="email@company.com"/></div>
+              <div class="settings-form-group"><label class="settings-label">Job Title</label><input class="settings-input" id="s-profile-title" placeholder="e.g. HR Manager"/></div>
+              <div class="settings-form-group"><label class="settings-label">Role <span style="font-weight:400;color:var(--muted);font-size:10px;">(set by logged-in account)</span></label>
+                <select class="settings-select" id="s-profile-role" disabled style="opacity:0.8;cursor:default;"><option value="HR Manager">HR Manager</option><option value="Assistant">Assistant</option></select>
               </div>
               <div class="settings-form-row">
                 <div class="settings-form-group"><label class="settings-label">Timezone</label>
-                  <select class="settings-select"><option selected>Asia/Manila (GMT+8)</option><option>UTC</option><option>America/New_York</option><option>Europe/London</option></select>
+                  <select class="settings-select" id="s-ws-timezone">
+                    <option>Asia/Manila (GMT+8)</option><option>UTC</option><option>America/New_York</option><option>America/Los_Angeles</option><option>Europe/London</option><option>Asia/Singapore</option><option>Australia/Sydney (GMT+10)</option>
+                  </select>
                 </div>
                 <div class="settings-form-group"><label class="settings-label">Date Format</label>
-                  <select class="settings-select"><option selected>MM/DD/YYYY</option><option>DD/MM/YYYY</option><option>YYYY-MM-DD</option></select>
+                  <select class="settings-select" id="s-ws-dateformat">
+                    <option>MM/DD/YYYY</option><option>DD/MM/YYYY</option><option>YYYY-MM-DD</option>
+                  </select>
                 </div>
               </div>
-              <button class="settings-save-btn" data-action="toastWorkspaceSaved">Save</button>
-            </div>
-            <div class="settings-card">
-              <div class="settings-card-title">Default View</div>
-              <div class="settings-card-desc">Choose which view opens by default when you log in.</div>
-              <div class="settings-row">
-                <div><div class="settings-row-label">Default Board View</div><div class="settings-row-sub">What shows first when opening a project</div></div>
-                <select class="settings-select" style="width:auto">
-                  <option selected>List</option><option>Board</option><option>Calendar</option><option>Table</option>
-                </select>
-              </div>
-              <div class="settings-row" style="margin-top:12px">
-                <div><div class="settings-row-label">Compact Mode</div><div class="settings-row-sub">Reduce spacing for more tasks on screen</div></div>
-                <label class="toggle-switch"><input type="checkbox"/><span class="toggle-slider"></span></label>
-              </div>
-              <div class="settings-row">
-                <div><div class="settings-row-label">Show Completed Tasks</div><div class="settings-row-sub">Always display Done tasks in all views</div></div>
-                <label class="toggle-switch"><input type="checkbox" checked/><span class="toggle-slider"></span></label>
-              </div>
-            </div>
-          </div>
-
-          <!-- ── Team Members ── -->
-          <div class="settings-panel" id="setting-members">
-            <div class="settings-card">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
-                <div>
-                  <div class="settings-card-title" class="u-mb-2">Team Members</div>
-                  <div class="u-fs-12 u-light">Manage who has access to this workspace.</div>
-                </div>
-                <button class="settings-save-btn" data-action="toastInviteSent">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                  Invite Member
-                </button>
-              </div>
-              <div id="members-list"></div>
+              <button class="settings-save-btn" onclick="saveProfileSettings()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                Save Profile
+              </button>
             </div>
           </div>
 
@@ -606,6 +540,7 @@
             </div>
           </div>
 
+          <!-- ── Departments ── -->
           <!-- ── Calendars ── -->
           <div class="settings-panel" id="setting-calendars">
 
@@ -762,33 +697,70 @@
 
           <!-- ── Partner API Integration ── -->
           <div class="settings-panel" id="setting-partner-api">
+
+            <!-- Account Credentials Card -->
+            <div class="settings-card" style="margin-bottom:12px;">
+              <div class="settings-card-title">🔐 Account Credentials</div>
+              <div class="settings-card-desc">Enter your Apps Script admin credentials. These are stored locally in your browser — never in the source code.</div>
+              <form onsubmit="return false;" autocomplete="on">
+
+              <!-- Web App URL -->
+              <div style="margin-bottom:12px;">
+                <label class="settings-label">Google Apps Script Web App URL</label>
+                <div class="settings-row-sub" style="margin-bottom:6px;">The <code>/exec</code> URL from your Apps Script deployment.</div>
+                <input id="api-cred-url" type="url"
+                  placeholder="https://script.google.com/macros/s/.../exec"
+                  style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid var(--border,rgba(255,255,255,.08));background:var(--surface-2,#0f1629);color:var(--text,#e2e8f0);font-size:12px;outline:none;font-family:monospace;"/>
+              </div>
+
+              <!-- ADMIN_EMAIL -->
+              <div style="margin-bottom:12px;">
+                <label class="settings-label">ADMIN_EMAIL</label>
+                <div class="settings-row-sub" style="margin-bottom:6px;">From Script Properties in your Apps Script project.</div>
+                <input id="api-cred-email" type="email"
+                  placeholder="qwerty123@example.com"
+                  style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid var(--border,rgba(255,255,255,.08));background:var(--surface-2,#0f1629);color:var(--text,#e2e8f0);font-size:13px;outline:none;"/>
+              </div>
+
+              <!-- ADMIN_PASSWORD -->
+              <div style="margin-bottom:16px;">
+                <label class="settings-label">ADMIN_PASSWORD</label>
+                <div class="settings-row-sub" style="margin-bottom:6px;">From Script Properties in your Apps Script project.</div>
+                <div style="display:flex;gap:8px;align-items:center;">
+                  <input id="api-cred-password" type="password"
+                    placeholder="••••••••"
+                    style="flex:1;padding:10px 12px;border-radius:10px;border:1px solid var(--border,rgba(255,255,255,.08));background:var(--surface-2,#0f1629);color:var(--text,#e2e8f0);font-size:13px;outline:none;"/>
+                  <button onclick="toggleApiPasswordVisibility()" title="Show/hide"
+                    style="padding:10px 12px;border-radius:10px;border:1px solid var(--border,rgba(255,255,255,.08));background:var(--surface-2,#0f1629);color:var(--muted,#64748b);cursor:pointer;font-size:13px;">👁</button>
+                </div>
+              </div>
+
+              <div style="display:flex;gap:8px;align-items:center;">
+                <button class="settings-save-btn" onclick="saveApiCredentials()" style="flex:1;">Save Credentials</button>
+              </div>
+              <div id="api-cred-status" style="margin-top:8px;font-size:11px;color:var(--muted);min-height:16px;"></div>
+              </form>
+            </div>
+
+            <!-- Connection Status Card -->
             <div class="settings-card">
-              <div class="settings-card-title">🔗 Partner API (Google Sheets / Supabase)</div>
-              <div class="settings-card-desc">Connect to your partner's applicant database. Once connected, applicants will be loaded live from the shared database.</div>
+              <div class="settings-card-title">🔗 Connection</div>
               <div class="settings-row">
-                <div><div class="settings-row-label">Web App URL</div><div class="settings-row-sub">The deployed Google Apps Script Web App URL</div></div>
-                <input class="settings-input" id="s-api-url" placeholder="https://script.google.com/macros/s/..." oninput="saveApiConfig()"/>
+                <div>
+                  <div class="settings-row-label">Logged in as</div>
+                  <div class="settings-row-sub" id="api-logged-in-as">—</div>
+                </div>
+                <button class="settings-save-btn" style="background:var(--red,#ef4444);color:#fff;" onclick="handleLogout()">Sign Out</button>
               </div>
-              <div class="settings-row">
-                <div><div class="settings-row-label">Admin Email</div><div class="settings-row-sub">Admin login email</div></div>
-                <input class="settings-input" id="s-api-email" type="email" placeholder="admin@example.com" oninput="saveApiConfig()"/>
-              </div>
-              <div class="settings-row">
-                <div><div class="settings-row-label">Password</div><div class="settings-row-sub">Admin login password</div></div>
-                <input class="settings-input" id="s-api-password" type="password" placeholder="••••••••" oninput="saveApiConfig()"/>
-              </div>
-              <div class="settings-row" style="margin-top:4px">
+              <div class="settings-row" style="margin-top:4px;">
                 <div>
                   <div class="settings-row-label">Connection Status</div>
-                  <div class="settings-row-sub" id="api-status-text">Not connected</div>
+                  <div class="settings-row-sub" id="api-status-text">Checking…</div>
                 </div>
-                <button class="settings-save-btn" onclick="connectToApi()">Connect &amp; Test</button>
-              </div>
-              <div class="settings-row" style="margin-top:4px">
-                <div><div class="settings-row-label">Sync Applicants</div><div class="settings-row-sub">Manually pull the latest applicants from the database</div></div>
                 <button class="settings-save-btn" onclick="syncApplicantsFromApi()">Sync Now</button>
               </div>
             </div>
+
           </div>
 
           <!-- ── Danger Zone ── -->
@@ -851,13 +823,29 @@
     <div id="view-analytics" class="view-panel" style="display:none">
 
       <!-- ── Top KPI cards ── -->
-      <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:12px">
+        <button class="filter-btn" onclick="syncApplicantsFromApi()" style="gap:6px">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+          Refresh from Sheet
+        </button>
         <button class="filter-btn" data-action="exportAnalyticsCSV" style="gap:6px">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Export Analytics CSV
+          Export CSV
         </button>
       </div>
       <div class="analytics-stat-row" id="analytics-kpi-row"></div>
+
+      <!-- ── Time to Hire ── -->
+      <div class="u-mb-20">
+        <div class="analytics-section-title">⏱️ Time to Hire <span>— Average days from application to hire, by position</span></div>
+        <div class="analytics-card" id="chart-time-to-hire"></div>
+      </div>
+
+      <!-- ── Pipeline Funnel ── -->
+      <div class="u-mb-20">
+        <div class="analytics-section-title">🔽 Recruitment Pipeline <span>— Current applicant distribution across all stages</span></div>
+        <div class="analytics-card" id="chart-pipeline"></div>
+      </div>
 
       <!-- ── Position Choices Summary Table ── -->
       <div class="u-mb-20">
@@ -933,8 +921,7 @@
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>
             All Candidates
           </button>
-          <button class="filter-btn" data-folder="Ready to Call" data-action="switchCandidateFolder" data-arg="Ready to Call">📞 Ready to Call</button>
-          <button class="filter-btn" data-folder="Ready to Hire" data-action="switchCandidateFolder" data-arg="Ready to Hire">🎯 Ready to Hire</button>
+          <button class="filter-btn" data-folder="Waiting List" data-action="switchCandidateFolder" data-arg="Waiting List">⏳ Waiting List</button>
           <button class="filter-btn" data-folder="Talent Pool / Shortlisted" data-action="switchCandidateFolder" data-arg="Talent Pool / Shortlisted">⭐ Talent Pool</button>
         </div>
         <div class="filter-spacer"></div>
@@ -946,24 +933,6 @@
       <div id="candidates-list"></div>
     </div><!-- /view-candidates -->
 
-    <!-- ── JOBS VIEW ── -->
-    <div id="view-jobs" class="view-panel" style="display:none">
-      <div style="max-width:700px;margin:0 auto;padding:20px 0">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
-          <div>
-            <div style="font-size:18px;font-weight:700;color:var(--text)">Job Listings</div>
-            <div style="font-size:12px;color:var(--muted);margin-top:2px">Synced from partner database</div>
-          </div>
-          <div style="display:flex;gap:8px">
-            <button class="settings-save-btn" onclick="loadJobsView()">Refresh</button>
-            <button class="settings-save-btn" style="background:var(--cyan)" onclick="openAddJobModal()">+ Add Job</button>
-          </div>
-        </div>
-        <div id="jobs-list" style="display:flex;flex-direction:column;gap:10px">
-          <div style="text-align:center;padding:40px;color:var(--muted);font-size:13px">Loading jobs…</div>
-        </div>
-      </div>
-    </div><!-- /view-jobs -->
 
   </div><!-- /content -->
 </div><!-- /main -->
@@ -978,19 +947,23 @@
   <div id="task-modal">
 
     <!-- Header -->
-    <div class="modal-title">
-      <div style="display:flex;flex-direction:column;gap:2px;min-width:0">
-        <span id="task-modal-heading" class="u-fs-15 u-fw-700">New Applicant</span>
-        <div id="task-modal-subhead" style="font-size:11px;color:var(--muted);font-weight:500"></div>
+    <div class="modal-header">
+      <div id="task-modal-avatar" class="modal-avatar">NA</div>
+      <div class="modal-header-info">
+        <span id="task-modal-heading" class="modal-heading">New Applicant</span>
+        <div id="task-modal-subhead" class="modal-subhead"></div>
       </div>
       <button class="modal-close" id="task-modal-close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
+
+    <!-- Scrollable body -->
+    <div class="modal-scroll-body">
 
     <!-- Pipeline stage progress bar -->
     <div id="task-stage-progress" class="u-mb-12"></div>
 
     <!-- Pipeline action strip (shows when editing an active applicant) -->
-    <div id="task-pipeline-actions" style="display:none;margin-bottom:14px;padding:10px 12px;background:var(--surface-2);border-radius:10px;border:1px solid var(--border);display:none;flex-wrap:wrap;gap:6px;align-items:center">
+    <div id="task-pipeline-actions" style="display:none">
       <span style="font-size:11px;color:var(--muted);font-weight:600;margin-right:4px">Move:</span>
       <button id="btn-advance-stage" class="pipeline-action-btn pipeline-btn-next" data-action="advanceStageAndClose">→ Next Stage</button>
       <select id="btn-move-stage" class="pipeline-action-btn pipeline-btn-move" style="display:none" onchange="if(this.value){moveApplicantToStage(window._editingTaskId,this.value);closeTaskModal();this.value=''}">
@@ -998,6 +971,7 @@
       </select>
       <button id="btn-hire-now"      class="pipeline-action-btn pipeline-btn-hire" data-action="hireAndClose" style="display:none">✓ Hire</button>
       <button id="btn-reject-now"    class="pipeline-action-btn pipeline-btn-reject" data-action="rejectAndClose">✗ Reject</button>
+      <button id="btn-delete-now"    class="pipeline-action-btn pipeline-btn-delete" onclick="listDeleteApplicant(window._editingTaskId)" style="margin-left:auto;">🗑️ Delete</button>
     </div>
 
     <!-- Tab Nav -->
@@ -1027,10 +1001,7 @@
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
         Activity
       </button>
-      <button class="modal-tab" data-tab="files" data-action="switchModalTab" data-arg="files">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-        Files
-      </button>
+
       <button class="modal-tab" data-tab="history" data-action="switchModalTab" data-arg="history">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>
         History
@@ -1059,6 +1030,13 @@
           <input type="tel" class="form-input" id="f-phone" placeholder="+63 917 000 0000"/>
         </div>
       </div>
+      <div class="form-group">
+        <label class="form-label">Address</label>
+        <input type="text" class="form-input" id="f-address" placeholder="City, Province, Philippines"/>
+      </div>
+
+      <!-- Application Info -->
+      <div class="form-section-divider">Application Info</div>
       <div class="form-row">
         <div class="form-group">
           <label class="form-label">Position Applied</label>
@@ -1071,14 +1049,163 @@
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label">Resume Link</label>
-          <input type="url" class="form-input" id="f-resume" placeholder="https://drive.google.com/…"/>
+          <label class="form-label">Follow-up Reminder</label>
+          <input type="date" class="form-input" id="f-followup-date" title="Get notified on this date to follow up with the applicant"/>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Employment Type</label>
+          <select class="form-select" id="f-employment-type">
+            <option value="">— Select —</option>
+            <option>Full-time</option>
+            <option>Part-time</option>
+            <option>Contract</option>
+            <option>Freelance</option>
+            <option>Project-based</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Work Setup</label>
+          <select class="form-select" id="f-work-setup">
+            <option value="">— Select —</option>
+            <option>On-site</option>
+            <option>Remote</option>
+            <option>Hybrid</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Work Schedule</label>
+          <select class="form-select" id="f-work-schedule">
+            <option value="">— Select —</option>
+            <option>Morning (6AM–2PM)</option>
+            <option>Mid-shift (2PM–10PM)</option>
+            <option>Night (10PM–6AM)</option>
+            <option>Weekends Only</option>
+            <option>Flexible</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Referral Source</label>
+          <select class="form-select" id="f-referral-source">
+            <option value="">— Select —</option>
+            <option>LinkedIn</option>
+            <option>JobStreet</option>
+            <option>Indeed</option>
+            <option>Facebook</option>
+            <option>Referral</option>
+            <option>Walk-in</option>
+            <option>Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Interview Slots</label>
+        <input type="text" class="form-input" id="f-interview-slots" placeholder="e.g. 2026-04-17 @ 09:00"/>
+      </div>
+
+      <!-- Education -->
+      <div class="form-section-divider">Education</div>
+      <div class="form-group">
+        <label class="form-label">Education Level</label>
+        <select class="form-select" id="f-education-level">
+          <option value="">— Select —</option>
+          <option>High School</option>
+          <option>Vocational / Technical</option>
+          <option>Some College</option>
+          <option>Bachelor's Degree</option>
+          <option>Master's Degree</option>
+          <option>Doctorate</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">School</label>
+          <input type="text" class="form-input" id="f-school" placeholder="University / College name"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Course</label>
+          <input type="text" class="form-input" id="f-course" placeholder="e.g. BS Computer Science"/>
+        </div>
+      </div>
+
+      <!-- Skills & Tools -->
+      <div class="form-section-divider">Skills &amp; Tools</div>
+      <div class="form-group">
+        <label class="form-label">Skills</label>
+        <textarea class="form-textarea" id="f-skills" placeholder="e.g. Communication, Problem-solving, Customer Service…" rows="2"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Tools</label>
+        <textarea class="form-textarea" id="f-tools" placeholder="e.g. MS Office, Slack, Salesforce, Figma…" rows="2"></textarea>
+      </div>
+
+      <!-- Links -->
+      <div class="form-section-divider">Links</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Resume / CV Link</label>
+          <div class="link-card" id="lc-resume">
+            <div class="link-card-input-row">
+              <input type="url" class="form-input link-card-input" id="f-resume" placeholder="https://drive.google.com/…"/>
+              <button type="button" class="link-card-btn" id="lc-resume-copy" title="Copy link" style="display:none">📋</button>
+              <button type="button" class="link-card-btn" id="lc-resume-open" title="Open link" style="display:none">↗</button>
+            </div>
+            <div class="link-card-badge" id="lc-resume-badge" style="display:none"></div>
+          </div>
         </div>
         <div class="form-group">
           <label class="form-label">Portfolio Link</label>
-          <input type="url" class="form-input" id="f-portfolio" placeholder="https://behance.net/…"/>
+          <div class="link-card" id="lc-portfolio">
+            <div class="link-card-input-row">
+              <input type="url" class="form-input link-card-input" id="f-portfolio" placeholder="https://behance.net/…"/>
+              <button type="button" class="link-card-btn" id="lc-portfolio-copy" title="Copy link" style="display:none">📋</button>
+              <button type="button" class="link-card-btn" id="lc-portfolio-open" title="Open link" style="display:none">↗</button>
+            </div>
+            <div class="link-card-badge" id="lc-portfolio-badge" style="display:none"></div>
+          </div>
         </div>
       </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Video Intro Link</label>
+          <div class="link-card" id="lc-video-intro">
+            <div class="link-card-input-row">
+              <input type="url" class="form-input link-card-input" id="f-video-intro" placeholder="https://drive.google.com/… or YouTube"/>
+              <button type="button" class="link-card-btn" id="lc-video-intro-copy" title="Copy link" style="display:none">📋</button>
+              <button type="button" class="link-card-btn" id="lc-video-intro-open" title="Open link" style="display:none">↗</button>
+            </div>
+            <div class="link-card-badge" id="lc-video-intro-badge" style="display:none"></div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Other Docs Link</label>
+          <div class="link-card" id="lc-other-docs">
+            <div class="link-card-input-row">
+              <input type="url" class="form-input link-card-input" id="f-other-docs" placeholder="https://drive.google.com/…"/>
+              <button type="button" class="link-card-btn" id="lc-other-docs-copy" title="Copy link" style="display:none">📋</button>
+              <button type="button" class="link-card-btn" id="lc-other-docs-open" title="Open link" style="display:none">↗</button>
+            </div>
+            <div class="link-card-badge" id="lc-other-docs-badge" style="display:none"></div>
+          </div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Drive Folder Link</label>
+        <div class="link-card" id="lc-drive-folder">
+          <div class="link-card-input-row">
+            <input type="url" class="form-input link-card-input" id="f-drive-folder" placeholder="https://drive.google.com/drive/folders/…"/>
+            <button type="button" class="link-card-btn" id="lc-drive-folder-copy" title="Copy link" style="display:none">📋</button>
+            <button type="button" class="link-card-btn" id="lc-drive-folder-open" title="Open link" style="display:none">↗</button>
+          </div>
+          <div class="link-card-badge" id="lc-drive-folder-badge" style="display:none"></div>
+        </div>
+      </div>
+
+      <!-- Notes -->
+      <div class="form-section-divider">Notes</div>
       <div class="form-group">
         <label class="form-label">Notes</label>
         <textarea class="form-textarea" id="f-notes" placeholder="Any additional notes about this applicant…" rows="3"></textarea>
@@ -1194,28 +1321,21 @@
         <div class="form-group">
           <label class="form-label">Pipeline Stage</label>
           <select class="form-select" id="f-status">
-            <optgroup label="Pipeline Stages">
-              <option value="Applied">Applied</option>
-              <option value="Screening">Screening</option>
-              <option value="Assessment">Assessment</option>
-              <option value="Interview">Interview</option>
-              <option value="Review">Review</option>
-              <option value="Hired">Hired</option>
-              <option value="Rejected">Rejected</option>
-              <option value="Cancelled">Cancelled</option>
-            </optgroup>
-            <optgroup label="Partner Statuses">
-              <option value="For Interview">For Interview</option>
-              <option value="Interviewed">Interviewed</option>
-              <option value="For Client Endorsement">For Client Endorsement</option>
-              <option value="Hired - Resigned">Hired - Resigned</option>
-              <option value="Open for other roles">Open for other roles</option>
-              <option value="Could be Revisited">Could be Revisited</option>
-              <option value="For Future Consideration">For Future Consideration</option>
-              <option value="No Show">No Show</option>
-              <option value="Not Qualified">Not Qualified</option>
-              <option value="Duplicate Lead">Duplicate Lead</option>
-            </optgroup>
+            <option value="">All Stages</option>
+            <option value="New">New</option>
+            <option value="For Interview">For Interview</option>
+            <option value="Interviewed">Interviewed</option>
+            <option value="For Client Endorsement">For Client Endorsement</option>
+            <option value="Hired">Hired</option>
+            <option value="Hired - Resigned">Hired - Resigned</option>
+            <option value="For Future Consideration">For Future Consideration</option>
+            <option value="Could be Revisited">Could be Revisited</option>
+            <option value="Open for other Roles">Open for other Roles</option>
+            <option value="Not Qualified">Not Qualified</option>
+            <option value="Rejected">Rejected</option>
+            <option value="No Show">No Show</option>
+            <option value="Duplicate Lead">Duplicate Lead</option>
+            <option value="Closed">Closed</option>
           </select>
         </div>
         <div class="form-group">
@@ -1233,7 +1353,7 @@
           <label class="form-label">Recruiter / Assignees</label>
           <div id="assignee-dropdown" class="assignee-dropdown-wrapper">
             <button type="button" id="assignee-dropdown-toggle" class="form-select assignee-dropdown-toggle" style="text-align:left;cursor:pointer;">
-              <span id="assignee-dropdown-label">HR Team</span>
+              <span id="assignee-dropdown-label">Assistant</span>
               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="float:right;margin-top:2px;"><polyline points="6 9 12 15 18 9"/></svg>
             </button>
             <div id="assignee-dropdown-panel" class="assignee-dropdown-panel" style="display:none;">
@@ -1245,8 +1365,7 @@
           <label class="form-label">Candidate Folder</label>
           <select class="form-select" id="f-folder">
             <option value="">— None —</option>
-            <option value="Ready to Call">📞 Ready to Call</option>
-            <option value="Ready to Hire">🎯 Ready to Hire</option>
+            <option value="Waiting List">⏳ Waiting List</option>
             <option value="Talent Pool / Shortlisted">⭐ Talent Pool / Shortlisted</option>
           </select>
         </div>
@@ -1318,7 +1437,7 @@
         </div>
         <div class="form-group">
           <label class="form-label">Interviewer</label>
-          <input type="text" class="form-input" id="iv-interviewer" placeholder="e.g. HR Team"/>
+          <input type="text" class="form-input" id="iv-interviewer" placeholder="e.g. Assistant"/>
         </div>
       </div>
 
@@ -1426,26 +1545,18 @@
     </div>
 
     <!-- ── TAB: FILES ── -->
-    <div class="modal-tab-panel" id="tab-files">
-      <div id="tab-files-list" class="files-list"></div>
-      <div class="file-dropzone" id="file-dropzone">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="color:var(--muted)"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-        <div style="font-size:12px;color:var(--muted);margin-top:6px;">Drag & drop or <button class="file-browse-btn" data-action="triggerFileInput">browse files</button></div>
-        <div style="font-size:10px;color:var(--light);margin-top:2px;">Max 1 MB per file · Max 5 files per task</div>
-        <input type="file" id="file-attach-input" multiple style="display:none" onchange="handleFileAttach(this)"/>
-      </div>
-    </div>
-
     <!-- ── TAB: HISTORY ── -->
     <div class="modal-tab-panel" id="tab-history">
       <div id="tab-history-timeline" class="stage-history-timeline"></div>
     </div>
 
+    </div><!-- /.modal-scroll-body -->
+
     <!-- Footer -->
     <div class="form-actions">
       <button class="btn-delete" id="btn-task-delete" style="display:none">Delete</button>
       <div class="u-flex-1"></div>
-      <button class="btn-cancel" id="task-modal-cancel">Cancel</button>
+<button class="btn-cancel" id="task-modal-cancel">Cancel</button>
       <button class="btn-save" id="btn-task-save">Save Applicant</button>
     </div>
   </div>
@@ -1536,11 +1647,6 @@
       <div class="hire-form-grid">
         <div class="hire-form-group"><label class="hire-form-label">Position *</label>
           <select class="hire-form-select" id="hf-position"></select>
-        </div>
-        <div class="hire-form-group"><label class="hire-form-label">Department</label>
-          <select class="hire-form-select" id="hf-dept">
-            <option>Customer Service</option><option>Marketing</option><option>HR</option><option>Operations</option><option>Sales</option><option>Finance</option>
-          </select>
         </div>
         <div class="hire-form-group"><label class="hire-form-label">Start Date *</label><input class="hire-form-input" type="date" id="hf-start"/></div>
         <div class="hire-form-group"><label class="hire-form-label">Employment Type</label>
@@ -1703,7 +1809,7 @@
       </div>
 
       <!-- Interviewer -->
-      <div class="cal-form-group"><label class="cal-form-label">Interviewer</label><input type="text" class="cal-form-input" id="cal-f-interviewer" placeholder="e.g. HR Team"/></div>
+      <div class="cal-form-group"><label class="cal-form-label">Interviewer</label><input type="text" class="cal-form-input" id="cal-f-interviewer" placeholder="e.g. Assistant"/></div>
 
       <!-- Notes -->
       <div class="cal-form-group"><label class="cal-form-label">Notes</label><textarea class="cal-form-textarea" id="cal-f-notes" placeholder="Any additional notes…"></textarea></div>
@@ -1810,7 +1916,6 @@
 <script src="js/pm-ui-core.js"></script>
 <script src="js/pm-ui-views.js"></script>
 <script src="js/pm-ui-gcal.js"></script>
-```
 
 <script>
 /* ══ MOBILE SIDEBAR TOGGLE ══ */
@@ -1848,16 +1953,211 @@
 })();
 </script>
 
+<!-- ══ LOGIN GATE MODAL ══ -->
+<div id="login-gate-overlay" style="display:none;position:fixed;inset:0;z-index:9999;background:var(--bg,#0f1629);align-items:center;justify-content:center;">
+  <div style="width:100%;max-width:400px;padding:32px;background:var(--surface,#1a1f35);border:1px solid var(--border,rgba(255,255,255,.08));border-radius:20px;box-shadow:0 24px 64px rgba(0,0,0,.5);">
+    <div style="text-align:center;margin-bottom:32px;">
+      <div style="font-size:32px;font-weight:900;font-family:Syne,sans-serif;background:linear-gradient(135deg,var(--cyan,#3ecfdf),var(--violet,#6c63ff));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:6px;">upstaff</div>
+      <div style="font-size:13px;color:var(--light,#8892b0);">Sign in to continue</div>
+    </div>
+    <!-- Step 1: API Credentials (shown if not configured yet) -->
+    <div id="gate-setup-section" style="display:none;margin-bottom:20px;">
+      <div style="font-size:11px;font-weight:700;color:var(--cyan,#3ecfdf);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;">⚙️ First-Time Setup</div>
+      <form onsubmit="return false;" autocomplete="on">
+      <div style="margin-bottom:10px;">
+        <label style="display:block;font-size:11px;font-weight:600;color:var(--muted,#64748b);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px;">Web App URL</label>
+        <input id="gate-setup-url" type="url" placeholder="https://script.google.com/macros/s/.../exec"
+          style="width:100%;box-sizing:border-box;padding:9px 12px;border-radius:9px;border:1px solid var(--border,rgba(255,255,255,.08));background:var(--surface-2,#0f1629);color:var(--text,#e2e8f0);font-size:11px;outline:none;font-family:monospace;"/>
+      </div>
+      <div style="margin-bottom:10px;">
+        <label style="display:block;font-size:11px;font-weight:600;color:var(--muted,#64748b);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px;">ADMIN_EMAIL</label>
+        <input id="gate-setup-email" type="email" placeholder="qwerty123@example.com"
+          style="width:100%;box-sizing:border-box;padding:9px 12px;border-radius:9px;border:1px solid var(--border,rgba(255,255,255,.08));background:var(--surface-2,#0f1629);color:var(--text,#e2e8f0);font-size:13px;outline:none;"/>
+      </div>
+      <div style="margin-bottom:12px;">
+        <label style="display:block;font-size:11px;font-weight:600;color:var(--muted,#64748b);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px;">ADMIN_PASSWORD</label>
+        <input id="gate-setup-password" type="password" placeholder="••••••••"
+          style="width:100%;box-sizing:border-box;padding:9px 12px;border-radius:9px;border:1px solid var(--border,rgba(255,255,255,.08));background:var(--surface-2,#0f1629);color:var(--text,#e2e8f0);font-size:13px;outline:none;"/>
+      </div>
+      <button onclick="saveGateCredentials()"
+        style="width:100%;padding:10px;border-radius:10px;border:none;background:var(--cyan,#3ecfdf);color:#0f1629;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:4px;">
+        Save & Continue
+      </button>
+      <div id="gate-setup-status" style="font-size:11px;color:var(--muted,#64748b);min-height:16px;margin-top:6px;text-align:center;"></div>
+      </form>
+      <div style="border-top:1px solid var(--border,rgba(255,255,255,.06));margin:16px 0;"></div>
+    </div>
+
+    <!-- Step 2: Google Sign-In -->
+    <div style="display:flex;justify-content:center;margin-bottom:8px;">
+      <div id="g_id_onload"
+        data-callback="handleGoogleSignIn"
+        data-auto_prompt="false">
+      </div>
+      <div class="g_id_signin"
+        data-type="standard"
+        data-theme="filled_black"
+        data-text="sign_in_with"
+        data-shape="pill"
+        data-size="large"
+        data-logo_alignment="left">
+      </div>
+    </div>
+    <div id="gate-status" style="margin-top:8px;text-align:center;font-size:12px;color:var(--muted,#64748b);min-height:18px;"></div>
+    <div style="margin-top:12px;text-align:center;font-size:11px;color:var(--muted,#64748b);">Only authorized accounts can sign in.</div>
+  </div>
+</div>
+
+<script>
+/* ══ LOGIN GATE MODAL ══ */
+function _showLoginGate() {
+  var overlay = document.getElementById('login-gate-overlay');
+  if (overlay) overlay.style.display = 'flex';
+
+  // Auto-show setup section if credentials are not yet configured
+  var cfg     = window.UpstaffAPI ? UpstaffAPI.getConfig() : {};
+  var section = document.getElementById('gate-setup-section');
+  if (section) {
+    var needsSetup = !cfg.webAppUrl || !cfg.adminEmail || !cfg.adminPassword;
+    section.style.display = needsSetup ? 'block' : 'none';
+    // Pre-fill if partially saved
+    if (cfg.webAppUrl)     document.getElementById('gate-setup-url').value      = cfg.webAppUrl;
+    if (cfg.adminEmail)    document.getElementById('gate-setup-email').value    = cfg.adminEmail;
+    if (cfg.adminPassword) document.getElementById('gate-setup-password').value = cfg.adminPassword;
+  }
+}
+
+window.saveGateCredentials = function() {
+  var url      = (document.getElementById('gate-setup-url')?.value      || '').trim();
+  var email    = (document.getElementById('gate-setup-email')?.value    || '').trim();
+  var password = (document.getElementById('gate-setup-password')?.value || '').trim();
+  var statusEl = document.getElementById('gate-setup-status');
+
+  if (!url || !url.startsWith('https://script.google.com/macros/s/') || !url.endsWith('/exec')) {
+    statusEl.textContent = '❌ Invalid URL — must end in /exec';
+    statusEl.style.color = '#ef4444';
+    return;
+  }
+  if (!email || !password) {
+    statusEl.textContent = '❌ All fields are required.';
+    statusEl.style.color = '#ef4444';
+    return;
+  }
+
+  var cfg = window.UpstaffAPI ? UpstaffAPI.getConfig() : {};
+  cfg.webAppUrl     = url;
+  cfg.adminEmail    = email;
+  cfg.adminPassword = password;
+  if (window.UpstaffAPI) UpstaffAPI.saveConfig(cfg);
+
+  statusEl.textContent = '✅ Saved! Now sign in with Google below.';
+  statusEl.style.color = 'var(--green,#10b981)';
+  // Hide setup after short delay
+  setTimeout(function() {
+    document.getElementById('gate-setup-section').style.display = 'none';
+  }, 1500);
+};
+
+function _hideLoginGate() {
+  var overlay = document.getElementById('login-gate-overlay');
+  if (overlay) overlay.style.display = 'none';
+}
+
+// Google Sign-In callback — called by GIS library after user picks account
+window.handleGoogleSignIn = async function(response) {
+  var statusEl = document.getElementById('gate-status');
+  statusEl.textContent = 'Signing in…';
+  statusEl.style.color = 'var(--muted,#64748b)';
+
+  try {
+    // Decode JWT payload (base64url → JSON)
+    var parts   = response.credential.split('.');
+    var payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+
+    // Reject expired Google credential tokens
+    if (payload.exp && Math.floor(Date.now() / 1000) > payload.exp) {
+      throw new Error('Sign-in token expired. Please refresh the page and try again.');
+    }
+
+    var result = await UpstaffAPI.loginWithGoogle(payload);
+    _applyRoleRestrictions(result.role);
+    _updateTopbarAvatar();
+    statusEl.textContent = '✅ Welcome, ' + result.name + '!';
+    statusEl.style.color = 'var(--green,#10b981)';
+    setTimeout(function() {
+      _hideLoginGate();
+      if (typeof syncApplicantsFromApi === 'function') syncApplicantsFromApi();
+    }, 700);
+  } catch (err) {
+    statusEl.textContent = '❌ ' + (err.message || 'Sign in failed.');
+    statusEl.style.color = '#ef4444';
+  }
+};
+
+// Update topbar avatar initials and dropdown labels from stored profile / API config
+function _updateTopbarAvatar() {
+  var el = document.querySelector('.topbar-avatar');
+  if (!el) return;
+  var profile = {};
+  try { profile = JSON.parse(localStorage.getItem('upstaff_profile') || '{}'); } catch (_) {}
+  var cfg = (window.UpstaffAPI ? UpstaffAPI.getConfig() : {});
+  var name = [profile.firstName, profile.lastName].filter(Boolean).join(' ') || cfg.name || '';
+  var initials = name.split(' ').filter(Boolean).map(function(w) { return w[0]; }).join('').toUpperCase().slice(0, 2) || 'HR';
+  el.textContent = initials;
+  // Also update the dropdown labels so they reflect the current user immediately
+  var nameLbl = document.getElementById('avatar-name-label');
+  var emailLbl = document.getElementById('avatar-email-label');
+  if (nameLbl && name) nameLbl.textContent = name;
+  if (emailLbl) emailLbl.textContent = cfg.email || profile.email || 'Not connected';
+}
+
+// Apply role-based UI restrictions
+function _applyRoleRestrictions(role) {
+  if (role === 'assistant') {
+    document.querySelectorAll('[data-role-hide="hr"]').forEach(function(el) {
+      el.style.display = 'none';
+    });
+    // Settings nav stays visible for assistants so they can access
+    // Profile, Notifications, Calendars, and Partner API configuration.
+    // Only HR-specific panels (Positions, Danger Zone) are hidden via data-role-hide="hr".
+  }
+}
+
+// Re-apply restrictions and update avatar on page load if already logged in
+document.addEventListener('DOMContentLoaded', function() {
+  _updateTopbarAvatar();
+  if (window.UpstaffAPI) {
+    var cfg = UpstaffAPI.getConfig();
+    if (cfg.role) _applyRoleRestrictions(cfg.role);
+  }
+});
+</script>
+
 <script>
 /* ══ AUTO-SYNC FROM PARTNER API ON LOAD ══ */
 (function() {
-  // Wait for all scripts to finish, then sync if API is configured
   window.addEventListener('DOMContentLoaded', function() {
-    if (window.UpstaffAPI && UpstaffAPI.isConfigured()) {
-      syncApplicantsFromApi();
+    if (!window.UpstaffAPI) return;
+    if (UpstaffAPI.isConfigured()) {
+      // Verify token — auto silent re-login if expired, only show gate if that fails too
+      UpstaffAPI.verifySession().then(function(ok) {
+        if (ok) {
+          // Re-apply role restrictions (in case silent re-login refreshed config)
+          var cfg = UpstaffAPI.getConfig();
+          if (cfg.role) _applyRoleRestrictions(cfg.role);
+          syncApplicantsFromApi();
+        } else {
+          _showLoginGate();
+        }
+      });
+    } else {
+      // Credentials not configured — show login gate
+      _showLoginGate();
     }
   });
 })();
 </script>
+<!-- Shared list action menu — rendered at body level to escape table stacking contexts -->
+<div id="list-action-menu" class="list-action-menu"></div>
 </body>
 </html>

@@ -158,25 +158,29 @@ const PRIORITY_COLORS = {
 ───────────────────────────────────────────────────────────────────────── */
 const STATUS_META = {
   // ── Pipeline stages ──
-  Applied: { color: "#6c63ff", bg: "#ede9ff" },
-  Screening: { color: "#44d7e9", bg: "#e0fafb" },
-  Assessment: { color: "#f59e0b", bg: "#fef3c7" },
-  Interview: { color: "#fa8231", bg: "#fff3e8" },
-  Review: { color: "#a855f7", bg: "#f3e8ff" },
-  Hired: { color: "#43e97b", bg: "#e8fdf1" },
-  Rejected: { color: "#ef4444", bg: "#fee2e2" },
-  Cancelled: { color: "#9ca3af", bg: "#f3f4f6" },
+  "New":         { color: "#6c63ff", bg: "#ede9ff" },
+  "In Progress": { color: "#f59e0b", bg: "#fef3c7" },
+  "Endorsed":    { color: "#3ecfdf", bg: "#e0fafb" },
+  "Hired":       { color: "#43e97b", bg: "#e8fdf1" },
+  "Others":      { color: "#60a5fa", bg: "#dbeafe" },
+  "Closed":      { color: "#9ca3af", bg: "#f3f4f6" },
   // ── Legacy aliases (keeps old tasks rendering correctly) ──
-  "To Do": { color: "#6c63ff", bg: "#ede9ff" },
-  "In Progress": { color: "#44d7e9", bg: "#e0fafb" },
-  "In Review": { color: "#a855f7", bg: "#f3e8ff" },
-  Done: { color: "#43e97b", bg: "#e8fdf1" },
+  "Applied":     { color: "#6c63ff", bg: "#ede9ff" },
+  "Screening":   { color: "#6c63ff", bg: "#ede9ff" },
+  "Assessment":  { color: "#f59e0b", bg: "#fef3c7" },
+  "Interview":   { color: "#f59e0b", bg: "#fef3c7" },
+  "Review":      { color: "#3ecfdf", bg: "#e0fafb" },
+  "Rejected":    { color: "#9ca3af", bg: "#f3f4f6" },
+  "Cancelled":   { color: "#9ca3af", bg: "#f3f4f6" },
+  "To Do":       { color: "#6c63ff", bg: "#ede9ff" },
+  "In Review":   { color: "#3ecfdf", bg: "#e0fafb" },
+  "Done":        { color: "#43e97b", bg: "#e8fdf1" },
   // ── Partner statuses (from Supabase / Google Sheets) ──
   "For Interview":            { color: "#0369a1", bg: "#e0f2fe" },
   "Interviewed":              { color: "#059669", bg: "#d1fae5" },
   "For Client Endorsement":   { color: "#7c3aed", bg: "#ede9fe" },
   "Hired - Resigned":         { color: "#ea580c", bg: "#ffedd5" },
-  "Open for other roles":     { color: "#2563eb", bg: "#dbeafe" },
+  "Open for other Roles":     { color: "#2563eb", bg: "#dbeafe" },
   "Could be Revisited":       { color: "#0284c7", bg: "#e0f2fe" },
   "For Future Consideration": { color: "#475569", bg: "#f1f5f9" },
   "No Show":                  { color: "#a16207", bg: "#fef9c3" },
@@ -187,21 +191,36 @@ const STATUS_META = {
 /** Returns the CSS class for a status pill — theme-aware, always readable */
 function statusPillClass(status) {
   const map = {
-    Applied: "sp-applied",
-    Screening: "sp-screening",
-    Assessment: "sp-assessment",
-    Interview: "sp-interview",
-    Review: "sp-review",
-    Hired: "sp-hired",
-    Rejected: "sp-rejected",
-    Cancelled: "sp-cancelled",
+    // Pipeline stages
+    "New":                      "sp-new",
+    "For Interview":            "sp-forinterview",
+    "Interviewed":              "sp-interviewed",
+    "For Client Endorsement":   "sp-forclientendorsement",
+    "Hired":                    "sp-hired",
+    "Closed":                   "sp-closed",
+    // Partner / Google Sheet statuses
+    "Hired - Resigned":         "sp-hiredresigned",
+    "Open for other Roles":     "sp-openotherroles",
+    "Could be Revisited":       "sp-couldberevisited",
+    "For Future Consideration": "sp-forfuture",
+    "No Show":                  "sp-noshow",
+    "Not Qualified":            "sp-notqualified",
+    "Duplicate Lead":           "sp-duplicatelead",
     // Legacy aliases
-    "To Do": "sp-applied",
-    "In Progress": "sp-screening",
-    "In Review": "sp-review",
-    Done: "sp-hired",
+    "In Progress": "sp-inprogress",
+    "Endorsed":    "sp-endorsed",
+    "Applied":     "sp-new",
+    "Screening":   "sp-new",
+    "Assessment":  "sp-inprogress",
+    "Interview":   "sp-forinterview",
+    "Review":      "sp-forclientendorsement",
+    "Rejected":    "sp-closed",
+    "Cancelled":   "sp-closed",
+    "To Do":       "sp-new",
+    "In Review":   "sp-endorsed",
+    "Done":        "sp-hired",
   };
-  return "status-pill " + (map[status] || "sp-applied");
+  return "status-pill " + (map[status] || "sp-new");
 }
 
 /** Returns class for calendar event status pills */
@@ -261,8 +280,7 @@ const JOB_POSITIONS = [
 
 /* ── Candidate folders ── */
 const CANDIDATE_FOLDERS = [
-  "Ready to Call",
-  "Ready to Hire",
+  "Waiting List",
   "Talent Pool / Shortlisted",
 ];
 const LS_KEYS_CANDIDATES = "upstaff_candidates";
@@ -391,12 +409,19 @@ function toggleBulkMoveStageMenu(e) {
   } else {
     const idx = STAGE_ORDER.indexOf(statuses[0]);
     const fwd = idx >= 0 ? STAGE_ORDER.slice(idx + 1).filter(s => !TERMINAL_STAGES.includes(s)) : [];
-    if (!fwd.length) {
-      menu.innerHTML = `<div style="padding:8px 12px;font-size:12px;font-weight:600;font-family:'Montserrat',sans-serif;color:var(--muted);">No forward stages available.</div>`;
+    const othersOpts = OTHERS_STATUSES.filter(s => s !== statuses[0]);
+    const btnStyle = `display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:8px;font-size:12px;font-weight:600;font-family:'Montserrat',sans-serif;color:var(--muted);cursor:pointer;background:transparent;border:none;width:100%;text-align:left;white-space:nowrap;`;
+    const btnHover = `onmouseover="this.style.background='var(--surface-3)';this.style.color='var(--text)'" onmouseout="this.style.background='transparent';this.style.color='var(--muted)'"`;
+    if (!fwd.length && !othersOpts.length) {
+      menu.innerHTML = `<div style="padding:8px 12px;font-size:12px;font-weight:600;font-family:'Montserrat',sans-serif;color:var(--muted);">No stages available.</div>`;
     } else {
-      menu.innerHTML = fwd.map(stage =>
-        `<button onclick="bulkMoveToStage('${stage}')" style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:8px;font-size:12px;font-weight:600;font-family:'Montserrat',sans-serif;color:var(--muted);cursor:pointer;background:transparent;border:none;width:100%;text-align:left;white-space:nowrap;" onmouseover="this.style.background='var(--surface-3)';this.style.color='var(--text)'" onmouseout="this.style.background='transparent';this.style.color='var(--muted)'">${stage}</button>`
-      ).join('');
+      let html = fwd.map(stage => `<button onclick="bulkMoveToStage('${stage}')" style="${btnStyle}" ${btnHover}>${stage}</button>`).join('');
+      if (othersOpts.length) {
+        if (fwd.length) html += `<div style="margin:4px 8px;border-top:1px solid var(--border);"></div>`;
+        html += `<div style="padding:4px 12px 2px;font-size:10px;font-weight:700;color:var(--muted);font-family:'Montserrat',sans-serif;text-transform:uppercase;letter-spacing:.5px;">Others</div>`;
+        html += othersOpts.map(stage => `<button onclick="bulkMoveToStage('${stage}')" style="${btnStyle}" ${btnHover}>${stage}</button>`).join('');
+      }
+      menu.innerHTML = html;
     }
   }
   menu.style.display = 'block';
@@ -438,7 +463,7 @@ async function bulkReject() {
     const t = TASKS.find((x) => x.id === id);
     if (t) {
       t.rejection_reason = reason;
-      moveApplicantToStage(id, "Rejected", { silent: true });
+      moveApplicantToStage(id, "Closed", { silent: true });
     }
   });
   selectedTaskIds.clear();
@@ -455,7 +480,7 @@ const _SEED_TASKS_UNUSED_REMOVED = [
     status: "Screening",
     priority: "High",
     position: "Intake Caller",
-    assignee: "HR Team",
+    assignee: "Assistant",
     start: "2026-03-08",
     due: "2026-03-15",
     notes: "Strong resume from referral",
@@ -567,7 +592,7 @@ const _SEED_TASKS_UNUSED_REMOVED = [
     status: "Screening",
     priority: "Low",
     position: "CSR",
-    assignee: "HR Team",
+    assignee: "Assistant",
     start: "2026-03-09",
     due: "2026-03-18",
     notes: "",
@@ -589,7 +614,7 @@ const _SEED_TASKS_UNUSED_REMOVED = [
     status: "Interview",
     priority: "High",
     position: "Intake Caller",
-    assignee: "HR Team",
+    assignee: "Assistant",
     start: "2026-03-17",
     due: "2026-03-19",
     notes: "Offer ready if passes",
@@ -611,7 +636,7 @@ const _SEED_TASKS_UNUSED_REMOVED = [
     status: "Assessment",
     priority: "Low",
     position: "CSR",
-    assignee: "HR Team",
+    assignee: "Assistant",
     start: "2026-03-11",
     due: "2026-03-13",
     notes: "",
@@ -655,7 +680,7 @@ const _SEED_TASKS_UNUSED_REMOVED = [
     status: "Cancelled",
     priority: "Low",
     position: "CSR",
-    assignee: "HR Team",
+    assignee: "Assistant",
     start: "2026-03-10",
     due: "2026-03-14",
     notes: "Withdrew application",
@@ -798,8 +823,8 @@ function persistLoad() {
     }
     // Migrate: ensure every task has assignees[], comments[], activity[], attachments[]
     TASKS.forEach((t) => {
-      if (!t.assignees) t.assignees = t.assignee ? [t.assignee] : ["HR Team"];
-      if (!t.assignee) t.assignee = t.assignees[0] || "HR Team";
+      if (!t.assignees) t.assignees = t.assignee ? [t.assignee] : ["Assistant"];
+      if (!t.assignee) t.assignee = t.assignees[0] || "Assistant";
       if (!t.comments) t.comments = [];
       if (!t.activity) t.activity = [];
       if (!t.attachments) t.attachments = [];
@@ -809,6 +834,8 @@ function persistLoad() {
     dbg(
       `[Persist] ✅ Restored ${calEvents.length} event(s), ${TASKS.length} task(s), ${UPSTAFF_CALENDARS.length} calendar(s)`,
     );
+
+    // Session expiry is handled by verifySession() on load (with auto silent re-login)
   } catch (e) {
     console.warn("[Persist] ⚠️ localStorage read failed — starting fresh:", e);
     calEvents = [];
@@ -869,20 +896,35 @@ function autoProgressStatuses() { _markOverdueTasks(); }
 ══════════════════════════════════════════════ */
 /* ── Recruitment Pipeline order ─────────────────────────────────────────── */
 const STAGE_ORDER = [
-  "Applied",
-  "Screening",
-  "Assessment",
-  "Interview",
-  "Review",
+  "New",
+  "For Interview",
+  "Interviewed",
+  "For Client Endorsement",
   "Hired",
 ];
-const TERMINAL_STAGES = ["Hired", "Rejected", "Cancelled"];
+const TERMINAL_STAGES = ["Hired", "Closed"];
 const ACTIVE_STAGES = [
-  "Applied",
-  "Screening",
-  "Assessment",
-  "Interview",
-  "Review",
+  "New",
+  "For Interview",
+  "Interviewed",
+  "For Client Endorsement",
+];
+const CLOSED_STATUSES = [
+  "Closed", "Rejected", "Cancelled", "Not Qualified",
+  "No Show", "Duplicate Lead", "Hired - Resigned",
+];
+const OTHERS_STATUSES = [
+  "For Future Consideration", "Could be Revisited", "Open for other Roles",
+];
+const LIST_STATUS_ORDER = [
+  // Active pipeline
+  "New", "For Interview", "Interviewed", "For Client Endorsement", "Hired",
+  // Post-hire
+  "Hired - Resigned",
+  // On hold
+  "For Future Consideration", "Could be Revisited", "Open for other Roles",
+  // Closed
+  "Not Qualified", "Rejected", "No Show", "Duplicate Lead", "Closed",
 ];
 
 /* ── Assessment config: which tests each position type requires ─────────── */
@@ -968,10 +1010,10 @@ function moveApplicantToStage(taskId, newStage, opts = {}) {
     showToast(
       `↩️ Applicant returned to ${newStage}. Onboarding record preserved.`,
     );
-  } else if (newStage === "Rejected") {
+  } else if (newStage === "Closed") {
     t.rejected_at = new Date().toISOString();
     t.archived = true;
-    showToast(`Applicant moved to Rejected and archived.`);
+    showToast(`Applicant moved to Closed and archived.`);
   } else {
     showToast(`✅ Moved to ${newStage}`);
   }
@@ -992,6 +1034,13 @@ function moveApplicantToStage(taskId, newStage, opts = {}) {
         dbg(`[API] Status synced: ${t.name} → ${resolvedPartnerStatus}`);
       }
     });
+  }
+  // Sync Google Calendar event title/status if one exists for this task
+  if (typeof gcalSignedIn !== "undefined" && gcalSignedIn && t.gcalEventId &&
+      typeof _taskSyncToGcal === "function") {
+    _taskSyncToGcal(t).catch((e) =>
+      console.warn("[GCal] Stage sync failed:", e.message)
+    );
   }
 }
 
@@ -1032,7 +1081,7 @@ async function rejectApplicant(taskId) {
     return;
   const t = TASKS.find((x) => x.id === taskId);
   if (t) t.rejection_reason = reason;
-  moveApplicantToStage(taskId, "Rejected");
+  moveApplicantToStage(taskId, "Closed");
 }
 
 /* Auto-creates an onboarding employee when a candidate is Hired */
@@ -1058,6 +1107,10 @@ function _autoCreateEmployee(t) {
     existing.email = t.applicant_email || existing.email;
     existing.phone = t.applicant_phone || existing.phone;
     existing.manager = t.assignee || existing.manager;
+    // Sync Drive Folder link only if not already set
+    if (t.drive_folder_link && !existing.driveLink) {
+      existing.driveLink = t.drive_folder_link;
+    }
     empPersistSave();
     return;
   }
@@ -1071,13 +1124,13 @@ function _autoCreateEmployee(t) {
     fname: nameParts[0] || "",
     lname: nameParts.slice(1).join(" ") || "",
     position: t.position || "",
-    dept: "",
     emptype: "Probationary",
     start: new Date().toISOString().slice(0, 10),
     status: "Pending",
     email: t.applicant_email || "",
     phone: t.applicant_phone || "",
-    manager: t.assignee || "HR Team",
+    manager: t.assignee || "Assistant",
+    driveLink: t.drive_folder_link || "", // carry over folder link from recruitment
     notes:
       `Auto-created from recruitment pipeline. ${t.interview_notes || ""}`.trim(),
     checklist,
@@ -1086,31 +1139,32 @@ function _autoCreateEmployee(t) {
   empPersistSave(); // persist immediately so data survives a refresh
 }
 function buildStageProgress(status) {
-  if (status === "Cancelled") {
-    return `<div class="stage-progress-wrap">
-      <div class="stage-progress-label"><span>Pipeline</span><span style="color:#9ca3af;">Cancelled</span></div>
-      <div class="stage-steps">${STAGE_ORDER.map((s) => `<div class="stage-step s-cancelled" title="${s}"></div>`).join("")}</div>
-    </div>`;
-  }
-  if (status === "Rejected") {
-    return `<div class="stage-progress-wrap">
-      <div class="stage-progress-label"><span>Pipeline</span><span style="color:#ef4444;">Rejected</span></div>
-      <div class="stage-steps">${STAGE_ORDER.map((s) => `<div class="stage-step s-rejected" title="${s}"></div>`).join("")}</div>
-    </div>`;
-  }
-  const idx = STAGE_ORDER.indexOf(status);
-  const steps = STAGE_ORDER.map((s, i) => {
-    const cls = i < idx ? "s-done" : i === idx ? "s-active" : "";
-    return `<div class="stage-step ${cls}" title="${s}"></div>`;
+  const isClosed = CLOSED_STATUSES.includes(status) || status === "Cancelled";
+  const idx = isClosed ? -1 : STAGE_ORDER.indexOf(status);
+  const items = STAGE_ORDER.map((s, i) => {
+    let cls = "";
+    let icon = `<span style="font-size:8px;font-weight:700;">${i + 1}</span>`;
+    if (isClosed) {
+      cls = "ss-cancelled";
+    } else if (i < idx) {
+      cls = "ss-done";
+      icon = `<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+    } else if (i === idx) {
+      cls = "ss-active";
+    }
+    const connectorCls = isClosed ? "ss-connector-cancelled" : i < idx ? "ss-connector-done" : i === idx ? "ss-connector-active" : "";
+    const connector = i < STAGE_ORDER.length - 1 ? `<div class="ss-connector ${connectorCls}"></div>` : "";
+    const shortLabel = s.replace("For Client Endorsement", "Endorsed").replace("For Interview", "Interview");
+    return `<div class="ss-item ${cls}"><div class="ss-node">${icon}</div><div class="ss-label">${shortLabel}</div></div>${connector}`;
   }).join("");
-  const pct =
-    idx === -1 ? 0 : Math.round((idx / (STAGE_ORDER.length - 1)) * 100);
-  const stageLabel =
-    idx === -1 ? status : `${status} (${idx + 1}/${STAGE_ORDER.length})`;
-  return `<div class="stage-progress-wrap">
-    <div class="stage-progress-label"><span>Pipeline</span><span style="color:var(--cyan);">${stageLabel}</span></div>
-    <div class="stage-steps">${steps}</div>
-    <div class="stage-names">${STAGE_ORDER.map((s, i) => `<span class="${i === idx ? "stage-name-active" : ""}">${s}</span>`).join("")}</div>
+  const statusLabel = isClosed
+    ? `<span class="ss-status-badge ss-badge-closed">${status}</span>`
+    : idx === -1
+      ? `<span class="ss-status-badge">${status}</span>`
+      : `<span class="ss-status-badge ss-badge-active">${status} · ${idx + 1}/${STAGE_ORDER.length}</span>`;
+  return `<div class="stage-stepper-wrap">
+    <div class="stage-stepper-header"><span class="ss-label-pipeline">Pipeline</span>${statusLabel}</div>
+    <div class="stage-stepper">${items}</div>
   </div>`;
 }
 
@@ -1174,13 +1228,11 @@ function getCalName(calendarId) {
 /* ── Positions list (used by Settings) ── */
 let POSITIONS = [...JOB_POSITIONS];
 
+
 /* ── Team members (used by Settings) — loaded from localStorage ── */
 const DEFAULT_MEMBERS = [
-  { name: "Ana Reyes",  role: "HR Manager",  email: "ana@upstaff.com",   color: "#6c63ff" },
-  { name: "HR Team",    role: "Recruiter",   email: "hr@upstaff.com",    color: "#44d7e9" },
-  { name: "Marketing",  role: "Reviewer",    email: "mkt@upstaff.com",   color: "#fa8231" },
-  { name: "CEO Office", role: "Admin",       email: "ceo@upstaff.com",   color: "#ff6584" },
-  { name: "HR Panel",   role: "Interviewer", email: "panel@upstaff.com", color: "#43e97b" },
+  { name: "Assistant", role: "Assistant", email: "assistant@upstaff.com", color: "#44d7e9" },
+  { name: "Manager",   role: "Manager",   email: "manager@upstaff.com",   color: "#6c63ff" },
 ];
 let MEMBERS = (() => {
   try {
@@ -1228,11 +1280,11 @@ function _updateNotifBadge() {
 /* ══════════════════════════════════════════════
    UTILITIES
 ══════════════════════════════════════════════ */
-function showToast(msg) {
+function showToast(msg, duration) {
   const t = document.getElementById("toast");
   t.textContent = msg;
   t.classList.add("show");
-  setTimeout(() => t.classList.remove("show"), 2800);
+  setTimeout(() => t.classList.remove("show"), duration || 2800);
 }
 /* ── Custom Dialog Helpers (replaces native alert/confirm) ── */
 function _showDialog({
@@ -1379,7 +1431,7 @@ window.addEventListener("storage", function onStorageSync(e) {
     if (e.key === LS_KEYS.TASKS && e.newValue) {
       TASKS = JSON.parse(e.newValue);
       TASKS.forEach((t) => {
-        if (!t.assignees) t.assignees = t.assignee ? [t.assignee] : ["HR Team"];
+        if (!t.assignees) t.assignees = t.assignee ? [t.assignee] : ["Assistant"];
         if (!t.comments) t.comments = [];
         if (!t.activity) t.activity = [];
         if (!t.attachments) t.attachments = [];
@@ -1912,6 +1964,19 @@ function postComment() {
 ══════════════════════════════════════════════ */
 const MAX_FILE_SIZE_MB = 1;
 const MAX_FILES_PER_TASK = 5;
+const ALLOWED_FILE_TYPES = [
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "text/csv",
+  "text/plain",
+  "image/jpeg",
+  "image/png",
+  "image/gif",
+  "image/webp",
+];
 // localStorage quota safety threshold (4.5 MB — leaves headroom for other data)
 const LS_QUOTA_SAFETY_BYTES = 4.5 * 1024 * 1024;
 
@@ -1940,6 +2005,10 @@ function handleFileAttach(input) {
   }
   let processed = 0;
   files.forEach((file) => {
+    if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+      showToast(`⚠️ "${file.name}" is not an allowed file type — skipped.`);
+      return;
+    }
     if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
       showToast(`⚠️ "${file.name}" exceeds ${MAX_FILE_SIZE_MB} MB limit — skipped.`);
       return;
@@ -2060,3 +2129,27 @@ document.addEventListener("keydown", function (e) {
     _tabChannel.postMessage("tab_opened");
   } catch (_) {}
 })();
+
+/* ══════════════════════════════════════════════
+   GLOBAL ERROR HANDLER — catch unhandled promise rejections
+══════════════════════════════════════════════ */
+window.addEventListener("unhandledrejection", function (event) {
+  const reason = event.reason;
+  if (!reason) return;
+  // Ignore network failures and known expected errors — these are already handled inline
+  const msg = (reason.message || String(reason)).toLowerCase();
+  if (
+    msg.includes("failed to fetch") ||
+    msg.includes("networkerror") ||
+    msg.includes("load failed") ||
+    msg.includes("access denied") ||
+    msg.includes("not authorized") ||
+    msg.includes("the user is not signed in") ||
+    msg.includes("popup_closed") ||
+    msg.includes("cancelled")
+  ) return;
+  console.error("[Unhandled Rejection]", reason);
+  if (typeof showToast === "function") {
+    showToast("⚠️ An unexpected error occurred. Please refresh if something looks wrong.", 5000);
+  }
+});

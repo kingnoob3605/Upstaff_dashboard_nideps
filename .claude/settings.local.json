@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wc -l \"/c/Users/Internship/Desktop/Upstaff_dashboard\"/*.html \"/c/Users/Internship/Desktop/Upstaff_dashboard/js\"/*.js \"/c/Users/Internship/Desktop/Upstaff_dashboard/css\"/*.css)",
+      "Bash(wc -l \"/c/Users/Internship/Desktop/back up/backup\"/*.html \"/c/Users/Internship/Desktop/back up/backup/js\"/*.js \"/c/Users/Internship/Desktop/back up/backup/css\"/*.css)",
+      "Bash(grep -rn \"nav-item\\\\|data-space\" /c/Users/Internship/Desktop/Upstaff_dashboard/js/*.js)",
+      "Bash(grep -rn \"querySelector.*nav-item\\\\|querySelectorAll.*nav-item\" /c/Users/Internship/Desktop/Upstaff_dashboard/js/*.js)",
+      "Bash(grep -n \"DOMContentLoaded\\\\|syncApplicantsFromApi\\\\|async function.*sync\" /c/Users/Internship/Desktop/Upstaff_dashboard/js/*.js)",
+      "Bash(grep -n \"window.addEventListener.*DOMContentLoaded\\\\|document.addEventListener.*DOMContentLoaded\" /c/Users/Internship/Desktop/Upstaff_dashboard/*.html /c/Users/Internship/Desktop/Upstaff_dashboard/js/*.js)",
+      "Bash(grep -n \"deleteTask\\\\|openTaskEdit\\\\|saveTaskForm\\\\|handleLogout\\\\|loginWithGoogle\" /c/Users/Internship/Desktop/Upstaff_dashboard/js/*.js)",
+      "Bash(grep -v \"^[<>][[:space:]]*$\")",
+      "Bash(sed -n '1595,1672p' \"C:\\\\Users\\\\Internship\\\\Desktop\\\\Upstaff_dashboard\\\\appscript.js\")",
+      "Bash(sed -n '1233,1287p' \"C:\\\\Users\\\\Internship\\\\Desktop\\\\appscript.txt\")",
+      "Bash(sed -n '2039,2134p' \"C:\\\\Users\\\\Internship\\\\Desktop\\\\Upstaff_dashboard\\\\appscript.js\")",
+      "Bash(sed -n '1496,1550p' \"C:\\\\Users\\\\Internship\\\\Desktop\\\\appscript.txt\")",
+      "Bash(grep -n \"function autoProgressStatuses\" /c/Users/Internship/Desktop/Upstaff_dashboard/js/*.js)",
+      "mcp__Claude_Preview__preview_start"
+    ]
+  }
+}

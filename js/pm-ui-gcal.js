@@ -12,7 +12,7 @@ const GCAL_CONFIG = {
   //   → Create Credentials → API Key
   //   → Restrict it to "Google Calendar API" only
   //
-  API_KEY: "",
+  API_KEY: "AIzaSyCtvFs7-4tc6jUnXmrPc0zdmBrTdrAu-cI",
 
   // STEP 3 — Get your OAuth 2.0 Client ID
   //   Google Cloud Console → Credentials
@@ -21,7 +21,7 @@ const GCAL_CONFIG = {
   //   → Authorized JavaScript origins: add your deployed URL
   //     (e.g. https://yourdomain.com  OR  http://localhost:8080 for local)
   //
-  CLIENT_ID: "",
+  CLIENT_ID: "320953058285-4se6egb1i6v6ssfqvau8m8nonr05ll7o.apps.googleusercontent.com",
   // ══════════════════════════════════════════════════════════════════
 
   // Calendar IDs are discovered dynamically via gcalFetchCalendarList()
@@ -30,11 +30,12 @@ const GCAL_CONFIG = {
   // How many months of events to fetch (before & after today)
   MONTHS_RANGE: 2,
 
-  // Google API scopes — read-only access to fetch calendar events
-  SCOPES: "https://www.googleapis.com/auth/calendar.readonly",
+  // Google API scopes — events access (read + create/update/delete events)
+  SCOPES: "https://www.googleapis.com/auth/calendar.events",
 
   // Google API discovery document for Calendar v3
-  DISCOVERY_DOC: "https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest",
+  DISCOVERY_DOC:
+    "https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest",
 
   // ─────────────────────────────────────────────────────────────────
   // REMINDER SETTINGS
@@ -64,7 +65,9 @@ async function _gcalWithRetry(fn, maxRetries = 3) {
       }
       // Rate limit — wait before retry
       if (status === 429) {
-        showCalToast(`⏳ Google rate limited — retrying (${attempt}/${maxRetries})…`);
+        showCalToast(
+          `⏳ Google rate limited — retrying (${attempt}/${maxRetries})…`,
+        );
         await new Promise((r) => setTimeout(r, attempt * 1500));
         continue;
       }
@@ -78,7 +81,8 @@ async function _gcalWithRetry(fn, maxRetries = 3) {
       break;
     }
   }
-  const errMsg = lastErr?.result?.error?.message || lastErr?.message || "Unknown error";
+  const errMsg =
+    lastErr?.result?.error?.message || lastErr?.message || "Unknown error";
   console.warn("[GCal] ❌ Failed after retries:", errMsg, lastErr);
   showCalToast(`⚠️ Google Calendar error: ${errMsg}`);
   throw lastErr;
@@ -110,7 +114,8 @@ function gcalInit() {
     );
     const _unconfigBtn = document.getElementById("gcal-sync-btn");
     if (_unconfigBtn) {
-      _unconfigBtn.title = "GCal not configured — add API_KEY and CLIENT_ID in js/pm-ui-gcal.js";
+      _unconfigBtn.title =
+        "GCal not configured — add API_KEY and CLIENT_ID in js/pm-ui-gcal.js";
       _unconfigBtn.setAttribute("data-unconfigured", "true");
       _unconfigBtn.style.opacity = "0.45";
       _unconfigBtn.style.cursor = "not-allowed";
@@ -175,16 +180,29 @@ function gcalInit() {
       dbg("[Google Calendar] ✅ gapi client + Calendar API ready");
       _gapiReadyResolve(); // signal that calendar API is ready
 
-      // ── Silent re-auth on page load ─────────────────────────────────
-      // If the user previously granted access, try refreshing the token
-      // silently (no popup). This re-fetches Google events after a reload.
+      // ── Handle redirect-based OAuth return ──────────────────────────
+      // Check if Google just redirected back with an access_token in the hash
+      const redirectToken = _gcalHandleRedirectToken();
+      if (redirectToken) {
+        gapi.client.setToken({ access_token: redirectToken });
+        updateSyncBtnState("Syncing…");
+        gcalFetchCalendarList()
+          .then(() => gcalFetchAllCalendars())
+          .catch((err) =>
+            console.warn("[GCal] ⚠️ Post-redirect fetch failed:", err),
+          );
+        return;
+      }
+
+      // ── Silent re-auth on page load (no popup — redirect only) ──────
+      // If previously signed in, attempt a silent token refresh via redirect.
+      // We skip this to avoid unexpected redirects on every page load.
+      // Users must click Sync to re-authenticate after a session expires.
       const wasPreviouslySignedIn =
         localStorage.getItem(getUserGcalAuthKey()) === "1";
       if (wasPreviouslySignedIn) {
-        dbg("[GCal] 🔄 Attempting silent token refresh…");
-        updateSyncBtnState("Reconnecting…");
-        // prompt: '' = use existing session; never shows a UI popup
-        gcalTokenClient.requestAccessToken({ prompt: "" });
+        dbg("[GCal] ℹ️ Previously signed in — click Sync to reconnect.");
+        updateSyncBtnState("Sync Google Cal", false);
       }
     } catch (err) {
       console.error("[GCal] ❌ gapi init error:", err);
@@ -226,7 +244,8 @@ function updateSyncBtnState(label, isError = false) {
 
   // If resetting to neutral label and user is not signed in, show "Connect to Google" instead
   const isNeutral = label === "Sync Google Cal";
-  const notSignedIn = !gcalSignedIn && localStorage.getItem(getUserGcalAuthKey()) !== "1";
+  const notSignedIn =
+    !gcalSignedIn && localStorage.getItem(getUserGcalAuthKey()) !== "1";
   if (isNeutral && notSignedIn) {
     label = "Connect to Google";
   }
@@ -234,7 +253,10 @@ function updateSyncBtnState(label, isError = false) {
   if (lbl) lbl.textContent = label;
   if (btn) {
     const isConnectPrompt = label === "Connect to Google";
-    const isBusy = label === "Connecting…" || label === "Syncing…" || label === "Reconnecting…";
+    const isBusy =
+      label === "Connecting…" ||
+      label === "Syncing…" ||
+      label === "Reconnecting…";
     btn.classList.toggle("gcal-syncing", isBusy);
 
     if (isError) {
@@ -255,32 +277,81 @@ function updateSyncBtnState(label, isError = false) {
 }
 
 /* ──────────────────────────────────────────────
+   REDIRECT-BASED OAUTH — no popup needed
+   Redirects the page to Google's auth screen.
+   On return, _gcalHandleRedirectToken() picks
+   up the access_token from the URL hash.
+────────────────────────────────────────────── */
+function _gcalRedirectToAuth() {
+  const redirectUri = window.location.origin + window.location.pathname;
+  const url = new URL("https://accounts.google.com/o/oauth2/v2/auth");
+  url.searchParams.set("client_id", GCAL_CONFIG.CLIENT_ID);
+  url.searchParams.set("redirect_uri", redirectUri);
+  url.searchParams.set("response_type", "token");
+  url.searchParams.set("scope", GCAL_CONFIG.SCOPES);
+  url.searchParams.set("include_granted_scopes", "true");
+  url.searchParams.set("prompt", "select_account");
+  // Save the current view so we can restore it after redirect
+  try {
+    sessionStorage.setItem("gcal_redirect_view", window.location.hash || "");
+  } catch (_) {}
+  window.location.href = url.toString();
+}
+
+/* ──────────────────────────────────────────────
+   Called on page load — checks if Google just
+   redirected back with an access_token in hash.
+────────────────────────────────────────────── */
+function _gcalHandleRedirectToken() {
+  if (!window.location.hash) return false;
+  const params = new URLSearchParams(window.location.hash.slice(1));
+  const token = params.get("access_token");
+  if (!token) return false;
+
+  // Clean the hash from the URL immediately
+  history.replaceState(
+    null,
+    "",
+    window.location.pathname + window.location.search,
+  );
+
+  // Apply token to gapi
+  if (window.gapi && gapi.client) gapi.client.setToken({ access_token: token });
+  gcalSignedIn = true;
+  localStorage.setItem(getUserGcalAuthKey(), "1");
+
+  dbg("[GCal] ✅ Got access_token from redirect flow");
+  return token;
+}
+
+/* ──────────────────────────────────────────────
    SYNC BUTTON CLICK HANDLER
 ────────────────────────────────────────────── */
-function handleGCalSync() {
+async function handleGCalSync() {
   if (!GCAL_CONFIG.API_KEY || !GCAL_CONFIG.CLIENT_ID) {
-    showCalToast("⚠️ Google Calendar is not set up yet. Open js/pm-ui-gcal.js and fill in your API_KEY and CLIENT_ID to enable sync.");
-    return;
-  }
-  if (!gcalTokenClient) {
-    // gapi not ready yet — give a clear message and retry hint
     showCalToast(
-      "⚠️ Google API still loading. Please wait a moment and try again.",
+      "⚠️ Google Calendar is not set up yet. Open js/pm-ui-gcal.js and fill in your API_KEY and CLIENT_ID to enable sync.",
     );
     return;
   }
+
   // Dismiss any previous popup-blocked banner
   const prevBanner = document.getElementById("gcal-popup-banner");
   if (prevBanner) prevBanner.remove();
 
-  updateSyncBtnState("Connecting…");
   if (!gcalSignedIn) {
-    // Use 'select_account' so Google always shows the account picker without
-    // forcing re-consent — this keeps the popup smaller and less likely to be
-    // blocked. If this is the very first sign-in, Google auto-shows consent.
-    gcalTokenClient.requestAccessToken({ prompt: "select_account" });
+    // Use GIS popup flow (COOP header fixed via netlify.toml — popups work)
+    if (gcalTokenClient) {
+      updateSyncBtnState("Connecting…");
+      gcalTokenClient.requestAccessToken({ prompt: "select_account" });
+    } else {
+      // GIS not loaded yet — fall back to redirect flow
+      updateSyncBtnState("Redirecting to Google…");
+      _gcalRedirectToAuth();
+    }
   } else {
-    gcalFetchAllCalendars();
+    updateSyncBtnState("Syncing…");
+    await gcalFetchAllCalendars();
   }
 }
 
@@ -305,9 +376,11 @@ async function gcalFetchCalendarList() {
   try {
     // Use "reader" (not "writer" or "freeBusyReader") so that subscribed
     // public/holiday calendars — which are read-only — are included in the list.
-    const resp = await _gcalWithRetry(() => gapi.client.calendar.calendarList.list({
-      minAccessRole: "reader",
-    }));
+    const resp = await _gcalWithRetry(() =>
+      gapi.client.calendar.calendarList.list({
+        minAccessRole: "reader",
+      }),
+    );
     const items = resp.result.items || [];
 
     UPSTAFF_CALENDARS = items.map((cal, i) => ({
@@ -341,7 +414,10 @@ async function gcalFetchCalendarList() {
       syncEnabled: true,
     }));
 
-    localStorage.setItem(getUserCalendarsKey(), JSON.stringify(UPSTAFF_CALENDARS));
+    localStorage.setItem(
+      getUserCalendarsKey(),
+      JSON.stringify(UPSTAFF_CALENDARS),
+    );
     dbg(
       `[GCal] 📋 Discovered ${UPSTAFF_CALENDARS.length} calendar(s):`,
       UPSTAFF_CALENDARS.map((c) => c.icon + " " + c.calendarName).join(", "),
@@ -352,7 +428,10 @@ async function gcalFetchCalendarList() {
     return UPSTAFF_CALENDARS;
   } catch (err) {
     const msg = err?.result?.error?.message || "";
-    if (!msg) showCalToast("⚠️ Could not load Google Calendars. Check your connection.");
+    if (!msg)
+      showCalToast(
+        "⚠️ Could not load Google Calendars. Check your connection.",
+      );
     console.warn("[GCal] ⚠️ Could not fetch calendar list:", msg || err);
     return UPSTAFF_CALENDARS;
   }
@@ -397,7 +476,10 @@ async function gcalCreateCalendar(name, description, calendarType) {
       Holiday: "🎉",
     };
     entry.icon = typeIcons[calendarType] || "📋";
-    localStorage.setItem(getUserCalendarsKey(), JSON.stringify(UPSTAFF_CALENDARS));
+    localStorage.setItem(
+      getUserCalendarsKey(),
+      JSON.stringify(UPSTAFF_CALENDARS),
+    );
   }
 
   return newCalId;
@@ -519,7 +601,10 @@ async function handleDeleteCalendar(calendarId, calendarName, btnEl) {
     calEvents = calEvents.filter(
       (e) => (e.calendarId || e.sourceCalendar) !== calendarId,
     );
-    localStorage.setItem(getUserCalendarsKey(), JSON.stringify(UPSTAFF_CALENDARS));
+    localStorage.setItem(
+      getUserCalendarsKey(),
+      JSON.stringify(UPSTAFF_CALENDARS),
+    );
     persistSave();
 
     populateCalendarSelectors();
@@ -610,6 +695,15 @@ async function gcalFetchAllCalendars() {
     );
 
     gcalInjectEvents(allEvents);
+
+    // Re-inject interview_slots after GCal sync so slot-derived events
+    // are not wiped out by gcalInjectEvents (which clears gcalSyncedIds).
+    if (
+      typeof TASKS !== "undefined" &&
+      typeof injectInterviewSlotsAsEvents === "function"
+    ) {
+      injectInterviewSlotsAsEvents(TASKS);
+    }
 
     localStorage.setItem(getUserGcalCountKey(), String(totalCount));
 
@@ -740,6 +834,117 @@ function gcalInjectEvents(googleEvents) {
     });
     gcalSyncedIds.add(localId);
   });
+}
+
+/* ──────────────────────────────────────────────
+   INJECT INTERVIEW SLOTS AS CALENDAR EVENTS
+   Reads task.interview_slots (text from Google Sheet col 15) and
+   adds each slot as a pseudo-event in calEvents so it shows on the
+   calendar and counts in analytics — WITHOUT touching Google Calendar.
+
+   Format handled (from Apps Script buildRow):
+     "• Jan 15, 2024 @ 2:30 PM\n• Jan 16, 2024 @ 10:00 AM"
+     "• 2024-01-15 @ 09:00\n• 2024-01-16 @ 14:00"
+
+   Duplicate prevention:
+     Slots are keyed by "taskId|date|time" so re-syncing is safe.
+────────────────────────────────────────────── */
+const _slotEventIds = new Set(); // tracks slot-derived event IDs across refreshes
+
+function injectInterviewSlotsAsEvents(tasks) {
+  // Remove previously injected slot events (clean re-inject on every sync)
+  calEvents = calEvents.filter((e) => !e._fromSlot);
+  _slotEventIds.clear();
+
+  (tasks || []).forEach((task) => {
+    const raw = task.interview_slots;
+    if (!raw || !raw.trim()) return;
+
+    // Split by newline — each line is one slot
+    const lines = raw
+      .split(/\n/)
+      .map((l) => l.replace(/^[•\-]\s*/, "").trim())
+      .filter(Boolean);
+
+    lines.forEach((line) => {
+      // Try to parse "DATE @ TIME" pattern
+      // Handles: "Jan 15, 2024 @ 2:30 PM" | "2024-01-15 @ 09:00" | "Jan 15, 2024 @ 09:00 AM"
+      const atIdx = line.indexOf("@");
+      if (atIdx === -1) return;
+
+      const datePart = line.slice(0, atIdx).trim();
+      const timePart = line.slice(atIdx + 1).trim();
+
+      let parsedDate = "";
+      try {
+        const d = new Date(datePart);
+        if (isNaN(d.getTime())) return;
+        const pad = (n) => String(n).padStart(2, "0");
+        parsedDate = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+      } catch (_) {
+        return;
+      }
+
+      // Normalise time to HH:MM (24-hour)
+      let parsedTime = "09:00";
+      const timeMatch = timePart.match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
+      if (timeMatch) {
+        let h = parseInt(timeMatch[1], 10);
+        const m = timeMatch[2];
+        const meridian = (timeMatch[3] || "").toUpperCase();
+        if (meridian === "PM" && h < 12) h += 12;
+        if (meridian === "AM" && h === 12) h = 0;
+        parsedTime = `${String(h).padStart(2, "0")}:${m}`;
+      }
+
+      // Build a stable ID — prevents duplicates on re-sync
+      const _stableKey = task.supabase_id || task.applicant_email || String(task.id);
+      const slotKey = `slot_${_stableKey}_${parsedDate}_${parsedTime}`;
+      const numericId = 80000 + Math.abs(hashStr(slotKey));
+      if (_slotEventIds.has(numericId)) return;
+
+      // Skip if an identical Google Calendar event already covers this slot
+      // (matches by task id linkage or same applicant name + same date)
+      const alreadyCovered = calEvents.some(
+        (e) =>
+          !e._fromSlot &&
+          e.date === parsedDate &&
+          (e.taskId === task.id ||
+            (e.applicant_name || e.name || "").toLowerCase() ===
+              (task.applicant_name || task.name || "").toLowerCase()),
+      );
+      if (alreadyCovered) return;
+
+      _slotEventIds.add(numericId);
+      calEvents.push({
+        id: numericId,
+        _fromSlot: true, // marker so we can remove on re-sync
+        taskId: task.id,
+        // Canonical event fields
+        title: task.applicant_name || task.name || "Interview",
+        name: task.applicant_name || task.name || "Interview",
+        applicant_name: task.applicant_name || task.name || "",
+        position: task.position || "",
+        interview_stage: "Interview Slot",
+        date: parsedDate,
+        time: parsedTime,
+        start_time: parsedTime,
+        end_time: autoEndTime(parsedTime),
+        status: "Scheduled",
+        type: "Interview",
+        round: "Interview Slot",
+        interviewer: "",
+        notes: `Interview slot from applicant's submitted preferences.\nRaw: ${line}`,
+        isGoogleEvent: false,
+        sourceCalendar: "interview_slots",
+        calendarId: "interview_slots",
+      });
+    });
+  });
+
+  dbg(
+    `[Slots] Injected ${_slotEventIds.size} interview slot event(s) from task data`,
+  );
 }
 
 /* ──────────────────────────────────────────────
@@ -1108,14 +1313,14 @@ function syncGCalCancellationsToRecruitment() {
     ) {
       // Find the matching TASK by gcalEventId
       const task = TASKS.find((t) => t.gcalEventId === ev.google_event_id);
-      if (task && task.status !== "Cancelled") {
-        task.status = "Cancelled";
+      if (task && task.status !== "Closed" && task.status !== "Cancelled" && task.status !== "Hired") {
+        moveApplicantToStage(task.id, "Closed");
         changed = true;
         dbg(
-          `[GCalSync] 🔄 Task "${task.name}" auto-cancelled because GCal event was cancelled.`,
+          `[GCalSync] 🔄 Task "${task.name}" closed because GCal event was cancelled.`,
         );
         showToast(
-          `📅 "${task.name}" cancelled — mirrored from Google Calendar.`,
+          `📅 "${task.name}" closed — interview cancelled in Google Calendar.`,
         );
       }
     }
@@ -1329,18 +1534,42 @@ window.addEventListener("load", () => {
     }
   }
 
-  // Load Google Identity Services for OAuth
-  const gisScript = document.createElement("script");
-  gisScript.src = "https://accounts.google.com/gsi/client";
-  gisScript.onload = () => {
-    if (typeof gapi !== "undefined") gcalInit();
-    else setTimeout(gcalInit, 500);
-  };
-  gisScript.onerror = () => {
-    console.warn("[GCal] Could not load GIS script — offline or blocked?");
-    if (wasSignedIn) updateSyncBtnState("Offline — local events only", true);
-  };
-  document.head.appendChild(gisScript);
+  // GIS script is loaded in the HTML head — wait for it to be ready then init
+  function _initGIS() {
+    if (window.google && google.accounts && google.accounts.id) {
+      google.accounts.id.initialize({
+        client_id: GCAL_CONFIG.CLIENT_ID,
+        callback: window.handleGoogleSignIn || function () {},
+        auto_select: false,
+      });
+      google.accounts.id.renderButton(document.querySelector(".g_id_signin"), {
+        theme: "filled_black",
+        size: "large",
+        shape: "pill",
+        text: "sign_in_with",
+      });
+    }
+  }
+  if (window.google && google.accounts) {
+    _initGIS();
+  } else {
+    // GIS loaded with async defer — poll briefly until ready (max ~2s)
+    let _gisAttempts = 0;
+    const _gisTimer = setInterval(() => {
+      _gisAttempts++;
+      if (window.google && google.accounts) {
+        clearInterval(_gisTimer);
+        _initGIS();
+      } else if (_gisAttempts > 20) {
+        clearInterval(_gisTimer);
+        console.warn("[GCal] Could not load GIS script — offline or blocked?");
+        if (wasSignedIn) updateSyncBtnState("Offline — local events only", true);
+      }
+    }, 100);
+  }
+
+  // Init Calendar API (gapi is loaded synchronously in HTML head — always ready)
+  gcalInit();
 
   // Request browser notification permission
   requestNotificationPermission();

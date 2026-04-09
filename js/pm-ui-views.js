@@ -65,10 +65,6 @@ function switchView(v) {
     if (el) el.style.display = id === v ? "block" : "none";
   });
 
-  // Hide jobs panel when not active (it's not in the main panels list)
-  const jobsEl = document.getElementById("view-jobs");
-  if (jobsEl) jobsEl.style.display = v === "jobs" ? "block" : "none";
-
   // Update topbar breadcrumb
   const labels = {
     list: "Interview Pipeline",
@@ -76,7 +72,6 @@ function switchView(v) {
     calendar: "Interview Calendar",
     table: "Data Table",
     mytasks: "My Tasks",
-    jobs: "Job Listings",
   };
   document.getElementById("crumb-current").textContent = labels[v] || v;
   document.getElementById("crumb-parent").textContent = "Recruitment";
@@ -189,26 +184,28 @@ function refreshStorageStatus() {
       true,
     ),
   ].join("");
-  // Storage usage bar
+  // Storage usage bar — update in place to avoid duplicate bars on refresh
   try {
     const bytes = new Blob([JSON.stringify(localStorage)]).size;
     const MB = bytes / (1024 * 1024);
     const pct = Math.min(Math.round((MB / 5) * 100), 100);
     const barColor =
       pct > 85 ? "#ef4444" : pct > 65 ? "#fa8231" : "var(--cyan)";
-    el.insertAdjacentHTML(
-      "afterend",
-      `
-      <div style="margin-top:12px;">
-        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px;">
-          <span>Storage Usage</span>
-          <span id="storage-usage-label">${MB.toFixed(2)} MB (~${pct}% of 5 MB)</span>
-        </div>
-        <div style="height:6px;border-radius:99px;background:var(--border);overflow:hidden;">
-          <div id="storage-usage-bar" style="height:100%;width:${pct}%;background:${barColor};border-radius:99px;transition:width 0.3s;"></div>
-        </div>
-      </div>`,
-    );
+    let barWrap = document.getElementById("storage-usage-wrap");
+    if (!barWrap) {
+      barWrap = document.createElement("div");
+      barWrap.id = "storage-usage-wrap";
+      barWrap.style.marginTop = "12px";
+      el.insertAdjacentElement("afterend", barWrap);
+    }
+    barWrap.innerHTML = `
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px;">
+        <span>Storage Usage</span>
+        <span>${MB.toFixed(2)} MB (~${pct}% of 5 MB)</span>
+      </div>
+      <div style="height:6px;border-radius:99px;background:var(--border);overflow:hidden;">
+        <div style="height:100%;width:${pct}%;background:${barColor};border-radius:99px;transition:width 0.3s;"></div>
+      </div>`;
   } catch (_) {}
 }
 
@@ -271,10 +268,8 @@ function listPageChange(dir) {
    [SECTION: LIST-VIEW]
 ══════════════════════════════════════════════ */
 function renderListStatusTabs() {
-  // STATUS STRINGS — sourced from STATUS_META keys (defined in pm-ui-core.js)
-  const allStatuses = Object.keys(STATUS_META).filter(
-    (s) => !["To Do", "In Progress", "In Review", "Done"].includes(s),
-  );
+  // STATUS STRINGS — ordered by pipeline stage (defined in pm-ui-core.js)
+  const allStatuses = LIST_STATUS_ORDER;
   const tabsEl = document.getElementById("list-status-tabs");
   if (!tabsEl) return;
   const tabs = [
@@ -400,7 +395,7 @@ function renderList() {
   }
 
   // Group by status
-  const order = [...ACTIVE_STAGES, "Hired", "Rejected", "Cancelled"];
+  const order = [...ACTIVE_STAGES, "Hired", "Others", "Closed", "Rejected", "Cancelled", "Not Qualified", "No Show", "Duplicate Lead", "Hired - Resigned"];
   const groups = {};
   tasks.forEach((t) => {
     if (!groups[t.status]) groups[t.status] = [];
@@ -410,11 +405,33 @@ function renderList() {
   let html = "";
   let anySection = false;
   order.forEach((st) => {
-    if (f.status && st !== f.status) return; // skip if filtered to one status
-    const stTasks = sortTasks(groups[st] || []);
-    const sm = STATUS_META[st];
-    const allInStatus = TASKS.filter((t) => t.status === st).length;
-    const donePct = st === "Done" ? 100 : 0;
+    // "Others" is a virtual group — handle separately
+    let sectionLabel = st;
+    let stTasks;
+
+    if (st === "Others") {
+      if (f.status && !OTHERS_STATUSES.includes(f.status)) return;
+      if (f.status && OTHERS_STATUSES.includes(f.status)) {
+        // User clicked a specific Others sub-tab — show that sub-status
+        sectionLabel = f.status;
+        stTasks = sortTasks(groups[f.status] || []);
+      } else {
+        // "All" tab — merge all OTHERS_STATUSES into one section
+        sectionLabel = "Others";
+        stTasks = sortTasks(OTHERS_STATUSES.flatMap((s) => groups[s] || []));
+      }
+    } else {
+      if (f.status && st !== f.status) return; // skip if filtered to one status
+      stTasks = sortTasks(groups[st] || []);
+    }
+
+    // On "All" tab, always show active pipeline stages even when empty
+    // (mirrors Board view), but hide empty terminal/others/closed stages
+    if (!f.status && stTasks.length === 0 && !ACTIVE_STAGES.includes(st)) return;
+    const sm = STATUS_META[sectionLabel] || STATUS_META[st] || STATUS_META["New"];
+    const allInStatus = st === "Others"
+      ? TASKS.filter((t) => OTHERS_STATUSES.includes(t.status)).length
+      : TASKS.filter((t) => t.status === st).length;
     anySection = true;
 
     const sortIcons = {
@@ -431,10 +448,10 @@ function renderList() {
         <div class="list-section-left">
           <svg class="list-section-chevron open" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
           <div class="list-section-dot" style="background:${sm.color};"></div>
-          <span class="list-section-title" style="color:${sm.color}">${st}</span>
+          <span class="list-section-title" style="color:${sm.color}">${sectionLabel}</span>
           <span class="list-section-count">${stTasks.length}${stTasks.length !== allInStatus ? `/${allInStatus}` : ""}</span>
         </div>
-        ${stTasks.length > 0 ? `<div class="list-section-progress"><div class="list-section-progress-fill" style="width:${st === "Done" ? 100 : st === "Cancelled" ? 100 : Math.round((stTasks.length / Math.max(allInStatus, 1)) * 100)}%;background:${sm.color};"></div></div>` : ""}
+        ${stTasks.length > 0 ? `<div class="list-section-progress"><div class="list-section-progress-fill" style="width:${sectionLabel === "Done" ? 100 : sectionLabel === "Cancelled" ? 100 : Math.round((stTasks.length / Math.max(allInStatus, 1)) * 100)}%;background:${sm.color};"></div></div>` : ""}
       </div>
       <div class="list-section-body">
       <table class="list-table">
@@ -538,7 +555,7 @@ function renderList() {
                     const rowCls =
                       t.status === "Hired"
                         ? "list-row-hired"
-                        : t.status === "Cancelled" || t.status === "Rejected"
+                        : t.status === "Closed" || t.status === "Cancelled" || t.status === "Rejected"
                           ? "list-row-cancelled"
                           : "";
                     const pc = PRIORITY_COLORS[t.priority] || "#9ca3af";
@@ -549,7 +566,7 @@ function renderList() {
                   ${TERMINAL_STAGES.includes(t.status) ? `<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>` : ""}
                 </div>
                 <div style="min-width:0;">
-                  <div class="task-name ${t.status === "Hired" || t.status === "Done" ? "done" : t.status === "Cancelled" || t.status === "Rejected" ? "cancelled" : ""}">
+                  <div class="task-name ${t.status === "Hired" || t.status === "Done" ? "done" : t.status === "Closed" || t.status === "Cancelled" || t.status === "Rejected" ? "cancelled" : ""}">
                     ${sanitize(t.name)}${folderTag ? ` ${folderTag}` : ""}
                   </div>
                   <div style="display:flex;align-items:center;gap:5px;margin-top:2px;flex-wrap:wrap;">
@@ -581,65 +598,15 @@ function renderList() {
                 <button class="list-actions-btn" onclick="toggleListActionMenu(${t.id},this)" title="Actions">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="5" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="12" cy="19" r="1.2"/></svg>
                 </button>
-                <div class="list-action-menu" id="lam-${t.id}">
-                  <button class="lam-item" onclick="openTaskEdit(${t.id});closeAllListMenus()">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                    Edit Applicant
-                  </button>
-                  <button class="lam-item" onclick="listAdvanceStage(${t.id})">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
-                    Advance Stage
-                  </button>
-                  ${(() => {
-                    const _curIdx = STAGE_ORDER.indexOf(t.status);
-                    const _fwd =
-                      _curIdx >= 0
-                        ? STAGE_ORDER.slice(_curIdx + 1).filter(
-                            (s) => !TERMINAL_STAGES.includes(s),
-                          )
-                        : [];
-                    if (!_fwd.length) return "";
-                    return `<div class="lam-item lam-has-sub" onmouseenter="this.querySelector('.lam-sub').style.display='block'" onmouseleave="this.querySelector('.lam-sub').style.display='none'" style="position:relative;display:flex;align-items:center;gap:8px;cursor:pointer;">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>
-                      Move to Stage
-                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="margin-left:auto;"><polyline points="9 18 15 12 9 6"/></svg>
-                      <div class="lam-sub" style="display:none;position:absolute;left:100%;top:0;background:var(--surface-1);border:1.5px solid var(--border);border-radius:10px;padding:4px;box-shadow:0 8px 24px rgba(0,0,0,.25);z-index:9200;min-width:140px;">
-                        ${_fwd.map((st) => `<button class="lam-item" onclick="moveApplicantToStage(${t.id},'${st}');closeAllListMenus()">${st}</button>`).join("")}
-                      </div>
-                    </div>`;
-                  })()}
-                  ${
-                    getPrevStage(t.status)
-                      ? `<button class="lam-item" onclick="listRevertStage(${t.id})">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
-                    Move Back to ${getPrevStage(t.status)}
-                  </button>`
-                      : ""
-                  }
-                  <button class="lam-item" onclick="listScheduleInterview(${t.id})">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                    Schedule Interview
-                  </button>
-                  <div class="lam-sep"></div>
-                  <button class="lam-item" onclick="openTaskEdit(${t.id},true);closeAllListMenus()">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-                    View Scores
-                  </button>
-                  <div class="lam-sep"></div>
-                  <button class="lam-item lam-danger" onclick="listCancelApplicant(${t.id})">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
-                    Cancel Application
-                  </button>
-                </div>
               </div></td>
             </tr>`;
                   })
                   .join("")
           }
           <tr class="add-task-row"><td colspan="8">
-            <button class="add-task-btn" onclick="openTaskNew('${st}')">
+            <button class="add-task-btn" onclick="openTaskNew('${sectionLabel}')">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-               Add applicant in ${st}
+               Add applicant in ${sectionLabel}
             </button>
           </td></tr>
         </tbody>
@@ -684,8 +651,12 @@ function renderList() {
       paginationEl.style.display = "flex";
       prevBtn.disabled = listCurrentPage <= 1;
       nextBtn.disabled = listCurrentPage >= totalPages;
-      prevBtn.title = listCurrentPage <= 1 ? "You are on the first page" : "Previous page";
-      nextBtn.title = listCurrentPage >= totalPages ? "You are on the last page" : "Next page";
+      prevBtn.title =
+        listCurrentPage <= 1 ? "You are on the first page" : "Previous page";
+      nextBtn.title =
+        listCurrentPage >= totalPages
+          ? "You are on the last page"
+          : "Next page";
       infoEl.textContent = `Page ${listCurrentPage} of ${totalPages} (${allFiltered.length} applicants)`;
     } else {
       paginationEl.style.display = "none";
@@ -731,27 +702,80 @@ function cycleSort(colKey) {
 }
 
 /* ── List view: Three-dot action menu helpers ── */
+function buildListActionMenuHTML(taskId) {
+  const t = TASKS.find(x => x.id === taskId);
+  if (!t) return "";
+  const curIdx = STAGE_ORDER.indexOf(t.status);
+  const fwd = curIdx >= 0 ? STAGE_ORDER.slice(curIdx + 1).filter(s => !TERMINAL_STAGES.includes(s)) : [];
+  const othersOpts = OTHERS_STATUSES.filter(s => s !== t.status);
+  const moveToSub = (fwd.length || othersOpts.length) ? `<div class="lam-item lam-has-sub" onmouseenter="this.querySelector('.lam-sub').style.display='block'" onmouseleave="this.querySelector('.lam-sub').style.display='none'" style="position:relative;display:flex;align-items:center;gap:8px;cursor:pointer;">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>
+    Move to Stage
+    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="margin-left:auto;"><polyline points="9 18 15 12 9 6"/></svg>
+    <div class="lam-sub" style="display:none;position:fixed;background:var(--surface-1);border:1.5px solid var(--border);border-radius:10px;padding:4px;box-shadow:0 8px 24px rgba(0,0,0,.25);z-index:9200;min-width:180px;">
+      ${fwd.map(st => `<button class="lam-item" onclick="moveApplicantToStage(${taskId},'${st}');closeAllListMenus()">${st}</button>`).join("")}
+      ${othersOpts.length ? (fwd.length ? `<div style="margin:4px 4px;border-top:1px solid var(--border);"></div>` : "") + `<div style="padding:4px 8px 2px;font-size:10px;font-weight:700;color:var(--muted);font-family:'Montserrat',sans-serif;text-transform:uppercase;letter-spacing:.5px;">Others</div>` + othersOpts.map(st => `<button class="lam-item" onclick="moveApplicantToStage(${taskId},'${st}');closeAllListMenus()">${st}</button>`).join("") : ""}
+    </div>
+  </div>` : "";
+  const prevStage = getPrevStage(t.status);
+  const moveBack = prevStage ? `<button class="lam-item" onclick="listRevertStage(${taskId});closeAllListMenus()">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+    Move Back to ${prevStage}
+  </button>` : "";
+  return `
+    <button class="lam-item" onclick="openTaskEdit(${taskId});closeAllListMenus()">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      Edit Applicant
+    </button>
+    <button class="lam-item" onclick="listAdvanceStage(${taskId})">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+      Advance Stage
+    </button>
+    ${moveToSub}
+    ${moveBack}
+    <button class="lam-item" onclick="listScheduleInterview(${taskId});closeAllListMenus()">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      Schedule Interview
+    </button>
+    <div class="lam-sep"></div>
+    <button class="lam-item" onclick="openTaskEdit(${taskId},true);closeAllListMenus()">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      View Scores
+    </button>
+    <div class="lam-sep"></div>
+    <button class="lam-item lam-danger" onclick="listRejectApplicant(${taskId})">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      Reject Applicant
+    </button>
+    <button class="lam-item lam-danger" onclick="listCancelApplicant(${taskId})">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+      Cancel Application
+    </button>
+    <button class="lam-item lam-danger" onclick="listDeleteApplicant(${taskId})">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+      Delete Applicant
+    </button>`;
+}
+
 function toggleListActionMenu(taskId, btnEl) {
-  const menu = document.getElementById("lam-" + taskId);
+  const menu = document.getElementById("list-action-menu");
   if (!menu) return;
-  const isOpen = menu.classList.contains("open");
+  const isOpen = menu.classList.contains("open") && menu.dataset.taskId == taskId;
   closeAllListMenus();
   if (!isOpen) {
-    // Position the menu relative to the button using fixed coords
+    menu.dataset.taskId = taskId;
+    menu.innerHTML = buildListActionMenuHTML(taskId);
+    // Position relative to the button using fixed coords
     const rect = btnEl.getBoundingClientRect();
-    const menuW = 196; // min-width + border
+    const menuW = 196;
     const spaceBelow = window.innerHeight - rect.bottom;
     const spaceRight = window.innerWidth - rect.left;
-
-    // Prefer opening below-right; flip up if not enough space below
     const top = spaceBelow > 240 ? rect.bottom + 4 : rect.top - 4;
     const yDir = spaceBelow > 240 ? "top" : "bottom";
     const left = spaceRight > menuW ? rect.left : rect.right - menuW;
-
     menu.style.top = "";
     menu.style.bottom = "";
-    menu.style[yDir] =
-      (yDir === "top" ? top : window.innerHeight - rect.top + 4) + "px";
+    menu.style[yDir] = (yDir === "top" ? top : window.innerHeight - rect.top + 4) + "px";
     menu.style.left = Math.max(4, left) + "px";
     menu.classList.add("open");
 
@@ -765,9 +789,8 @@ function _lamOutsideClick(e) {
   if (!e.target.closest(".list-row-actions")) closeAllListMenus();
 }
 function closeAllListMenus() {
-  document
-    .querySelectorAll(".list-action-menu.open")
-    .forEach((m) => m.classList.remove("open"));
+  const menu = document.getElementById("list-action-menu");
+  if (menu) menu.classList.remove("open");
 }
 // Also close menus on content scroll so they don't float out of sync
 document
@@ -804,13 +827,7 @@ async function listRevertStage(taskId) {
   );
   if (!confirmed) return;
 
-  const fromStage = t.status;
-  t.status = prev;
-  persistSave();
-  renderList();
-  showToast(
-    `↩️ ${t.applicant_name || t.name} moved back to ${prev} (was ${fromStage})`,
-  );
+  moveApplicantToStage(taskId, prev);
 }
 
 function listScheduleInterview(taskId) {
@@ -835,6 +852,18 @@ function listScheduleInterview(taskId) {
   }, 350);
 }
 
+function listRejectApplicant(taskId) {
+  closeAllListMenus();
+  const t = TASKS.find((x) => x.id === taskId);
+  if (!t) return;
+  if (t.status === "Closed") {
+    showToast("Already closed/rejected.");
+    return;
+  }
+  moveApplicantToStage(taskId, "Closed");
+  showToast(`🚫 ${t.applicant_name || t.name} rejected`);
+}
+
 function listCancelApplicant(taskId) {
   closeAllListMenus();
   const t = TASKS.find((x) => x.id === taskId);
@@ -846,7 +875,51 @@ function listCancelApplicant(taskId) {
   t.status = "Cancelled";
   persistSave();
   renderList();
-  showToast(`❌ ${t.name} marked as Cancelled`);
+  showToast(`❌ ${t.applicant_name || t.name} marked as Cancelled`);
+}
+
+async function listDeleteApplicant(taskId) {
+  closeAllListMenus();
+  const t = TASKS.find((x) => x.id === taskId);
+  if (!t) return;
+
+  const name = t.applicant_name || t.name || "this applicant";
+  const confirmed = await uiConfirm(
+    `Permanently delete ${name}? This cannot be undone.`,
+    { icon: "🗑️", title: "Delete Applicant", okText: "Delete", okDanger: true },
+  );
+  if (!confirmed) return;
+
+  const idx = TASKS.findIndex((x) => x.id === taskId);
+
+  // If synced to the sheet, delete from API first — only remove locally if it succeeds
+  if (
+    (t._source === "api" || t.supabase_id) &&
+    window.UpstaffAPI &&
+    UpstaffAPI.isConfigured()
+  ) {
+    try {
+      await UpstaffAPI.deleteApplicant({
+        email: t.applicant_email,
+        supabaseId: t.supabase_id,
+      });
+      if (idx !== -1) TASKS.splice(idx, 1);
+      showToast(`🗑️ ${name} deleted.`);
+    } catch (e) {
+      showToast(`⚠️ Delete failed: ${e.message}`);
+      return; // Do not remove locally if API delete failed
+    }
+  } else {
+    // Local-only applicant — safe to remove immediately
+    if (idx !== -1) TASKS.splice(idx, 1);
+    showToast(`🗑️ ${name} removed.`);
+  }
+
+  persistSave();
+  refreshCurrentView();
+  if (document.getElementById("task-modal")?.style.display !== "none") {
+    closeTaskModal();
+  }
 }
 
 function populateListPositionFilter() {
@@ -889,9 +962,9 @@ function toggleSection(hdr) {
 function toggleDone(id) {
   const t = TASKS.find((x) => x.id === id);
   if (!t) return;
-  // In the recruitment pipeline, the check button advances or resets to Applied
+  // In the recruitment pipeline, the check button advances or resets to New
   if (TERMINAL_STAGES.includes(t.status)) {
-    t.status = "Applied";
+    t.status = "New";
   } else {
     advanceToNextStage(id);
     return;
@@ -1457,11 +1530,11 @@ function listQuickAdd() {
   const t = {
     id: taskNextId++,
     name,
-    status: document.getElementById("list-quickadd-status")?.value || "Applied",
+    status: document.getElementById("list-quickadd-status")?.value || "New",
     priority:
       document.getElementById("list-quickadd-priority")?.value || "Medium",
     position: JOB_POSITIONS[0],
-    assignee: "HR Team",
+    assignee: "Assistant",
     start: todayStr(),
     due: "",
     notes: "",
@@ -1500,7 +1573,6 @@ function openEmpEdit(empId) {
   });
   const selects = [
     ["hf-position", e.position],
-    ["hf-dept", e.dept],
     ["hf-emptype", e.emptype],
     ["hf-status", e.status],
   ];
@@ -1537,11 +1609,15 @@ function saveEmpDetailChanges() {
 ══════════════════════════════════════════════ */
 function renderBoard() {
   autoProgressStatuses();
-  const activeOrder = [...ACTIVE_STAGES, "Hired"];
+  const activeOrder = [...ACTIVE_STAGES, "Hired", "Others", "Closed"];
   let html = "";
   activeOrder.forEach((st) => {
-    const tasks = TASKS.filter((t) => t.status === st && !t.archived);
-    const sm = STATUS_META[st] || STATUS_META["Applied"];
+    const tasks = st === "Closed"
+      ? TASKS.filter((t) => CLOSED_STATUSES.includes(t.status) && !t.archived)
+      : st === "Others"
+        ? TASKS.filter((t) => OTHERS_STATUSES.includes(t.status) && !t.archived)
+        : TASKS.filter((t) => t.status === st && !t.archived);
+    const sm = STATUS_META[st] || STATUS_META["New"];
     const color = sm.color;
     const isTerminal = TERMINAL_STAGES.includes(st);
     html += `<div class="board-col"
@@ -1627,7 +1703,7 @@ function renderBoard() {
                 if (_bfwd.length < 2) return "";
                 return `<select class="bca-btn bca-skip" title="Skip to stage" onchange="if(this.value){moveApplicantToStage(${t.id},this.value);this.value=''}" onclick="event.stopPropagation()"><option value="">⤸ Skip</option>${_bfwd.map((s) => `<option value="${s}">${s}</option>`).join("")}</select>`;
               })()}
-              ${t.status === "Review" ? `<button class="bca-btn bca-hire" onclick="hireApplicant(${t.id})">✓ Hire</button>` : ""}
+              ${t.status === "For Client Endorsement" ? `<button class="bca-btn bca-hire" onclick="hireApplicant(${t.id})">✓ Hire</button>` : ""}
               <button class="bca-btn bca-reject" onclick="rejectApplicant(${t.id})">✗</button>
             </div>`
                 : ""
@@ -1722,8 +1798,10 @@ function boardDragEnd(event) {
     .querySelectorAll(".board-col-body")
     .forEach((b) => b.classList.remove("board-drop-active"));
 }
+let _boardDropProcessing = false;
 function boardDrop(event, newStatus) {
   event.preventDefault();
+  if (_boardDropProcessing) return; // prevent double-fire during re-render
   const colBody = event.currentTarget.querySelector(".board-col-body");
   if (colBody) colBody.classList.remove("board-drop-active");
   const taskId =
@@ -1731,12 +1809,9 @@ function boardDrop(event, newStatus) {
   if (!taskId) return;
   const t = TASKS.find((x) => x.id === taskId);
   if (!t || t.status === newStatus) return;
-  const oldStatus = t.status;
-  t.status = newStatus;
-  persistSave();
-  renderBoard();
-  showToast(`✅ Moved to ${newStatus}`);
-  dbg(`[Board] Task "${t.name}" moved: ${oldStatus} → ${newStatus}`);
+  _boardDropProcessing = true;
+  moveApplicantToStage(taskId, newStatus);
+  setTimeout(() => { _boardDropProcessing = false; }, 500);
 }
 
 /* ══════════════════════════════════════════════
@@ -1746,7 +1821,16 @@ function boardDrop(event, newStatus) {
 /** Safe field setter — silently skips if element doesn't exist */
 function _setField(id, value) {
   const el = document.getElementById(id);
-  if (el) el.value = value ?? "";
+  if (!el) return;
+  el.value = value ?? "";
+  // For <select> elements: if value doesn't match any option, add it dynamically
+  if (el.tagName === "SELECT" && value && el.value !== value) {
+    const opt = document.createElement("option");
+    opt.value = value;
+    opt.textContent = value;
+    el.appendChild(opt);
+    el.value = value;
+  }
 }
 
 /** Switch the applicant modal tab */
@@ -1847,16 +1931,16 @@ function _updateVerbalPreview(url) {
 /** Show/hide pipeline action strip and update button labels */
 function _updatePipelineActions(taskId, status) {
   window._editingTaskId = taskId;
-  const strip   = document.getElementById("task-pipeline-actions");
+  const strip = document.getElementById("task-pipeline-actions");
   const btnNext = document.getElementById("btn-advance-stage");
   const btnHire = document.getElementById("btn-hire-now");
-  const btnRej  = document.getElementById("btn-reject-now");
+  const btnRej = document.getElementById("btn-reject-now");
   const btnMove = document.getElementById("btn-move-stage");
   if (!strip) return;
 
   // Hide Assessment tab for early stages where it hasn't happened yet
   const assessTab = document.querySelector('.modal-tab[data-tab="assessment"]');
-  const HIDE_ASSESS_STAGES = ["Applied", "Screening", "Interview"];
+  const HIDE_ASSESS_STAGES = ["New"];
   if (assessTab) {
     assessTab.style.display = HIDE_ASSESS_STAGES.includes(status) ? "none" : "";
     // If currently on assessment tab and it should be hidden, switch back to profile
@@ -1871,8 +1955,18 @@ function _updatePipelineActions(taskId, status) {
   // Show/hide Review tab based on current stage
   _updateReviewTab(status);
 
-  if (!taskId || TERMINAL_STAGES.includes(status)) {
+  if (!taskId) {
     strip.style.display = "none";
+    return;
+  }
+
+  // For terminal stages, show only the delete button
+  if (TERMINAL_STAGES.includes(status)) {
+    strip.style.display = "flex";
+    if (btnNext) btnNext.style.display = "none";
+    if (btnHire) btnHire.style.display = "none";
+    if (btnRej) btnRej.style.display = "none";
+    if (btnMove) btnMove.style.display = "none";
     return;
   }
 
@@ -1883,13 +1977,13 @@ function _updatePipelineActions(taskId, status) {
     btnNext.style.display = next ? "inline-flex" : "none";
   }
   if (btnHire)
-    btnHire.style.display = status === "Review" ? "inline-flex" : "none";
+    btnHire.style.display = status === "Endorsed" ? "inline-flex" : "none";
   if (btnRej) btnRej.style.display = "inline-flex";
 
   // Populate "Move to" dropdown with all non-terminal stages except the current one
   if (btnMove) {
     const moveable = STAGE_ORDER.filter(
-      (s) => s !== status && !TERMINAL_STAGES.includes(s)
+      (s) => s !== status && !TERMINAL_STAGES.includes(s),
     );
     if (moveable.length > 0) {
       btnMove.innerHTML =
@@ -2008,7 +2102,7 @@ function _refreshScoreSummary() {
    and marks results as `imported:true` once applied.
 ══════════════════════════════════════════════ */
 const ASSESSMENT_PORTAL_LS_KEY = "upstaff_pending_assessments";
-const ASSESSMENT_PORTAL_URL = "voicetest.html"; // path to friend's portal
+const ASSESSMENT_PORTAL_URL = "https://f--asessment-portal.web.app/";
 
 /**
  * Global function the friend's portal can call directly:
@@ -2294,7 +2388,7 @@ const EMAILJS_DEFAULTS = {
   serviceId: "",
   templateId: "",
   publicKey: "",
-  portalUrl: "https://kingnoob3605.github.io/upstaff-portal/",
+  portalUrl: "https://f--asessment-portal.web.app/",
   expiryHours: 72,
 };
 function loadEmailJSConfig() {
@@ -2340,11 +2434,7 @@ function populateEmailJSSettings() {
 ══════════════════════════════════════════════ */
 
 function saveApiConfig() {
-  const cfg = UpstaffAPI.getConfig();
-  cfg.webAppUrl = (document.getElementById("s-api-url")?.value || "").trim();
-  cfg.email = (document.getElementById("s-api-email")?.value || "").trim();
-  // Password is never stored — read from DOM at login time only
-  UpstaffAPI.saveConfig(cfg);
+  // No-op — URL/email/password are now hardcoded in pm-ui-api.js
 }
 
 /* ══════════════════════════════════════════════
@@ -2398,10 +2488,9 @@ async function handleLogout() {
   const menu = document.getElementById("avatar-menu");
   if (menu) menu.style.display = "none";
 
-  const confirmed = await upstaffConfirm(
-    "Log Out",
+  const confirmed = await uiConfirm(
     "Are you sure you want to log out? Your local data will stay saved.",
-    "⚠️",
+    { icon: "⚠️", title: "Log Out", okText: "Log Out" },
   );
   if (!confirmed) return;
 
@@ -2421,13 +2510,21 @@ async function handleLogout() {
 
 function populateApiSettings() {
   const cfg = UpstaffAPI.getConfig();
-  const set = (id, val) => {
-    const el = document.getElementById(id);
-    if (el) el.value = val || "";
-  };
-  set("s-api-url", cfg.webAppUrl);
-  set("s-api-email", cfg.email);
-  // Password intentionally not repopulated — user must re-enter to reconnect
+
+  // Populate credential fields
+  const urlEl = document.getElementById("api-cred-url");
+  const emailEl = document.getElementById("api-cred-email");
+  const passEl = document.getElementById("api-cred-password");
+  if (urlEl) urlEl.value = cfg.webAppUrl || "";
+  if (emailEl) emailEl.value = cfg.adminEmail || "";
+  if (passEl) passEl.value = cfg.adminPassword || "";
+
+  const loggedInEl = document.getElementById("api-logged-in-as");
+  if (loggedInEl) {
+    loggedInEl.textContent = cfg.name
+      ? `${cfg.name} (${cfg.email}) — ${cfg.role === "hr" ? "HR" : "Assistant"}`
+      : "Not signed in";
+  }
 
   const statusEl = document.getElementById("api-status-text");
   if (statusEl) {
@@ -2436,77 +2533,197 @@ function populateApiSettings() {
   }
 }
 
-async function connectToApi() {
-  saveApiConfig();
+window.saveApiCredentials = function () {
+  const url = (document.getElementById("api-cred-url")?.value || "").trim();
+  const email = (document.getElementById("api-cred-email")?.value || "").trim();
+  const password = (
+    document.getElementById("api-cred-password")?.value || ""
+  ).trim();
+  const statusEl = document.getElementById("api-cred-status");
+
+  if (
+    !url ||
+    !url.startsWith("https://script.google.com/macros/s/") ||
+    !url.endsWith("/exec")
+  ) {
+    statusEl.textContent =
+      "❌ Invalid URL — must be a valid Apps Script /exec URL.";
+    statusEl.style.color = "#ef4444";
+    return;
+  }
+  if (!email) {
+    statusEl.textContent = "❌ ADMIN_EMAIL is required.";
+    statusEl.style.color = "#ef4444";
+    return;
+  }
+  if (!password) {
+    statusEl.textContent = "❌ ADMIN_PASSWORD is required.";
+    statusEl.style.color = "#ef4444";
+    return;
+  }
+
   const cfg = UpstaffAPI.getConfig();
-  // Read password from DOM only — never from stored config
-  const password = (document.getElementById("s-api-password")?.value || "").trim();
-  const statusEl = document.getElementById("api-status-text");
+  cfg.webAppUrl = url;
+  cfg.adminEmail = email;
+  cfg.adminPassword = password;
+  UpstaffAPI.saveConfig(cfg);
 
-  if (!cfg.webAppUrl) {
-    showToast("Enter the Web App URL first.");
-    return;
-  }
-  if (!cfg.email || !password) {
-    showToast("Enter admin email and password.");
-    return;
-  }
+  statusEl.textContent =
+    "✅ Credentials saved. Sign in with Google to connect.";
+  statusEl.style.color = "var(--green,#10b981)";
+};
 
-  if (statusEl) {
-    statusEl.textContent = "Connecting…";
-    statusEl.style.color = "";
-  }
+window.toggleApiPasswordVisibility = function () {
+  const input = document.getElementById("api-cred-password");
+  if (input) input.type = input.type === "password" ? "text" : "password";
+};
 
-  try {
-    await UpstaffAPI.login(cfg.email, password);
-    if (statusEl) {
-      statusEl.textContent = "Connected ✅";
-      statusEl.style.color = "var(--green)";
-    }
-    showToast("✅ Connected to partner API!");
-    await syncApplicantsFromApi();
-  } catch (e) {
-    if (statusEl) {
-      statusEl.textContent = "Failed: " + e.message;
-      statusEl.style.color = "var(--red,#ef4444)";
-    }
-    showToast("❌ Connection failed: " + e.message);
-  }
-}
-
-async function syncApplicantsFromApi() {
+let _syncInProgress = false;
+async function syncApplicantsFromApi(opts) {
+  if (_syncInProgress) return;
   if (!window.UpstaffAPI || !UpstaffAPI.isConfigured()) return;
+  const silent = opts && opts.silent;
+  _syncInProgress = true;
 
   try {
-    showToast("Syncing applicants…");
+    if (!silent) showToast("Syncing applicants…");
     const res = await UpstaffAPI.getApplicants({ limit: 500 });
     if (!res.data || !res.data.length) {
-      showToast("No applicants found in database.");
+      // Clear any stale API-sourced tasks so they don't linger after being removed from the sheet
+      const hadApiTasks = TASKS.some((t) => t._source === "api");
+      const localOnly = TASKS.filter((t) => t._source !== "api");
+      TASKS.length = 0;
+      localOnly.forEach((t) => TASKS.push(t));
+      if (hadApiTasks) {
+        persistSave();
+        refreshCurrentView();
+      }
+      if (!silent) showToast("No applicants found in database.");
       return;
     }
 
     // Remove previously API-sourced tasks and re-import fresh
     const localTasks = TASKS.filter((t) => t._source !== "api");
+    const prevCount = TASKS.filter((t) => t._source === "api").length;
 
     // Assign local IDs starting after existing max
+    const existingApiTasks = TASKS.filter((t) => t._source === "api");
     let nextId = Math.max(taskNextId, ...TASKS.map((t) => t.id || 0)) + 1;
     const apiTasks = res.data.map((r) => {
       const mapped = UpstaffAPI.mapApplicant(r, nextId++);
+
+      // Preserve the local dashboard stage if the partner status hasn't changed
+      // externally. This prevents the sync from overwriting finer-grained local
+      // stages (e.g. "Screening") that map to the same coarse partner status
+      // (e.g. "For Interview").
+      const existing = existingApiTasks.find((t) =>
+        (t.supabase_id && t.supabase_id === mapped.supabase_id) ||
+        (t.applicant_email && t.applicant_email === (mapped.applicant_email || "").toLowerCase())
+      );
+      if (existing && existing.partner_status === mapped.partner_status) {
+        // Partner status unchanged — keep the user's local dashboard stage
+        mapped.status = existing.status;
+      }
+
       return mapped;
     });
 
+    // Deduplicate: drop local tasks that match an API record by supabase_id OR by email.
+    // Email fallback catches cases where addApplicant appeared to fail in JS but
+    // actually succeeded on the server — so supabase_id was never captured locally.
+    const apiIds = new Set(apiTasks.map((t) => t.supabase_id).filter(Boolean));
+    const apiEmails = new Set(
+      apiTasks
+        .map((t) => (t.applicant_email || "").toLowerCase())
+        .filter(Boolean),
+    );
+    const dedupedLocal = localTasks.filter((t) => {
+      if (t.supabase_id && apiIds.has(t.supabase_id)) return false;
+      if (t.applicant_email && apiEmails.has(t.applicant_email.toLowerCase()))
+        return false;
+      return true;
+    });
+
     TASKS.length = 0;
-    localTasks.forEach((t) => TASKS.push(t));
+    dedupedLocal.forEach((t) => TASKS.push(t));
     apiTasks.forEach((t) => TASKS.push(t));
     taskNextId = nextId;
+
+    // Auto-create onboarding records for any hired applicants that don't have one yet
+    apiTasks.forEach((t) => {
+      if (t.status === "Hired" && typeof _autoCreateEmployee === "function") {
+        _autoCreateEmployee(t);
+      }
+    });
+
     persistSave();
+
+    // Inject interview_slots from sheet data as calendar events
+    // so they appear on the calendar and count in analytics
+    if (typeof injectInterviewSlotsAsEvents === "function") {
+      injectInterviewSlotsAsEvents(TASKS);
+    }
+
     refreshCurrentView();
-    showToast(`✅ Synced ${apiTasks.length} applicants from database.`);
+
+    const newCount = apiTasks.length - prevCount;
+    if (silent) {
+      // Only notify if there are new applicants since last sync
+      if (newCount > 0)
+        showToast(`🔄 ${newCount} new applicant${newCount > 1 ? "s" : ""} synced.`);
+    } else {
+      showToast(`✅ Synced ${apiTasks.length} applicants from database.`);
+    }
+
+    // Update GCal events for tasks that already have a linked event
+    if (typeof gcalSignedIn !== "undefined" && gcalSignedIn &&
+        typeof _taskSyncToGcal === "function") {
+      TASKS.filter((t) => t.gcalEventId).forEach((t) => {
+        _taskSyncToGcal(t).catch(() => {});
+      });
+    }
   } catch (e) {
-    showToast("❌ Sync failed: " + e.message);
+    if (!silent) showToast("❌ Sync failed: " + e.message);
     console.error("[API Sync]", e);
+  } finally {
+    _syncInProgress = false;
   }
 }
+
+// ── Auto-sync every 60 seconds (silent background pull) ──────────────────────
+(function _startAutoSync() {
+  setInterval(function () {
+    syncApplicantsFromApi({ silent: true });
+    checkFollowUpReminders();
+  }, 60 * 1000);
+})();
+
+/* ── Follow-up reminder check ─────────────────────────────────────────────────
+   Runs on load + every auto-sync. Notifies once per day per task.
+────────────────────────────────────────────── */
+function checkFollowUpReminders() {
+  const today = new Date().toISOString().slice(0, 10);
+  let any = false;
+  TASKS.forEach((t) => {
+    if (!t.followup_date) return;
+    if (t.followup_date > today) return; // not due yet
+    if (t.followup_notified === today) return; // already notified today
+    if (TERMINAL_STAGES.includes(t.status)) return; // hired/closed — skip
+    const name = t.applicant_name || t.name || "an applicant";
+    const overdue = t.followup_date < today;
+    pushNotif(
+      "reminder",
+      `${overdue ? "⚠️ Overdue" : "📌 Follow up"}: ${name} (${t.position || t.status})`,
+      t.id,
+    );
+    t.followup_notified = today;
+    any = true;
+  });
+  if (any) persistSave();
+}
+document.addEventListener("DOMContentLoaded", () => {
+  setTimeout(checkFollowUpReminders, 2000); // slight delay so TASKS are loaded
+});
 
 /* ══════════════════════════════════════════════
    JOBS VIEW
@@ -2554,7 +2771,7 @@ async function loadJobsView() {
       )
       .join("");
   } catch (e) {
-    el.innerHTML = `<div style="text-align:center;padding:40px;color:var(--red,#ef4444);font-size:13px">Failed to load jobs: ${e.message}</div>`;
+    el.innerHTML = `<div style="text-align:center;padding:40px;color:var(--red,#ef4444);font-size:13px">Failed to load jobs: ${sanitize(e.message)}</div>`;
   }
 }
 
@@ -2597,7 +2814,7 @@ function generateAssessToken() {
 /* ── Build the assessment URL with token + email ── */
 function buildAssessmentLink(task, token) {
   const config = loadEmailJSConfig();
-  const base = config.portalUrl || "https://yoursite.com/assessment";
+  const base = config.portalUrl || "https://f--asessment-portal.web.app/";
   const email = encodeURIComponent(task.applicant_email || "");
   const name = encodeURIComponent(task.applicant_name || task.name || "");
   return `${base}?token=${token}&email=${email}&name=${name}`;
@@ -2672,63 +2889,105 @@ function _refreshAssessInviteUI(task) {
 
 /* ── Core send function (used by both Send and Resend) ── */
 async function _doSendAssessmentEmail(isResend = false) {
-  const taskId = window._editingTaskId;
-  if (!taskId) return;
+  const taskId = taskEditId || window._editingTaskId;
+  if (!taskId) {
+    showToast("⚠️ No applicant selected.");
+    return;
+  }
   const task = TASKS.find((t) => t.id === taskId);
-  if (!task) return;
-
+  if (!task) {
+    showToast("⚠️ Applicant not found.");
+    return;
+  }
   if (!task.applicant_email) {
     showToast("⚠️ No email address on file for this applicant.");
     return;
   }
 
-  const config = loadEmailJSConfig();
-  if (!config.serviceId || !config.templateId || !config.publicKey) {
-    showToast(
-      "⚠️ EmailJS not configured. Go to Settings → EmailJS Integration.",
-    );
-    return;
-  }
-
   const noteEl = document.getElementById("assess-invite-note");
   if (noteEl) noteEl.textContent = isResend ? "Resending…" : "Sending…";
-
-  // Generate new token
-  const token = generateAssessToken();
-  const link = buildAssessmentLink(task, token);
-
-  // Initialize EmailJS
-  emailjs.init(config.publicKey);
-
-  const templateParams = {
-    to_email: task.applicant_email,
-    first_name: (task.applicant_name || task.name || "Applicant").split(" ")[0],
-    company_name: "Upstaff",
-    company_email: "hr@upstaff.com",
-    website_link: link,
-  };
+  showToast(
+    isResend
+      ? "⏳ Resending assessment link…"
+      : "⏳ Sending assessment invitation…",
+  );
 
   try {
-    await emailjs.send(config.serviceId, config.templateId, templateParams, {
-      publicKey: config.publicKey,
-    });
-    // Save token + timestamp to task record
+    const token = generateAssessToken();
+    const link = buildAssessmentLink(task, token);
+    const firstName = (task.applicant_name || task.name || "Applicant").split(
+      " ",
+    )[0];
+    const position = task.position || "the role";
+
+    let hrName = "HR Team";
+    try {
+      const p = JSON.parse(localStorage.getItem("upstaff_profile") || "{}");
+      hrName = [p.firstName, p.lastName].filter(Boolean).join(" ") || hrName;
+    } catch (e) {}
+
+    const subject = `Your Assessment Invitation – ${position} at Upstaff`;
+    const logoUrl = "https://upstaff.netlify.app/css/logo-footer.png";
+    const body = `<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<style>
+  body{margin:0;padding:0;background:#f1f5f9;font-family:Arial,sans-serif;}
+  .wrap{max-width:600px;margin:32px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08);}
+  .hdr{background:#1a1f35;padding:28px 40px;text-align:center;}
+  .hdr img{height:40px;}
+  .bod{padding:40px;color:#1e293b;font-size:15px;line-height:1.7;}
+  .bod h2{margin:0 0 20px;font-size:20px;color:#1a1f35;}
+  .bod p{margin:0 0 16px;}
+  .btn-wrap{text-align:center;margin:28px 0;}
+  .btn{display:inline-block;padding:14px 32px;background:linear-gradient(135deg,#3ecfdf,#6ee7ef);color:#0f1629!important;font-weight:700;font-size:15px;border-radius:10px;text-decoration:none;}
+  .foot{background:#f8fafc;padding:24px 40px;text-align:center;font-size:12px;color:#94a3b8;}
+  .foot a{color:#3ecfdf;text-decoration:none;}
+  hr{border:none;border-top:1px solid #e2e8f0;margin:28px 0;}
+</style></head><body>
+<div class="wrap">
+  <div class="hdr"><img src="${logoUrl}" alt="Upstaff"/></div>
+  <div class="bod">
+    <h2>You've Been Invited to Take an Assessment!</h2>
+    <p>Hi <strong>${firstName}</strong>,</p>
+    <p>As part of the application process for the <strong>${position}</strong> role at Upstaff, we'd like you to complete a short online assessment.</p>
+    <p>It should take approximately <strong>15–20 minutes</strong>. Please finish it at your earliest convenience.</p>
+    <div class="btn-wrap"><a href="${link}" class="btn">Start Assessment →</a></div>
+    <p style="font-size:13px;color:#94a3b8;text-align:center;">Or copy this link:<br><a href="${link}" style="color:#3ecfdf;">${link}</a></p>
+    <hr>
+    <p>If you have any questions, feel free to reply to this email.</p>
+    <p>Best regards,<br><strong>${hrName}</strong><br>Upstaff HR Team</p>
+  </div>
+  <div class="foot"><p>© ${new Date().getFullYear()} Upstaff &nbsp;·&nbsp; <a href="https://upstaff.netlify.app">upstaff.netlify.app</a></p></div>
+</div></body></html>`;
+
+    await UpstaffAPI.sendEmail(
+      task.applicant_email,
+      subject,
+      body,
+      "Upstaff HR",
+    );
+
     task.assess_token = token;
     task.assess_sent_at = new Date().toISOString();
     task.assess_completed = false;
     task.assess_completed_at = null;
     persistSave();
     _refreshAssessInviteUI(task);
+
+    if (noteEl)
+      noteEl.textContent = isResend ? "✅ Link resent!" : "✅ Invitation sent!";
     showToast(
       isResend
         ? "✅ Assessment link resent!"
         : "✅ Assessment invitation sent!",
     );
   } catch (err) {
-    console.error("EmailJS error:", err);
+    console.error("[Assessment Email] error:", err);
     if (noteEl)
-      noteEl.textContent = "❌ Failed to send. Check EmailJS settings.";
-    showToast("❌ Email failed. Check EmailJS config in Settings.");
+      noteEl.textContent = "❌ Failed to send. Check Partner API settings.";
+    showToast(
+      "❌ " + (err.message || "Email failed. Check Partner API settings."),
+    );
   }
 }
 
@@ -2763,17 +3022,112 @@ async function resetAssessmentAttempt() {
 }
 
 /* ══════════════════════════════════════════════
+   SMART LINK CARDS — platform detection & UI
+══════════════════════════════════════════════ */
+function _detectLinkPlatform(url) {
+  if (!url) return null;
+  const u = url.toLowerCase();
+  if (u.includes("drive.google.com/drive/folders"))
+    return { label: "📁 Google Drive · Folder", cls: "link-badge-drive" };
+  if (u.includes("drive.google.com"))
+    return { label: "📄 Google Drive", cls: "link-badge-drive" };
+  if (u.includes("dropbox.com"))
+    return { label: "📦 Dropbox", cls: "link-badge-dropbox" };
+  if (u.includes("onedrive.live.com") || u.includes("1drv.ms"))
+    return { label: "☁️ OneDrive", cls: "link-badge-onedrive" };
+  if (u.includes("behance.net"))
+    return { label: "🎨 Behance", cls: "link-badge-behance" };
+  if (u.includes("linkedin.com"))
+    return { label: "💼 LinkedIn", cls: "link-badge-linkedin" };
+  if (u.includes("github.com"))
+    return { label: "🐙 GitHub", cls: "link-badge-github" };
+  if (u.includes("notion.so"))
+    return { label: "📝 Notion", cls: "link-badge-notion" };
+  if (u.startsWith("http"))
+    return { label: "🔗 External Link", cls: "link-badge-generic" };
+  return null;
+}
+
+function _updateLinkCard(inputId, cardId) {
+  const input = document.getElementById(inputId);
+  const badge = document.getElementById(cardId + "-badge");
+  const btnCopy = document.getElementById(cardId + "-copy");
+  const btnOpen = document.getElementById(cardId + "-open");
+  if (!input || !badge) return;
+
+  const url = input.value.trim();
+  const info = url ? _detectLinkPlatform(url) : null;
+
+  if (info) {
+    badge.textContent = info.label;
+    badge.className = "link-card-badge " + info.cls;
+    badge.style.display = "flex";
+  } else {
+    badge.style.display = "none";
+    badge.className = "link-card-badge";
+  }
+
+  if (btnCopy) {
+    btnCopy.style.display = url ? "inline-flex" : "none";
+    btnCopy.onclick = () => {
+      if (navigator.clipboard) {
+        navigator.clipboard
+          .writeText(url)
+          .then(() => showToast("📋 Link copied!"));
+      }
+    };
+  }
+  if (btnOpen) {
+    btnOpen.style.display = url ? "inline-flex" : "none";
+    btnOpen.onclick = () => {
+      if (url) window.open(url, "_blank", "noopener");
+    };
+  }
+}
+
+// Wire up live detection on the 3 profile link fields
+(function _initLinkCards() {
+  const cards = [
+    { input: "f-resume", card: "lc-resume" },
+    { input: "f-portfolio", card: "lc-portfolio" },
+    { input: "f-drive-folder", card: "lc-drive-folder" },
+  ];
+  cards.forEach(({ input, card }) => {
+    const el = document.getElementById(input);
+    if (el) el.addEventListener("input", () => _updateLinkCard(input, card));
+  });
+})();
+
+/* ══════════════════════════════════════════════
    [SECTION: MODAL-OPEN] — Task/Applicant Modal
 ══════════════════════════════════════════════ */
-function openTaskNew(status = "Applied") {
+function _setModalAvatar(name, status) {
+  const av = document.getElementById("task-modal-avatar");
+  const sh = document.getElementById("task-modal-subhead");
+  if (av) {
+    const parts = (name || "NA").split(" ").filter(Boolean);
+    const ini = (parts[0]?.[0] || "") + (parts[1]?.[0] || parts[0]?.[1] || "");
+    av.textContent = ini.toUpperCase() || "?";
+    av.style.background = avatarColor(name || "NA");
+  }
+  if (sh && status) {
+    const sm = STATUS_META[status] || {};
+    sh.innerHTML = `<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;background:${sm.bg||'var(--surface-3)'};color:${sm.color||'var(--muted)'};">${status}</span>`;
+  } else if (sh) {
+    sh.innerHTML = "";
+  }
+}
+
+function openTaskNew(status = "New") {
   taskEditId = null;
   document.getElementById("task-modal-heading").textContent = "New Applicant";
+  _setModalAvatar("New Applicant", status);
   document.getElementById("f-name").value = "";
   document.getElementById("f-status").value = status;
   document.getElementById("f-priority").value = "Medium";
   document.getElementById("f-position").value = "Intake Caller";
   _rebuildAssigneeOptions();
-  _setAssignees(["HR Team"]);
+  _setAssignees(["Assistant"]);
   document.getElementById("f-start").value = new Date()
     .toISOString()
     .slice(0, 10);
@@ -2783,9 +3137,29 @@ function openTaskNew(status = "Applied") {
   // Applicant profile fields
   _setField("f-email", "");
   _setField("f-phone", "");
+  _setField("f-address", "");
+  _setField("f-employment-type", "");
+  _setField("f-work-setup", "");
+  _setField("f-work-schedule", "");
+  _setField("f-education-level", "");
+  _setField("f-school", "");
+  _setField("f-course", "");
+  _setField("f-skills", "");
+  _setField("f-tools", "");
+  _setField("f-interview-slots", "");
+  _setField("f-referral-source", "");
   _setField("f-resume", "");
   _setField("f-portfolio", "");
+  _setField("f-video-intro", "");
+  _setField("f-other-docs", "");
+  _setField("f-drive-folder", "");
+  _updateLinkCard("f-resume", "lc-resume");
+  _updateLinkCard("f-portfolio", "lc-portfolio");
+  _updateLinkCard("f-video-intro", "lc-video-intro");
+  _updateLinkCard("f-other-docs", "lc-other-docs");
+  _updateLinkCard("f-drive-folder", "lc-drive-folder");
   _setField("f-app-date", new Date().toISOString().slice(0, 10));
+  _setField("f-followup-date", "");
   // Assessment fields
   _setField("f-typing-score", "");
   _setField("f-knowledge-score", "");
@@ -2815,24 +3189,45 @@ function openTaskEdit(id, goToAssessment = false) {
   const t = TASKS.find((x) => x.id === id);
   if (!t) return;
   taskEditId = id;
-  document.getElementById("task-modal-heading").textContent =
-    t.applicant_name || t.name;
-  document.getElementById("f-name").value = t.applicant_name || t.name;
+  const _tName = t.applicant_name || t.name;
+  document.getElementById("task-modal-heading").textContent = _tName;
+  _setModalAvatar(_tName, t.status);
+  document.getElementById("f-name").value = _tName;
   document.getElementById("f-status").value = t.status;
   document.getElementById("f-priority").value = t.priority;
-  document.getElementById("f-position").value = t.position;
+  _setField("f-position", t.position);
   _rebuildAssigneeOptions();
-  _setAssignees(t.assignees || (t.assignee ? [t.assignee] : ["HR Team"]));
-  document.getElementById("f-start").value = t.start || "";
+  _setAssignees(t.assignees || (t.assignee ? [t.assignee] : ["Assistant"]));
+  document.getElementById("f-start").value = t.start || t.application_date || "";
   document.getElementById("f-due").value = t.due || "";
   document.getElementById("f-notes").value = t.notes || "";
   document.getElementById("f-folder").value = t.candidateFolder || "";
   // Applicant profile fields
   _setField("f-email", t.applicant_email || "");
   _setField("f-phone", t.applicant_phone || "");
+  _setField("f-address", t.address || "");
+  _setField("f-employment-type", t.employment_type || "");
+  _setField("f-work-setup", t.work_setup || "");
+  _setField("f-work-schedule", t.work_schedule || "");
+  _setField("f-education-level", t.education_level || "");
+  _setField("f-school", t.school || "");
+  _setField("f-course", t.course || "");
+  _setField("f-skills", t.skills || "");
+  _setField("f-tools", t.tools || "");
+  _setField("f-interview-slots", t.interview_slots || "");
+  _setField("f-referral-source", t.referral_source || "");
   _setField("f-resume", t.resume_link || "");
   _setField("f-portfolio", t.portfolio_link || "");
+  _setField("f-video-intro", t.video_intro_link || "");
+  _setField("f-other-docs", t.other_docs_link || "");
+  _setField("f-drive-folder", t.drive_folder_link || "");
+  _updateLinkCard("f-resume", "lc-resume");
+  _updateLinkCard("f-portfolio", "lc-portfolio");
+  _updateLinkCard("f-video-intro", "lc-video-intro");
+  _updateLinkCard("f-other-docs", "lc-other-docs");
+  _updateLinkCard("f-drive-folder", "lc-drive-folder");
   _setField("f-app-date", t.application_date || t.start || "");
+  _setField("f-followup-date", t.followup_date || "");
   // Assessment fields
   _setField("f-typing-score", t.typing_score || "");
   _setField("f-knowledge-score", t.knowledge_score || "");
@@ -2846,12 +3241,10 @@ function openTaskEdit(id, goToAssessment = false) {
   _updateAssessmentPanel(t.position);
   // Refresh assessment invite card status
   _refreshAssessInviteUI(t);
-  // Review tab: show only for Review stage, populate sections
   _updateReviewTab(t.status);
-  if (t.status === "Review") _populateReviewTab(t);
-  // Interview Schedule tab: show only for Interview stage
+  if (t.status === "Endorsed" || t.status === "Review") _populateReviewTab(t);
   _updateInterviewScheduleTab(t.status);
-  if (t.status === "Interview") _populateInterviewScheduleTab(t);
+  if (t.status === "In Progress" || t.status === "Interview") _populateInterviewScheduleTab(t);
   // Pipeline action buttons
   _updatePipelineActions(id, t.status);
   // GCal sync toggle — pre-check if already synced so re-save updates rather than duplicates
@@ -2900,11 +3293,11 @@ function openTaskEdit(id, goToAssessment = false) {
    REVIEW TAB
 ══════════════════════════════════════════════ */
 
-/** Show Review tab only when stage is Review */
+/** Show Review tab only when stage is Endorsed (or legacy Review) */
 function _updateReviewTab(status) {
   const btn = document.getElementById("tab-btn-review");
   if (!btn) return;
-  const isReview = status === "Review";
+  const isReview = status === "Endorsed" || status === "Review";
   btn.style.display = isReview ? "" : "none";
   if (!isReview && btn.classList.contains("active")) {
     _switchModalTab("profile");
@@ -2915,11 +3308,11 @@ function _updateReviewTab(status) {
    [SECTION: INTERVIEW] — Interview Schedule Tab
 ══════════════════════════════════════════════ */
 
-/** Show the Interview tab only when stage is Interview */
+/** Show the Interview tab only when stage is In Progress (or legacy Interview) */
 function _updateInterviewScheduleTab(status) {
   const btn = document.getElementById("tab-btn-interview-schedule");
   if (!btn) return;
-  const isInterview = status === "Interview";
+  const isInterview = status === "In Progress" || status === "Interview";
   btn.style.display = isInterview ? "" : "none";
   if (!isInterview && btn.classList.contains("active")) {
     _switchModalTab("profile");
@@ -2944,10 +3337,16 @@ function _populateInterviewScheduleTab(task) {
   const endEl = document.getElementById("iv-end-time");
   if (endEl && !endEl.value) endEl.value = "10:00";
 
-  // Auto-fill interviewer from task assignee
+  // Auto-fill interviewer from task assignee, falling back to saved profile name
   const interviewerEl = document.getElementById("iv-interviewer");
   if (interviewerEl && !interviewerEl.value) {
-    interviewerEl.value = task.assignee || "HR Team";
+    const _ivProfile = JSON.parse(
+      localStorage.getItem("upstaff_profile") || "{}",
+    );
+    const _ivHrName = _ivProfile.firstName
+      ? (_ivProfile.firstName + " " + (_ivProfile.lastName || "")).trim()
+      : "Assistant";
+    interviewerEl.value = task.assignee || _ivHrName;
   }
 
   // Auto-select interview stage based on task status
@@ -3029,8 +3428,7 @@ function _renderIvSavedList(task) {
           </div>
         </div>
         <div class="u-text-base u-text-muted u-flex-wrap u-gap-10">
-          <span>📅 ${e.date || "—"}</span>
-          <span>⏰ ${startFmt}${endFmt}</span>
+          <span>📅 ${e.date || "—"}${startFmt ? " @ " + startFmt : ""}${endFmt}</span>
           ${e.interviewer ? `<span>👤 ${sanitize(e.interviewer)}</span>` : ""}
           ${ml ? `<a href="${ml}" target="_blank" style="color:var(--cyan);font-weight:700;">🔗 Join</a>` : ""}
         </div>
@@ -3121,9 +3519,14 @@ function openIvPlatform() {
 
 /** Save a new interview from the Interview tab form into calEvents */
 function saveInterviewSchedule() {
-  const taskId = window._editingTaskId;
+  const taskId = taskEditId || window._editingTaskId;
   const task = TASKS.find((x) => x.id === taskId);
-  if (!task) return;
+  if (!task) {
+    showToast(
+      "⚠️ Could not find applicant. Save the form first, then add the interview.",
+    );
+    return;
+  }
 
   const date = document.getElementById("iv-date").value;
   const startTime = document.getElementById("iv-start-time").value;
@@ -3174,6 +3577,17 @@ function saveInterviewSchedule() {
   calEvents.push(ev);
   persistSave();
 
+  // Push interview event to Google Calendar if signed in
+  if (typeof gcalSignedIn !== "undefined" && gcalSignedIn &&
+      typeof gcalCreateEvent === "function") {
+    gcalCreateEvent(ev).then((googleEventId) => {
+      if (googleEventId) {
+        ev.google_event_id = googleEventId;
+        persistSave();
+      }
+    }).catch((e) => console.warn("[GCal] Interview event create failed:", e.message));
+  }
+
   // Reset link + notes but keep date/type/interviewer for consecutive scheduling
   document.getElementById("iv-meeting-link").value = "";
   document.getElementById("iv-notes").value = "";
@@ -3183,6 +3597,22 @@ function saveInterviewSchedule() {
 
   _renderIvSavedList(task);
   showToast("✅ Interview scheduled!");
+
+  // Update task.interview_slots field with the new slot and sync to sheet
+  const _slotStr = `${ev.date} ${ev.start_time}–${ev.end_time} (${ev.round})`;
+  task.interview_slots = task.interview_slots
+    ? task.interview_slots + "\n" + _slotStr
+    : _slotStr;
+  persistSave();
+  if ((task._source === "api" || task.supabase_id) && window.UpstaffAPI) {
+    UpstaffAPI.updateApplicant({
+      supabase_id: task.supabase_id,
+      email: task.applicant_email,
+      interview_slots: task.interview_slots,
+    }).catch((e) =>
+      console.warn("[API] Interview slot sync failed:", e.message),
+    );
+  }
 }
 
 /** Delete a saved interview event from the Interview tab list */
@@ -3296,6 +3726,8 @@ function _renderReviewOverallSummary(task) {
     <div class="rv-summary-row"><span class="rv-summary-label">Priority</span><span class="rv-summary-val" style="color:${priorityColor};font-weight:700;">${sanitize(task.priority) || "—"}</span></div>
     <div class="rv-summary-row"><span class="rv-summary-label">Assignee</span><span class="rv-summary-val">${sanitize(task.assignee) || "—"}</span></div>
     <div class="rv-summary-row"><span class="rv-summary-label">Applied Date</span><span class="rv-summary-val">${sanitize(task.application_date || task.start) || "—"}</span></div>
+    ${task.work_schedule ? `<div class="rv-summary-row"><span class="rv-summary-label">Work Schedule</span><span class="rv-summary-val">${sanitize(task.work_schedule)}</span></div>` : ""}
+    ${task.interview_slots ? `<div class="rv-summary-row"><span class="rv-summary-label">Interview Slots</span><span class="rv-summary-val" style="white-space:pre-line;">${sanitize(task.interview_slots)}</span></div>` : ""}
     <div class="rv-summary-row"><span class="rv-summary-label">Folder</span><span class="rv-summary-val">${sanitize(task.candidateFolder) || "—"}</span></div>
     <div class="rv-summary-row"><span class="rv-summary-label">Email</span><span class="rv-summary-val">${sanitize(task.applicant_email) || "—"}</span></div>
     <div class="rv-summary-row"><span class="rv-summary-label">Phone</span><span class="rv-summary-val">${sanitize(task.applicant_phone) || "—"}</span></div>
@@ -3361,6 +3793,9 @@ document
       { id: "f-phone", type: "phone", label: "Phone" },
       { id: "f-resume", type: "url", label: "Resume Link" },
       { id: "f-portfolio", type: "url", label: "Portfolio Link" },
+      { id: "f-video-intro", type: "url", label: "Video Intro Link" },
+      { id: "f-other-docs", type: "url", label: "Other Docs Link" },
+      { id: "f-drive-folder", type: "url", label: "Drive Folder Link" },
     ]);
     if (!formOk) {
       showToast("⚠️ Please fix the highlighted fields.");
@@ -3392,8 +3827,8 @@ document
       status: newStatus,
       priority: document.getElementById("f-priority").value,
       position: document.getElementById("f-position").value,
-      assignees: _getAssignees().length ? _getAssignees() : ["HR Team"],
-      assignee: _getAssignees()[0] || existing?.assignee || "HR Team",
+      assignees: _getAssignees().length ? _getAssignees() : ["Assistant"],
+      assignee: _getAssignees()[0] || existing?.assignee || "Assistant",
       start: document.getElementById("f-start").value,
       due: dueDate,
       notes: document.getElementById("f-notes").value,
@@ -3408,6 +3843,50 @@ document
         document.getElementById("f-phone")?.value?.trim() ||
         existing?.applicant_phone ||
         "",
+      address:
+        document.getElementById("f-address")?.value?.trim() ||
+        existing?.address ||
+        "",
+      employment_type:
+        document.getElementById("f-employment-type")?.value ||
+        existing?.employment_type ||
+        "",
+      work_setup:
+        document.getElementById("f-work-setup")?.value ||
+        existing?.work_setup ||
+        "",
+      work_schedule:
+        document.getElementById("f-work-schedule")?.value ||
+        existing?.work_schedule ||
+        "",
+      education_level:
+        document.getElementById("f-education-level")?.value ||
+        existing?.education_level ||
+        "",
+      school:
+        document.getElementById("f-school")?.value?.trim() ||
+        existing?.school ||
+        "",
+      course:
+        document.getElementById("f-course")?.value?.trim() ||
+        existing?.course ||
+        "",
+      skills:
+        document.getElementById("f-skills")?.value?.trim() ||
+        existing?.skills ||
+        "",
+      tools:
+        document.getElementById("f-tools")?.value?.trim() ||
+        existing?.tools ||
+        "",
+      interview_slots:
+        document.getElementById("f-interview-slots")?.value?.trim() ||
+        existing?.interview_slots ||
+        "",
+      referral_source:
+        document.getElementById("f-referral-source")?.value ||
+        existing?.referral_source ||
+        "",
       resume_link:
         document.getElementById("f-resume")?.value?.trim() ||
         existing?.resume_link ||
@@ -3416,10 +3895,25 @@ document
         document.getElementById("f-portfolio")?.value?.trim() ||
         existing?.portfolio_link ||
         "",
+      video_intro_link:
+        document.getElementById("f-video-intro")?.value?.trim() ||
+        existing?.video_intro_link ||
+        "",
+      other_docs_link:
+        document.getElementById("f-other-docs")?.value?.trim() ||
+        existing?.other_docs_link ||
+        "",
+      drive_folder_link:
+        document.getElementById("f-drive-folder")?.value?.trim() ||
+        existing?.drive_folder_link ||
+        "",
       application_date:
         document.getElementById("f-app-date")?.value ||
         existing?.application_date ||
         "",
+      followup_date:
+        document.getElementById("f-followup-date")?.value || "",
+      followup_notified: existing?.followup_notified || "",
       // Assessment scores
       typing_score:
         document.getElementById("f-typing-score")?.value ||
@@ -3445,7 +3939,7 @@ document
         existing?.rejected_at ||
         (newStatus === "Rejected" ? new Date().toISOString() : ""),
       archived:
-        existing?.archived || ["Rejected", "Cancelled"].includes(newStatus),
+        existing?.archived || ["Closed", "Rejected", "Cancelled"].includes(newStatus),
       stage_changed_at:
         newStatus !== existing?.status
           ? new Date().toISOString()
@@ -3493,11 +3987,103 @@ document
       const i = TASKS.findIndex((x) => x.id === taskEditId);
       if (i > -1) TASKS[i] = t;
       showToast("✅ Task updated!");
+      // Sync status change to partner API when edited via the save form
+      if (
+        existing &&
+        newStatus !== existing.status &&
+        window.UpstaffAPI &&
+        (t._source === "api" || t.supabase_id)
+      ) {
+        UpstaffAPI.syncStatusToApi(t, newStatus)
+          .then((resolvedPartnerStatus) => {
+            if (resolvedPartnerStatus) {
+              t.partner_status = resolvedPartnerStatus;
+              persistSave();
+            }
+          })
+          .catch((e) => {
+            console.warn("[API] Status sync failed on save:", e.message);
+          });
+      }
+      // Full field sync — push all edited fields to the sheet regardless of status change
+      if ((t._source === "api" || t.supabase_id) && window.UpstaffAPI) {
+        UpstaffAPI.updateApplicant({
+          supabase_id: t.supabase_id,
+          email: t.applicant_email,
+          full_name: t.applicant_name || t.name,
+          status: t.partner_status || t.status,
+          phone: t.applicant_phone,
+          address: t.address,
+          positions: t.position,
+          employment_type: t.employment_type,
+          work_setup: t.work_setup,
+          work_schedule: t.work_schedule,
+          education_level: t.education_level,
+          school: t.school,
+          course: t.course,
+          skills: t.skills,
+          tools: t.tools,
+          interview_slots: t.interview_slots,
+          referral_source: t.referral_source,
+          resume_link: t.resume_link,
+          portfolio_link: t.portfolio_link,
+          video_intro_link: t.video_intro_link,
+          other_docs_link: t.other_docs_link,
+          notes: t.notes,
+          drive_folder_link: t.drive_folder_link,
+        }).catch((e) =>
+          console.warn("[API] Full field sync failed:", e.message),
+        );
+      }
     } else {
       TASKS.push(t);
       showToast("✅ Task added!");
+      // Sync new applicant to Google Sheet if API is configured
+      if (window.UpstaffAPI && UpstaffAPI.isConfigured()) {
+        try {
+          const _addRes = await UpstaffAPI.addApplicant({
+            status: t.partner_status || "For Interview",
+            full_name: t.name || t.applicant_name || "",
+            email: t.applicant_email || "",
+            phone: t.applicant_phone || "",
+            address: t.address || "",
+            positions: t.position || "",
+            employment_type: t.employment_type || "",
+            work_setup: t.work_setup || "",
+            work_schedule: t.work_schedule || "",
+            education_level: t.education_level || "",
+            school: t.school || "",
+            course: t.course || "",
+            skills: t.skills || "",
+            tools: t.tools || "",
+            interview_slots: t.interview_slots || "",
+            referral_source: t.referral_source || "",
+            resume_link: t.resume_link || "",
+            portfolio_link: t.portfolio_link || "",
+            video_intro_link: t.video_intro_link || "",
+            other_docs_link: t.other_docs_link || "",
+            notes: t.notes || "",
+            drive_folder_link: t.drive_folder_link || "",
+          });
+          // Mark as API-sourced so it won't duplicate on next sync
+          t._source = "api";
+          if (_addRes && _addRes.supabaseId) t.supabase_id = _addRes.supabaseId;
+        } catch (e) {
+          console.warn("Could not sync new applicant to sheet:", e.message);
+          showToast("⚠️ Saved locally — sheet sync failed: " + e.message);
+        }
+      }
     }
     persistSave();
+
+    // ── Auto-update GCal if this task already has a linked event (no checkbox needed) ──
+    if (taskEditId && t.gcalEventId && !sync &&
+        typeof gcalSignedIn !== "undefined" && gcalSignedIn &&
+        typeof _taskSyncToGcal === "function") {
+      _taskSyncToGcal(t).catch((e) =>
+        console.warn("[GCal] Auto-update on edit failed:", e.message)
+      );
+    }
 
     // ── Optional GCal sync ──
     if (sync && dueDate) {
@@ -3561,37 +4147,8 @@ document
   .getElementById("btn-task-delete")
   .addEventListener("click", async () => {
     if (!taskEditId) return;
-    const t = TASKS.find((x) => x.id === taskEditId);
-    if (
-      await uiConfirm("This applicant will be permanently deleted.", {
-        icon: "🗑️",
-        title: `Delete "${t?.name}"?`,
-        okText: "Delete",
-        okDanger: true,
-      })
-    ) {
-      // Remove from GCal if synced
-      if (t?.gcalEventId && gcalSignedIn && gapi?.client?.calendar) {
-        try {
-          const calId = UPSTAFF_CALENDARS[0]?.calendarId || "primary";
-          await gapi.client.calendar.events.delete({
-            calendarId: calId,
-            eventId: t.gcalEventId,
-          });
-          calEvents = calEvents.filter(
-            (e) => e.google_event_id !== t.gcalEventId,
-          );
-          persistSave();
-        } catch (e) {
-          console.warn("[GCal] Delete failed:", e);
-        }
-      }
-      TASKS = TASKS.filter((x) => x.id !== taskEditId);
-      persistSave();
-      closeTaskModal();
-      refreshCurrentView();
-      showToast("🗑️ Task deleted.");
-    }
+    // Delegate to listDeleteApplicant which handles GCal removal + API delete + local removal
+    await listDeleteApplicant(taskEditId);
   });
 
 /* ──────────────────────────────────────────────
@@ -3607,17 +4164,13 @@ async function _taskSyncToGcal(t) {
   const calId = UPSTAFF_CALENDARS[0]?.calendarId || "primary";
 
   const statusEmoji = {
-    Applied: "📋",
-    Screening: "🔍",
-    Assessment: "📝",
-    Interview: "🎤",
-    Review: "👀",
+    New: "📋",
+    "In Progress": "🔄",
+    Endorsed: "📤",
     Hired: "✅",
+    Closed: "🚫",
     Rejected: "❌",
     Cancelled: "🚫",
-    "To Do": "📋",
-    "In Progress": "🔄",
-    "In Review": "👀",
     Done: "✅",
   };
   const resource = {
@@ -3636,9 +4189,9 @@ async function _taskSyncToGcal(t) {
     colorId:
       t.status === "Hired"
         ? "2"
-        : t.status === "Rejected" || t.status === "Cancelled"
+        : t.status === "Closed" || t.status === "Rejected" || t.status === "Cancelled"
           ? "8"
-          : t.status === "Review" || t.status === "Interview"
+          : t.status === "Endorsed" || t.status === "In Progress"
             ? "6"
             : "1",
     // Set a reminder for the due date
@@ -3953,7 +4506,7 @@ function buildEmployeeCard(e) {
       <div class="employee-avatar-lg" style="background:${ac};">${initParts}</div>
       <div class="u-flex-1">
         <div class="employee-name">${sanitize(e.fname)} ${sanitize(e.lname)}</div>
-        <div class="employee-position">${sanitize(e.position)} · ${sanitize(e.dept) || "—"}</div>
+        <div class="employee-position">${sanitize(e.position)}</div>
         <div class="employee-start">Started: ${e.start ? new Date(e.start + "T00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—"}</div>
       </div>
       <div class="employee-status-badge" style="background:${sm.bg};color:${sm.color};">${sm.label}</div>
@@ -4101,11 +4654,10 @@ function saveNewHire() {
       e.address = document.getElementById("hf-address")?.value || "";
       e.position =
         document.getElementById("hf-position")?.value || JOB_POSITIONS[0];
-      e.dept = document.getElementById("hf-dept")?.value || "Customer Service";
       e.emptype =
         document.getElementById("hf-emptype")?.value || "Probationary";
       e.start = document.getElementById("hf-start")?.value || "";
-      e.manager = document.getElementById("hf-manager")?.value || "HR Team";
+      e.manager = document.getElementById("hf-manager")?.value || "Assistant";
       e.status = document.getElementById("hf-status")?.value || "Pending";
       e.notes = document.getElementById("hf-notes")?.value || "";
       empPersistSave();
@@ -4145,12 +4697,11 @@ function saveNewHire() {
     phone: document.getElementById("hf-phone")?.value || "",
     address: document.getElementById("hf-address")?.value || "",
     position: document.getElementById("hf-position")?.value || JOB_POSITIONS[0],
-    dept: document.getElementById("hf-dept")?.value || "Customer Service",
     emptype: document.getElementById("hf-emptype")?.value || "Probationary",
     start:
       document.getElementById("hf-start")?.value ||
       new Date().toISOString().slice(0, 10),
-    manager: document.getElementById("hf-manager")?.value || "HR Team",
+    manager: document.getElementById("hf-manager")?.value || "Assistant",
     status: document.getElementById("hf-status")?.value || "Pending",
     notes: document.getElementById("hf-notes")?.value || "",
     checklist,
@@ -4196,7 +4747,7 @@ function openEmpDetail(empId) {
       <div style="width:56px;height:56px;border-radius:16px;background:${ac};display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:#fff;font-family:'Montserrat',sans-serif;">${initParts}</div>
       <div class="u-flex-1">
         <div style="font-size:16px;font-weight:800;font-family:'Syne',sans-serif;color:var(--text);">${sanitize(e.fname)} ${sanitize(e.lname)}</div>
-        <div style="font-size:12px;color:var(--muted);margin-top:2px;">${sanitize(e.position)} · ${sanitize(e.dept) || "—"}</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px;">${sanitize(e.position)}</div>
         <span style="display:inline-flex;margin-top:5px;padding:3px 10px;border-radius:99px;font-size:10px;font-weight:700;font-family:'Montserrat',sans-serif;background:${sm.bg};color:${sm.color};">${sm.label}</span>
       </div>
     </div>
@@ -4209,7 +4760,6 @@ function openEmpDetail(empId) {
         <div class="emp-info-item"><div class="emp-info-label">Start Date</div><div class="emp-info-value">${startFmt}</div></div>
         <div class="emp-info-item"><div class="emp-info-label">Employment Type</div><div class="emp-info-value">${sanitize(e.emptype) || "—"}</div></div>
         <div class="emp-info-item"><div class="emp-info-label">Manager</div><div class="emp-info-value">${sanitize(e.manager) || "—"}</div></div>
-        <div class="emp-info-item"><div class="emp-info-label">Department</div><div class="emp-info-value">${sanitize(e.dept) || "—"}</div></div>
       </div>
       ${e.notes ? `<div class="u-surface-note">"${sanitize(e.notes)}"</div>` : ""}
     </div>
@@ -4260,16 +4810,17 @@ function openEmpDetail(empId) {
 
       <!-- Drive Folder Link -->
       <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Applicant's Drive Folder</div>
-      <div style="display:flex;align-items:center;gap:6px;margin-bottom:14px;">
-        <input type="url" id="drive-link-${e.id}" placeholder="Paste applicant's Drive folder link…"
-          value="${sanitize(e.driveLink || "")}"
-          style="flex:1;border-radius:8px;border:1.5px solid var(--border);background:var(--surface-3);color:var(--text);font-size:11px;padding:6px 10px;font-family:'DM Sans',sans-serif;"
-          onchange="saveDriveLink(${e.id},this.value)"
-          onblur="saveDriveLink(${e.id},this.value)"/>
-        <button onclick="(function(){const inp=document.getElementById('drive-link-${e.id}');const url=inp?inp.value.trim():'';if(!url){showToast('⚠️ No folder link saved yet.');return;}try{window.open(url,'_blank','noopener');}catch(_){navigator.clipboard?.writeText(url).catch(()=>{const ta=document.createElement('textarea');ta.value=url;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();});showToast('📋 Link copied to clipboard!');}})();"
-          style="flex-shrink:0;height:32px;padding:0 12px;border-radius:8px;border:1.5px solid var(--border);background:var(--surface-2);color:var(--text);font-size:10px;font-weight:700;cursor:pointer;font-family:'Montserrat',sans-serif;white-space:nowrap;">
-          Open Folder
-        </button>
+      <div class="link-card" id="lc-emp-drive-${e.id}" style="margin-bottom:14px;">
+        <div class="link-card-input-row">
+          <input type="url" class="form-input link-card-input" id="drive-link-${e.id}"
+            placeholder="Paste applicant's Drive folder link…"
+            value="${sanitize(e.driveLink || "")}"
+            onchange="saveDriveLink(${e.id},this.value)"
+            onblur="saveDriveLink(${e.id},this.value)"/>
+          <button type="button" class="link-card-btn" id="lc-emp-drive-${e.id}-copy" style="display:none" title="Copy link">📋</button>
+          <button type="button" class="link-card-btn" id="lc-emp-drive-${e.id}-open" style="display:none" title="Open folder">↗</button>
+        </div>
+        <div class="link-card-badge" id="lc-emp-drive-${e.id}-badge" style="display:none"></div>
       </div>
 
       <!-- Received Checkboxes -->
@@ -4290,6 +4841,17 @@ function openEmpDetail(empId) {
   `;
 
   document.getElementById("emp-detail-overlay").classList.add("open");
+
+  // Wire up smart link card for the drive folder input
+  const _empDriveInput = document.getElementById(`drive-link-${e.id}`);
+  const _empCardId = `lc-emp-drive-${e.id}`;
+  _updateLinkCard(`drive-link-${e.id}`, _empCardId);
+  if (_empDriveInput) {
+    _empDriveInput.addEventListener("input", () => {
+      saveDriveLink(e.id, _empDriveInput.value);
+      _updateLinkCard(`drive-link-${e.id}`, _empCardId);
+    });
+  }
 }
 
 function toggleChecklistItemDetail(empId, idx) {
@@ -4540,20 +5102,46 @@ function renderMonth() {
           b.time || b.start_time || "",
         ),
       );
-    let evHtml = dayEvts
+    // Group by time slot
+    const timeGroups = {};
+    dayEvts.forEach((e) => {
+      const key = e.time || e.start_time || "";
+      if (!timeGroups[key]) timeGroups[key] = [];
+      timeGroups[key].push(e);
+    });
+    const sortedKeys = Object.keys(timeGroups).sort();
+    let evHtml = sortedKeys
       .slice(0, 3)
-      .map((e) => {
-        const bg = getEventColor(e);
-        const ml = e.meeting_link || e.meetingLink || "";
-        return `<div class="cal-event" style="background:${bg} !important;color:#0f172a !important;border:2px solid ${bg} !important;" onclick="event.stopPropagation();openEdit(${e.id})">
-                <div class="cal-event-dot" style="background:rgba(0,0,0,0.3);flex-shrink:0;"></div>
-        ${sanitize(e.name.split(" ")[0])} ${fmtTime(e.time || e.start_time)}
-        ${ml ? `<span style="margin-left:3px;opacity:.7;" title="Has meeting link">📹</span>` : ""}
-      </div>`;
+      .map((time) => {
+        const grp = timeGroups[time];
+        const bg = getEventColor(grp[0]);
+        const ml = grp.some((e) => e.meeting_link || e.meetingLink);
+        if (grp.length === 1) {
+          const e = grp[0];
+          return `<div class="cal-event" style="background:${bg} !important;color:#0f172a !important;border:2px solid ${bg} !important;" onclick="event.stopPropagation();openEdit(${e.id})">
+                  <div class="cal-event-dot" style="background:rgba(0,0,0,0.3);flex-shrink:0;"></div>
+          ${sanitize((e.name || "").split(" ")[0])} ${fmtTime(time)}
+          ${ml ? `<span style="margin-left:3px;opacity:.7;" title="Has meeting link">📹</span>` : ""}
+        </div>`;
+        } else {
+          return `<div class="cal-event cal-event-grouped" style="background:${bg} !important;color:#0f172a !important;border:2px solid ${bg} !important;" onclick="event.stopPropagation();openGroupSlot('${ds}','${time}')">
+                  <div class="cal-event-dot" style="background:rgba(0,0,0,0.3);flex-shrink:0;"></div>
+          ${(() => {
+            const _ap = grp.filter((e) => !e.isGoogleEvent).length;
+            const _gc = grp.length - _ap;
+            if (_ap > 0 && _gc === 0)
+              return `<strong>${_ap}</strong>&nbsp;Applicant${_ap > 1 ? "s" : ""}`;
+            if (_ap === 0)
+              return `<strong>${_gc}</strong>&nbsp;Event${_gc > 1 ? "s" : ""}`;
+            return `<strong>${grp.length}</strong>&nbsp;Events`;
+          })()} · ${fmtTime(time)}
+          ${ml ? `<span style="margin-left:3px;opacity:.7;" title="Has meeting link">📹</span>` : ""}
+        </div>`;
+        }
       })
       .join("");
-    if (dayEvts.length > 3)
-      evHtml += `<div class="cal-more">+${dayEvts.length - 3} more</div>`;
+    if (sortedKeys.length > 3)
+      evHtml += `<div class="cal-more">+${sortedKeys.length - 3} more</div>`;
     html += `<div class="cal-cell${isT ? " today" : ""}" onclick="calCellClick('${ds}')"><div class="cal-cell-num">${d}</div>${evHtml}</div>`;
   }
   const total = startDow + daysInMo,
@@ -4610,16 +5198,29 @@ function renderWeek() {
             `<div class="cal-hour-block" onclick="openNewAt('${ds}','${String(h).padStart(2, "0")}:00')"></div>`,
         )
         .join("");
-      const evts = events
+      // Group by time slot
+      const wkGroups = {};
+      events
         .filter((e) => e.date === ds)
-        .map((e) => {
-          const [eh, em] = e.time.split(":").map(Number);
+        .forEach((e) => {
+          const key = e.time || e.start_time || "";
+          if (!wkGroups[key]) wkGroups[key] = [];
+          wkGroups[key].push(e);
+        });
+      const isDarkW =
+        document.documentElement.getAttribute("data-theme") === "dark";
+      const evColorW = isDarkW ? "#ffffff" : "#0f172a";
+      const evts = Object.entries(wkGroups)
+        .map(([time, grp]) => {
+          const [eh, em] = (time || "09:00").split(":").map(Number);
           const top = (eh - 7 + em / 60) * HH;
-          const bg = getEventColor(e);
-          const isDarkW =
-            document.documentElement.getAttribute("data-theme") === "dark";
-          const evColorW = isDarkW ? "#ffffff" : "#0f172a";
-          return `<div class="cal-week-event" style="top:${top}px;height:${HH}px;background:${bg};color:${evColorW};border:1px solid ${bg};" onclick="event.stopPropagation();openEdit(${e.id})">${fmtTime(e.time)} ${sanitize(e.name.split(" ")[0])}</div>`;
+          const bg = getEventColor(grp[0]);
+          if (grp.length === 1) {
+            const e = grp[0];
+            return `<div class="cal-week-event" style="top:${top}px;height:${HH}px;background:${bg};color:${evColorW};border:1px solid ${bg};" onclick="event.stopPropagation();openEdit(${e.id})">${fmtTime(time)} ${sanitize((e.name || "").split(" ")[0])}</div>`;
+          } else {
+            return `<div class="cal-week-event cal-event-grouped" style="top:${top}px;height:${HH}px;background:${bg};color:${evColorW};border:1px solid ${bg};" onclick="event.stopPropagation();openGroupSlot('${ds}','${time}')">${fmtTime(time)} · <strong>${grp.length}</strong> ${grp.every((e) => !e.isGoogleEvent) ? `Applicant${grp.length > 1 ? "s" : ""}` : "Events"}</div>`;
+          }
         })
         .join("");
       return `<div class="cal-day-col" style="position:relative;">${blocks}${evts}</div>`;
@@ -4634,7 +5235,11 @@ function renderDay() {
   const ds = fmtDate(calDate);
   const dayEvts = events
     .filter((e) => e.date === ds)
-    .sort((a, b) => a.time.localeCompare(b.time));
+    .sort((a, b) =>
+      (a.time || a.start_time || "").localeCompare(
+        b.time || b.start_time || "",
+      ),
+    );
   const hours = Array.from({ length: 14 }, (_, i) => i + 7);
   const HH = 60;
   document.getElementById("cal-month-label").textContent =
@@ -4656,15 +5261,31 @@ function renderDay() {
         `<div class="cal-day-hour-block" style="height:${HH}px;" onclick="openNewAt('${ds}','${String(h).padStart(2, "0")}:00')"></div>`,
     )
     .join("");
-  const evts = dayEvts
-    .map((e) => {
-      const [eh, em] = e.time.split(":").map(Number);
+  // Group by time slot
+  const dayGroups = {};
+  dayEvts.forEach((e) => {
+    const key = e.time || e.start_time || "";
+    if (!dayGroups[key]) dayGroups[key] = [];
+    dayGroups[key].push(e);
+  });
+  const isDarkD =
+    document.documentElement.getAttribute("data-theme") === "dark";
+  const evColorD = isDarkD ? "#ffffff" : "#0f172a";
+  const evts = Object.entries(dayGroups)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([time, grp]) => {
+      const [eh, em] = (time || "09:00").split(":").map(Number);
       const top = (eh - 7 + em / 60) * HH;
-      const bg = getEventColor(e);
-      const isDarkD =
-        document.documentElement.getAttribute("data-theme") === "dark";
-      const evColorD = isDarkD ? "#ffffff" : "#0f172a";
-      return `<div class="cal-day-event" style="top:${top}px;height:${HH}px;background:${bg};color:${evColorD};border:1px solid ${bg};" onclick="event.stopPropagation();openEdit(${e.id})"><strong>${fmtTime(e.time)}</strong> — ${sanitize(e.name)} (${sanitize(e.position)})<br><span style="font-size:10px;opacity:.85;">${sanitize(e.round)} · ${sanitize(e.type)}</span></div>`;
+      const bg = getEventColor(grp[0]);
+      if (grp.length === 1) {
+        const e = grp[0];
+        return `<div class="cal-day-event" style="top:${top}px;height:${HH}px;background:${bg};color:${evColorD};border:1px solid ${bg};" onclick="event.stopPropagation();openEdit(${e.id})"><strong>${fmtTime(time)}</strong> — ${sanitize(e.name || "")} (${sanitize(e.position || "")})<br><span style="font-size:10px;opacity:.85;">${sanitize(e.round || "")} · ${sanitize(e.type || "")}</span></div>`;
+      } else {
+        const nameList = grp
+          .map((e) => sanitize(e.name || "Unknown"))
+          .join(", ");
+        return `<div class="cal-day-event cal-event-grouped" style="top:${top}px;height:${HH}px;background:${bg};color:${evColorD};border:1px solid ${bg};" onclick="event.stopPropagation();openGroupSlot('${ds}','${time}')"><strong>${fmtTime(time)}</strong> — ${grp.length} ${grp.every((e) => !e.isGoogleEvent) ? `Applicant${grp.length > 1 ? "s" : ""}` : "Events"}<br><span style="font-size:10px;opacity:.85;">${nameList}</span></div>`;
+      }
     })
     .join("");
   document.getElementById("cal-main-area").innerHTML =
@@ -4675,7 +5296,11 @@ function renderAgenda() {
   const today = todayStr();
   const evts = getFiltered()
     .filter((e) => e.date === today)
-    .sort((a, b) => a.time.localeCompare(b.time));
+    .sort((a, b) =>
+      (a.time || a.start_time || "").localeCompare(
+        b.time || b.start_time || "",
+      ),
+    );
   document.getElementById("cal-today-label").textContent =
     new Date().toLocaleDateString("en-PH", {
       weekday: "long",
@@ -4944,15 +5569,20 @@ function openNewAt(ds, ts, taskContext) {
     (window._editingTaskId
       ? TASKS.find((x) => x.id === window._editingTaskId)
       : null);
-  document.getElementById("cal-f-name").value = t
-    ? t.applicant_name || t.name || ""
-    : "";
-  document.getElementById("cal-f-position").value = t
-    ? t.position || "Intake Caller"
-    : "Intake Caller";
+  const _newApplicantName = t ? (t.applicant_name || t.name || "") : "";
+  document.getElementById("cal-f-name").value = _newApplicantName;
+  const _calSubheadNew = document.getElementById("cal-modal-subhead");
+  if (_calSubheadNew) _calSubheadNew.textContent = _newApplicantName || "Fill in the interview details below";
+  _setField("cal-f-position", t ? (t.position || "Intake Caller") : "Intake Caller");
+  const _calProfile = JSON.parse(
+    localStorage.getItem("upstaff_profile") || "{}",
+  );
+  const _calHrName = _calProfile.firstName
+    ? (_calProfile.firstName + " " + (_calProfile.lastName || "")).trim()
+    : "Assistant";
   document.getElementById("cal-f-interviewer").value = t
-    ? t.assignee || "HR Team"
-    : "HR Team";
+    ? t.assignee || _calHrName
+    : _calHrName;
 
   // Auto-select stage from task status
   const stageMap = {
@@ -4990,9 +5620,96 @@ function openNewAt(ds, ts, taskContext) {
   document.getElementById("cal-btn-delete").style.display = "none";
   document.getElementById("cal-modal-overlay").classList.add("open");
 }
+function openGroupSlot(date, time) {
+  const grp = getFiltered().filter(
+    (e) => e.date === date && (e.time || e.start_time) === time,
+  );
+  if (!grp.length) return;
+
+  const existing = document.getElementById("cal-group-popup");
+  if (existing) existing.remove();
+
+  const popup = document.createElement("div");
+  popup.id = "cal-group-popup";
+  popup.className = "cal-group-popup";
+
+  const rows = grp
+    .map(
+      (
+        e,
+      ) => `<div class="cal-group-popup-row" onclick="document.getElementById('cal-group-popup').remove();openEdit(${e.id})">
+      <div class="cal-group-popup-dot" style="background:${getEventColor(e)};"></div>
+      <div class="cal-group-popup-info">
+        <div class="cal-group-popup-name">${sanitize(e.name || "Unknown")}</div>
+        <div class="cal-group-popup-meta">${sanitize(e.position || "")}${e.round ? " · " + sanitize(e.round) : ""}</div>
+      </div>
+    </div>`,
+    )
+    .join("");
+
+  popup.innerHTML = `
+    <div class="cal-group-popup-header">
+      <span>${fmtTime(time)} &nbsp;·&nbsp; ${(() => {
+        const _ap = grp.filter((e) => !e.isGoogleEvent).length;
+        const _gc = grp.length - _ap;
+        if (_ap > 0 && _gc === 0)
+          return `${_ap} Applicant${_ap > 1 ? "s" : ""}`;
+        if (_ap === 0) return `${_gc} Event${_gc > 1 ? "s" : ""}`;
+        return `${grp.length} Events`;
+      })()}</span>
+      <button class="cal-group-popup-close" onclick="document.getElementById('cal-group-popup').remove()">×</button>
+    </div>
+    <div class="cal-group-popup-list">${rows}</div>`;
+
+  document.body.appendChild(popup);
+
+  // Position near click
+  const clickEvt = window.event;
+  const cx = clickEvt ? clickEvt.clientX : window.innerWidth / 2;
+  const cy = clickEvt ? clickEvt.clientY : 200;
+  const pw = 270;
+  let left = cx + 10;
+  let top = cy + 10;
+  if (left + pw > window.innerWidth - 10) left = cx - pw - 10;
+  if (top + 260 > window.innerHeight - 10) top = window.innerHeight - 270;
+  popup.style.left = left + "px";
+  popup.style.top = top + "px";
+
+  // Close on outside click
+  setTimeout(() => {
+    document.addEventListener("click", function closePopup(evt) {
+      if (!popup.contains(evt.target)) {
+        popup.remove();
+        document.removeEventListener("click", closePopup);
+      }
+    });
+  }, 0);
+}
+
 function openEdit(id) {
-  const e = calEvents.find((x) => x.id === id);
-  if (!e) return;
+  // Coerce to number — onclick attributes pass strings in some browsers
+  const _id = typeof id === "string" ? parseInt(id, 10) : id;
+  let e = calEvents.find((x) => x.id === _id || x.id === id);
+
+  // Fallback: slot events may have been re-injected with a new hash if task.id
+  // changed since the last render. Try matching by first name in rendered element.
+  if (!e) {
+    const rendered = document.querySelector(`[onclick*="openEdit(${id})"]`);
+    if (rendered) {
+      const renderedText = rendered.textContent.toLowerCase();
+      e = calEvents.find((x) =>
+        x._fromSlot &&
+        (x.name || "").split(" ")[0].length > 1 &&
+        renderedText.includes((x.name || "").split(" ")[0].toLowerCase())
+      ) || null;
+    }
+  }
+
+  if (!e) {
+    console.warn("[Calendar] openEdit: event not found", { id, _id, total: calEvents.length });
+    showCalToast("⚠️ Could not load event details. Try refreshing.");
+    return;
+  }
   calEditId = id;
   document.getElementById("cal-modal-heading").textContent = "Edit Interview";
   // ── Append Google Calendar badge for synced events ──
@@ -5023,16 +5740,40 @@ function openEdit(id) {
     calSel.value = savedCal;
     updateCalSelectorDot();
   }
-  document.getElementById("cal-f-name").value = e.name;
-  document.getElementById("cal-f-position").value = e.position;
+  const _evNameKey = (e.applicant_name || e.name || "").trim().toLowerCase();
+  const _matchedTask =
+    (e.taskId ? TASKS.find((t) => t.id === e.taskId) : null) ||
+    (e.google_event_id
+      ? TASKS.find((t) => t.gcalEventId === e.google_event_id)
+      : null) ||
+    (_evNameKey
+      ? TASKS.find(
+          (t) =>
+            t.name.toLowerCase().includes(_evNameKey) ||
+            _evNameKey.includes(t.name.toLowerCase()),
+        )
+      : null);
+  const _editApplicantName = _matchedTask
+    ? _matchedTask.applicant_name || _matchedTask.name || e.name
+    : e.name;
+  document.getElementById("cal-f-name").value = _editApplicantName;
+  const _calSubheadEdit = document.getElementById("cal-modal-subhead");
+  if (_calSubheadEdit) _calSubheadEdit.textContent = _editApplicantName || "Fill in the interview details below";
+  _setField("cal-f-position", _matchedTask
+    ? _matchedTask.position || e.position || ""
+    : e.position || "");
   document.getElementById("cal-f-date").value = e.date;
   document.getElementById("cal-f-time").value =
     e.time || e.start_time || "09:00";
   document.getElementById("cal-f-end-time").value =
     e.end_time || autoEndTime(e.time || "09:00");
-  document.getElementById("cal-f-type").value = e.type;
-  document.getElementById("cal-f-round").value =
-    e.round || e.interview_stage || "Initial Interview";
+  // Slot events use "Interview" as type — map to closest valid option
+  const _typeRaw = e.type || "Virtual";
+  document.getElementById("cal-f-type").value =
+    _typeRaw === "Interview" ? "Virtual" : _typeRaw;
+  // Slot events use "Interview Slot" as round — map to Initial Interview
+  const _roundRaw = e.round || e.interview_stage || "Initial Interview";
+  _setField("cal-f-round", _roundRaw === "Interview Slot" ? "Initial Interview" : _roundRaw);
   document.getElementById("cal-f-status").value = e.status;
   document.getElementById("cal-f-interviewer").value = e.interviewer || "";
   const ml = e.meetingLink || e.meeting_link || "";
@@ -5261,9 +6002,12 @@ document.getElementById("cal-btn-save").addEventListener("click", async () => {
     persistSave();
     // Update Google Calendar if synced
     if (shouldSync && ev.google_event_id && gcalSignedIn) {
-      await gcalUpdateEvent(ev).catch((err) =>
-        console.warn("[GCal] Update failed:", err),
-      );
+      try {
+        await gcalUpdateEvent(ev);
+      } catch (err) {
+        console.warn("[GCal] Update failed:", err);
+        showCalToast("⚠️ Saved locally. Google Calendar sync failed.");
+      }
     }
     // ── BI-DIRECTIONAL SYNC: push calendar status change → matching TASK ──
     syncCalEventToTask(ev);
@@ -5315,11 +6059,11 @@ function syncCalEventToTask(ev) {
 
   // Map calendar status → recruitment stage
   const CAL_TO_TASK_STATUS = {
-    Completed: "Review", // Interview done → move to Review, not auto-Hired
-    Cancelled: "Cancelled",
-    Rescheduled: "Screening",
-    Scheduled: "Interview",
-    "No Show": "Review",
+    Completed: "Endorsed", // Interview done → move to Endorsed for client review
+    Cancelled: "Closed",   // Cancelled interview → close the application
+    Rescheduled: "In Progress",
+    Scheduled: "In Progress",
+    "No Show": "Closed",   // No-show → close
   };
   const newStatus = CAL_TO_TASK_STATUS[ev.status];
   const evName = (ev.applicant_name || ev.name || "").trim().toLowerCase();
@@ -5358,7 +6102,8 @@ function syncCalEventToTask(ev) {
       newStatus &&
       match.status !== newStatus &&
       match.status !== "Done" &&
-      match.status !== "Cancelled"
+      match.status !== "Cancelled" &&
+      match.status !== "Closed"
     ) {
       match.status = newStatus;
       changed = true;
@@ -5395,10 +6140,10 @@ function syncCalEventToTask(ev) {
     const stub = {
       id: taskNextId++,
       name: ev.applicant_name || ev.name || "New Applicant",
-      status: newStatus || "Applied",
+      status: newStatus || "New",
       priority: "Medium",
       position: ev.position || "",
-      assignee: ev.interviewer || "HR Team",
+      assignee: ev.interviewer || "Assistant",
       due: ev.date,
       notes: `Auto-created from calendar: ${ev.round || ""} interview`,
       tags: [],
@@ -5851,6 +6596,7 @@ document.getElementById("position-search").addEventListener("input", (e) => {
   renderPositionsList(e.target.value);
 });
 
+
 /* ── Assignee dropdown toggle ── */
 document.addEventListener("click", function (e) {
   const toggle = e.target.closest("#assignee-dropdown-toggle");
@@ -5878,6 +6624,65 @@ document.addEventListener("change", function (e) {
   const LS_WORKSPACE = "upstaff_workspace";
   const LS_NOTIFS = "upstaff_notifications";
 
+  // Called by onclick="saveProfileSettings()" on the Save Profile button
+  window.saveProfileSettings = function () {
+    const pInputs = document.querySelectorAll(
+      "#setting-profile .settings-input",
+    );
+    const pSelects = document.querySelectorAll(
+      "#setting-profile .settings-select",
+    );
+    const profile = {
+      firstName: pInputs[0]?.value.trim() || "",
+      lastName: pInputs[1]?.value.trim() || "",
+      email: pInputs[2]?.value.trim() || "",
+      jobTitle: pInputs[3]?.value.trim() || "",
+    };
+    if (!profile.firstName || !profile.email)
+      return showToast("⚠️ First name and email are required.");
+    localStorage.setItem(LS_PROFILE, JSON.stringify(profile));
+
+    // Save timezone + dateFormat to workspace key
+    const ws = JSON.parse(localStorage.getItem(LS_WORKSPACE) || "{}");
+    ws.timezone =
+      document.getElementById("s-ws-timezone")?.value || ws.timezone || "";
+    ws.dateFormat =
+      document.getElementById("s-ws-dateformat")?.value || ws.dateFormat || "";
+    localStorage.setItem(LS_WORKSPACE, JSON.stringify(ws));
+
+    // Update avatar display
+    const avatarEl = document.getElementById("profile-avatar-circle");
+    const fullName = `${profile.firstName} ${profile.lastName}`.trim();
+    if (avatarEl && fullName) {
+      try {
+        const cfg = JSON.parse(
+          localStorage.getItem("upstaff_api_config") || "{}",
+        );
+        if (cfg.picture) {
+          const initials = fullName
+            .split(" ")
+            .map((w) => w[0])
+            .join("")
+            .toUpperCase()
+            .slice(0, 2);
+          avatarEl.innerHTML = `<img src="${cfg.picture}" style="width:64px;height:64px;border-radius:50%;object-fit:cover;" onerror="this.parentElement.textContent='${initials}'"/>`;
+        } else {
+          avatarEl.textContent = fullName
+            .split(" ")
+            .map((w) => w[0])
+            .join("")
+            .toUpperCase()
+            .slice(0, 2);
+        }
+      } catch (_) {}
+    }
+
+    // Update header display name
+    const displayNameEl = document.getElementById("profile-display-name");
+    if (displayNameEl && fullName) displayNameEl.textContent = fullName;
+    showToast("✅ Profile saved!");
+  };
+
   // Repopulate Settings fields from localStorage
   window._settingsLoad = function () {
     // ── Profile ──
@@ -5889,33 +6694,46 @@ document.addEventListener("change", function (e) {
     pFields.forEach((f, i) => {
       if (pInputs[i] && profile[f]) pInputs[i].value = profile[f];
     });
-    const pRole = document.querySelector("#setting-profile .settings-select");
-    if (pRole && profile.role) pRole.value = profile.role;
+    const pSelects = document.querySelectorAll(
+      "#setting-profile .settings-select",
+    );
+    if (pSelects[0] && profile.role) pSelects[0].value = profile.role;
 
-    // ── Workspace ──
+    // ── Profile: timezone + date format (stored in upstaff_workspace) ──
     const ws = JSON.parse(localStorage.getItem(LS_WORKSPACE) || "{}");
-    const wsInputs = document.querySelectorAll(
-      "#setting-workspace .settings-input",
-    );
-    if (wsInputs[0] && ws.companyName) wsInputs[0].value = ws.companyName;
-    const wsSelects = document.querySelectorAll(
-      "#setting-workspace .settings-select",
-    );
-    if (wsSelects[0] && ws.industry) wsSelects[0].value = ws.industry;
-    if (wsSelects[1] && ws.companySize) wsSelects[1].value = ws.companySize;
-    if (wsSelects[2] && ws.timezone) wsSelects[2].value = ws.timezone;
-    if (wsSelects[3] && ws.dateFormat) wsSelects[3].value = ws.dateFormat;
-    const defView = document.querySelector(
-      "#setting-workspace select[style*='auto']",
-    );
-    if (defView && ws.defaultView) defView.value = ws.defaultView;
-    const wsToggles = document.querySelectorAll(
-      "#setting-workspace .toggle-switch input",
-    );
-    if (wsToggles[0] && ws.compactMode !== undefined)
-      wsToggles[0].checked = ws.compactMode;
-    if (wsToggles[1] && ws.showCompleted !== undefined)
-      wsToggles[1].checked = ws.showCompleted;
+    const tzSel = document.getElementById("s-ws-timezone");
+    const dfSel = document.getElementById("s-ws-dateformat");
+    if (tzSel && ws.timezone) tzSel.value = ws.timezone;
+    if (dfSel && ws.dateFormat) dfSel.value = ws.dateFormat;
+
+    // ── Profile: Show Google profile picture if available ──
+    try {
+      const cfg = JSON.parse(
+        localStorage.getItem("upstaff_api_config") || "{}",
+      );
+      const avatarEl = document.getElementById("profile-avatar-circle");
+      if (avatarEl && cfg.picture) {
+        avatarEl.innerHTML = `<img src="${cfg.picture}" style="width:64px;height:64px;border-radius:50%;object-fit:cover;" onerror="this.parentElement.textContent=this.parentElement.dataset.initials||'HR'"/>`;
+        // Pre-fill name fields from Google if profile fields are still empty
+        if (!pInputs[0]?.value && cfg.name) {
+          const parts = cfg.name.trim().split(" ");
+          if (pInputs[0]) pInputs[0].value = parts[0] || "";
+          if (pInputs[1]) pInputs[1].value = parts.slice(1).join(" ") || "";
+        }
+        if (!pInputs[2]?.value && cfg.email) {
+          if (pInputs[2]) pInputs[2].value = cfg.email;
+        }
+      }
+      // Auto-reflect role from Google auth
+      if (cfg.role) {
+        const roleLabel = cfg.role === "hr" ? "HR Manager" : cfg.role === "assistant" ? "Assistant" : cfg.role;
+        const roleDisplayEl = document.getElementById("profile-display-role");
+        if (roleDisplayEl) roleDisplayEl.textContent = roleLabel + " · upstaff";
+        const roleSelectEl = document.getElementById("s-profile-role");
+        if (roleSelectEl) roleSelectEl.value = roleLabel;
+      }
+    } catch (_) {}
+
     // Re-apply compact mode on load
     document.body.classList.toggle("compact-mode", !!ws.compactMode);
 
@@ -5955,51 +6773,63 @@ document.addEventListener("change", function (e) {
       const pInputs = document.querySelectorAll(
         "#setting-profile .settings-input",
       );
-      const pRole = document.querySelector("#setting-profile .settings-select");
+      const pSelects = document.querySelectorAll(
+        "#setting-profile .settings-select",
+      );
       const profile = {
         firstName: pInputs[0]?.value.trim() || "",
         lastName: pInputs[1]?.value.trim() || "",
         email: pInputs[2]?.value.trim() || "",
         jobTitle: pInputs[3]?.value.trim() || "",
-        role: pRole?.value || "Administrator",
+        role: pSelects[0]?.value || "Administrator",
       };
       if (!profile.firstName || !profile.email)
         return showToast("⚠️ First name and email are required.");
       localStorage.setItem(LS_PROFILE, JSON.stringify(profile));
-      // Update avatar initials in-panel
-      const avatarEl = document.querySelector(
-        "#setting-profile div[style*='border-radius:50%']",
-      );
+
+      // Also save timezone + dateFormat to workspace key
+      const ws = JSON.parse(localStorage.getItem(LS_WORKSPACE) || "{}");
+      ws.timezone =
+        document.getElementById("s-ws-timezone")?.value || ws.timezone || "";
+      ws.dateFormat =
+        document.getElementById("s-ws-dateformat")?.value ||
+        ws.dateFormat ||
+        "";
+      localStorage.setItem(LS_WORKSPACE, JSON.stringify(ws));
+
+      // Update avatar: show initials (picture is set separately from Google login)
+      const avatarEl = document.getElementById("profile-avatar-circle");
       const fullName = `${profile.firstName} ${profile.lastName}`.trim();
       if (avatarEl && fullName) {
-        avatarEl.textContent = fullName
-          .split(" ")
-          .map((w) => w[0])
-          .join("")
-          .toUpperCase()
-          .slice(0, 2);
+        const cfg = JSON.parse(
+          localStorage.getItem("upstaff_api_config") || "{}",
+        );
+        if (cfg.picture) {
+          avatarEl.innerHTML = `<img src="${cfg.picture}" style="width:64px;height:64px;border-radius:50%;object-fit:cover;" onerror="this.parentElement.textContent='${fullName
+            .split(" ")
+            .map((w) => w[0])
+            .join("")
+            .toUpperCase()
+            .slice(0, 2)}'"/>`;
+        } else {
+          avatarEl.textContent = fullName
+            .split(" ")
+            .map((w) => w[0])
+            .join("")
+            .toUpperCase()
+            .slice(0, 2);
+        }
       }
       showToast("✅ Profile saved!");
 
-      // ── Profile: Update Password ──
-    } else if (action === "toastPasswordUpdated") {
-      const pwInputs = document.querySelectorAll(
-        "#setting-profile input[type='password']",
-      );
-      const current = pwInputs[0]?.value || "";
-      const newPw = pwInputs[1]?.value || "";
-      const confirm = pwInputs[2]?.value || "";
-      if (!current || !newPw || !confirm)
-        return showToast("⚠️ Please fill in all password fields.");
-      if (newPw.length < 6)
-        return showToast("⚠️ New password must be at least 6 characters.");
-      if (newPw !== confirm) return showToast("❌ Passwords do not match.");
-      // Store hashed indicator (not plain text — this is a demo-safe approach)
-      localStorage.setItem("upstaff_pw_set", "1");
-      pwInputs.forEach((i) => {
-        i.value = "";
-      });
-      showToast("🔐 Password updated!");
+      // ── EmailJS: Save Config ──
+    } else if (action === "saveEmailJSConfig") {
+      saveEmailJSConfig();
+      showToast("✅ Email settings saved!");
+
+      // ── Storage: Refresh Status ──
+    } else if (action === "refreshStorageStatus") {
+      refreshStorageStatus();
 
       // ── Workspace: Save Changes ──
     } else if (action === "toastWorkspaceSaved") {
@@ -6259,27 +7089,16 @@ function highlightMatch(text, q) {
   return text.replace(re, "<mark>$1</mark>");
 }
 
-function renderSearchResults(q) {
+async function renderSearchResults(q) {
   const el = document.getElementById("search-results");
   const query = q.trim().toLowerCase();
 
   if (!query) {
-    // Show recent / all tasks as default hint
     el.innerHTML = `<div class="search-empty">Start typing to search applicants, positions, or assignees…</div>`;
     return;
   }
 
-  // Search tasks
-  const taskHits = TASKS.filter(
-    (t) =>
-      t.name.toLowerCase().includes(query) ||
-      t.position.toLowerCase().includes(query) ||
-      t.assignee.toLowerCase().includes(query) ||
-      t.status.toLowerCase().includes(query) ||
-      t.priority.toLowerCase().includes(query),
-  ).slice(0, 8);
-
-  // Search calendar events
+  // Calendar hits are always local
   const calHits = calEvents
     .filter(
       (e) =>
@@ -6289,6 +7108,43 @@ function renderSearchResults(q) {
         e.interviewer.toLowerCase().includes(query),
     )
     .slice(0, 4);
+
+  // Use API search when connected, otherwise filter local TASKS
+  let taskHits = [];
+  if (window.UpstaffAPI && UpstaffAPI.isConfigured()) {
+    el.innerHTML = `<div class="search-empty" style="color:var(--muted);">🔍 Searching database…</div>`;
+    try {
+      const res = await UpstaffAPI.search(q);
+      if (res.data && res.data.length) {
+        // Map API records and assign temporary display IDs
+        let tmpId = 900000;
+        taskHits = res.data
+          .map((r) => {
+            // Find if already in local TASKS (matched by email)
+            const local = TASKS.find((t) => t.applicant_email === r.email);
+            return local || UpstaffAPI.mapApplicant(r, tmpId++);
+          })
+          .slice(0, 8);
+      }
+    } catch (e) {
+      // Fall back to local on API error
+      taskHits = TASKS.filter(
+        (t) =>
+          (t.name || "").toLowerCase().includes(query) ||
+          (t.position || "").toLowerCase().includes(query) ||
+          (t.status || "").toLowerCase().includes(query),
+      ).slice(0, 8);
+    }
+  } else {
+    taskHits = TASKS.filter(
+      (t) =>
+        (t.name || "").toLowerCase().includes(query) ||
+        (t.position || "").toLowerCase().includes(query) ||
+        (t.assignee || "").toLowerCase().includes(query) ||
+        (t.status || "").toLowerCase().includes(query) ||
+        (t.priority || "").toLowerCase().includes(query),
+    ).slice(0, 8);
+  }
 
   if (!taskHits.length && !calHits.length) {
     el.innerHTML = `<div class="search-empty">No results for "<strong>${sanitize(q)}</strong>"</div>`;
@@ -6461,8 +7317,16 @@ function buildDonut(container, data, colors) {
     cx = 60,
     cy = 60;
   let angle = -Math.PI / 2; // start at top
+
   const slices = data.map((d, i) => {
-    const sweep = (d.value / total) * 2 * Math.PI;
+    // ── Single-item (100%) fix ──────────────────────────────────────
+    // SVG arcs with identical start & end points render nothing.
+    // Clamp sweep just under 2π so the arc stays visible.
+    const sweep = Math.min(
+      (d.value / total) * 2 * Math.PI,
+      2 * Math.PI - 0.0001,
+    );
+
     const x1 = cx + R * Math.cos(angle);
     const y1 = cy + R * Math.sin(angle);
     angle += sweep;
@@ -6484,16 +7348,25 @@ function buildDonut(container, data, colors) {
     };
   });
 
+  // Track ring: light background ring so single-color donuts have visible depth
+  const trackPath = `M${cx.toFixed(2)},${(cy - R).toFixed(2)} A${R},${R} 0 1,1 ${(cx - 0.01).toFixed(2)},${(cy - R).toFixed(2)} Z`;
+  const holePath = `M${cx.toFixed(2)},${(cy - r).toFixed(2)} A${r},${r} 0 1,1 ${(cx - 0.01).toFixed(2)},${(cy - r).toFixed(2)} Z`;
+
   const svg = `<svg width="120" height="120" viewBox="0 0 120 120" style="flex-shrink:0;">
-    ${slices.map((s) => `<path d="${s.path}" fill="${s.color}" opacity=".9"/>`).join("")}
-    <text x="${cx}" y="${cy + 2}" text-anchor="middle" font-size="13" font-weight="800" font-family="Syne,sans-serif" fill="currentColor" style="fill:var(--text);">${total}</text>
-    <text x="${cx}" y="${cy + 14}" text-anchor="middle" font-size="8" font-weight="600" font-family="Montserrat,sans-serif" fill="currentColor" style="fill:var(--light);">TOTAL</text>
+    <!-- background track ring -->
+    <path d="${trackPath}" fill="currentColor" style="fill:var(--border,rgba(0,0,0,.08));opacity:.5;"/>
+    <!-- donut slices -->
+    ${slices.map((s) => `<path d="${s.path}" fill="${s.color}" opacity=".92"/>`).join("")}
+    <!-- centre hole — must use --surface-1 (not --surface which is undefined) -->
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="currentColor" style="fill:var(--surface-1,#ffffff);"/>
+    <!-- centre labels — drawn last so they sit on top of the hole -->
+    <text x="${cx}" y="${cy - 4}" text-anchor="middle" dominant-baseline="middle" font-size="16" font-weight="800" font-family="Syne,sans-serif" fill="currentColor" style="fill:var(--text);">${total}</text>
+    <text x="${cx}" y="${cy + 11}" text-anchor="middle" dominant-baseline="middle" font-size="8" font-weight="700" font-family="Montserrat,sans-serif" fill="currentColor" style="fill:var(--muted);letter-spacing:.08em;">TOTAL</text>
   </svg>`;
 
   const legend = `<div class="donut-legend">${slices
     .map(
-      (s) =>
-        `<div class="donut-legend-item">
+      (s) => `<div class="donut-legend-item">
       <div class="donut-legend-dot" style="background:${s.color};"></div>
       <span class="donut-legend-label">${s.label}</span>
       <span class="donut-legend-val">${s.value} <span style="opacity:.5;">(${Math.round((s.value / total) * 100)}%)</span></span>
@@ -6537,26 +7410,52 @@ function buildTagCloud(container, data) {
 /* ── Build source list ── */
 function buildSourceList(container, data) {
   const total = data.reduce((s, d) => s + d.value, 0);
-  const icons = {
-    Facebook: "👍",
-    LinkedIn: "💼",
-    Instagram: "📸",
-    JobStreet: "🔎",
-    Indeed: "🔍",
-    Referral: "🤝",
-    "Company Website": "🌐",
-    "Walk-in": "🚶",
-    Other: "❓",
-  };
+
+  // Resolve icon — handles exact match AND prefix match (e.g. "Referral [code]")
+  function _srcIcon(label) {
+    const exact = {
+      Facebook: "👍",
+      LinkedIn: "💼",
+      Instagram: "📸",
+      TikTok: "🎵",
+      Twitter: "🐦",
+      JobStreet: "🔎",
+      Indeed: "🔍",
+      Kalibrr: "🎯",
+      Referral: "🤝",
+      "Company Website": "🌐",
+      "Walk-in": "🚶",
+      Other: "❓",
+    };
+    if (exact[label]) return exact[label];
+    // Prefix match: "Referral [yangyang]" → 🤝
+    const lower = label.toLowerCase();
+    if (lower.startsWith("referral")) return "🤝";
+    if (lower.startsWith("facebook")) return "👍";
+    if (lower.startsWith("linkedin")) return "💼";
+    if (lower.startsWith("instagram")) return "📸";
+    if (lower.startsWith("tiktok")) return "🎵";
+    if (lower.startsWith("jobstreet")) return "🔎";
+    if (lower.startsWith("indeed")) return "🔍";
+    if (lower.startsWith("walk")) return "🚶";
+    if (lower.includes("website") || lower.includes("web")) return "🌐";
+    return "📣";
+  }
+
+  if (!data.length) {
+    container.innerHTML = '<div class="u-no-data">No data</div>';
+    return;
+  }
+
   container.innerHTML = data
     .map((d) => {
       const pct = total ? Math.round((d.value / total) * 100) : 0;
       return `<div class="source-row">
-      <div class="source-icon">${icons[d.label] || "❓"}</div>
+      <div class="source-icon">${_srcIcon(d.label)}</div>
       <div class="source-label">${d.label}</div>
       <div class="source-bar-track"><div class="source-bar-fill" style="width:${pct}%;"></div></div>
       <div class="source-pct">${pct}%</div>
-      <div style="font-size:11px;color:var(--muted);min-width:20px;text-align:right;font-family:'Montserrat',sans-serif;font-weight:700;">${d.value}</div>
+      <div class="source-count">${d.value}</div>
     </div>`;
     })
     .join("");
@@ -6564,27 +7463,44 @@ function buildSourceList(container, data) {
 
 /* ── Main render function for the Analytics view ── */
 function renderAnalytics() {
-  const A = TASKS; // live data from pipeline
+  const A = TASKS;
   const total = A.length;
 
   /* ── 1. KPI cards ── */
-  const totalInterviews = calEvents.length;
-  const hiredCount = TASKS.filter((t) => t.status === "Hired").length;
-  const uniquePositions = [...new Set(A.map((a) => a.position).filter(Boolean))]
-    .length;
+  const hiredCount = A.filter(
+    (t) => t.status === "Hired" || t.partner_status === "Hired",
+  ).length;
+  const rejectedCount = A.filter(
+    (t) => t.status === "Rejected" || t.partner_status === "Rejected",
+  ).length;
+  const activeCount = A.filter(
+    (t) => !["Hired", "Closed", "Rejected", "Cancelled"].includes(t.status),
+  ).length;
+  const interviewedCount = A.filter(
+    (t) =>
+      t.partner_status === "Interviewed" ||
+      t.status === "In Progress" ||
+      t.status === "Endorsed",
+  ).length;
+  const hireRate = total > 0 ? Math.round((hiredCount / total) * 100) : 0;
+  const rejRate = total > 0 ? Math.round((rejectedCount / total) * 100) : 0;
+
+  // Time-to-hire: days from application_date (or start) to hired_at
+  const _tthData = A.filter((t) => t.hired_at && (t.application_date || t.start))
+    .map((t) => {
+      const a = new Date(t.application_date || t.start);
+      const h = new Date(t.hired_at);
+      return isNaN(a) || isNaN(h) ? null : Math.max(0, Math.round((h - a) / 86400000));
+    })
+    .filter((d) => d !== null);
+  const avgTTH = _tthData.length
+    ? Math.round(_tthData.reduce((s, d) => s + d, 0) / _tthData.length)
+    : null;
+  const minTTH = _tthData.length ? Math.min(..._tthData) : null;
+  const maxTTH = _tthData.length ? Math.max(..._tthData) : null;
 
   const _kpiEl = document.getElementById("analytics-kpi-row");
   if (_kpiEl) {
-    _kpiEl.innerHTML =
-      '<div class="skeleton-list-wrap" style="display:flex;gap:12px">' +
-      Array(4)
-        .fill(
-          '<div class="skeleton skeleton-card" style="flex:1;height:80px"></div>',
-        )
-        .join("") +
-      "</div>";
-  }
-  requestAnimationFrame(() => {
     _kpiEl.innerHTML = `
     <div class="analytics-stat-card">
       <div class="analytics-stat-icon" style="background:rgba(68,215,233,.12);">
@@ -6592,35 +7508,143 @@ function renderAnalytics() {
       </div>
       <div class="analytics-stat-value">${total}</div>
       <div class="analytics-stat-label">Total Applicants</div>
-      <div class="analytics-stat-sub">In current dataset</div>
+      <div class="analytics-stat-sub">All time</div>
+    </div>
+    <div class="analytics-stat-card">
+      <div class="analytics-stat-icon" style="background:rgba(68,215,233,.10);">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#44d7e9" stroke-width="2.5" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      </div>
+      <div class="analytics-stat-value">${activeCount}</div>
+      <div class="analytics-stat-label">Active Pipeline</div>
+      <div class="analytics-stat-sub">Currently in process</div>
     </div>
     <div class="analytics-stat-card">
       <div class="analytics-stat-icon" style="background:rgba(67,233,123,.12);">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#43e97b" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#43e97b" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
       </div>
-      <div class="analytics-stat-value">${totalInterviews}</div>
-      <div class="analytics-stat-label">Interviews Scheduled</div>
-      <div class="analytics-stat-sub">From calendar data</div>
+      <div class="analytics-stat-value">${hiredCount}</div>
+      <div class="analytics-stat-label">Hired</div>
+      <div class="analytics-stat-sub">Hire rate: ${hireRate}%</div>
+    </div>
+    <div class="analytics-stat-card">
+      <div class="analytics-stat-icon" style="background:rgba(239,68,68,.10);">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </div>
+      <div class="analytics-stat-value">${rejectedCount}</div>
+      <div class="analytics-stat-label">Rejected</div>
+      <div class="analytics-stat-sub">Rejection rate: ${rejRate}%</div>
     </div>
     <div class="analytics-stat-card">
       <div class="analytics-stat-icon" style="background:rgba(108,99,255,.12);">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6c63ff" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6c63ff" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg>
       </div>
-      <div class="analytics-stat-value">${hiredCount}</div>
-      <div class="analytics-stat-label">Completed Interviews</div>
-      <div class="analytics-stat-sub">Status: Completed</div>
+      <div class="analytics-stat-value">${interviewedCount}</div>
+      <div class="analytics-stat-label">Interviewed</div>
+      <div class="analytics-stat-sub">In Progress + Endorsed stage</div>
     </div>
     <div class="analytics-stat-card">
       <div class="analytics-stat-icon" style="background:rgba(250,130,49,.12);">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fa8231" stroke-width="2.5" stroke-linecap="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
       </div>
-      <div class="analytics-stat-value">${uniquePositions}</div>
-      <div class="analytics-stat-label">Positions Applied</div>
-         <div class="analytics-stat-sub">Unique 1st-choice roles</div>
+      <div class="analytics-stat-value">${[...new Set(A.map((a) => a.position).filter(Boolean))].length}</div>
+      <div class="analytics-stat-label">Positions Open</div>
+      <div class="analytics-stat-sub">Unique roles applied</div>
+    </div>
+    <div class="analytics-stat-card">
+      <div class="analytics-stat-icon" style="background:rgba(251,191,36,.12);">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      </div>
+      <div class="analytics-stat-value">${avgTTH !== null ? avgTTH + "d" : "—"}</div>
+      <div class="analytics-stat-label">Avg. Time to Hire</div>
+      <div class="analytics-stat-sub">${_tthData.length ? `Min ${minTTH}d · Max ${maxTTH}d · ${_tthData.length} hired` : "No hire data yet"}</div>
     </div>`;
-  }); // end requestAnimationFrame
+  }
 
-  /* ── 2. Position summary table (live from TASKS) ── */
+  /* ── Time-to-hire per position breakdown ── */
+  const _tthPosEl = document.getElementById("chart-time-to-hire");
+  if (_tthPosEl) {
+    const posMap = {};
+    A.filter((t) => t.hired_at && (t.application_date || t.start) && t.position).forEach((t) => {
+      const days = Math.max(0, Math.round((new Date(t.hired_at) - new Date(t.application_date || t.start)) / 86400000));
+      if (!posMap[t.position]) posMap[t.position] = [];
+      posMap[t.position].push(days);
+    });
+    const posRows = Object.entries(posMap)
+      .map(([pos, days]) => ({ pos, avg: Math.round(days.reduce((s, d) => s + d, 0) / days.length), n: days.length }))
+      .sort((a, b) => a.avg - b.avg);
+    const maxDays = posRows.length ? Math.max(...posRows.map((r) => r.avg), 1) : 1;
+    _tthPosEl.innerHTML = posRows.length
+      ? posRows.map((r) => `
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+          <div style="width:170px;font-size:12px;font-weight:600;color:var(--text);text-align:right;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${sanitize(r.pos)}">${sanitize(r.pos)}</div>
+          <div style="flex:1;background:var(--surface-2);border-radius:6px;overflow:hidden;height:22px;">
+            <div style="width:${Math.round((r.avg / maxDays) * 100)}%;background:#f59e0b;height:100%;border-radius:6px;transition:width .5s;"></div>
+          </div>
+          <div style="width:42px;font-size:13px;font-weight:700;color:var(--text);">${r.avg}d</div>
+          <div style="width:32px;font-size:11px;color:var(--muted);">${r.n} hire${r.n > 1 ? "s" : ""}</div>
+        </div>`).join("")
+      : `<p style="color:var(--muted);font-size:13px;text-align:center;padding:20px 0;">No hire data yet — time-to-hire will appear once applicants reach Hired stage.</p>`;
+  }
+
+  /* ── 2. Pipeline funnel ── */
+  const PIPELINE_STAGES = [
+    { key: "For Interview", label: "For Interview", color: "#44d7e9" },
+    { key: "Interviewed", label: "Interviewed", color: "#6c63ff" },
+    {
+      key: "For Client Endorsement",
+      label: "For Client Endorsement",
+      color: "#a78bfa",
+    },
+    { key: "Hired", label: "Hired", color: "#43e97b" },
+    { key: "Hired - Resigned", label: "Hired - Resigned", color: "#fa8231" },
+    {
+      key: "Open for other roles",
+      label: "Open for Other Roles",
+      color: "#38bdf8",
+    },
+    {
+      key: "Could be Revisited",
+      label: "Could Be Revisited",
+      color: "#60a5fa",
+    },
+    {
+      key: "For Future Consideration",
+      label: "For Future Consideration",
+      color: "#94a3b8",
+    },
+    { key: "No Show", label: "No Show", color: "#fbbf24" },
+    { key: "Not Qualified", label: "Not Qualified", color: "#64748b" },
+    { key: "Duplicate Lead", label: "Duplicate Lead", color: "#c084fc" },
+    { key: "Rejected", label: "Rejected", color: "#ef4444" },
+  ];
+  const pipelineEl = document.getElementById("chart-pipeline");
+  if (pipelineEl) {
+    const stageCounts = PIPELINE_STAGES.map((s) => ({
+      ...s,
+      count: A.filter((t) => t.partner_status === s.key || t.status === s.key)
+        .length,
+    }))
+      .filter((s) => s.count > 0)
+      .sort((a, b) => b.count - a.count);
+    const maxCount = Math.max(...stageCounts.map((s) => s.count), 1);
+    pipelineEl.innerHTML = stageCounts.length
+      ? stageCounts
+          .map(
+            (s) => `
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+          <div style="width:160px;font-size:12px;font-weight:600;color:var(--text);text-align:right;flex-shrink:0;">${s.label}</div>
+          <div style="flex:1;background:var(--surface-2);border-radius:6px;overflow:hidden;height:22px;">
+            <div style="width:${Math.round((s.count / maxCount) * 100)}%;background:${s.color};height:100%;border-radius:6px;transition:width .5s ease;"></div>
+          </div>
+          <div style="width:36px;font-size:13px;font-weight:700;color:var(--text);">${s.count}</div>
+          <div style="width:40px;font-size:11px;color:var(--muted);">${Math.round((s.count / total) * 100)}%</div>
+        </div>`,
+          )
+          .join("")
+      : `<p style="color:var(--muted);font-size:13px;text-align:center;padding:20px 0;">No pipeline data yet</p>`;
+  }
+
+  /* ── 3. Position summary table ── */
   const posCount = countBy(A.map((a) => a.position).filter(Boolean));
   const posEntries = Object.entries(posCount).sort((a, b) => b[1] - a[1]);
   const tableRows = posEntries
@@ -6641,7 +7665,7 @@ function renderAnalytics() {
     </tr></thead>
     <tbody>${tableRows || '<tr><td colspan="3" class="u-text-center u-text-light" style="padding:16px;">No applicants yet</td></tr>'}</tbody>`;
 
-  /* ── 3. Applicants per position bar chart (live from TASKS) ── */
+  /* ── 4. Applicants per position bar chart (live from TASKS) ── */
   const posData = posEntries.map(([label, value]) => ({ label, value }));
   buildBarChart(
     document.getElementById("chart-position"),
@@ -6652,11 +7676,55 @@ function renderAnalytics() {
   /* ── 4–10. Extended fields — reads from TASKS if DB populates them,
      shows "No data" gracefully until then ── */
 
-  // Employment type donut
-  const empData = ["Full-Time", "Part-Time", "Contractual", "Project-Based"]
+  // Split a bullet/comma list string into individual items.
+  // Handles: "A, B, C"  |  "• A\n• B\n• C"  |  "A\nB\nC"
+  // Defined first so it can be reused for all multi-value fields below.
+  function splitItems(raw) {
+    if (!raw) return [];
+    if (Array.isArray(raw))
+      return raw
+        .map((s) =>
+          s
+            .toString()
+            .replace(/^[•\-]\s*/, "")
+            .trim(),
+        )
+        .filter(Boolean);
+    return raw
+      .split(/[\n,]+/)
+      .map((s) => s.replace(/^[•\-]\s*/, "").trim())
+      .filter(Boolean);
+  }
+
+  // ── Field name note ───────────────────────────────────────────────────────
+  // The API mapper (pm-ui-api.js mapApplicant) stores fields as snake_case:
+  //   employment_type, work_setup, work_schedule, education_level, referral_source
+  // The Google Sheet can store multi-line bullet values (e.g. "• Full-Time\n• Part-Time")
+  // so we use splitItems() to normalise them before counting.
+  // ─────────────────────────────────────────────────────────────────────────
+
+  // Employment type donut — normalise to handle both legacy and new form values
+  const allEmpTypes = A.flatMap((t) => splitItems(t.employment_type)).map(
+    (v) => {
+      const n = v.toLowerCase();
+      if (n.includes("full")) return "Full-time";
+      if (n.includes("part")) return "Part-time";
+      if (n.includes("contract")) return "Contract";
+      if (n.includes("freelance")) return "Freelance";
+      if (n.includes("project")) return "Project-based";
+      return v;
+    },
+  );
+  const empData = [
+    "Full-time",
+    "Part-time",
+    "Contract",
+    "Freelance",
+    "Project-based",
+  ]
     .map((l) => ({
       label: l,
-      value: A.filter((t) => t.employmentType === l).length,
+      value: allEmpTypes.filter((v) => v === l).length,
     }))
     .filter((d) => d.value > 0);
   buildDonut(document.getElementById("chart-employment"), empData, [
@@ -6664,13 +7732,21 @@ function renderAnalytics() {
     "#6c63ff",
     "#fa8231",
     "#43e97b",
+    "#f472b6",
   ]);
 
   // Work setup donut
+  const allWorkSetups = A.flatMap((t) => splitItems(t.work_setup)).map((v) => {
+    const n = v.toLowerCase();
+    if (n.includes("on-site") || n.includes("onsite")) return "On-site";
+    if (n.includes("remote")) return "Remote";
+    if (n.includes("hybrid")) return "Hybrid";
+    return v;
+  });
   const setupData = ["On-site", "Remote", "Hybrid"]
     .map((l) => ({
       label: l,
-      value: A.filter((t) => t.workSetup === l).length,
+      value: allWorkSetups.filter((v) => v === l).length,
     }))
     .filter((d) => d.value > 0);
   buildDonut(document.getElementById("chart-setup"), setupData, [
@@ -6679,17 +7755,21 @@ function renderAnalytics() {
     "#6c63ff",
   ]);
 
-  // Work schedule bar chart
-  const schedData = [
-    "Morning",
-    "Mid-shift",
-    "Night",
-    "Weekends Only",
-    "Flexible",
-  ]
+  // Work schedule bar chart — matches new form dropdown values (includes time range)
+  const allWorkSchedules = A.flatMap((t) => splitItems(t.work_schedule)).map(
+    (v) => {
+      const n = v.toLowerCase();
+      if (n.includes("morning") || n.includes("7am")) return "Morning";
+      if (n.includes("mid") || n.includes("10am")) return "Mid-shift";
+      if (n.includes("night") || n.includes("9pm")) return "Night";
+      if (n.includes("flexible")) return "Flexible";
+      return v;
+    },
+  );
+  const schedData = ["Morning", "Mid-shift", "Night", "Flexible"]
     .map((l) => ({
       label: l,
-      value: A.filter((t) => t.workSchedule === l).length,
+      value: allWorkSchedules.filter((v) => v === l).length,
     }))
     .filter((d) => d.value > 0);
   buildBarChart(
@@ -6698,30 +7778,49 @@ function renderAnalytics() {
     "#6c63ff",
   );
 
-  // Education bar chart
-  const eduData = [
-    "High School Graduate",
-    "Vocational / TESDA",
-    "College Undergraduate",
-    "College Graduate",
-    "Post Graduate",
-  ]
+  // Education bar chart — matches new form dropdown values
+  const allEduLevels = A.map((t) => (t.education_level || "").trim())
+    .map((v) => {
+      const n = v.toLowerCase();
+      if (n.includes("high school")) return "High School";
+      if (
+        n.includes("vocational") ||
+        n.includes("technical") ||
+        n.includes("tesda")
+      )
+        return "Vocational / Technical";
+      if (n.includes("some college")) return "Some College";
+      if (n.includes("bachelor")) return "Bachelor's Degree";
+      if (n.includes("master")) return "Master's Degree";
+      if (n.includes("doctorate") || n.includes("phd")) return "Doctorate";
+      return v;
+    })
+    .filter(Boolean);
+  const eduLabels = [
+    "High School",
+    "Vocational / Technical",
+    "Some College",
+    "Bachelor's Degree",
+    "Master's Degree",
+    "Doctorate",
+  ];
+  const eduData = eduLabels
     .map((l) => ({
       label: l,
-      value: A.filter((t) => t.education === l).length,
+      value: allEduLevels.filter((v) => v === l).length,
     }))
     .filter((d) => d.value > 0);
   buildBarChart(document.getElementById("chart-education"), eduData, "#43e97b");
 
-  // Source list
-  const srcRaw = A.map((t) => t.source).filter(Boolean);
+  // Source list — reads t.referral_source (not t.source)
+  const srcRaw = A.flatMap((t) => splitItems(t.referral_source));
   const srcData = Object.entries(countBy(srcRaw))
     .map(([label, value]) => ({ label, value }))
     .sort((a, b) => b.value - a.value);
   buildSourceList(document.getElementById("chart-source"), srcData);
 
   // Tools tag cloud
-  const allTools = A.flatMap((t) => t.tools || []);
+  const allTools = A.flatMap((t) => splitItems(t.tools));
   buildTagCloud(
     document.getElementById("chart-tools"),
     Object.entries(countBy(allTools))
@@ -6730,7 +7829,7 @@ function renderAnalytics() {
   );
 
   // Skills tag cloud
-  const allSkills = A.flatMap((t) => t.skills || []);
+  const allSkills = A.flatMap((t) => splitItems(t.skills));
   buildTagCloud(
     document.getElementById("chart-skills"),
     Object.entries(countBy(allSkills))
@@ -6743,107 +7842,271 @@ function renderAnalytics() {
 function exportAnalyticsCSV() {
   const A = TASKS;
   const rows = [];
+  const date = new Date().toISOString().slice(0, 10);
+  const now = new Date().toLocaleString("en-PH", { timeZone: "Asia/Manila" });
 
-  rows.push(["UPSTAFF — Analytics Export", new Date().toLocaleString()]);
-  rows.push([]);
-  rows.push(["=== PIPELINE SUMMARY ==="]);
-  rows.push(["Metric", "Value"]);
-  rows.push(["Total Applicants", TASKS.length]);
-  rows.push(["Applied", TASKS.filter((t) => t.status === "Applied").length]);
-  rows.push([
-    "Screening",
-    TASKS.filter((t) => t.status === "Screening").length,
-  ]);
-  rows.push([
-    "Interview",
-    TASKS.filter((t) => t.status === "Interview").length,
-  ]);
-  rows.push([
-    "Assessment",
-    TASKS.filter((t) => t.status === "Assessment").length,
-  ]);
-  rows.push(["Review", TASKS.filter((t) => t.status === "Review").length]);
-  rows.push(["Hired", TASKS.filter((t) => t.status === "Hired").length]);
-  rows.push(["Rejected", TASKS.filter((t) => t.status === "Rejected").length]);
-  rows.push([]);
+  // Helper: split bullet/comma lists from sheet values
+  function _sp(raw) {
+    if (!raw) return [];
+    return String(raw)
+      .split(/[\n,]+/)
+      .map((s) => s.replace(/^[•\-]\s*/, "").trim())
+      .filter(Boolean);
+  }
+  // Helper: count occurrences in an array
+  function _count(arr) {
+    const m = {};
+    arr.forEach((v) => {
+      m[v] = (m[v] || 0) + 1;
+    });
+    return m;
+  }
+  // Helper: hire rate string
+  function _rate(hired, total) {
+    return total ? Math.round((hired / total) * 100) + "%" : "—";
+  }
 
-  rows.push(["=== ASSESSMENT RESULTS ==="]);
-  rows.push(["Metric", "Value"]);
-  const withKnowledge = TASKS.filter((t) => t.knowledge_score);
-  const passed = withKnowledge.filter(
-    (t) => parseInt(t.knowledge_score) >= 75,
-  ).length;
-  const failed = withKnowledge.filter(
-    (t) => parseInt(t.knowledge_score) < 75,
-  ).length;
-  const avgScore = withKnowledge.length
-    ? Math.round(
-        withKnowledge.reduce((s, t) => s + parseInt(t.knowledge_score), 0) /
-          withKnowledge.length,
-      )
-    : "N/A";
-  rows.push(["Assessments Taken", withKnowledge.length]);
-  rows.push(["Passed (≥75%)", passed]);
-  rows.push(["Failed (<75%)", failed]);
-  rows.push(["Average Score", withKnowledge.length ? avgScore + "%" : "N/A"]);
+  // ── Cover ──────────────────────────────────────────────────────────────────
+  rows.push(["UPSTAFF — Recruitment Analytics Report"]);
+  rows.push(["Exported:", now]);
+  rows.push(["Total Applicants in Dataset:", A.length]);
   rows.push([]);
 
-  rows.push(["=== POSITION BREAKDOWN ==="]);
-  rows.push(["Position", "Total Applicants", "Hired", "Avg Knowledge Score"]);
-  const positions = [...new Set(TASKS.map((t) => t.position))].sort();
+  // ── Section 1: Pipeline Summary ────────────────────────────────────────────
+  const stages = [
+    "New",
+    "In Progress",
+    "Endorsed",
+    "Hired",
+    "Closed",
+    "Rejected",
+    "Cancelled",
+  ];
+  const hired = A.filter((t) => t.status === "Hired").length;
+  rows.push(["=== 1. PIPELINE SUMMARY ==="]);
+  rows.push(["Stage", "Count", "% of Total"]);
+  stages.forEach((s) => {
+    const n = A.filter((t) => t.status === s).length;
+    const pct = A.length ? Math.round((n / A.length) * 100) + "%" : "—";
+    rows.push([s, n, pct]);
+  });
+  rows.push(["TOTAL", A.length, "100%"]);
+  rows.push(["Overall Hire Rate", "", _rate(hired, A.length)]);
+  rows.push([]);
+
+  // ── Section 2: Position Breakdown ─────────────────────────────────────────
+  rows.push(["=== 2. POSITION BREAKDOWN ==="]);
+  rows.push([
+    "Position",
+    "Total Applicants",
+    "Hired",
+    "Rejected",
+    "In Progress",
+    "Hire Rate",
+  ]);
+  const positions = [
+    ...new Set(
+      A.map((t) => (t.position || "").split(/[•,\n]/)[0].trim()).filter(
+        Boolean,
+      ),
+    ),
+  ].sort();
   positions.forEach((pos) => {
-    const group = TASKS.filter((t) => t.position === pos);
-    const hired = group.filter((t) => t.status === "Hired").length;
-    const scored = group.filter((t) => t.knowledge_score);
-    const avg = scored.length
-      ? Math.round(
-          scored.reduce((s, t) => s + parseInt(t.knowledge_score), 0) /
-            scored.length,
-        ) + "%"
-      : "—";
-    rows.push([pos, group.length, hired, avg]);
+    const g = A.filter((t) => (t.position || "").includes(pos));
+    const h = g.filter((t) => t.status === "Hired").length;
+    const r = g.filter(
+      (t) => t.status === "Rejected" || t.status === "Cancelled",
+    ).length;
+    const ip = g.length - h - r;
+    rows.push([pos, g.length, h, r, ip, _rate(h, g.length)]);
   });
   rows.push([]);
 
-  // Source, Employment Type, Work Setup — auto-populated once DB fields are live
-  const liveSrc = A.map((t) => t.source).filter(Boolean);
-  if (liveSrc.length) {
-    rows.push(["=== APPLICANT SOURCE BREAKDOWN ==="]);
-    rows.push(["Source", "Count"]);
-    const srcMap = {};
-    liveSrc.forEach((s) => {
-      srcMap[s] = (srcMap[s] || 0) + 1;
-    });
+  // ── Section 3: Employment Type ─────────────────────────────────────────────
+  const empItems = A.flatMap((t) => _sp(t.employment_type));
+  const empMap = _count(empItems);
+  if (empItems.length) {
+    rows.push(["=== 3. EMPLOYMENT TYPE ==="]);
+    rows.push(["Type", "Count", "% of Applicants"]);
+    Object.entries(empMap)
+      .sort((a, b) => b[1] - a[1])
+      .forEach(([k, v]) => rows.push([k, v, _rate(v, A.length)]));
+    rows.push([]);
+  }
+
+  // ── Section 4: Work Setup ──────────────────────────────────────────────────
+  const setupItems = A.flatMap((t) => _sp(t.work_setup));
+  const setupMap = _count(setupItems);
+  if (setupItems.length) {
+    rows.push(["=== 4. PREFERRED WORK SETUP ==="]);
+    rows.push(["Setup", "Count", "% of Applicants"]);
+    Object.entries(setupMap)
+      .sort((a, b) => b[1] - a[1])
+      .forEach(([k, v]) => rows.push([k, v, _rate(v, A.length)]));
+    rows.push([]);
+  }
+
+  // ── Section 5: Work Schedule ───────────────────────────────────────────────
+  const schedItems = A.flatMap((t) => _sp(t.work_schedule));
+  const schedMap = _count(schedItems);
+  if (schedItems.length) {
+    rows.push(["=== 5. PREFERRED WORK SCHEDULE ==="]);
+    rows.push(["Schedule", "Count", "% of Applicants"]);
+    Object.entries(schedMap)
+      .sort((a, b) => b[1] - a[1])
+      .forEach(([k, v]) => rows.push([k, v, _rate(v, A.length)]));
+    rows.push([]);
+  }
+
+  // ── Section 6: Education Level ─────────────────────────────────────────────
+  const eduMap = _count(A.map((t) => t.education_level).filter(Boolean));
+  if (Object.keys(eduMap).length) {
+    rows.push(["=== 6. EDUCATION LEVEL ==="]);
+    rows.push(["Level", "Count", "% of Applicants"]);
+    Object.entries(eduMap)
+      .sort((a, b) => b[1] - a[1])
+      .forEach(([k, v]) => rows.push([k, v, _rate(v, A.length)]));
+    rows.push([]);
+  }
+
+  // ── Section 7: Applicant Sources ──────────────────────────────────────────
+  const srcItems = A.flatMap((t) => _sp(t.referral_source));
+  const srcMap = _count(srcItems);
+  if (srcItems.length) {
+    rows.push(["=== 7. HOW THEY FOUND US ==="]);
+    rows.push(["Source", "Count", "% of Applicants with Source"]);
+    const srcTotal = srcItems.length;
     Object.entries(srcMap)
       .sort((a, b) => b[1] - a[1])
-      .forEach(([s, c]) => rows.push([s, c]));
+      .forEach(([k, v]) => rows.push([k, v, _rate(v, srcTotal)]));
     rows.push([]);
   }
 
-  const liveEmp = A.map((t) => t.employmentType).filter(Boolean);
-  if (liveEmp.length) {
-    rows.push(["=== EMPLOYMENT TYPE ==="]);
-    rows.push(["Type", "Count"]);
-    const empMap = {};
-    liveEmp.forEach((e) => {
-      empMap[e] = (empMap[e] || 0) + 1;
-    });
-    Object.entries(empMap).forEach(([k, v]) => rows.push([k, v]));
+  // ── Section 8: Top Skills ──────────────────────────────────────────────────
+  const skillItems = A.flatMap((t) => _sp(t.skills));
+  const skillMap = _count(skillItems);
+  if (skillItems.length) {
+    rows.push(["=== 8. TOP SKILLS MENTIONED ==="]);
+    rows.push(["Skill", "Applicants with Skill"]);
+    Object.entries(skillMap)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 20)
+      .forEach(([k, v]) => rows.push([k, v]));
     rows.push([]);
   }
 
-  const liveSetup = A.map((t) => t.workSetup).filter(Boolean);
-  if (liveSetup.length) {
-    rows.push(["=== WORK SETUP ==="]);
-    rows.push(["Setup", "Count"]);
-    const setupMap = {};
-    liveSetup.forEach((s) => {
-      setupMap[s] = (setupMap[s] || 0) + 1;
-    });
-    Object.entries(setupMap).forEach(([k, v]) => rows.push([k, v]));
+  // ── Section 9: Top Tools ───────────────────────────────────────────────────
+  const toolItems = A.flatMap((t) => _sp(t.tools));
+  const toolMap = _count(toolItems);
+  if (toolItems.length) {
+    rows.push(["=== 9. TOP TOOLS & SOFTWARE ==="]);
+    rows.push(["Tool", "Applicants with Tool"]);
+    Object.entries(toolMap)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 20)
+      .forEach(([k, v]) => rows.push([k, v]));
+    rows.push([]);
   }
 
-  const date = new Date().toISOString().slice(0, 10);
+  // ── Section 10: Interview Schedule ────────────────────────────────────────
+  const withSlots = A.filter(
+    (t) => t.interview_slots && t.interview_slots.trim(),
+  );
+  if (withSlots.length) {
+    rows.push(["=== 10. INTERVIEW SLOTS ==="]);
+    rows.push(["Applicant", "Position", "Status", "Interview Slot(s)"]);
+    withSlots.forEach((t) => {
+      const slots = _sp(t.interview_slots);
+      slots.forEach((slot, idx) => {
+        rows.push([
+          idx === 0 ? t.applicant_name || t.name || "" : "",
+          idx === 0 ? t.position || "" : "",
+          idx === 0 ? t.partner_status || t.status || "" : "",
+          slot,
+        ]);
+      });
+    });
+    rows.push([]);
+  }
+
+  // ── Section 11: Hired Applicants ──────────────────────────────────────────
+  const hiredList = A.filter((t) => t.status === "Hired");
+  if (hiredList.length) {
+    rows.push(["=== 11. HIRED APPLICANTS ==="]);
+    rows.push([
+      "Name",
+      "Email",
+      "Phone",
+      "Position",
+      "Employment Type",
+      "Work Setup",
+      "Date Applied",
+    ]);
+    hiredList.forEach((t) => {
+      rows.push([
+        t.applicant_name || t.name || "",
+        t.applicant_email || "",
+        t.applicant_phone || "",
+        (t.position || "").replace(/[•\n]/g, " ").trim(),
+        _sp(t.employment_type).join(", "),
+        _sp(t.work_setup).join(", "),
+        t.timestamp || "",
+      ]);
+    });
+    rows.push([]);
+  }
+
+  // ── Section 12: Full Applicant Roster ─────────────────────────────────────
+  rows.push(["=== 12. FULL APPLICANT ROSTER ==="]);
+  rows.push([
+    "Name",
+    "Email",
+    "Phone",
+    "Address",
+    "Position",
+    "Stage",
+    "Partner Status",
+    "Employment Type",
+    "Work Setup",
+    "Work Schedule",
+    "Education Level",
+    "School",
+    "Course",
+    "Skills",
+    "Tools",
+    "Referral Source",
+    "Resume Link",
+    "Portfolio Link",
+    "Interview Slots",
+    "Notes",
+    "Date Applied",
+  ]);
+  A.forEach((t) => {
+    rows.push([
+      t.applicant_name || t.name || "",
+      t.applicant_email || "",
+      t.applicant_phone || "",
+      t.address || "",
+      (t.position || "").replace(/[•\n]/g, " | ").trim(),
+      t.status || "",
+      t.partner_status || "",
+      _sp(t.employment_type).join(", "),
+      _sp(t.work_setup).join(", "),
+      _sp(t.work_schedule).join(", "),
+      t.education_level || "",
+      t.school || "",
+      t.course || "",
+      _sp(t.skills).join(", "),
+      _sp(t.tools).join(", "),
+      _sp(t.referral_source).join(", "),
+      t.resume_link || "",
+      t.portfolio_link || "",
+      (t.interview_slots || "").replace(/\n/g, " | "),
+      (t.notes || "").replace(/\n/g, " "),
+      t.timestamp || "",
+    ]);
+  });
+
   buildCSVDownload(rows, `upstaff-analytics-${date}.csv`);
   showToast("📊 Analytics CSV exported!");
 }
@@ -6920,7 +8183,7 @@ async function _renderApiCountsBanner() {
           .join("")}
       </div>`;
   } catch (e) {
-    banner.innerHTML = `<div style="font-size:12px;color:var(--muted)">🔗 Could not load live counts: ${e.message}</div>`;
+    banner.innerHTML = `<div style="font-size:12px;color:var(--muted)">🔗 Could not load live counts: ${sanitize(e.message)}</div>`;
   }
 }
 
@@ -7608,14 +8871,11 @@ async function subscribeCustomExtCalendar() {
 }
 
 function copyExtCalId(calendarId, btnEl) {
-  navigator.clipboard?.writeText(calendarId).catch(() => {
-    const ta = document.createElement("textarea");
-    ta.value = calendarId;
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand("copy");
-    ta.remove();
-  });
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(calendarId).catch(() => {
+      showCalToast("⚠️ Could not copy to clipboard.");
+    });
+  }
   if (btnEl) {
     const orig = btnEl.textContent;
     btnEl.textContent = "✅ Copied!";

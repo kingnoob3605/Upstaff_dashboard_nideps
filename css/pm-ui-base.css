@@ -19,9 +19,9 @@
   --pink: #ff6584;
   --navy: #0f172a;
   --slate: #1e293b;
-  --bg: #f0f2f7;
-  --card: #ffffff;
-  --border: #dde1ea;
+  --bg: #e4e8f3;
+  --card: #f0f4fb;
+  --border: #c9cfd9;
   --text: #0f172a;
   --muted: #475569;
   --light: #64748b;
@@ -31,26 +31,26 @@
   --s-done: #43e97b;
   --s-cancelled: #9ca3af;
   /* surface layers */
-  --surface-1: #ffffff; /* cards, modals */
-  --surface-2: #f0f2f7; /* content bg */
-  --surface-3: #f6f7fa; /* table headers, subtle bg */
-  --surface-4: #ebedf2; /* tags, count pills */
-  --row-hover: #f4f6fb;
-  --row-alt: #f7f8fb;
-  --topbar-bg: #ffffff;
-  --input-bg: #f9fafb;
-  --input-border: #d1d5db;
-  --shadow-sm: 0 1px 8px rgba(0, 0, 0, 0.06);
-  --shadow-md: 0 2px 12px rgba(0, 0, 0, 0.08);
+  --surface-1: #f0f4fb; /* cards, modals */
+  --surface-2: #e4e8f3; /* content bg */
+  --surface-3: #e8ecf5; /* table headers, subtle bg */
+  --surface-4: #dde2ed; /* tags, count pills */
+  --row-hover: #e8ecf6;
+  --row-alt: #ecf0f8;
+  --topbar-bg: #edf1f9;
+  --input-bg: #edf1f8;
+  --input-border: #c5ccd8;
+  --shadow-sm: 0 1px 8px rgba(0, 0, 0, 0.09);
+  --shadow-md: 0 2px 12px rgba(0, 0, 0, 0.12);
   --shadow-lg: 0 24px 60px rgba(0, 0, 0, 0.18);
   --search-overlay: rgba(15, 23, 42, 0.6);
   /* calendar cell colours */
-  --cal-cell-border: #e8eaef;
-  --cal-other-month: #f7f8fb;
+  --cal-cell-border: #d5dae8;
+  --cal-other-month: #eef1f8;
   --cal-today-bg: #e6fbfd;
   --cal-hour-hover: #f0fbfc;
-  --agenda-item-bg: #f9fafb;
-  --board-col-bg: #e2e6f0;
+  --agenda-item-bg: #edf1f8;
+  --board-col-bg: #d5dae8;
 }
 
 /* ── DARK MODE ── */
@@ -209,7 +209,7 @@ body {
 }
 
 .sidebar-section-label {
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
   color: rgba(255, 255, 255, 0.25);
   text-transform: uppercase;
@@ -261,7 +261,7 @@ nav {
   color: var(--cyan) !important;
 }
 .nav-label {
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
   font-family: "Montserrat", sans-serif;
   color: rgba(255, 255, 255, 0.45);
@@ -925,42 +925,111 @@ nav {
   color: #9ca3af;
   font-style: italic;
 }
-/* ── Stage progress bar (in task modal) ── */
-.stage-progress-wrap {
-  margin: 14px 0 4px;
+/* ── Stage stepper (in task modal) ── */
+.stage-stepper-wrap {
+  margin: 4px 0 2px;
 }
-.stage-progress-label {
-  font-size: 10px;
-  font-weight: 700;
-  font-family: "Montserrat", sans-serif;
-  color: var(--light);
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
-  margin-bottom: 6px;
+.stage-stepper-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  margin-bottom: 10px;
 }
-.stage-steps {
-  display: flex;
-  gap: 4px;
+.ss-label-pipeline {
+  font-size: 10px;
+  font-weight: 700;
+  font-family: "Montserrat", sans-serif;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
 }
-.stage-step {
-  flex: 1;
-  height: 5px;
+.ss-status-badge {
+  font-size: 10px;
+  font-weight: 700;
+  font-family: "Montserrat", sans-serif;
+  padding: 2px 9px;
   border-radius: 99px;
+  background: var(--surface-3);
+  color: var(--muted);
+}
+.ss-status-badge.ss-badge-active {
+  background: rgba(68,215,233,0.12);
+  color: var(--cyan);
+}
+.ss-status-badge.ss-badge-closed {
+  background: rgba(156,163,175,0.15);
+  color: #9ca3af;
+}
+.stage-stepper {
+  display: flex;
+  align-items: flex-start;
+}
+.ss-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  flex: 0 0 auto;
+}
+.ss-connector {
+  flex: 1;
+  height: 2px;
   background: var(--border);
+  margin-top: 11px;
+  min-width: 8px;
   transition: background 0.3s;
 }
-.stage-step.s-active {
-  background: var(--cyan);
+.ss-connector-done  { background: var(--green); }
+.ss-connector-active { background: var(--cyan); }
+.ss-connector-cancelled { background: #9ca3af; }
+.ss-node {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: var(--surface-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  transition: all 0.25s;
 }
-.stage-step.s-done {
+.ss-item.ss-done .ss-node {
   background: var(--green);
+  border-color: var(--green);
+  color: #fff;
 }
-.stage-step.s-cancelled {
-  background: #9ca3af;
+.ss-item.ss-active .ss-node {
+  background: var(--cyan);
+  border-color: var(--cyan);
+  color: #fff;
+  box-shadow: 0 0 0 4px rgba(68,215,233,0.15);
 }
+.ss-item.ss-cancelled .ss-node {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+  color: #9ca3af;
+}
+.ss-label {
+  font-size: 8.5px;
+  font-weight: 600;
+  font-family: "Montserrat", sans-serif;
+  color: var(--muted);
+  text-align: center;
+  white-space: nowrap;
+  max-width: 56px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ss-item.ss-done .ss-label  { color: var(--green); }
+.ss-item.ss-active .ss-label { color: var(--cyan); font-weight: 700; }
+/* Legacy — kept for any other usage */
+.stage-progress-wrap { margin: 14px 0 4px; }
+.stage-steps { display: flex; gap: 4px; }
+.stage-step { flex:1;height:5px;border-radius:99px;background:var(--border); }
+.stage-step.s-active { background: var(--cyan); }
+.stage-step.s-done   { background: var(--green); }
+.stage-step.s-cancelled { background: #9ca3af; }
 /* ── GCal task sync badge ── */
 .task-gcal-badge {
   display: inline-flex;
@@ -1040,54 +1109,78 @@ nav {
 }
 
 /* ── Pipeline stage pills (used in List & Board views) ─── */
-.status-pill.sp-applied {
+.status-pill.sp-new {
   background: #ede9ff;
   color: #5a52d5 !important;
 }
-.status-pill.sp-screening {
+.status-pill.sp-inprogress {
   background: #cffafe;
   color: #0e7490 !important;
 }
-.status-pill.sp-assessment {
+.status-pill.sp-endorsed {
   background: #fef3c7;
   color: #92400e !important;
-}
-.status-pill.sp-interview {
-  background: #fff3e8;
-  color: #c2410c !important;
 }
 .status-pill.sp-hired {
   background: #d1fae5;
   color: #065f46 !important;
 }
-.status-pill.sp-rejected {
+.status-pill.sp-closed {
   background: #fee2e2;
   color: #b91c1c !important;
 }
-[data-theme="dark"] .status-pill.sp-applied {
+/* Legacy aliases */
+.status-pill.sp-applied { background: #ede9ff; color: #5a52d5 !important; }
+.status-pill.sp-screening { background: #cffafe; color: #0e7490 !important; }
+.status-pill.sp-interview { background: #fff3e8; color: #c2410c !important; }
+.status-pill.sp-rejected { background: #fee2e2; color: #b91c1c !important; }
+[data-theme="dark"] .status-pill.sp-new {
   background: rgba(108, 99, 255, 0.2);
   color: #a5b4fc !important;
 }
-[data-theme="dark"] .status-pill.sp-screening {
+[data-theme="dark"] .status-pill.sp-inprogress {
   background: rgba(68, 215, 233, 0.18);
   color: #44d7e9 !important;
 }
-[data-theme="dark"] .status-pill.sp-assessment {
+[data-theme="dark"] .status-pill.sp-endorsed {
   background: rgba(245, 158, 11, 0.18);
   color: #fbbf24 !important;
-}
-[data-theme="dark"] .status-pill.sp-interview {
-  background: rgba(250, 130, 49, 0.18);
-  color: #fb923c !important;
 }
 [data-theme="dark"] .status-pill.sp-hired {
   background: rgba(67, 233, 123, 0.18);
   color: #43e97b !important;
 }
-[data-theme="dark"] .status-pill.sp-rejected {
+[data-theme="dark"] .status-pill.sp-closed {
   background: rgba(239, 68, 68, 0.18);
   color: #f87171 !important;
 }
+/* Legacy dark aliases */
+[data-theme="dark"] .status-pill.sp-applied { background: rgba(108,99,255,0.2); color: #a5b4fc !important; }
+[data-theme="dark"] .status-pill.sp-screening { background: rgba(68,215,233,0.18); color: #44d7e9 !important; }
+[data-theme="dark"] .status-pill.sp-interview { background: rgba(250,130,49,0.18); color: #fb923c !important; }
+[data-theme="dark"] .status-pill.sp-rejected { background: rgba(239,68,68,0.18); color: #f87171 !important; }
+/* Partner / Google Sheet statuses — light mode */
+.status-pill.sp-forinterview         { background: #e0f2fe; color: #0369a1 !important; }
+.status-pill.sp-interviewed          { background: #d1fae5; color: #059669 !important; }
+.status-pill.sp-forclientendorsement { background: #ede9fe; color: #7c3aed !important; }
+.status-pill.sp-hiredresigned        { background: #ffedd5; color: #ea580c !important; }
+.status-pill.sp-openotherroles       { background: #dbeafe; color: #2563eb !important; }
+.status-pill.sp-couldberevisited     { background: #e0f2fe; color: #0284c7 !important; }
+.status-pill.sp-forfuture            { background: #f1f5f9; color: #475569 !important; }
+.status-pill.sp-noshow               { background: #fef9c3; color: #a16207 !important; }
+.status-pill.sp-notqualified         { background: #f1f5f9; color: #64748b !important; }
+.status-pill.sp-duplicatelead        { background: #fae8ff; color: #a21caf !important; }
+/* Partner statuses — dark mode */
+[data-theme="dark"] .status-pill.sp-forinterview         { background: rgba(3,105,161,0.18);   color: #38bdf8 !important; }
+[data-theme="dark"] .status-pill.sp-interviewed          { background: rgba(5,150,105,0.18);   color: #34d399 !important; }
+[data-theme="dark"] .status-pill.sp-forclientendorsement { background: rgba(124,58,237,0.18);  color: #c084fc !important; }
+[data-theme="dark"] .status-pill.sp-hiredresigned        { background: rgba(234,88,12,0.18);   color: #fb923c !important; }
+[data-theme="dark"] .status-pill.sp-openotherroles       { background: rgba(37,99,235,0.18);   color: #60a5fa !important; }
+[data-theme="dark"] .status-pill.sp-couldberevisited     { background: rgba(2,132,199,0.18);   color: #38bdf8 !important; }
+[data-theme="dark"] .status-pill.sp-forfuture            { background: rgba(71,85,105,0.22);   color: #94a3b8 !important; }
+[data-theme="dark"] .status-pill.sp-noshow               { background: rgba(161,98,7,0.18);    color: #fbbf24 !important; }
+[data-theme="dark"] .status-pill.sp-notqualified         { background: rgba(100,116,139,0.18); color: #94a3b8 !important; }
+[data-theme="dark"] .status-pill.sp-duplicatelead        { background: rgba(162,28,175,0.18);  color: #e879f9 !important; }
 .priority-pill {
   display: inline-flex;
   align-items: center;
@@ -1278,7 +1371,7 @@ nav {
 }
 .list-action-menu {
   position: fixed; /* fixed so it escapes ALL parent stacking contexts */
-  background: var(--surface-1);
+  background: #ffffff;
   border: 1.5px solid var(--border);
   border-radius: 12px;
   padding: 4px;
@@ -1295,9 +1388,10 @@ nav {
     transform 0.15s;
 }
 [data-theme="dark"] .list-action-menu {
+  background: #1e2d42;
   box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.45),
-    0 2px 8px rgba(0, 0, 0, 0.3);
+    0 8px 32px rgba(0, 0, 0, 0.55),
+    0 2px 8px rgba(0, 0, 0, 0.35);
 }
 .list-action-menu.open {
   opacity: 1;
