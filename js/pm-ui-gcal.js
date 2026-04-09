@@ -12,7 +12,7 @@ const GCAL_CONFIG = {
   //   → Create Credentials → API Key
   //   → Restrict it to "Google Calendar API" only
   //
-  API_KEY: "AIzaSyCtvFs7-4tc6jUnXmrPc0zdmBrTdrAu-cI",
+  API_KEY: "dsa",
 
   // STEP 3 — Get your OAuth 2.0 Client ID
   //   Google Cloud Console → Credentials
@@ -21,7 +21,7 @@ const GCAL_CONFIG = {
   //   → Authorized JavaScript origins: add your deployed URL
   //     (e.g. https://yourdomain.com  OR  http://localhost:8080 for local)
   //
-  CLIENT_ID: "320953058285-4se6egb1i6v6ssfqvau8m8nonr05ll7o.apps.googleusercontent.com",
+  CLIENT_ID: "dsa",
   // ══════════════════════════════════════════════════════════════════
 
   // Calendar IDs are discovered dynamically via gcalFetchCalendarList()
