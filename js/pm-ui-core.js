@@ -1282,9 +1282,21 @@ function _updateNotifBadge() {
 ══════════════════════════════════════════════ */
 function showToast(msg, duration) {
   const t = document.getElementById("toast");
+  if (!t) return;
   t.textContent = msg;
-  t.classList.add("show");
-  setTimeout(() => t.classList.remove("show"), duration || 2800);
+  if (window.gsap) {
+    t.style.display = "block";
+    gsap.fromTo(t, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.3, ease: "back.out(1.4)" });
+    setTimeout(() => {
+      gsap.to(t, { opacity: 0, y: 10, duration: 0.2, onComplete: () => {
+        t.style.display = "none";
+        gsap.set(t, { clearProps: "all" });
+      }});
+    }, duration || 2800);
+  } else {
+    t.classList.add("show");
+    setTimeout(() => t.classList.remove("show"), duration || 2800);
+  }
 }
 /* ── Custom Dialog Helpers (replaces native alert/confirm) ── */
 function _showDialog({
@@ -1298,11 +1310,16 @@ function _showDialog({
 }) {
   return new Promise((resolve) => {
     const overlay = document.getElementById("upstaff-dialog");
-    document.getElementById("upstaff-dialog-icon").textContent = icon;
-    document.getElementById("upstaff-dialog-title").textContent = title;
-    document.getElementById("upstaff-dialog-msg").textContent = msg;
+    if (!overlay) { resolve(false); return; }
+    const iconEl = document.getElementById("upstaff-dialog-icon");
+    const titleEl = document.getElementById("upstaff-dialog-title");
+    const msgEl = document.getElementById("upstaff-dialog-msg");
     const okBtn = document.getElementById("upstaff-dialog-ok");
     const cancelBtn = document.getElementById("upstaff-dialog-cancel");
+    if (!okBtn || !cancelBtn) { resolve(false); return; }
+    if (iconEl) iconEl.textContent = icon;
+    if (titleEl) titleEl.textContent = title;
+    if (msgEl) msgEl.textContent = msg;
     okBtn.textContent = okText;
     okBtn.style.background = okDanger ? "#ef4444" : "var(--cyan)";
     cancelBtn.style.display = showCancel ? "" : "none";
@@ -1499,12 +1516,26 @@ function todayStr() {
    SIDEBAR COLLAPSE
 ══════════════════════════════════════════════ */
 document.getElementById("toggle-btn")?.addEventListener("click", () => {
-  const sb = document.getElementById("sidebar");
-  sb.classList.toggle("collapsed");
+  const sb   = document.getElementById("sidebar");
   const icon = document.getElementById("toggle-icon");
-  icon.style.transform = sb.classList.contains("collapsed")
-    ? "rotate(180deg)"
-    : "";
+  const isCollapsing = !sb.classList.contains("collapsed");
+  sb.classList.toggle("collapsed");
+  if (window.gsap) {
+    if (isCollapsing) {
+      gsap.to(sb,   { width: 64,  duration: 0.3, ease: "power2.inOut", onComplete: () => gsap.set(sb, { clearProps: "width" }) });
+      gsap.to(icon, { rotation: 180, duration: 0.3, ease: "power2.inOut" });
+    } else {
+      gsap.to(sb,   { width: 220, duration: 0.3, ease: "power2.inOut", onComplete: () => gsap.set(sb, { clearProps: "width" }) });
+      gsap.to(icon, { rotation: 0,   duration: 0.3, ease: "power2.inOut" });
+    }
+    // Enable / disable Tippy tooltips based on collapsed state
+    document.querySelectorAll(".nav-item").forEach(el => {
+      if (isCollapsing) el._tippy?.enable();
+      else el._tippy?.disable();
+    });
+  } else {
+    icon.style.transform = sb.classList.contains("collapsed") ? "rotate(180deg)" : "";
+  }
 });
 
 /* ══════════════════════════════════════════════
@@ -1757,6 +1788,12 @@ document.addEventListener("click", function (e) {
     case "applyPendingAssessment":
       applyPendingAssessment();
       break;
+    case "copyAssessmentLink":
+      copyAssessmentLink();
+      break;
+    case "saveGCalApiCredentials":
+      saveGCalApiConfig();
+      break;
 
     // Interview tab
     case "setIvPlatform":
@@ -1902,7 +1939,14 @@ function toggleNotifPanel() {
   if (!panel) return;
   const isOpen = panel.classList.contains("open");
   if (isOpen) {
-    panel.classList.remove("open");
+    if (window.gsap) {
+      gsap.to(panel, { opacity: 0, y: -8, duration: 0.15, ease: "power2.in", onComplete: () => {
+        panel.classList.remove("open");
+        gsap.set(panel, { clearProps: "opacity,y" });
+      }});
+    } else {
+      panel.classList.remove("open");
+    }
   } else {
     panel.classList.add("open");
     if (typeof renderNotifPanel === "function") renderNotifPanel();
@@ -1910,6 +1954,9 @@ function toggleNotifPanel() {
     NOTIFS.forEach((n) => (n.read = true));
     saveNotifs();
     _updateNotifBadge();
+    if (window.gsap) {
+      gsap.fromTo(panel, { opacity: 0, y: -8 }, { opacity: 1, y: 0, duration: 0.2, ease: "power2.out" });
+    }
   }
 }
 

@@ -45,13 +45,13 @@ function switchView(v) {
     if (tb) tb.style.display = "none";
   }
   // Show view bar, hide settings, analytics, candidates, todos
-  document.getElementById("view-bar").style.display = "";
-  document.getElementById("view-settings").style.display = "none";
-  document.getElementById("view-analytics").style.display = "none";
-  document.getElementById("view-candidates").style.display = "none";
-  document.getElementById("view-onboarding").style.display = "none";
-
-  document.getElementById("topbar-filter-btn").style.display = "";
+  const _s = (id, val) => { const e = document.getElementById(id); if (e) e.style.display = val; };
+  _s("view-bar", "");
+  _s("view-settings", "none");
+  _s("view-analytics", "none");
+  _s("view-candidates", "none");
+  _s("view-onboarding", "none");
+  _s("topbar-filter-btn", "");
 
   // Update tab active state
   document
@@ -73,12 +73,12 @@ function switchView(v) {
     table: "Data Table",
     mytasks: "My Tasks",
   };
-  document.getElementById("crumb-current").textContent = labels[v] || v;
-  document.getElementById("crumb-parent").textContent = "Recruitment";
-
-  // Show/hide Add Task button
-  document.getElementById("btn-add-task").style.display =
-    v === "calendar" || v === "mytasks" ? "none" : "";
+  const crumbCurrent = document.getElementById("crumb-current");
+  const crumbParent  = document.getElementById("crumb-parent");
+  const btnAddTask   = document.getElementById("btn-add-task");
+  if (crumbCurrent) crumbCurrent.textContent = labels[v] || v;
+  if (crumbParent)  crumbParent.textContent  = "Recruitment";
+  if (btnAddTask)   btnAddTask.style.display  = v === "calendar" || v === "mytasks" ? "none" : "";
 
   // Render content
   if (v === "list") renderList();
@@ -122,6 +122,7 @@ function showSettings() {
   refreshStorageStatus();
   renderSettingsCalendarList();
   renderPublicCalendars();
+  populateGCalApiSettings();
   populateEmailJSSettings();
   populateApiSettings();
   if (window._settingsLoad) window._settingsLoad();
@@ -1251,11 +1252,11 @@ function openTodoModal(id) {
   document.getElementById("btn-todo-delete").style.display = t
     ? "inline-flex"
     : "none";
-  document.getElementById("todo-modal-overlay").classList.add("open");
+  _gsapModalOpen("todo-modal-overlay", "todo-modal");
   setTimeout(() => document.getElementById("td-title")?.focus(), 80);
 }
 function closeTodoModal() {
-  document.getElementById("todo-modal-overlay").classList.remove("open");
+  _gsapModalClose("todo-modal-overlay", "todo-modal");
 }
 document
   .getElementById("todo-modal-overlay")
@@ -1621,10 +1622,7 @@ function renderBoard() {
     const color = sm.color;
     const isTerminal = TERMINAL_STAGES.includes(st);
     html += `<div class="board-col"
-      data-status="${st}"
-      ondragover="event.preventDefault();this.querySelector('.board-col-body').classList.add('board-drop-active');"
-      ondragleave="this.querySelector('.board-col-body').classList.remove('board-drop-active');"
-      ondrop="boardDrop(event,'${st}')">
+      data-status="${st}">
       <div class="board-col-header" style="border-top:3px solid ${color};">
         <div class="board-col-dot" style="background:${color};"></div>
         <span class="board-col-title">${st}</span>
@@ -1651,10 +1649,7 @@ function renderBoard() {
           </div>`
               : "";
             return `<div class="board-card"
-            draggable="true"
             data-task-id="${t.id}"
-            ondragstart="boardDragStart(event,${t.id})"
-            ondragend="boardDragEnd(event)"
             onclick="openTaskEdit(${t.id})">
             <label class="bulk-cb-wrap" onclick="event.stopPropagation();"><input type="checkbox" class="bulk-cb" ${typeof selectedTaskIds !== "undefined" && selectedTaskIds.has(t.id) ? "checked" : ""} onchange="toggleBulkSelect(${t.id},this)"></label>
             <div class="board-card-name">${sanitize(t.applicant_name || t.name)}</div>
@@ -1773,6 +1768,30 @@ function renderBoard() {
       "</div>";
     requestAnimationFrame(() => {
       _boardEl.innerHTML = html;
+      // Init SortableJS on every column body
+      _sortables.forEach(s => { try { s.destroy(); } catch (_) {} });
+      _sortables = [];
+      if (window.Sortable) {
+        document.querySelectorAll(".board-col-body").forEach(colBody => {
+          const s = Sortable.create(colBody, {
+            group: "kanban",
+            animation: 150,
+            ghostClass: "board-card-ghost",
+            dragClass: "board-card-dragging",
+            filter: ".bulk-cb-wrap, .board-add-btn",
+            onEnd(evt) {
+              const taskId = +evt.item.dataset.taskId;
+              if (!taskId) return;
+              const newStatus = evt.to.closest(".board-col")?.dataset.status;
+              const oldStatus = evt.from.closest(".board-col")?.dataset.status;
+              if (newStatus && oldStatus && newStatus !== oldStatus) {
+                moveApplicantToStage(taskId, newStatus);
+              }
+            },
+          });
+          _sortables.push(s);
+        });
+      }
     });
   }
 }
@@ -1817,6 +1836,27 @@ function boardDrop(event, newStatus) {
 /* ══════════════════════════════════════════════
    MODAL HELPER UTILITIES
 ══════════════════════════════════════════════ */
+
+/** Update the u-surface-note preview under the Notes textarea */
+function _notesPreviewUpdate(text) {
+  const preview = document.getElementById("f-notes-preview");
+  if (!preview) return;
+  const trimmed = (text || "").trim();
+  if (trimmed) {
+    preview.textContent = "\u201c" + trimmed + "\u201d";
+    preview.style.display = "";
+  } else {
+    preview.style.display = "none";
+  }
+}
+
+// Wire up live typing preview once DOM is ready
+document.addEventListener("DOMContentLoaded", function () {
+  const notesEl = document.getElementById("f-notes");
+  if (notesEl) notesEl.addEventListener("input", function () {
+    _notesPreviewUpdate(this.value);
+  });
+});
 
 /** Safe field setter — silently skips if element doesn't exist */
 function _setField(id, value) {
@@ -2000,40 +2040,69 @@ function _updatePipelineActions(taskId, status) {
 function _refreshScoreSummary() {
   const card = document.getElementById("score-summary");
   if (!card) return;
-  const typing = document.getElementById("f-typing-score")?.value;
-  const knowledge = document.getElementById("f-knowledge-score")?.value;
-  const verbal = document.getElementById("f-verbal-link")?.value;
-  const notes = document.getElementById("f-interview-notes")?.value;
-  const hasAny = typing || knowledge || verbal || notes;
-  if (!hasAny) {
-    card.style.display = "none";
-    return;
-  }
+
+  const typing    = document.getElementById("f-typing-score")?.value?.trim();
+  const wordTyping= document.getElementById("f-word-typing")?.value?.trim();
+  const knowledge = document.getElementById("f-knowledge-score")?.value?.trim();
+  const verbal    = document.getElementById("f-verbal-link")?.value?.trim();
+  const conflict  = document.getElementById("f-conflict-score")?.value?.trim();
+  const grammar   = document.getElementById("f-grammar-score")?.value?.trim();
+  const dataEntry = document.getElementById("f-data-entry-score")?.value?.trim();
+  const formatting= document.getElementById("f-formatting-score")?.value?.trim();
+  const sorting   = document.getElementById("f-sorting-score")?.value?.trim();
+  const notes     = document.getElementById("f-interview-notes")?.value?.trim();
+
+  const hasTyping  = typing || wordTyping || knowledge;
+  const hasVerbal  = verbal || conflict || grammar;
+  const hasExcel   = dataEntry || formatting || sorting;
+  const hasAny     = hasTyping || hasVerbal || hasExcel || notes;
+
+  if (!hasAny) { card.style.display = "none"; return; }
   card.style.display = "block";
+
+  function _scoreRow(label, val, outOf, threshold) {
+    if (!val) return "";
+    const num = parseFloat(val);
+    const hasPass = threshold !== undefined && !isNaN(num);
+    const passed  = hasPass && num >= threshold;
+    const pill    = hasPass
+      ? `<span style="font-size:10px;font-weight:800;font-family:'Montserrat',sans-serif;padding:2px 8px;border-radius:99px;background:${passed ? "rgba(67,233,123,.12)" : "rgba(239,68,68,.1)"};color:${passed ? "var(--green)" : "#ef4444"};">${passed ? "✓ PASS" : "✗ FAIL"}</span>`
+      : "";
+    const display = outOf ? `${val}/${outOf}` : val;
+    return `<div class="score-item"><span class="score-label">${label}</span><span class="score-val" style="display:flex;align-items:center;gap:6px;">${display}${pill}</span></div>`;
+  }
+
+  function _categoryBlock(icon, title, rows) {
+    const content = rows.join("");
+    if (!content) return "";
+    return `
+      <div class="score-category">
+        <div class="score-category-title">${icon} ${title}</div>
+        <div class="score-summary-grid">${content}</div>
+      </div>`;
+  }
+
   card.innerHTML = `
     <div class="score-summary-title">📊 Score Summary</div>
-    <div class="score-summary-grid">
-      ${typing ? `<div class="score-item"><span class="score-label">⌨️ Typing</span><span class="score-val">${typing}%</span></div>` : ""}
-      ${(() => {
-        if (!knowledge) return "";
-        const kNum = parseInt(knowledge) || 0;
-        const passed = kNum >= 75;
-        const resultColor = passed ? "var(--green)" : "#ef4444";
-        const resultBg = passed ? "rgba(67,233,123,.12)" : "rgba(239,68,68,.1)";
-        return `<div class="score-item score-item-full u-flex-col u-gap-4">
-          <span class="score-label">📝 Knowledge Test</span>
-          <div class="u-flex-center u-gap-8" style="width:100%;">
-            <span class="score-val">${knowledge}/100</span>
-            <span style="font-size:11px;font-weight:800;font-family:'Montserrat',sans-serif;padding:2px 10px;border-radius:99px;background:${resultBg};color:${resultColor};">${passed ? "✓ PASSED" : "✗ FAILED"}</span>
-            <span class="u-text-xs u-text-muted" style="font-family:'DM Sans',sans-serif;margin-left:auto;">Threshold: 75/100</span>
-          </div>
-        </div>`;
-      })()}
-      ${verbal ? `<div class="score-item"><span class="score-label">🎙️ Verbal</span><a href="${verbal}" target="_blank" class="score-val" style="color:var(--cyan);">View</a></div>` : ""}
-      ${notes ? `<div class="score-item score-item-full"><span class="score-label">💬 Notes</span><span class="score-val" style="font-weight:400;color:var(--muted);">${notes.slice(0, 80)}${notes.length > 80 ? "…" : ""}</span></div>` : ""}
-    </div>`;
-  // Visual feedback on filled score inputs
-  ["f-typing-score", "f-knowledge-score"].forEach((id) => {
+    ${_categoryBlock("⌨️", "Typing Test", [
+      _scoreRow("Typing Assessment", typing, null, 40),
+      _scoreRow("Word Typing", wordTyping, null, 40),
+      _scoreRow("Knowledge Test", knowledge, 100, 75),
+    ])}
+    ${_categoryBlock("🎙️", "Verbal Test", [
+      verbal ? `<div class="score-item"><span class="score-label">Verbal Comm</span><a href="${verbal}" target="_blank" class="score-val" style="color:var(--cyan);">View Recording</a></div>` : "",
+      _scoreRow("Conflict Reso", conflict, 20, 15),
+      _scoreRow("Grammar Test", grammar, 20, 15),
+    ])}
+    ${_categoryBlock("📊", "Excel Test", [
+      _scoreRow("Data Entry", dataEntry),
+      _scoreRow("Formatting", formatting),
+      _scoreRow("Sorting", sorting),
+    ])}
+    ${notes ? `<div class="score-category"><div class="score-category-title">💬 Interview Notes</div><div class="score-summary-grid"><div class="score-item score-item-full"><span class="score-val" style="font-weight:400;color:var(--muted);font-size:12px;">${notes.slice(0, 120)}${notes.length > 120 ? "…" : ""}</span></div></div></div>` : ""}
+  `;
+
+  ["f-typing-score","f-word-typing","f-knowledge-score","f-conflict-score","f-grammar-score","f-data-entry-score","f-formatting-score","f-sorting-score"].forEach((id) => {
     const el = document.getElementById(id);
     if (el) el.classList.toggle("score-filled", !!el.value.trim());
   });
@@ -2176,18 +2245,30 @@ function _savePendingAssessments(list) {
 
 /**
  * Find a pending result that matches the given task.
- * Matches by email first, then by name (case-insensitive).
+ * Matches by email first, then by name (normalized).
  */
+function _normName(s) {
+  return (s || "").toLowerCase().replace(/\s+/g, " ").trim();
+}
+function _namesMatch(a, b) {
+  const na = _normName(a);
+  const nb = _normName(b);
+  if (!na || !nb) return false;
+  if (na === nb) return true;
+  const pa = na.split(" ");
+  const pb = nb.split(" ");
+  return pa[0] === pb[0] && pa[pa.length - 1] === pb[pb.length - 1];
+}
 function _matchPendingResult(task) {
   const pending = _loadPendingAssessments();
   if (!pending.length) return null;
   const email = (task.applicant_email || "").toLowerCase().trim();
-  const name = (task.applicant_name || task.name || "").toLowerCase().trim();
+  const name = task.applicant_name || task.name || "";
   return (
     pending.find((r) => {
       if (email && r.email && r.email.toLowerCase().trim() === email)
         return true;
-      if (name && r.name && r.name.toLowerCase().trim() === name) return true;
+      if (name && r.name && _namesMatch(name, r.name)) return true;
       return false;
     }) || null
   );
@@ -2281,6 +2362,38 @@ function fetchAssessmentFromPortal() {
  * "Apply Scores" button handler.
  * Fills the modal form fields with the matched result and marks it imported.
  */
+// ── Assessment tab switcher ──────────────────────────────────────────────────
+function initAssessTabs() {
+  const bar = document.getElementById("assess-tab-bar");
+  if (!bar) return;
+  bar.querySelectorAll(".assess-tab").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      // Deactivate all tabs and hide all panels
+      bar.querySelectorAll(".assess-tab").forEach((t) => t.classList.remove("active"));
+      document.querySelectorAll(".assess-panel").forEach((p) => (p.style.display = "none"));
+      // Activate clicked tab and show its panel
+      btn.classList.add("active");
+      const panel = document.getElementById(btn.dataset.target);
+      if (panel) panel.style.display = "";
+    });
+  });
+}
+// Run once on page load
+document.addEventListener("DOMContentLoaded", initAssessTabs);
+
+function _resetAssessTabs() {
+  const bar = document.getElementById("assess-tab-bar");
+  if (!bar) return;
+  bar.querySelectorAll(".assess-tab").forEach((t) => t.classList.remove("active"));
+  document.querySelectorAll(".assess-panel").forEach((p) => (p.style.display = "none"));
+  const first = bar.querySelector(".assess-tab");
+  if (first) {
+    first.classList.add("active");
+    const panel = document.getElementById(first.dataset.target);
+    if (panel) panel.style.display = "";
+  }
+}
+
 function applyPendingAssessment() {
   const task = taskEditId ? TASKS.find((x) => x.id === taskEditId) : null;
   if (!task) return;
@@ -2289,12 +2402,12 @@ function applyPendingAssessment() {
     const raw = localStorage.getItem(ASSESSMENT_PORTAL_LS_KEY);
     const list = raw ? JSON.parse(raw) : [];
     const email = (task.applicant_email || "").toLowerCase().trim();
-    const name = (task.applicant_name || task.name || "").toLowerCase().trim();
+    const name = task.applicant_name || task.name || "";
 
     const idx = list.findIndex(
       (r) =>
         (email && r.email && r.email.toLowerCase().trim() === email) ||
-        (name && r.name && r.name.toLowerCase().trim() === name),
+        (name && r.name && _namesMatch(name, r.name)),
     );
     if (idx === -1) {
       showToast("⚠️ No matching result found.");
@@ -2311,9 +2424,18 @@ function applyPendingAssessment() {
         el.classList.add("score-filled");
       }
     };
-    _fill("f-typing-score", r.typing_score || "");
+    // Typing Test
+    _fill("f-typing-score",    r.typing_score    || "");
+    _fill("f-word-typing",     r.word_typing      || "");
     _fill("f-knowledge-score", r.knowledge_score || "");
-    _fill("f-verbal-link", r.verbal_link || "");
+    // Verbal Test
+    _fill("f-verbal-link",     r.verbal_link     || "");
+    _fill("f-conflict-score",  r.conflict_score  || "");
+    _fill("f-grammar-score",   r.grammar_score   || "");
+    // Excel Test
+    _fill("f-data-entry-score",  r.data_entry_score  || "");
+    _fill("f-formatting-score",  r.formatting_score  || "");
+    _fill("f-sorting-score",     r.sorting_score     || "");
     if (r.interview_notes) {
       const notesEl = document.getElementById("f-interview-notes");
       if (notesEl)
@@ -2382,6 +2504,35 @@ function applyPendingAssessment() {
 /* ══════════════════════════════════════════════
    EMAILJS — ASSESSMENT INVITATION SYSTEM
 ══════════════════════════════════════════════ */
+
+/* ── Load / Save GCal API config from localStorage ── */
+function loadGCalApiConfig() {
+  try {
+    return JSON.parse(localStorage.getItem("upstaff_gcal_api_config") || "{}");
+  } catch (_) { return {}; }
+}
+
+window.saveGCalApiConfig = function saveGCalApiConfig() {
+  const config = {
+    apiKey:   document.getElementById("s-gcal-api-key")?.value.trim()   || "",
+    clientId: document.getElementById("s-gcal-client-id")?.value.trim() || "",
+  };
+  localStorage.setItem("upstaff_gcal_api_config", JSON.stringify(config));
+  if (typeof GCAL_CONFIG !== "undefined") {
+    GCAL_CONFIG.API_KEY   = config.apiKey;
+    GCAL_CONFIG.CLIENT_ID = config.clientId;
+    if (config.apiKey && config.clientId && typeof gcalInit === "function") gcalInit();
+  }
+  showToast("✅ Google Calendar credentials saved.");
+};
+
+function populateGCalApiSettings() {
+  const c = loadGCalApiConfig();
+  const apiEl = document.getElementById("s-gcal-api-key");
+  const cidEl = document.getElementById("s-gcal-client-id");
+  if (apiEl) apiEl.value = c.apiKey   || "";
+  if (cidEl) cidEl.value = c.clientId || "";
+}
 
 /* ── Load / Save EmailJS config from localStorage ── */
 const EMAILJS_DEFAULTS = {
@@ -2620,9 +2771,24 @@ async function syncApplicantsFromApi(opts) {
         (t.supabase_id && t.supabase_id === mapped.supabase_id) ||
         (t.applicant_email && t.applicant_email === (mapped.applicant_email || "").toLowerCase())
       );
-      if (existing && existing.partner_status === mapped.partner_status) {
-        // Partner status unchanged — keep the user's local dashboard stage
-        mapped.status = existing.status;
+      if (existing) {
+        if (existing.partner_status === mapped.partner_status) {
+          // Partner status unchanged — keep the user's local dashboard stage
+          mapped.status = existing.status;
+        }
+        // Always preserve assessment state — these fields live only in localStorage
+        const assessFields = [
+          "assess_token", "assess_sent_at", "assess_completed",
+          "assess_completed_at", "assess_score", "assess_result",
+          "typing_score", "word_typing_score", "knowledge_score",
+          "verbal_link", "conflict_score", "grammar_score",
+          "data_entry_score", "formatting_score", "sorting_score",
+          "gcalEventId", "google_event_id",
+          "activity", "attachments", "stage_history", "comments",
+        ];
+        assessFields.forEach((f) => {
+          if (existing[f] !== undefined) mapped[f] = existing[f];
+        });
       }
 
       return mapped;
@@ -2822,13 +2988,31 @@ function buildAssessmentLink(task, token) {
 
 /* ── Update the invite status UI inside the Assessment tab ── */
 function _refreshAssessInviteUI(task) {
-  const badge = document.getElementById("assess-status-badge");
-  const meta = document.getElementById("assess-status-meta");
-  const sendBtn = document.getElementById("assess-send-btn");
+  const badge     = document.getElementById("assess-status-badge");
+  const meta      = document.getElementById("assess-status-meta");
+  const sendBtn   = document.getElementById("assess-send-btn");
   const resendBtn = document.getElementById("assess-resend-btn");
-  const resetBtn = document.getElementById("assess-reset-btn");
-  const noteEl = document.getElementById("assess-invite-note");
+  const resetBtn  = document.getElementById("assess-reset-btn");
+  const noteEl    = document.getElementById("assess-invite-note");
+  const copyBtn   = document.getElementById("assess-copy-btn");
+  const warnEl    = document.getElementById("assess-no-email-warn");
   if (!badge) return;
+
+  const hasEmail = !!(task.applicant_email || "").trim();
+
+  function _setSendControls(showSend, showResend) {
+    if (hasEmail) {
+      if (sendBtn)   sendBtn.style.display   = showSend   ? "inline-flex" : "none";
+      if (resendBtn) resendBtn.style.display = showResend ? "inline-flex" : "none";
+      if (copyBtn)   copyBtn.style.display   = "none";
+      if (warnEl)    warnEl.style.display    = "none";
+    } else {
+      if (sendBtn)   sendBtn.style.display   = "none";
+      if (resendBtn) resendBtn.style.display = "none";
+      if (copyBtn)   copyBtn.style.display   = (showSend || showResend) ? "inline-flex" : "none";
+      if (warnEl)    warnEl.style.display    = "block";
+    }
+  }
 
   const config = loadEmailJSConfig();
   const expHrs = config.expiryHours || 72;
@@ -2836,7 +3020,7 @@ function _refreshAssessInviteUI(task) {
   if (task.assess_completed) {
     badge.className = "assess-status-badge completed";
     badge.textContent = "✔ Completed";
-    meta.textContent = task.assess_completed_at
+    if (meta) meta.textContent = task.assess_completed_at
       ? "Completed on " +
         new Date(task.assess_completed_at).toLocaleDateString("en-PH", {
           month: "short",
@@ -2844,10 +3028,9 @@ function _refreshAssessInviteUI(task) {
           year: "numeric",
         })
       : "";
-    sendBtn.style.display = "none";
-    resendBtn.style.display = "none";
-    resetBtn.style.display = "inline-flex";
-    noteEl.textContent =
+    _setSendControls(false, false);
+    if (resetBtn) resetBtn.style.display = "inline-flex";
+    if (noteEl) noteEl.textContent =
       "Applicant has completed the assessment. Reset to allow a retry.";
     return;
   }
@@ -2861,18 +3044,17 @@ function _refreshAssessInviteUI(task) {
       ? "assess-status-badge expired"
       : "assess-status-badge sent";
     badge.textContent = expired ? "✗ Link Expired" : "● Sent";
-    meta.textContent =
+    if (meta) meta.textContent =
       "Sent " +
       sentDate.toLocaleDateString("en-PH", {
         month: "short",
         day: "numeric",
         year: "numeric",
       });
-    sendBtn.style.display = "none";
-    resendBtn.style.display = "inline-flex";
-    resetBtn.style.display = "inline-flex";
-    noteEl.textContent = expired
-      ? `Link expired after ${expHrs}h. Click Resend to generate a new one.`
+    _setSendControls(false, true);
+    if (resetBtn) resetBtn.style.display = "inline-flex";
+    if (noteEl) noteEl.textContent = expired
+      ? `Link expired after ${expHrs}h. Click ${hasEmail ? "Resend" : "Copy Link"} to generate a new one.`
       : `Link expires ${expiresAt.toLocaleDateString("en-PH", { month: "short", day: "numeric" })} at ${expiresAt.toLocaleTimeString("en-PH", { hour: "2-digit", minute: "2-digit" })}.`;
     return;
   }
@@ -2880,11 +3062,12 @@ function _refreshAssessInviteUI(task) {
   // Not sent yet
   badge.className = "assess-status-badge not-sent";
   badge.textContent = "● Not Sent";
-  meta.textContent = "";
-  sendBtn.style.display = "inline-flex";
-  resendBtn.style.display = "none";
-  resetBtn.style.display = "none";
-  noteEl.textContent = "Send an assessment invitation email to the applicant.";
+  if (meta) meta.textContent = "";
+  _setSendControls(true, false);
+  if (resetBtn) resetBtn.style.display = "none";
+  if (noteEl) noteEl.textContent = hasEmail
+    ? "Send an assessment invitation email to the applicant."
+    : "Generate a link and share it with the applicant directly.";
 }
 
 /* ── Core send function (used by both Send and Resend) ── */
@@ -2911,6 +3094,11 @@ async function _doSendAssessmentEmail(isResend = false) {
       ? "⏳ Resending assessment link…"
       : "⏳ Sending assessment invitation…",
   );
+
+  const _sendBtn = document.getElementById("assess-send-btn");
+  const _resendBtn = document.getElementById("assess-resend-btn");
+  if (_sendBtn) _sendBtn.disabled = true;
+  if (_resendBtn) _resendBtn.disabled = true;
 
   try {
     const token = generateAssessToken();
@@ -2960,11 +3148,24 @@ async function _doSendAssessmentEmail(isResend = false) {
   <div class="foot"><p>© ${new Date().getFullYear()} Upstaff &nbsp;·&nbsp; <a href="https://upstaff.netlify.app">upstaff.netlify.app</a></p></div>
 </div></body></html>`;
 
-    await UpstaffAPI.sendEmail(
-      task.applicant_email,
-      subject,
-      body,
-      "Upstaff HR",
+    const ejsConfig = loadEmailJSConfig();
+    if (!ejsConfig.serviceId || !ejsConfig.templateId || !ejsConfig.publicKey) {
+      throw new Error("EmailJS not configured. Go to Settings → EmailJS and fill in Service ID, Template ID, and Public Key.");
+    }
+    await emailjs.send(
+      ejsConfig.serviceId,
+      ejsConfig.templateId,
+      {
+        to_email:      task.applicant_email,
+        first_name:    firstName,
+        from_name:     hrName,
+        subject:       subject,
+        website_link:  link,
+        position:      position,
+        company_name:  "Upstaff",
+        company_email: "hr@upstaff.com",
+      },
+      ejsConfig.publicKey
     );
 
     task.assess_token = token;
@@ -2982,12 +3183,23 @@ async function _doSendAssessmentEmail(isResend = false) {
         : "✅ Assessment invitation sent!",
     );
   } catch (err) {
-    console.error("[Assessment Email] error:", err);
-    if (noteEl)
-      noteEl.textContent = "❌ Failed to send. Check Partner API settings.";
-    showToast(
-      "❌ " + (err.message || "Email failed. Check Partner API settings."),
-    );
+    // EmailJS errors: err.status (HTTP code) + err.text (reason string)
+    const ejsStatus = err?.status;
+    const ejsText   = err?.text || err?.message || JSON.stringify(err) || "Unknown error";
+    console.error("[Assessment Email] EmailJS error:", ejsStatus, ejsText, err);
+    let userMsg;
+    if (ejsStatus === 400) {
+      userMsg = `❌ EmailJS rejected the request (400): ${ejsText}. Check that your Service ID, Template ID, and Public Key in Settings → EmailJS are correct, and that your template variables match.`;
+    } else if (ejsStatus === 401 || ejsStatus === 403) {
+      userMsg = `❌ EmailJS authentication failed (${ejsStatus}): invalid Public Key or account suspended.`;
+    } else {
+      userMsg = `❌ Email failed: ${ejsText}`;
+    }
+    if (noteEl) noteEl.textContent = userMsg;
+    showToast(userMsg);
+  } finally {
+    if (_sendBtn) _sendBtn.disabled = false;
+    if (_resendBtn) _resendBtn.disabled = false;
   }
 }
 
@@ -2996,6 +3208,40 @@ function sendAssessmentEmail() {
 }
 function resendAssessmentEmail() {
   _doSendAssessmentEmail(true);
+}
+async function copyAssessmentLink() {
+  const taskId = taskEditId || window._editingTaskId;
+  if (!taskId) return;
+  const task = TASKS.find((t) => t.id === taskId);
+  if (!task) return;
+
+  const copyBtn = document.getElementById("assess-copy-btn");
+  if (copyBtn) copyBtn.disabled = true;
+
+  try {
+    const token = generateAssessToken();
+    const link = buildAssessmentLink(task, token);
+
+    task.assess_token = token;
+    task.assess_sent_at = new Date().toISOString();
+    task.assess_completed = false;
+    task.assess_completed_at = null;
+    persistSave();
+    _refreshAssessInviteUI(task);
+
+    try {
+      await navigator.clipboard.writeText(link);
+      showToast("✅ Assessment link copied! Share it with the applicant.");
+    } catch {
+      prompt("Copy this assessment link:", link);
+    }
+
+    const noteEl = document.getElementById("assess-invite-note");
+    if (noteEl) noteEl.textContent = "✅ Link copied! Share it with the applicant.";
+  } finally {
+    const btn = document.getElementById("assess-copy-btn");
+    if (btn) btn.disabled = false;
+  }
 }
 
 /* ── Reset attempt — allows applicant to retake ── */
@@ -3133,6 +3379,7 @@ function openTaskNew(status = "New") {
     .slice(0, 10);
   document.getElementById("f-due").value = "";
   document.getElementById("f-notes").value = "";
+  _notesPreviewUpdate("");
   document.getElementById("f-folder").value = "";
   // Applicant profile fields
   _setField("f-email", "");
@@ -3160,10 +3407,18 @@ function openTaskNew(status = "New") {
   _updateLinkCard("f-drive-folder", "lc-drive-folder");
   _setField("f-app-date", new Date().toISOString().slice(0, 10));
   _setField("f-followup-date", "");
+  // Reset assessment tabs to first tab (Typing)
+  _resetAssessTabs();
   // Assessment fields
   _setField("f-typing-score", "");
+  _setField("f-word-typing", "");
   _setField("f-knowledge-score", "");
   _setField("f-verbal-link", "");
+  _setField("f-conflict-score", "");
+  _setField("f-grammar-score", "");
+  _setField("f-data-entry-score", "");
+  _setField("f-formatting-score", "");
+  _setField("f-sorting-score", "");
   _setField("f-interview-notes", "");
   // Stage progress bar
   document.getElementById("task-stage-progress").innerHTML =
@@ -3183,7 +3438,7 @@ function openTaskNew(status = "New") {
   document.getElementById("btn-task-delete").style.display = "none";
   // Switch to Profile tab
   _switchModalTab("profile");
-  document.getElementById("task-modal-overlay").classList.add("open");
+  _gsapModalOpen("task-modal-overlay", "task-modal");
 }
 function openTaskEdit(id, goToAssessment = false) {
   const t = TASKS.find((x) => x.id === id);
@@ -3201,6 +3456,7 @@ function openTaskEdit(id, goToAssessment = false) {
   document.getElementById("f-start").value = t.start || t.application_date || "";
   document.getElementById("f-due").value = t.due || "";
   document.getElementById("f-notes").value = t.notes || "";
+  _notesPreviewUpdate(t.notes || "");
   document.getElementById("f-folder").value = t.candidateFolder || "";
   // Applicant profile fields
   _setField("f-email", t.applicant_email || "");
@@ -3228,11 +3484,21 @@ function openTaskEdit(id, goToAssessment = false) {
   _updateLinkCard("f-drive-folder", "lc-drive-folder");
   _setField("f-app-date", t.application_date || t.start || "");
   _setField("f-followup-date", t.followup_date || "");
-  // Assessment fields
-  _setField("f-typing-score", t.typing_score || "");
-  _setField("f-knowledge-score", t.knowledge_score || "");
-  _setField("f-verbal-link", t.verbal_link || "");
-  _setField("f-interview-notes", t.interview_notes || "");
+  // Reset assessment tabs to first tab (Typing)
+  _resetAssessTabs();
+  // Assessment fields — Typing Test
+  _setField("f-typing-score",    t.typing_score     || "");
+  _setField("f-word-typing",     t.word_typing      || "");
+  _setField("f-knowledge-score", t.knowledge_score  || "");
+  // Assessment fields — Verbal Test
+  _setField("f-verbal-link",     t.verbal_link      || "");
+  _setField("f-conflict-score",  t.conflict_score   || "");
+  _setField("f-grammar-score",   t.grammar_score    || "");
+  // Assessment fields — Excel Test
+  _setField("f-data-entry-score",  t.data_entry_score  || "");
+  _setField("f-formatting-score",  t.formatting_score  || "");
+  _setField("f-sorting-score",     t.sorting_score     || "");
+  _setField("f-interview-notes", t.interview_notes  || "");
   // Stage progress bar
   document.getElementById("task-stage-progress").innerHTML = buildStageProgress(
     t.status,
@@ -3276,7 +3542,7 @@ function openTaskEdit(id, goToAssessment = false) {
   }
   // Switch tab — go to Assessment tab if requested (e.g. "View Scores" action)
   _switchModalTab(goToAssessment ? "assessment" : "profile");
-  document.getElementById("task-modal-overlay").classList.add("open");
+  _gsapModalOpen("task-modal-overlay", "task-modal");
   // Check for pending portal results for this applicant
   _updateAssessTabBadge(t);
   _updateImportBanner(t);
@@ -3737,7 +4003,10 @@ function _renderReviewOverallSummary(task) {
 }
 
 function closeTaskModal() {
-  document.getElementById("task-modal-overlay").classList.remove("open");
+  _gsapModalClose("task-modal-overlay", "task-modal", () => {
+    taskEditId = null;
+    window._editingTaskId = null;
+  });
 }
 document
   .getElementById("task-modal-close")
@@ -3914,23 +4183,19 @@ document
       followup_date:
         document.getElementById("f-followup-date")?.value || "",
       followup_notified: existing?.followup_notified || "",
-      // Assessment scores
-      typing_score:
-        document.getElementById("f-typing-score")?.value ||
-        existing?.typing_score ||
-        "",
-      knowledge_score:
-        document.getElementById("f-knowledge-score")?.value ||
-        existing?.knowledge_score ||
-        "",
-      verbal_link:
-        document.getElementById("f-verbal-link")?.value?.trim() ||
-        existing?.verbal_link ||
-        "",
-      interview_notes:
-        document.getElementById("f-interview-notes")?.value ||
-        existing?.interview_notes ||
-        "",
+      // Assessment scores — Typing Test
+      typing_score:     document.getElementById("f-typing-score")?.value     || existing?.typing_score     || "",
+      word_typing:      document.getElementById("f-word-typing")?.value      || existing?.word_typing      || "",
+      knowledge_score:  document.getElementById("f-knowledge-score")?.value  || existing?.knowledge_score  || "",
+      // Assessment scores — Verbal Test
+      verbal_link:      document.getElementById("f-verbal-link")?.value?.trim() || existing?.verbal_link  || "",
+      conflict_score:   document.getElementById("f-conflict-score")?.value   || existing?.conflict_score   || "",
+      grammar_score:    document.getElementById("f-grammar-score")?.value    || existing?.grammar_score    || "",
+      // Assessment scores — Excel Test
+      data_entry_score: document.getElementById("f-data-entry-score")?.value || existing?.data_entry_score || "",
+      formatting_score: document.getElementById("f-formatting-score")?.value || existing?.formatting_score || "",
+      sorting_score:    document.getElementById("f-sorting-score")?.value    || existing?.sorting_score    || "",
+      interview_notes:  document.getElementById("f-interview-notes")?.value  || existing?.interview_notes  || "",
       // Preserve pipeline timestamps
       hired_at:
         existing?.hired_at ||
@@ -4031,6 +4296,10 @@ document
           other_docs_link: t.other_docs_link,
           notes: t.notes,
           drive_folder_link: t.drive_folder_link,
+          // Assessment scores — Excel Test
+          data_entry_score: t.data_entry_score || "",
+          formatting_score: t.formatting_score || "",
+          sorting_score:    t.sorting_score    || "",
         }).catch((e) =>
           console.warn("[API] Full field sync failed:", e.message),
         );
@@ -4617,10 +4886,10 @@ function openHireModal() {
     const el = document.getElementById(id);
     if (el) el.value = "";
   });
-  document.getElementById("hire-modal-overlay").classList.add("open");
+  _gsapModalOpen("hire-modal-overlay", "hire-modal");
 }
 function closeHireModal() {
-  document.getElementById("hire-modal-overlay").classList.remove("open");
+  _gsapModalClose("hire-modal-overlay", "hire-modal");
 }
 document
   .getElementById("hire-modal-overlay")
@@ -4840,7 +5109,7 @@ function openEmpDetail(empId) {
     </div>
   `;
 
-  document.getElementById("emp-detail-overlay").classList.add("open");
+  _gsapModalOpen("emp-detail-overlay", "emp-detail-panel");
 
   // Wire up smart link card for the drive folder input
   const _empDriveInput = document.getElementById(`drive-link-${e.id}`);
@@ -4887,10 +5156,11 @@ function closeEmpDetail(e) {
     closeEmpDetailDirect();
 }
 function closeEmpDetailDirect() {
-  document.getElementById("emp-detail-overlay").classList.remove("open");
-  _empDetailId = null;
-  if (document.getElementById("view-onboarding").style.display !== "none")
-    renderOnboarding();
+  _gsapModalClose("emp-detail-overlay", "emp-detail-panel", () => {
+    _empDetailId = null;
+    if (document.getElementById("view-onboarding").style.display !== "none")
+      renderOnboarding();
+  });
 }
 
 /* ══════════════════════════════════════════════
@@ -5006,25 +5276,19 @@ function buildCSVDownload(rows, filename) {
 
 document.getElementById("export-csv-btn")?.addEventListener("click", () => {
   const headers = [
-    "ID",
-    "Applicant Name",
-    "Email",
-    "Phone",
-    "Stage",
-    "Priority",
-    "Position",
-    "Assigned To",
-    "Application Date",
-    "Start Date",
-    "Due Date",
-    "Typing Score",
-    "Knowledge Score",
+    "ID", "Applicant Name", "Email", "Phone",
+    "Stage", "Priority", "Position", "Assigned To",
+    "Application Date", "Start Date", "Due Date",
+    // Typing Test
+    "Typing Assessment (WPM)", "Word Typing (WPM)", "Knowledge Test (/100)",
+    // Verbal Test
+    "Verbal Comm Link", "Conflict Reso (/20)", "Grammar Test (/20)",
+    // Excel Test
+    "Data Entry", "Formatting", "Sorting",
+    // Overall
     "Assessment Result",
-    "Resume Link",
-    "Portfolio Link",
-    "Interview Notes",
-    "General Notes",
-    "Candidate Folder",
+    // Links & Notes
+    "Resume Link", "Portfolio Link", "Interview Notes", "General Notes", "Candidate Folder",
   ];
   const rows = [headers];
   TASKS.forEach((t) => {
@@ -5032,19 +5296,31 @@ document.getElementById("export-csv-btn")?.addEventListener("click", () => {
     const assessResult = ks !== null ? (ks >= 75 ? "PASSED" : "FAILED") : "";
     rows.push([
       t.id,
-      t.applicant_name || t.name,
+      t.applicant_name || t.name || "",
       t.applicant_email || "",
       t.applicant_phone || "",
-      t.status,
-      t.priority,
-      t.position,
-      t.assignee,
+      t.status || "",
+      t.priority || "",
+      t.position || "",
+      t.assignee || "",
       t.application_date || t.start || "",
       t.start || "",
       t.due || "",
+      // Typing Test
       t.typing_score || "",
-      t.knowledge_score ? t.knowledge_score + "%" : "",
+      t.word_typing || "",
+      t.knowledge_score || "",
+      // Verbal Test
+      t.verbal_link || "",
+      t.conflict_score || "",
+      t.grammar_score || "",
+      // Excel Test
+      t.data_entry_score || "",
+      t.formatting_score || "",
+      t.sorting_score || "",
+      // Overall
       assessResult,
+      // Links & Notes
       t.resume_link || "",
       t.portfolio_link || "",
       t.interview_notes || "",
@@ -5618,7 +5894,7 @@ function openNewAt(ds, ts, taskContext) {
   document.getElementById("cal-f-notes").value = "";
   document.getElementById("cal-f-notify").checked = true;
   document.getElementById("cal-btn-delete").style.display = "none";
-  document.getElementById("cal-modal-overlay").classList.add("open");
+  _gsapModalOpen("cal-modal-overlay", "cal-modal");
 }
 function openGroupSlot(date, time) {
   const grp = getFiltered().filter(
@@ -5808,7 +6084,7 @@ function openEdit(id) {
   document.getElementById("cal-f-notes").value = e.notes || "";
   document.getElementById("cal-f-notify").checked = false;
   document.getElementById("cal-btn-delete").style.display = "inline-flex";
-  document.getElementById("cal-modal-overlay").classList.add("open");
+  _gsapModalOpen("cal-modal-overlay", "cal-modal");
 }
 
 /* Auto-compute end time (1 hour after start) */
@@ -5924,7 +6200,7 @@ function updateMeetingLinkNote(url) {
   else noteEl.textContent = "";
 }
 function closeModal() {
-  document.getElementById("cal-modal-overlay").classList.remove("open");
+  _gsapModalClose("cal-modal-overlay", "cal-modal");
   // ── Clean up badge and meeting link preview ──
   const badge = document.querySelector(".gcal-badge");
   if (badge) badge.remove();
@@ -5945,7 +6221,7 @@ document
     if (e.target === this) closeModal();
   });
 
-document.getElementById("cal-btn-save").addEventListener("click", async () => {
+document.getElementById("cal-btn-save")?.addEventListener("click", async () => {
   const name = document.getElementById("cal-f-name").value.trim();
   if (!name) {
     await uiAlert("Please enter the applicant's name.", {
@@ -6186,21 +6462,21 @@ document
       showCalToast("🗑️ Interview deleted.");
     }
   });
-document.getElementById("cal-prev").addEventListener("click", () => {
+document.getElementById("cal-prev")?.addEventListener("click", () => {
   if (calView === "month") calDate.setMonth(calDate.getMonth() - 1);
   else if (calView === "week") calDate.setDate(calDate.getDate() - 7);
   else calDate.setDate(calDate.getDate() - 1);
   calDate = new Date(calDate);
   renderCalendar();
 });
-document.getElementById("cal-next").addEventListener("click", () => {
+document.getElementById("cal-next")?.addEventListener("click", () => {
   if (calView === "month") calDate.setMonth(calDate.getMonth() + 1);
   else if (calView === "week") calDate.setDate(calDate.getDate() + 7);
   else calDate.setDate(calDate.getDate() + 1);
   calDate = new Date(calDate);
   renderCalendar();
 });
-document.getElementById("cal-today").addEventListener("click", () => {
+document.getElementById("cal-today")?.addEventListener("click", () => {
   calDate = new Date();
   renderCalendar();
 });
@@ -6297,12 +6573,12 @@ function renderMembersList() {
       </div>
       <span class="member-role-badge" style="background:${ROLE_COLORS[m.role] || "#9ca3af"}22;color:${ROLE_COLORS[m.role] || "#9ca3af"};">${sanitize(m.role)}</span>
       <div class="member-actions">
-        <button class="member-action-btn" data-action="editMember" data-arg="${i}">Edit</button>
-        <button class="member-action-btn" style="color:#ef4444;border-color:#fca5a5;" data-action="removeMember" data-arg="${i}">Remove</button>
+        <button class="member-action-btn" data-action="editMember" data-arg="${i}" data-role-hide="hr">Edit</button>
+        <button class="member-action-btn" style="color:#ef4444;border-color:#fca5a5;" data-action="removeMember" data-arg="${i}" data-role-hide="hr">Remove</button>
       </div>
     </div>`,
     ).join("") +
-    `<button class="btn-add-member" data-action="addMember" style="margin-top:10px;width:100%;padding:8px;border:1.5px dashed var(--border);border-radius:10px;background:transparent;color:var(--muted);cursor:pointer;font-size:12px;font-weight:600;">+ Add Member</button>`;
+    `<button class="btn-add-member" data-action="addMember" data-role-hide="hr" style="margin-top:10px;width:100%;padding:8px;border:1.5px dashed var(--border);border-radius:10px;background:transparent;color:var(--muted);cursor:pointer;font-size:12px;font-weight:600;">+ Add Member</button>`;
 }
 
 /* ── Rebuild assignee options in modal ── */
@@ -6403,36 +6679,22 @@ function renderActivityTab(task) {
 
 /* ── Render Files tab ── */
 function renderFilesTab(task) {
-  const el = document.getElementById("tab-files-list");
+  const el = document.getElementById("tab-files-content");
   if (!el) return;
-  const atts = task.attachments || [];
-  const fileIcon = (type) => {
-    if (type.startsWith("image/")) return "🖼️";
-    if (type.includes("pdf")) return "📄";
-    if (type.includes("word")) return "📝";
-    if (type.includes("sheet") || type.includes("excel")) return "📊";
-    return "📎";
-  };
-  const fmtSize = (b) =>
-    b > 1024 * 1024
-      ? (b / (1024 * 1024)).toFixed(1) + " MB"
-      : (b / 1024).toFixed(0) + " KB";
-  el.innerHTML = atts.length
-    ? atts
-        .map(
-          (a) => `
-    <div class="file-item">
-      <span class="file-icon">${fileIcon(a.type)}</span>
-      <div class="file-info">
-        <div class="file-name">${sanitize(a.name)}</div>
-        <div class="file-meta">${fmtSize(a.size)} · ${_relTime(a.uploadedAt)} · by ${sanitize(a.uploadedBy)}</div>
-      </div>
-      <a class="file-download" href="${a.dataUrl}" download="${sanitize(a.name)}" title="Download">↓</a>
-      <button class="file-delete" data-action="deleteAttachment" data-arg="${a.id}" title="Delete">🗑️</button>
-    </div>`,
-        )
-        .join("")
-    : `<div style="padding:20px;text-align:center;color:var(--muted);font-size:12px;">No files attached yet</div>`;
+  const folderUrl = (task.drive_folder_link || "").trim();
+  if (folderUrl) {
+    el.innerHTML = `
+      <div style="padding:20px 0;">
+        <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;">Applicant Drive Folder</div>
+        <a href="${sanitize(folderUrl)}" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;gap:8px;padding:10px 16px;background:rgba(67,233,123,0.08);border:1px solid #43e97b;border-radius:8px;color:#43e97b;font-size:12px;font-weight:600;text-decoration:none;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+          Open in Google Drive
+        </a>
+        <div style="margin-top:8px;font-size:10px;color:var(--muted);">Files are managed directly in Google Drive.</div>
+      </div>`;
+  } else {
+    el.innerHTML = `<div style="padding:24px;text-align:center;color:var(--muted);font-size:12px;">No Drive folder linked for this applicant.</div>`;
+  }
 }
 
 /* ── Render History (Stage Audit Log) tab ── */
@@ -6552,7 +6814,7 @@ async function removePosition(i) {
 }
 
 /* ── Position add (inline) ── */
-document.getElementById("add-position-btn").addEventListener("click", () => {
+document.getElementById("add-position-btn")?.addEventListener("click", () => {
   const row = document.getElementById("position-add-row");
   const inp = document.getElementById("position-add-input");
   row.classList.add("visible");
@@ -6576,23 +6838,25 @@ function confirmAddPosition() {
 
 document
   .getElementById("position-add-confirm")
-  .addEventListener("click", confirmAddPosition);
-document.getElementById("position-add-cancel").addEventListener("click", () => {
-  document.getElementById("position-add-row").classList.remove("visible");
-  document.getElementById("position-add-input").value = "";
+  ?.addEventListener("click", confirmAddPosition);
+document.getElementById("position-add-cancel")?.addEventListener("click", () => {
+  document.getElementById("position-add-row")?.classList.remove("visible");
+  const inp = document.getElementById("position-add-input");
+  if (inp) inp.value = "";
 });
 document
   .getElementById("position-add-input")
-  .addEventListener("keydown", (e) => {
+  ?.addEventListener("keydown", (e) => {
     if (e.key === "Enter") confirmAddPosition();
     if (e.key === "Escape") {
-      document.getElementById("position-add-row").classList.remove("visible");
-      document.getElementById("position-add-input").value = "";
+      document.getElementById("position-add-row")?.classList.remove("visible");
+      const inp = document.getElementById("position-add-input");
+      if (inp) inp.value = "";
     }
   });
 
 /* ── Position search ── */
-document.getElementById("position-search").addEventListener("input", (e) => {
+document.getElementById("position-search")?.addEventListener("input", (e) => {
   renderPositionsList(e.target.value);
 });
 
@@ -7225,10 +7489,10 @@ document
   .addEventListener("click", closeGlobalSearch);
 document
   .getElementById("search-modal-overlay")
-  .addEventListener("click", function (e) {
+  ?.addEventListener("click", function (e) {
     if (e.target === this) closeGlobalSearch();
   });
-document.getElementById("global-search-input").addEventListener(
+document.getElementById("global-search-input")?.addEventListener(
   "input",
   debounce(function () {
     searchFocusIdx = -1;
@@ -7275,6 +7539,50 @@ document.addEventListener("keydown", (e) => {
 // APPLICANT_DATA removed — analytics now reads live data from TASKS.
 // Fields like source, employmentType, workSetup, workSchedule, education,
 // tools, and skills will be populated once the database integration is live.
+
+/* ── ApexCharts instances (destroyed & re-created on each renderAnalytics call) ── */
+let _apexCharts = [];
+
+/* ── SortableJS instances (destroyed & re-created on each renderBoard call) ── */
+let _sortables = [];
+
+/* ── ApexCharts theme helper ── */
+function _getApexTheme() {
+  const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+  return {
+    isDark,
+    mode: isDark ? "dark" : "light",
+    foreColor: isDark ? "#cbd5e1" : "#475569",
+    borderColor: isDark ? "#2d3f55" : "#c9cfd9",
+  };
+}
+
+/* ── GSAP modal helpers ── */
+function _gsapModalOpen(overlayId, modalId) {
+  const overlay = document.getElementById(overlayId);
+  const modal   = document.getElementById(modalId);
+  if (!overlay || !modal) return;
+  overlay.classList.add("open");
+  if (!window.gsap) return;
+  gsap.fromTo(overlay, { opacity: 0 }, { opacity: 1, duration: 0.2, ease: "power2.out" });
+  gsap.fromTo(modal,   { opacity: 0, y: 14, scale: 0.97 }, { opacity: 1, y: 0, scale: 1, duration: 0.25, ease: "power3.out" });
+}
+function _gsapModalClose(overlayId, modalId, onComplete) {
+  const overlay = document.getElementById(overlayId);
+  const modal   = document.getElementById(modalId);
+  if (!overlay || !modal) { onComplete && onComplete(); return; }
+  if (!window.gsap) {
+    overlay.classList.remove("open");
+    onComplete && onComplete();
+    return;
+  }
+  gsap.to(modal,   { opacity: 0, y: 8, scale: 0.97, duration: 0.18, ease: "power2.in" });
+  gsap.to(overlay, { opacity: 0, duration: 0.18, ease: "power2.in", onComplete: () => {
+    overlay.classList.remove("open");
+    gsap.set([overlay, modal], { clearProps: "all" });
+    onComplete && onComplete();
+  }});
+}
 
 /* ── Colour palette for charts ── */
 const CHART_COLORS = [
@@ -7463,8 +7771,13 @@ function buildSourceList(container, data) {
 
 /* ── Main render function for the Analytics view ── */
 function renderAnalytics() {
+  // Destroy previous ApexCharts instances to prevent memory leaks
+  _apexCharts.forEach(c => { try { c.destroy(); } catch (_) {} });
+  _apexCharts = [];
+
   const A = TASKS;
   const total = A.length;
+  const { isDark, mode: _apexMode, foreColor: _apexFore, borderColor: _apexBorder } = _getApexTheme();
 
   /* ── 1. KPI cards ── */
   const hiredCount = A.filter(
@@ -7572,18 +7885,25 @@ function renderAnalytics() {
     const posRows = Object.entries(posMap)
       .map(([pos, days]) => ({ pos, avg: Math.round(days.reduce((s, d) => s + d, 0) / days.length), n: days.length }))
       .sort((a, b) => a.avg - b.avg);
-    const maxDays = posRows.length ? Math.max(...posRows.map((r) => r.avg), 1) : 1;
-    _tthPosEl.innerHTML = posRows.length
-      ? posRows.map((r) => `
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
-          <div style="width:170px;font-size:12px;font-weight:600;color:var(--text);text-align:right;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${sanitize(r.pos)}">${sanitize(r.pos)}</div>
-          <div style="flex:1;background:var(--surface-2);border-radius:6px;overflow:hidden;height:22px;">
-            <div style="width:${Math.round((r.avg / maxDays) * 100)}%;background:#f59e0b;height:100%;border-radius:6px;transition:width .5s;"></div>
-          </div>
-          <div style="width:42px;font-size:13px;font-weight:700;color:var(--text);">${r.avg}d</div>
-          <div style="width:32px;font-size:11px;color:var(--muted);">${r.n} hire${r.n > 1 ? "s" : ""}</div>
-        </div>`).join("")
-      : `<p style="color:var(--muted);font-size:13px;text-align:center;padding:20px 0;">No hire data yet — time-to-hire will appear once applicants reach Hired stage.</p>`;
+    _tthPosEl.innerHTML = "";
+    if (posRows.length) {
+      const chart = new ApexCharts(_tthPosEl, {
+        chart: { type: "bar", height: Math.max(posRows.length * 38 + 60, 120), background: "transparent", toolbar: { show: false } },
+        series: [{ name: "Avg Days", data: posRows.map(r => r.avg) }],
+        xaxis: { categories: posRows.map(r => r.pos), labels: { style: { fontSize: "11px", fontFamily: "Montserrat,sans-serif", colors: _apexFore } } },
+        yaxis: { labels: { style: { fontSize: "11px", colors: _apexFore } } },
+        plotOptions: { bar: { horizontal: true, borderRadius: 4 } },
+        colors: ["#f59e0b"],
+        theme: { mode: _apexMode },
+        dataLabels: { enabled: true, formatter: v => v + "d", style: { fontSize: "11px", fontWeight: 600 } },
+        grid: { borderColor: _apexBorder },
+        tooltip: { theme: _apexMode, y: { formatter: (v, { dataPointIndex }) => `${v}d avg · ${posRows[dataPointIndex].n} hire${posRows[dataPointIndex].n > 1 ? "s" : ""}` } },
+      });
+      chart.render();
+      _apexCharts.push(chart);
+    } else {
+      _tthPosEl.innerHTML = `<p style="color:var(--muted);font-size:13px;text-align:center;padding:20px 0;">No hire data yet — time-to-hire will appear once applicants reach Hired stage.</p>`;
+    }
   }
 
   /* ── 2. Pipeline funnel ── */
@@ -7621,27 +7941,28 @@ function renderAnalytics() {
   if (pipelineEl) {
     const stageCounts = PIPELINE_STAGES.map((s) => ({
       ...s,
-      count: A.filter((t) => t.partner_status === s.key || t.status === s.key)
-        .length,
-    }))
-      .filter((s) => s.count > 0)
-      .sort((a, b) => b.count - a.count);
-    const maxCount = Math.max(...stageCounts.map((s) => s.count), 1);
-    pipelineEl.innerHTML = stageCounts.length
-      ? stageCounts
-          .map(
-            (s) => `
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
-          <div style="width:160px;font-size:12px;font-weight:600;color:var(--text);text-align:right;flex-shrink:0;">${s.label}</div>
-          <div style="flex:1;background:var(--surface-2);border-radius:6px;overflow:hidden;height:22px;">
-            <div style="width:${Math.round((s.count / maxCount) * 100)}%;background:${s.color};height:100%;border-radius:6px;transition:width .5s ease;"></div>
-          </div>
-          <div style="width:36px;font-size:13px;font-weight:700;color:var(--text);">${s.count}</div>
-          <div style="width:40px;font-size:11px;color:var(--muted);">${Math.round((s.count / total) * 100)}%</div>
-        </div>`,
-          )
-          .join("")
-      : `<p style="color:var(--muted);font-size:13px;text-align:center;padding:20px 0;">No pipeline data yet</p>`;
+      count: A.filter((t) => t.partner_status === s.key || t.status === s.key).length,
+    })).filter((s) => s.count > 0).sort((a, b) => b.count - a.count);
+    pipelineEl.innerHTML = "";
+    if (stageCounts.length) {
+      const chart = new ApexCharts(pipelineEl, {
+        chart: { type: "bar", height: Math.max(stageCounts.length * 38 + 60, 120), background: "transparent", toolbar: { show: false } },
+        series: [{ name: "Applicants", data: stageCounts.map(s => s.count) }],
+        xaxis: { categories: stageCounts.map(s => s.label), labels: { style: { fontSize: "11px", fontFamily: "Montserrat,sans-serif", colors: _apexFore } } },
+        yaxis: { labels: { style: { fontSize: "11px", colors: _apexFore } } },
+        plotOptions: { bar: { horizontal: true, borderRadius: 4, distributed: true } },
+        colors: stageCounts.map(s => s.color),
+        legend: { show: false },
+        theme: { mode: _apexMode },
+        dataLabels: { enabled: true, style: { fontSize: "11px", fontWeight: 600 } },
+        grid: { borderColor: _apexBorder },
+        tooltip: { theme: _apexMode, y: { formatter: v => `${v} (${total ? Math.round((v / total) * 100) : 0}%)` } },
+      });
+      chart.render();
+      _apexCharts.push(chart);
+    } else {
+      pipelineEl.innerHTML = `<p style="color:var(--muted);font-size:13px;text-align:center;padding:20px 0;">No pipeline data yet</p>`;
+    }
   }
 
   /* ── 3. Position summary table ── */
@@ -7667,11 +7988,29 @@ function renderAnalytics() {
 
   /* ── 4. Applicants per position bar chart (live from TASKS) ── */
   const posData = posEntries.map(([label, value]) => ({ label, value }));
-  buildBarChart(
-    document.getElementById("chart-position"),
-    posData,
-    CHART_COLORS,
-  );
+  const _posEl = document.getElementById("chart-position");
+  if (_posEl) {
+    _posEl.innerHTML = "";
+    if (posData.length) {
+      const chart = new ApexCharts(_posEl, {
+        chart: { type: "bar", height: Math.max(posData.length * 38 + 60, 120), background: "transparent", toolbar: { show: false } },
+        series: [{ name: "Applicants", data: posData.map(d => d.value) }],
+        xaxis: { categories: posData.map(d => d.label), labels: { style: { fontSize: "11px", fontFamily: "Montserrat,sans-serif", colors: _apexFore } } },
+        yaxis: { labels: { style: { fontSize: "11px", colors: _apexFore } } },
+        plotOptions: { bar: { horizontal: true, borderRadius: 4, distributed: true } },
+        colors: CHART_COLORS,
+        legend: { show: false },
+        theme: { mode: _apexMode },
+        dataLabels: { enabled: true, style: { fontSize: "11px", fontWeight: 600 } },
+        grid: { borderColor: _apexBorder },
+        tooltip: { theme: _apexMode },
+      });
+      chart.render();
+      _apexCharts.push(chart);
+    } else {
+      _posEl.innerHTML = '<div class="u-no-data">No data</div>';
+    }
+  }
 
   /* ── 4–10. Extended fields — reads from TASKS if DB populates them,
      shows "No data" gracefully until then ── */
@@ -7727,13 +8066,26 @@ function renderAnalytics() {
       value: allEmpTypes.filter((v) => v === l).length,
     }))
     .filter((d) => d.value > 0);
-  buildDonut(document.getElementById("chart-employment"), empData, [
-    "#44d7e9",
-    "#6c63ff",
-    "#fa8231",
-    "#43e97b",
-    "#f472b6",
-  ]);
+  (function() {
+    const el = document.getElementById("chart-employment");
+    if (!el) return;
+    el.innerHTML = "";
+    if (!empData.length) { el.innerHTML = '<div class="u-no-data">No data</div>'; return; }
+    const chart = new ApexCharts(el, {
+      chart: { type: "donut", height: 220, background: "transparent", toolbar: { show: false } },
+      series: empData.map(d => d.value),
+      labels: empData.map(d => d.label),
+      colors: ["#44d7e9","#6c63ff","#fa8231","#43e97b","#f472b6"],
+      theme: { mode: _apexMode },
+      dataLabels: { enabled: false },
+      legend: { position: "bottom", fontSize: "11px", fontFamily: "Montserrat,sans-serif", labels: { colors: _apexFore } },
+      plotOptions: { pie: { donut: { size: "65%", labels: { show: true, total: { show: true, label: "Total", fontSize: "11px", fontWeight: 600, color: _apexFore } } } } },
+      stroke: { width: 0 },
+      tooltip: { theme: _apexMode },
+    });
+    chart.render();
+    _apexCharts.push(chart);
+  })();
 
   // Work setup donut
   const allWorkSetups = A.flatMap((t) => splitItems(t.work_setup)).map((v) => {
@@ -7749,11 +8101,26 @@ function renderAnalytics() {
       value: allWorkSetups.filter((v) => v === l).length,
     }))
     .filter((d) => d.value > 0);
-  buildDonut(document.getElementById("chart-setup"), setupData, [
-    "#fa8231",
-    "#44d7e9",
-    "#6c63ff",
-  ]);
+  (function() {
+    const el = document.getElementById("chart-setup");
+    if (!el) return;
+    el.innerHTML = "";
+    if (!setupData.length) { el.innerHTML = '<div class="u-no-data">No data</div>'; return; }
+    const chart = new ApexCharts(el, {
+      chart: { type: "donut", height: 220, background: "transparent", toolbar: { show: false } },
+      series: setupData.map(d => d.value),
+      labels: setupData.map(d => d.label),
+      colors: ["#fa8231","#44d7e9","#6c63ff"],
+      theme: { mode: _apexMode },
+      dataLabels: { enabled: false },
+      legend: { position: "bottom", fontSize: "11px", fontFamily: "Montserrat,sans-serif", labels: { colors: _apexFore } },
+      plotOptions: { pie: { donut: { size: "65%", labels: { show: true, total: { show: true, label: "Total", fontSize: "11px", fontWeight: 600, color: _apexFore } } } } },
+      stroke: { width: 0 },
+      tooltip: { theme: _apexMode },
+    });
+    chart.render();
+    _apexCharts.push(chart);
+  })();
 
   // Work schedule bar chart — matches new form dropdown values (includes time range)
   const allWorkSchedules = A.flatMap((t) => splitItems(t.work_schedule)).map(
@@ -7772,11 +8139,26 @@ function renderAnalytics() {
       value: allWorkSchedules.filter((v) => v === l).length,
     }))
     .filter((d) => d.value > 0);
-  buildBarChart(
-    document.getElementById("chart-schedule"),
-    schedData,
-    "#6c63ff",
-  );
+  (function() {
+    const el = document.getElementById("chart-schedule");
+    if (!el) return;
+    el.innerHTML = "";
+    if (!schedData.length) { el.innerHTML = '<div class="u-no-data">No data</div>'; return; }
+    const chart = new ApexCharts(el, {
+      chart: { type: "bar", height: Math.max(schedData.length * 38 + 60, 120), background: "transparent", toolbar: { show: false } },
+      series: [{ name: "Applicants", data: schedData.map(d => d.value) }],
+      xaxis: { categories: schedData.map(d => d.label), labels: { style: { fontSize: "11px", fontFamily: "Montserrat,sans-serif", colors: _apexFore } } },
+      yaxis: { labels: { style: { fontSize: "11px", colors: _apexFore } } },
+      plotOptions: { bar: { horizontal: true, borderRadius: 4 } },
+      colors: ["#6c63ff"],
+      theme: { mode: _apexMode },
+      dataLabels: { enabled: true, style: { fontSize: "11px", fontWeight: 600 } },
+      grid: { borderColor: _apexBorder },
+      tooltip: { theme: _apexMode },
+    });
+    chart.render();
+    _apexCharts.push(chart);
+  })();
 
   // Education bar chart — matches new form dropdown values
   const allEduLevels = A.map((t) => (t.education_level || "").trim())
@@ -7810,7 +8192,26 @@ function renderAnalytics() {
       value: allEduLevels.filter((v) => v === l).length,
     }))
     .filter((d) => d.value > 0);
-  buildBarChart(document.getElementById("chart-education"), eduData, "#43e97b");
+  (function() {
+    const el = document.getElementById("chart-education");
+    if (!el) return;
+    el.innerHTML = "";
+    if (!eduData.length) { el.innerHTML = '<div class="u-no-data">No data</div>'; return; }
+    const chart = new ApexCharts(el, {
+      chart: { type: "bar", height: Math.max(eduData.length * 38 + 60, 120), background: "transparent", toolbar: { show: false } },
+      series: [{ name: "Applicants", data: eduData.map(d => d.value) }],
+      xaxis: { categories: eduData.map(d => d.label), labels: { style: { fontSize: "11px", fontFamily: "Montserrat,sans-serif", colors: _apexFore } } },
+      yaxis: { labels: { style: { fontSize: "11px", colors: _apexFore } } },
+      plotOptions: { bar: { horizontal: true, borderRadius: 4 } },
+      colors: ["#43e97b"],
+      theme: { mode: _apexMode },
+      dataLabels: { enabled: true, style: { fontSize: "11px", fontWeight: 600 } },
+      grid: { borderColor: _apexBorder },
+      tooltip: { theme: _apexMode },
+    });
+    chart.render();
+    _apexCharts.push(chart);
+  })();
 
   // Source list — reads t.referral_source (not t.source)
   const srcRaw = A.flatMap((t) => splitItems(t.referral_source));
@@ -8207,6 +8608,11 @@ async function _renderApiCountsBanner() {
     } else {
       root.setAttribute("data-theme", "dark");
       localStorage.setItem("upstaff-theme", "dark");
+    }
+    // Re-render ApexCharts with new theme if analytics view is active
+    const analyticsView = document.getElementById("view-analytics");
+    if (analyticsView && analyticsView.style.display !== "none" && typeof renderAnalytics === "function") {
+      renderAnalytics();
     }
   });
 })();
@@ -8904,29 +9310,30 @@ function copyExtCalId(calendarId, btnEl) {
    FILE DROPZONE DRAG-AND-DROP SETUP
 ══════════════════════════════════════════════ */
 document.addEventListener("dragover", function (e) {
-  const zone = e.target.closest("#file-dropzone");
-  if (zone) {
-    e.preventDefault();
-    zone.classList.add("dragover");
-  }
+  const zone = e.target.closest("#file-dropzone, #files-drop-zone");
+  if (zone) { e.preventDefault(); zone.classList.add("dragover"); }
 });
 document.addEventListener("dragleave", function (e) {
-  const zone = e.target.closest("#file-dropzone");
-  if (zone && !zone.contains(e.relatedTarget))
-    zone.classList.remove("dragover");
+  const zone = e.target.closest("#file-dropzone, #files-drop-zone");
+  if (zone && !zone.contains(e.relatedTarget)) zone.classList.remove("dragover");
 });
 document.addEventListener("drop", function (e) {
-  const zone = e.target.closest("#file-dropzone");
+  const zone = e.target.closest("#file-dropzone, #files-drop-zone");
   if (!zone) return;
   e.preventDefault();
   zone.classList.remove("dragover");
   const input = document.getElementById("file-attach-input");
   if (!input) return;
-  // Create a DataTransfer to reuse handleFileAttach
   const dt = new DataTransfer();
   Array.from(e.dataTransfer.files).forEach((f) => dt.items.add(f));
   input.files = dt.files;
   handleFileAttach(input);
+});
+
+// Wire up the Files tab file input
+document.getElementById("file-attach-input")?.addEventListener("change", function () {
+  handleFileAttach(this);
+  this.value = ""; // reset so same file can be re-uploaded
 });
 
 /* ══════════════════════════════════════════════
@@ -8935,5 +9342,44 @@ document.addEventListener("drop", function (e) {
 document.addEventListener("click", function (e) {
   const panel = document.getElementById("notif-panel");
   if (!panel || !panel.classList.contains("open")) return;
-  if (!e.target.closest("#notif-wrapper")) panel.classList.remove("open");
+  if (!e.target.closest("#notif-wrapper")) {
+    if (window.gsap) {
+      gsap.to(panel, { opacity: 0, y: -8, duration: 0.15, ease: "power2.in", onComplete: () => {
+        panel.classList.remove("open");
+        gsap.set(panel, { clearProps: "all" });
+      }});
+    } else {
+      panel.classList.remove("open");
+    }
+  }
 });
+
+/* ══════════════════════════════════════════════
+   TIPPY.JS — SIDEBAR ICON TOOLTIPS
+   Shows tooltip labels when sidebar is collapsed.
+══════════════════════════════════════════════ */
+function _initSidebarTippys() {
+  if (!window.tippy) return;
+  const sidebar = document.getElementById("sidebar");
+  const isCollapsed = sidebar?.classList.contains("collapsed");
+  document.querySelectorAll(".nav-item").forEach(el => {
+    // Destroy any existing instance to prevent duplicates
+    if (el._tippy) el._tippy.destroy();
+    const label = el.querySelector(".nav-label")?.textContent?.trim();
+    if (!label) return;
+    tippy(el, {
+      content: label,
+      placement: "right",
+      theme: "upstaff",
+      disabled: !isCollapsed,
+      offset: [0, 10],
+    });
+  });
+}
+
+// Initialize on page load
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", _initSidebarTippys);
+} else {
+  _initSidebarTippys();
+}

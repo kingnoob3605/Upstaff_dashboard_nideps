@@ -1,4 +1,14 @@
 /* ══════════════════════════════════════════════
+   ROLE-BASED ACCESS CONTROL
+   body.role-assistant hides all [data-role-hide="hr"] elements.
+   Using !important so JS inline-style overrides (e.g. from _updatePipelineActions)
+   cannot reveal HR-only buttons for assistant users.
+══════════════════════════════════════════════ */
+body.role-assistant [data-role-hide="hr"] {
+  display: none !important;
+}
+
+/* ══════════════════════════════════════════════
    RESET & CSS VARIABLES
 ══════════════════════════════════════════════ */
 *,
@@ -476,6 +486,16 @@ nav {
 .filter-btn:hover {
   border-color: var(--cyan);
   color: var(--cyan);
+}
+.export-csv-btn {
+  background: rgba(67, 233, 123, 0.08);
+  border-color: #43e97b;
+  color: #43e97b;
+}
+.export-csv-btn:hover {
+  background: rgba(67, 233, 123, 0.18);
+  border-color: #43e97b;
+  color: #43e97b;
 }
 .filter-spacer {
   flex: 1;

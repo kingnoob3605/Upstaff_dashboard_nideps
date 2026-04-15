@@ -20,6 +20,13 @@
   <link rel="stylesheet" href="css/pm-ui-base.css">
 <link rel="stylesheet" href="css/pm-ui-components.css">
 <link rel="stylesheet" href="css/pm-ui-calendar.css">
+<!-- ── Library integrations ── -->
+<link rel="stylesheet" href="https://unpkg.com/tippy.js@6/dist/tippy.css" />
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/gsap.min.js"></script>
+<script src="https://unpkg.com/@popperjs/core@2"></script>
+<script src="https://unpkg.com/tippy.js@6"></script>
 </head>
 <body>
 <div id="app">
@@ -164,6 +171,10 @@
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
       My Tasks
     </button>
+    <button class="view-tab" data-view="jobs">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+      Jobs
+    </button>
   </div>
 
   <!-- Content Area -->
@@ -305,6 +316,21 @@
     </div>
 
 
+    <!-- ── JOBS VIEW ── -->
+    <div id="view-jobs" class="view-panel" style="display:none">
+      <div style="padding:24px 28px 16px;display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="font-size:18px;font-weight:800;color:var(--text);font-family:'Syne',sans-serif;">Job Openings</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:3px;">Manage active job postings synced from your partner API.</div>
+        </div>
+        <button onclick="openAddJobModal()" data-role-hide="hr"
+          style="padding:8px 16px;border-radius:10px;background:var(--violet);color:#fff;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:'Montserrat',sans-serif;">
+          + Add Job
+        </button>
+      </div>
+      <div id="jobs-list" style="padding:0 28px 28px;display:flex;flex-direction:column;gap:10px;"></div>
+    </div>
+
     <!-- ── ONBOARDING VIEW ── -->
     <div id="view-onboarding" class="view-panel" style="display:none">
       <div class="hr-view-header">
@@ -380,7 +406,7 @@
     <div id="view-table" class="view-panel" style="display:none">
       <div class="filter-row">
         <button class="filter-btn">Columns</button>
-        <button class="filter-btn" id="export-csv-btn">
+        <button class="filter-btn export-csv-btn" id="export-csv-btn">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Export CSV
         </button>
@@ -409,6 +435,10 @@
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
             Notifications
           </button>
+          <button class="settings-nav-item" data-setting="workspace">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            Workspace
+          </button>
           <button class="settings-nav-item" data-setting="positions" data-role-hide="hr">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
             Positions
@@ -420,6 +450,10 @@
           <button class="settings-nav-item" data-setting="partner-api">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
             Partner API
+          </button>
+          <button class="settings-nav-item" data-setting="emailjs">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            EmailJS
           </button>
           <button class="settings-nav-item" data-setting="danger" data-role-hide="hr">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
@@ -505,6 +539,15 @@
             </div>
           </div>
 
+          <!-- ── Workspace / Team Members ── -->
+          <div class="settings-panel" id="setting-workspace">
+            <div class="settings-card">
+              <div class="settings-card-title">Team Members</div>
+              <div class="settings-card-desc">Manage the people who have access to this dashboard.</div>
+              <div id="members-list"></div>
+            </div>
+          </div>
+
           <!-- ── Positions ── -->
           <div class="settings-panel" id="setting-positions">
             <div class="settings-card">
@@ -543,6 +586,26 @@
           <!-- ── Departments ── -->
           <!-- ── Calendars ── -->
           <div class="settings-panel" id="setting-calendars">
+
+            <!-- ── Google Calendar API Credentials ── -->
+            <div class="settings-card">
+              <div class="settings-card-title">🔑 Google Calendar API Credentials</div>
+              <div class="settings-card-desc">Required to sync with Google Calendar. Get these from <a href="https://console.cloud.google.com/" target="_blank" style="color:var(--violet)">Google Cloud Console</a> → APIs &amp; Services → Credentials.</div>
+              <div class="settings-row">
+                <div><div class="settings-row-label">API Key</div><div class="settings-row-sub">Restrict this key to Google Calendar API only in Cloud Console</div></div>
+                <input class="settings-input" id="s-gcal-api-key" placeholder="AIzaSy…"/>
+              </div>
+              <div class="settings-row">
+                <div><div class="settings-row-label">OAuth Client ID</div><div class="settings-row-sub">Web application type, ends in .apps.googleusercontent.com</div></div>
+                <input class="settings-input" id="s-gcal-client-id" placeholder="xxxxxx.apps.googleusercontent.com"/>
+              </div>
+              <div style="margin-top:12px;display:flex;justify-content:flex-end">
+                <button class="settings-save-btn" data-action="saveGCalApiCredentials">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                  Save Credentials
+                </button>
+              </div>
+            </div>
 
             <!-- ── Connected Calendars list ── -->
             <div class="settings-card">
@@ -670,27 +733,30 @@
               <div class="settings-card-desc">Required for sending assessment invitation emails to applicants. Get your free keys at <a href="https://emailjs.com" target="_blank" style="color:var(--violet)">emailjs.com</a></div>
               <div class="settings-row">
                 <div><div class="settings-row-label">Service ID</div><div class="settings-row-sub">Your EmailJS service identifier</div></div>
-                <input class="settings-input" id="s-emailjs-service" placeholder="service_xxxxxxx" oninput="saveEmailJSConfig()"/>
+                <input class="settings-input" id="s-emailjs-service" placeholder="service_xxxxxxx"/>
               </div>
               <div class="settings-row">
                 <div><div class="settings-row-label">Template ID</div><div class="settings-row-sub">Your assessment email template ID</div></div>
-                <input class="settings-input" id="s-emailjs-template" placeholder="template_xxxxxxx" oninput="saveEmailJSConfig()"/>
+                <input class="settings-input" id="s-emailjs-template" placeholder="template_xxxxxxx"/>
               </div>
               <div class="settings-row">
                 <div><div class="settings-row-label">Public Key</div><div class="settings-row-sub">Your EmailJS account public key</div></div>
-                <input class="settings-input" id="s-emailjs-pubkey" placeholder="xxxxxxxxxxxxxxxxxxxx" oninput="saveEmailJSConfig()"/>
+                <input class="settings-input" id="s-emailjs-pubkey" placeholder="xxxxxxxxxxxxxxxxxxxx"/>
               </div>
               <div class="settings-row">
                 <div><div class="settings-row-label">Assessment Portal URL</div><div class="settings-row-sub">Link sent to applicants (leave blank until portal is hosted)</div></div>
-                <input class="settings-input" id="s-assess-portal-url" placeholder="https://yoursite.com/assessment" oninput="saveEmailJSConfig()"/>
+                <input class="settings-input" id="s-assess-portal-url" placeholder="https://yoursite.com/assessment"/>
               </div>
               <div class="settings-row">
                 <div><div class="settings-row-label">Link Expiry</div><div class="settings-row-sub">Hours until assessment link expires</div></div>
-                <select class="form-select" id="s-assess-expiry" style="width:120px" onchange="saveEmailJSConfig()">
+                <select class="form-select" id="s-assess-expiry" style="width:120px">
                   <option value="24">24 hours</option>
                   <option value="48">48 hours</option>
                   <option value="72" selected>72 hours</option>
                 </select>
+              </div>
+              <div style="display:flex;justify-content:flex-end;margin-top:12px;">
+                <button class="settings-save-btn" onclick="saveEmailJSConfig();showToast('✅ EmailJS settings saved.')">Save Credentials</button>
               </div>
             </div>
           </div>
@@ -828,7 +894,7 @@
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
           Refresh from Sheet
         </button>
-        <button class="filter-btn" data-action="exportAnalyticsCSV" style="gap:6px">
+        <button class="filter-btn export-csv-btn" data-action="exportAnalyticsCSV">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Export CSV
         </button>
@@ -963,15 +1029,15 @@
     <div id="task-stage-progress" class="u-mb-12"></div>
 
     <!-- Pipeline action strip (shows when editing an active applicant) -->
-    <div id="task-pipeline-actions" style="display:none">
-      <span style="font-size:11px;color:var(--muted);font-weight:600;margin-right:4px">Move:</span>
+    <div id="task-pipeline-actions" style="display:none;align-items:center;flex-wrap:wrap;gap:6px;">
+      <span style="font-size:11px;color:var(--muted);font-weight:600;">Move:</span>
       <button id="btn-advance-stage" class="pipeline-action-btn pipeline-btn-next" data-action="advanceStageAndClose">→ Next Stage</button>
       <select id="btn-move-stage" class="pipeline-action-btn pipeline-btn-move" style="display:none" onchange="if(this.value){moveApplicantToStage(window._editingTaskId,this.value);closeTaskModal();this.value=''}">
         <option value="">⤸ Move to...</option>
       </select>
-      <button id="btn-hire-now"      class="pipeline-action-btn pipeline-btn-hire" data-action="hireAndClose" style="display:none">✓ Hire</button>
-      <button id="btn-reject-now"    class="pipeline-action-btn pipeline-btn-reject" data-action="rejectAndClose">✗ Reject</button>
-      <button id="btn-delete-now"    class="pipeline-action-btn pipeline-btn-delete" onclick="listDeleteApplicant(window._editingTaskId)" style="margin-left:auto;">🗑️ Delete</button>
+      <button id="btn-hire-now"      class="pipeline-action-btn pipeline-btn-hire" data-action="hireAndClose" data-role-hide="hr" style="display:none">✓ Hire</button>
+      <button id="btn-reject-now"    class="pipeline-action-btn pipeline-btn-reject" data-action="rejectAndClose" data-role-hide="hr">✗ Reject</button>
+      <button id="btn-delete-now"    class="pipeline-action-btn pipeline-btn-delete" onclick="listDeleteApplicant(window._editingTaskId)" data-role-hide="hr" style="margin-left:auto;">🗑️ Delete</button>
     </div>
 
     <!-- Tab Nav -->
@@ -1001,7 +1067,6 @@
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
         Activity
       </button>
-
       <button class="modal-tab" data-tab="history" data-action="switchModalTab" data-arg="history">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>
         History
@@ -1209,6 +1274,7 @@
       <div class="form-group">
         <label class="form-label">Notes</label>
         <textarea class="form-textarea" id="f-notes" placeholder="Any additional notes about this applicant…" rows="3"></textarea>
+        <div class="u-surface-note" id="f-notes-preview" style="display:none;"></div>
       </div>
     </div>
 
@@ -1239,8 +1305,22 @@
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
             Reset Attempt
           </button>
+          <button class="assess-copy-btn" id="assess-copy-btn" data-action="copyAssessmentLink" style="display:none">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copy Assessment Link
+          </button>
+        </div>
+        <div class="assess-no-email-warn" id="assess-no-email-warn" style="display:none">
+          ⚠️ No email on file — copy the link and share it manually.
         </div>
         <div class="assess-invite-note" id="assess-invite-note"></div>
+        <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">
+          <a id="assess-portal-open-btn" href="https://f--asessment-portal.web.app/" target="_blank" rel="noopener"
+            style="display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:var(--cyan);text-decoration:none;">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            Open Assessment Portal
+          </a>
+        </div>
       </div>
 
       <!-- Matched pending result banner -->
@@ -1258,46 +1338,79 @@
       <!-- Fetch status feedback line -->
       <div class="assess-fetch-status" id="assess-fetch-status"></div>
 
-      <div class="assessment-section" id="assess-typing">
-        <div class="assessment-section-header">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M6 14h.01M10 14h.01M14 14h.01M18 14h.01"/></svg>
+      <!-- ── Assessment Tab Switcher ── -->
+      <div class="assess-tab-bar" id="assess-tab-bar">
+        <button class="assess-tab active" data-target="assess-typing">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M6 14h.01M10 14h.01M14 14h.01M18 14h.01"/></svg>
           Typing Test
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">WPM / Score <span class="u-light u-fw-400">(e.g. 75 or 75%)</span></label>
-            <input type="text" class="form-input" id="f-typing-score" placeholder="e.g. 75"/>
-          </div>
-        </div>
+        </button>
+        <button class="assess-tab" data-target="assess-verbal">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+          Verbal Test
+        </button>
+        <button class="assess-tab" data-target="assess-excel">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/></svg>
+          Excel Test
+        </button>
       </div>
 
-      <div class="assessment-section" id="assess-knowledge">
-        <div class="assessment-section-header">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-          Overall Test
-        </div>
+      <!-- ── Typing Test ── -->
+      <div class="assessment-section assess-panel" id="assess-typing">
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label">Score <span class="u-light u-fw-400">(out of 100)</span></label>
+            <label class="form-label">Typing Assessment <span class="u-light u-fw-400">(WPM)</span></label>
+            <input type="text" class="form-input" id="f-typing-score" placeholder="e.g. 75"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Word Typing <span class="u-light u-fw-400">(WPM)</span></label>
+            <input type="text" class="form-input" id="f-word-typing" placeholder="e.g. 80"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Knowledge Test <span class="u-light u-fw-400">(out of 100)</span></label>
             <input type="number" class="form-input" id="f-knowledge-score" placeholder="e.g. 82" min="0" max="100"/>
           </div>
         </div>
       </div>
 
-      <div class="assessment-section" id="assess-verbal">
-        <div class="assessment-section-header">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
-          Verbal / Voice Test
-        </div>
-        <div class="form-group">
-          <label class="form-label">Recording Link</label>
-          <input type="url" class="form-input" id="f-verbal-link" placeholder="https://drive.google.com/verbal-recording…"/>
+      <!-- ── Verbal Test ── -->
+      <div class="assessment-section assess-panel" id="assess-verbal" style="display:none">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Verbal Comm <span class="u-light u-fw-400">(Recording Link)</span></label>
+            <input type="url" class="form-input" id="f-verbal-link" placeholder="https://drive.google.com/…"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Conflict Reso <span class="u-light u-fw-400">(out of 20)</span></label>
+            <input type="number" class="form-input" id="f-conflict-score" placeholder="e.g. 17" min="0" max="20"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Grammar Test <span class="u-light u-fw-400">(out of 20)</span></label>
+            <input type="number" class="form-input" id="f-grammar-score" placeholder="e.g. 18" min="0" max="20"/>
+          </div>
         </div>
         <div id="verbal-link-preview" style="display:none;margin-top:4px">
           <a id="verbal-link-open" href="#" target="_blank" rel="noopener" class="assessment-link-btn">
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
             Open Recording
           </a>
+        </div>
+      </div>
+
+      <!-- ── Excel Test ── -->
+      <div class="assessment-section assess-panel" id="assess-excel" style="display:none">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Data Entry <span class="u-light u-fw-400">(score)</span></label>
+            <input type="text" class="form-input" id="f-data-entry-score" placeholder="e.g. Passed"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Formatting <span class="u-light u-fw-400">(score)</span></label>
+            <input type="text" class="form-input" id="f-formatting-score" placeholder="e.g. Passed"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Sorting <span class="u-light u-fw-400">(score)</span></label>
+            <input type="text" class="form-input" id="f-sorting-score" placeholder="e.g. Passed"/>
+          </div>
         </div>
       </div>
 
@@ -1544,7 +1657,6 @@
       </div>
     </div>
 
-    <!-- ── TAB: FILES ── -->
     <!-- ── TAB: HISTORY ── -->
     <div class="modal-tab-panel" id="tab-history">
       <div id="tab-history-timeline" class="stage-history-timeline"></div>
@@ -1554,7 +1666,7 @@
 
     <!-- Footer -->
     <div class="form-actions">
-      <button class="btn-delete" id="btn-task-delete" style="display:none">Delete</button>
+      <button class="btn-delete" id="btn-task-delete" data-role-hide="hr" style="display:none">Delete</button>
       <div class="u-flex-1"></div>
 <button class="btn-cancel" id="task-modal-cancel">Cancel</button>
       <button class="btn-save" id="btn-task-save">Save Applicant</button>
@@ -1895,7 +2007,7 @@
     <button id="bulk-move-stage-btn" onclick="toggleBulkMoveStageMenu(event)" style="padding:7px 14px;border-radius:8px;border:none;background:var(--surface-3);color:var(--text);font-size:12px;font-weight:700;cursor:pointer;font-family:'Montserrat',sans-serif;transition:opacity 0.15s;">Move to Stage ▾</button>
     <div id="bulk-move-stage-menu" style="display:none;position:absolute;bottom:calc(100% + 6px);left:0;background:var(--surface-1);border:1.5px solid var(--border);border-radius:12px;padding:4px;box-shadow:0 8px 32px rgba(0,0,0,.25);z-index:9100;min-width:170px;"></div>
   </div>
-  <button onclick="bulkReject()" style="padding:7px 14px;border-radius:8px;border:none;background:#ef4444;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:'Montserrat',sans-serif;">Reject Selected</button>
+  <button onclick="bulkReject()" data-role-hide="hr" style="padding:7px 14px;border-radius:8px;border:none;background:#ef4444;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:'Montserrat',sans-serif;">Reject Selected</button>
   <button onclick="clearBulkSelection()" style="padding:7px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);font-size:12px;font-weight:600;cursor:pointer;font-family:'Montserrat',sans-serif;">Clear Selection</button>
 </div>
 
@@ -1954,7 +2066,7 @@
 </script>
 
 <!-- ══ LOGIN GATE MODAL ══ -->
-<div id="login-gate-overlay" style="display:none;position:fixed;inset:0;z-index:9999;background:var(--bg,#0f1629);align-items:center;justify-content:center;">
+<div id="login-gate-overlay" style="display:flex;position:fixed;inset:0;z-index:9999;background:var(--bg,#0f1629);align-items:center;justify-content:center;">
   <div style="width:100%;max-width:400px;padding:32px;background:var(--surface,#1a1f35);border:1px solid var(--border,rgba(255,255,255,.08));border-radius:20px;box-shadow:0 24px 64px rgba(0,0,0,.5);">
     <div style="text-align:center;margin-bottom:32px;">
       <div style="font-size:32px;font-weight:900;font-family:Syne,sans-serif;background:linear-gradient(135deg,var(--cyan,#3ecfdf),var(--violet,#6c63ff));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:6px;">upstaff</div>
@@ -2111,16 +2223,14 @@ function _updateTopbarAvatar() {
   if (emailLbl) emailLbl.textContent = cfg.email || profile.email || 'Not connected';
 }
 
-// Apply role-based UI restrictions
+// Apply role-based UI restrictions.
+// Uses a CSS class on <body> rather than inline styles so that dynamically
+// rendered buttons (pipeline actions, member list) stay hidden even after
+// JS re-renders that set element.style.display directly.
+// CSS rule in pm-ui-base.css:
+//   body.role-assistant [data-role-hide="hr"] { display: none !important; }
 function _applyRoleRestrictions(role) {
-  if (role === 'assistant') {
-    document.querySelectorAll('[data-role-hide="hr"]').forEach(function(el) {
-      el.style.display = 'none';
-    });
-    // Settings nav stays visible for assistants so they can access
-    // Profile, Notifications, Calendars, and Partner API configuration.
-    // Only HR-specific panels (Positions, Danger Zone) are hidden via data-role-hide="hr".
-  }
+  document.body.classList.toggle('role-assistant', role === 'assistant');
 }
 
 // Re-apply restrictions and update avatar on page load if already logged in
@@ -2145,6 +2255,8 @@ document.addEventListener('DOMContentLoaded', function() {
           // Re-apply role restrictions (in case silent re-login refreshed config)
           var cfg = UpstaffAPI.getConfig();
           if (cfg.role) _applyRoleRestrictions(cfg.role);
+          _updateTopbarAvatar();
+          _hideLoginGate();
           syncApplicantsFromApi();
         } else {
           _showLoginGate();

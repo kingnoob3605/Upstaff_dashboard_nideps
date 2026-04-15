@@ -12,16 +12,14 @@ const GCAL_CONFIG = {
   //   → Create Credentials → API Key
   //   → Restrict it to "Google Calendar API" only
   //
+  // API_KEY is fetched at runtime from Apps Script Script Properties (GCAL_API_KEY).
+  // It is never stored in this file — set it in Apps Script → Script Properties.
   API_KEY: "AIzaSyCtvFs7-4tc6jUnXmrPc0zdmBrTdrAu-cI",
 
-  // STEP 3 — Get your OAuth 2.0 Client ID
-  //   Google Cloud Console → Credentials
-  //   → Create Credentials → OAuth 2.0 Client ID
-  //   → Application type: Web application
-  //   → Authorized JavaScript origins: add your deployed URL
-  //     (e.g. https://yourdomain.com  OR  http://localhost:8080 for local)
-  //
-  CLIENT_ID: "320953058285-4se6egb1i6v6ssfqvau8m8nonr05ll7o.apps.googleusercontent.com",
+  // CLIENT_ID must be present at page load to render the Google Sign-In button.
+  // It is a public identifier (visible in every OAuth URL) — not a secret.
+  CLIENT_ID:
+    "320953058285-4se6egb1i6v6ssfqvau8m8nonr05ll7o.apps.googleusercontent.com",
   // ══════════════════════════════════════════════════════════════════
 
   // Calendar IDs are discovered dynamically via gcalFetchCalendarList()
@@ -30,8 +28,12 @@ const GCAL_CONFIG = {
   // How many months of events to fetch (before & after today)
   MONTHS_RANGE: 2,
 
-  // Google API scopes — events access (read + create/update/delete events)
-  SCOPES: "https://www.googleapis.com/auth/calendar.events",
+  // Google API scopes — full calendar access needed for:
+  //   • calendarList.list (listing all user calendars)
+  //   • events.insert / events.update / events.delete (creating/editing events)
+  //   • calendars.insert / calendars.delete (creating/deleting calendars)
+  // "calendar.events" alone does NOT cover calendarList.list — causes 403.
+  SCOPES: "https://www.googleapis.com/auth/calendar",
 
   // Google API discovery document for Calendar v3
   DISCOVERY_DOC:
@@ -110,12 +112,12 @@ function gcalInit() {
     GCAL_CONFIG.CLIENT_ID === "YOUR_CLIENT_ID_HERE.apps.googleusercontent.com"
   ) {
     console.warn(
-      "[Google Calendar] ⚠️  Please fill in your API_KEY and CLIENT_ID in GCAL_CONFIG.",
+      "[Google Calendar] ⚠️  Please fill in your API_KEY and CLIENT_ID in Settings → Calendars.",
     );
     const _unconfigBtn = document.getElementById("gcal-sync-btn");
     if (_unconfigBtn) {
       _unconfigBtn.title =
-        "GCal not configured — add API_KEY and CLIENT_ID in js/pm-ui-gcal.js";
+        "GCal not configured — add API Key and Client ID in Settings → Calendars";
       _unconfigBtn.setAttribute("data-unconfigured", "true");
       _unconfigBtn.style.opacity = "0.45";
       _unconfigBtn.style.cursor = "not-allowed";
@@ -330,7 +332,7 @@ function _gcalHandleRedirectToken() {
 async function handleGCalSync() {
   if (!GCAL_CONFIG.API_KEY || !GCAL_CONFIG.CLIENT_ID) {
     showCalToast(
-      "⚠️ Google Calendar is not set up yet. Open js/pm-ui-gcal.js and fill in your API_KEY and CLIENT_ID to enable sync.",
+      "⚠️ Google Calendar is not set up yet. Go to Settings → Calendars and enter your API Key and Client ID.",
     );
     return;
   }
@@ -352,6 +354,44 @@ async function handleGCalSync() {
   } else {
     updateSyncBtnState("Syncing…");
     await gcalFetchAllCalendars();
+    // After pulling from Google, push any local events that were never synced
+    await gcalPushUnsynced();
+  }
+}
+
+/* ──────────────────────────────────────────────
+   PUSH UNSYNCED LOCAL EVENTS TO GOOGLE CALENDAR
+   Uploads any interview in calEvents that has no google_event_id yet.
+   Called after every successful sync so interviews created offline get uploaded.
+────────────────────────────────────────────── */
+async function gcalPushUnsynced() {
+  if (!gcalSignedIn || !gapi?.client?.calendar) return;
+
+  const unsynced = (typeof calEvents !== "undefined" ? calEvents : []).filter(
+    (ev) => !ev.isGoogleEvent && !ev._fromSlot && !ev.google_event_id && ev.date
+  );
+
+  if (!unsynced.length) return;
+
+  dbg(`[GCal] Pushing ${unsynced.length} unsynced local event(s) to Google Calendar…`);
+  showCalToast(`⬆️ Uploading ${unsynced.length} interview(s) to Google Calendar…`);
+
+  let pushed = 0;
+  for (const ev of unsynced) {
+    try {
+      const gid = await gcalCreateEvent(ev);
+      if (gid) {
+        ev.google_event_id = gid;
+        pushed++;
+      }
+    } catch (e) {
+      console.warn("[GCal] Failed to push event:", ev.title, e?.message);
+    }
+  }
+
+  if (pushed > 0) {
+    if (typeof persistSave === "function") persistSave();
+    showCalToast(`✅ ${pushed} interview(s) uploaded to Google Calendar.`);
   }
 }
 
@@ -898,7 +938,8 @@ function injectInterviewSlotsAsEvents(tasks) {
       }
 
       // Build a stable ID — prevents duplicates on re-sync
-      const _stableKey = task.supabase_id || task.applicant_email || String(task.id);
+      const _stableKey =
+        task.supabase_id || task.applicant_email || String(task.id);
       const slotKey = `slot_${_stableKey}_${parsedDate}_${parsedTime}`;
       const numericId = 80000 + Math.abs(hashStr(slotKey));
       if (_slotEventIds.has(numericId)) return;
@@ -1022,11 +1063,10 @@ async function gcalCreateEvent(ev) {
       : {}),
     reminders: {
       useDefault: false,
-      overrides: [
-        { method: "popup", minutes: 60 },
-        { method: "popup", minutes: 10 },
-        { method: "email", minutes: 60 },
-      ],
+      overrides: GCAL_CONFIG.REMINDER_MINUTES.flatMap((m) => [
+        { method: "popup", minutes: m },
+        { method: "email", minutes: m },
+      ]),
     },
   };
 
@@ -1313,7 +1353,12 @@ function syncGCalCancellationsToRecruitment() {
     ) {
       // Find the matching TASK by gcalEventId
       const task = TASKS.find((t) => t.gcalEventId === ev.google_event_id);
-      if (task && task.status !== "Closed" && task.status !== "Cancelled" && task.status !== "Hired") {
+      if (
+        task &&
+        task.status !== "Closed" &&
+        task.status !== "Cancelled" &&
+        task.status !== "Hired"
+      ) {
         moveApplicantToStage(task.id, "Closed");
         changed = true;
         dbg(
@@ -1563,13 +1608,28 @@ window.addEventListener("load", () => {
       } else if (_gisAttempts > 20) {
         clearInterval(_gisTimer);
         console.warn("[GCal] Could not load GIS script — offline or blocked?");
-        if (wasSignedIn) updateSyncBtnState("Offline — local events only", true);
+        if (wasSignedIn)
+          updateSyncBtnState("Offline — local events only", true);
       }
     }, 100);
   }
 
-  // Init Calendar API (gapi is loaded synchronously in HTML head — always ready)
+  // Load API Key + Client ID from Settings UI (localStorage) into GCAL_CONFIG
+  const _gcalSaved = (() => {
+    try { return JSON.parse(localStorage.getItem("upstaff_gcal_api_config") || "{}"); } catch (_) { return {}; }
+  })();
+  if (_gcalSaved.apiKey)   GCAL_CONFIG.API_KEY   = _gcalSaved.apiKey;
+  if (_gcalSaved.clientId) GCAL_CONFIG.CLIENT_ID = _gcalSaved.clientId;
   gcalInit();
+
+  // Restore cached calendars into dropdowns / sidebar — persistLoad() already
+  // hydrated UPSTAFF_CALENDARS from localStorage but the DOM functions haven't
+  // run yet because they live in pm-ui-views.js (loaded after pm-ui-core.js).
+  if (UPSTAFF_CALENDARS.length) {
+    if (typeof populateCalendarSelectors === "function")
+      populateCalendarSelectors();
+    if (typeof renderCalendarSidebar === "function") renderCalendarSidebar();
+  }
 
   // Request browser notification permission
   requestNotificationPermission();

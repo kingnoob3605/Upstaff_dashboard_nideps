@@ -1729,6 +1729,24 @@
   cursor: pointer; font-size: 12px; font-weight: 600;
   text-decoration: underline; padding: 0;
 }
+.files-upload-area {
+  border: 2px dashed var(--border); border-radius: 12px;
+  padding: 20px 14px; text-align: center;
+  transition: border-color 0.2s, background 0.2s;
+  margin-bottom: 12px;
+}
+.files-upload-area:hover, .files-upload-area.dragover {
+  border-color: var(--cyan); background: var(--surface-2);
+}
+.file-upload-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  margin-top: 8px; padding: 6px 14px; border-radius: 8px;
+  border: 1.5px solid var(--cyan); background: transparent;
+  color: var(--cyan); font-size: 11px; font-weight: 700;
+  font-family: "Montserrat", sans-serif; cursor: pointer;
+  transition: background 0.15s;
+}
+.file-upload-btn:hover { background: rgba(62,207,223,.1); }
 
 /* ══════════════════════════════════════════════
    MULTI-ASSIGNEE DROPDOWN
@@ -2530,3 +2548,45 @@ tr:has(.bulk-cb:checked) td {
 [data-theme="dark"] #position-choice-table td {
   border-color: var(--border);
 }
+
+/* ══════════════════════════════════════════════
+   SORTABLEJS — Kanban drag ghost & dragging classes
+══════════════════════════════════════════════ */
+.board-card-ghost {
+  opacity: 0.35;
+  background: var(--surface-3);
+  border: 2px dashed var(--cyan);
+  border-radius: 10px;
+}
+.board-card-dragging {
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+  transform: rotate(1.5deg) scale(1.02);
+  opacity: 0.95;
+  cursor: grabbing !important;
+  z-index: 9999;
+}
+
+/* ══════════════════════════════════════════════
+   TIPPY.JS — Upstaff sidebar tooltip theme
+══════════════════════════════════════════════ */
+.tippy-box[data-theme~="upstaff"] {
+  background: var(--navy, #0f172a);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: "Montserrat", sans-serif;
+  border-radius: 8px;
+  padding: 2px 4px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+.tippy-box[data-theme~="upstaff"] .tippy-arrow {
+  color: var(--navy, #0f172a);
+}
+[data-theme="dark"] .tippy-box[data-theme~="upstaff"] {
+  background: #1e293b;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+}
+[data-theme="dark"] .tippy-box[data-theme~="upstaff"] .tippy-arrow {
+  color: #1e293b;
+}
+

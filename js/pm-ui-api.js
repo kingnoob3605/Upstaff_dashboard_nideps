@@ -5,13 +5,10 @@
 window.UpstaffAPI = (function () {
   var CONFIG_KEY = "upstaff_api_config";
 
-  // ── Allowed Google accounts — only emails, no passwords in code ─────────────
-  // ADMIN_EMAIL, ADMIN_PASSWORD, and Web App URL are entered via Settings UI
-  // and stored in localStorage — never hardcoded here.
-  var ALLOWED_ACCOUNTS = [
-    { email: "depamaylo.angelo360@gmail.com", role: "hr", name: "HR Manager" },
-    { email: "kingnoob360pro@gmail.com", role: "assistant", name: "Assistant" },
-  ];
+  // ── Allowed accounts are stored in Apps Script Script Properties (ALLOWED_USERS) ──
+  // No emails are hardcoded here. The backend decides who is authorized and what role
+  // they have. To add or remove users, update ALLOWED_USERS in the Apps Script editor:
+  //   Apps Script → Project Settings → Script Properties → ALLOWED_USERS
   // ─────────────────────────────────────────────────────────────────────────────
 
   // ── Config ──────────────────────────────────────────────────────────────────
@@ -75,11 +72,6 @@ window.UpstaffAPI = (function () {
   // Nothing sensitive is hardcoded — credentials come from Settings UI
   async function loginWithGoogle(googlePayload) {
     var email = (googlePayload.email || "").toLowerCase().trim();
-    var account = ALLOWED_ACCOUNTS.find(function (a) {
-      return a.email.toLowerCase() === email;
-    });
-    if (!account)
-      throw new Error("Access denied. This Google account is not authorized.");
 
     var c = _config();
     if (!c.webAppUrl)
@@ -91,14 +83,17 @@ window.UpstaffAPI = (function () {
         "Admin credentials not set. Go to Settings → Partner API and enter ADMIN_EMAIL and ADMIN_PASSWORD.",
       );
 
-    // Fetch SESSION_TOKEN from Apps Script using stored admin credentials
+    // Send the Google email to the backend — Apps Script checks it against
+    // ALLOWED_USERS in Script Properties and returns the role + name.
+    // No email list exists in this file.
     var resp = await fetch(c.webAppUrl, {
       method: "POST",
       headers: { "Content-Type": "text/plain" },
       body: JSON.stringify({
-        action: "login",
-        email: c.adminEmail,
-        password: c.adminPassword,
+        action:      "login",
+        email:       c.adminEmail,
+        password:    c.adminPassword,
+        googleEmail: email,
       }),
     });
     if (!resp.ok) throw new Error("HTTP " + resp.status);
@@ -106,30 +101,30 @@ window.UpstaffAPI = (function () {
     if (json.result === "error")
       throw new Error(json.message || "Login failed");
 
-    c.email = email;
-    c.name = account.name || googlePayload.name || email;
-    c.role = account.role;
-    c.picture = googlePayload.picture || "";
-    c.token = json.token;
+    c.email    = email;
+    c.name     = json.name || googlePayload.name || email;
+    c.role     = json.role;
+    c.picture  = googlePayload.picture || "";
+    c.token    = json.token;
     c.login_at = Date.now();
-    delete c.loggedOut; // Clear manual logout flag on successful sign-in
+    delete c.loggedOut;
     saveConfig(c);
 
     // Pre-populate upstaff_profile with Google account data
     try {
       var nameParts = (googlePayload.name || "").trim().split(" ");
       var firstName = nameParts[0] || "";
-      var lastName = nameParts.slice(1).join(" ") || "";
+      var lastName  = nameParts.slice(1).join(" ") || "";
       var existingProfile = JSON.parse(
         localStorage.getItem("upstaff_profile") || "{}",
       );
       existingProfile.firstName = firstName || existingProfile.firstName || "";
-      existingProfile.lastName = lastName || existingProfile.lastName || "";
-      existingProfile.email = email || existingProfile.email || "";
+      existingProfile.lastName  = lastName  || existingProfile.lastName  || "";
+      existingProfile.email     = email     || existingProfile.email     || "";
       localStorage.setItem("upstaff_profile", JSON.stringify(existingProfile));
     } catch (_) {}
 
-    return { role: account.role, name: c.name };
+    return { role: json.role, name: json.name || c.name };
   }
 
   function logout() {
@@ -155,9 +150,10 @@ window.UpstaffAPI = (function () {
         method: "POST",
         headers: { "Content-Type": "text/plain" },
         body: JSON.stringify({
-          action: "login",
-          email: c.adminEmail,
-          password: c.adminPassword,
+          action:      "login",
+          email:       c.adminEmail,
+          password:    c.adminPassword,
+          googleEmail: c.email || "",
         }),
       });
       if (!resp.ok) return false;

@@ -14,7 +14,8 @@
       "Bash(sed -n '2039,2134p' \"C:\\\\Users\\\\Internship\\\\Desktop\\\\Upstaff_dashboard\\\\appscript.js\")",
       "Bash(sed -n '1496,1550p' \"C:\\\\Users\\\\Internship\\\\Desktop\\\\appscript.txt\")",
       "Bash(grep -n \"function autoProgressStatuses\" /c/Users/Internship/Desktop/Upstaff_dashboard/js/*.js)",
-      "mcp__Claude_Preview__preview_start"
+      "mcp__Claude_Preview__preview_start",
+      "Bash(grep -n \"function buildCSVDownload\\\\|const buildCSVDownload\" /c/Users/Internship/Desktop/Upstaff_dashboard/js/*.js)"
     ]
   }
 }

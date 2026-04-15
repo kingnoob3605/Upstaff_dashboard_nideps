@@ -1,0 +1,2170 @@
+// ── Config ────────────────────────────────────────────────────────────────────
+var SPREADSHEET_ID = "1B_kafcy0aG-gLDYowXyaisHfYEEACi52HIu4-4J4yvI";
+var DRIVE_PARENT_FOLDER_URL =
+  "https://drive.google.com/drive/folders/1a1_qfv6TCPNvANClNl-9-ISLgRkZiY-V";
+
+var SHEET_NAME = "Applications";
+var LOGS_NAME = "Admin Logs";
+var JOBS_NAME = "Jobs";
+var ASSESSMENTS_SHEET_NAME = "Assessments";
+
+var HEADER_COLOR = "#1a1f35";
+var ACCENT_COLOR = "#3ecfdf";
+var STATUS_COL = 1;
+
+var STATUS_COLORS = {
+  // ── Filled pills (solid background + white text) ─────────────────────
+  "Rejected":                 { bg: "#DC2626", fg: "#FFFFFF", tint: "#fecaca" }, // red
+  "Hired":                    { bg: "#059669", fg: "#FFFFFF", tint: "#a7f3d0" }, // green
+  "Open for other Roles":     { bg: "#0EA5E9", fg: "#FFFFFF", tint: "#bae6fd" }, // sky
+  "Not Qualified":            { bg: "#4B5563", fg: "#FFFFFF", tint: "#d1d5db" }, // slate
+  "No Show":                  { bg: "#111827", fg: "#FFFFFF", tint: "#9ca3af" }, // black
+  "Duplicate Lead":           { bg: "#A855F7", fg: "#FFFFFF", tint: "#e9d5ff" }, // purple
+  "For Future Consideration": { bg: "#F59E0B", fg: "#FFFFFF", tint: "#fde68a" }, // amber
+  "Hired - Resigned":         { bg: "#7C2D12", fg: "#FFFFFF", tint: "#fecaca" }, // maroon
+
+  // ── Text-only (bg = tint so the pill blends into the row) ────────────
+  "For Interview":            { bg: "#fce7f3", fg: "#BE185D", tint: "#fce7f3" }, // pink text
+  "Interviewed":              { bg: "#a7f3d0", fg: "#065F46", tint: "#a7f3d0" }, // green text
+  "For Client Endorsement":   { bg: "#e9d5ff", fg: "#5B21B6", tint: "#e9d5ff" }, // violet text
+  "Could be Revisited":       { bg: "#bfdbfe", fg: "#1E3A8A", tint: "#bfdbfe" }, // blue text
+};
+
+var HEADERS = [
+  "Status", // col 1
+  "Full Name", // col 2
+  "Email", // col 3
+  "Phone", // col 4
+  "Address", // col 5
+  "Positions", // col 6
+  "Employment Type", // col 7
+  "Work Setup", // col 8
+  "Work Schedule", // col 9
+  "Education Level", // col 10
+  "School", // col 11
+  "Course", // col 12
+  "Skills", // col 13
+  "Tools", // col 14
+  "Interview Slots", // col 15
+  "Referral Source", // col 16
+  "Resume / CV Link", // col 17
+  "Notes", // col 18
+  "Portfolio Link", // col 19
+  "Video Intro Link", // col 20
+  "Other Docs Link", // col 21
+  "Drive Folder", // col 22
+  "Timestamp", // col 23
+  "Supabase ID", // col 24
+];
+
+var COL_TO_FIELD = {
+  1: "status",
+  2: "full_name",
+  3: "email",
+  4: "phone",
+  5: "address",
+  6: "positions",
+  7: "employment_type",
+  8: "work_setup",
+  9: "work_schedule",
+  10: "education_level",
+  11: "school",
+  12: "course",
+  13: "skills",
+  14: "tools",
+  15: "interview_slots",
+  16: "referral_source",
+  17: "resume_link",
+  18: "notes",
+  19: "portfolio_link",
+  20: "video_link",
+  21: "other_docs_link",
+  22: "drive_folder_link",
+};
+
+var LOG_HEADERS = ["Timestamp", "Event", "Email", "Info"];
+var JOBS_HEADERS = ["Title", "Active", "Date Added"];
+
+// ── Assessment Config ─────────────────────────────────────────────────────────
+var TEST_KEY_TO_COL = {
+  "typing-word": 2,
+  "typing-story": 3,
+  "typing-knowledge": 4,
+  "verbal-comm": 5,
+  "verbal-conflict": 6,
+  "verbal-grammar": 7,
+  "excel-data-entry": 8,
+  "excel-formatting": 9,
+  "excel-sorting": 10,
+};
+
+var ACOL = {
+  name: 1,
+  typingAssessment: 2,
+  wordTyping: 3,
+  knowledgeTest: 4,
+  verbalComm: 5,
+  conflictReso: 6,
+  grammarTest: 7,
+  dataEntry: 8,
+  formatting: 9,
+  sorting: 10,
+};
+
+var PASS_SCORES = {
+  typingAssessment: 40,
+  wordTyping: 40,
+  knowledgeTest: 10,
+  conflictReso: 15,
+  grammarTest: 15,
+};
+
+var TEST_COLORS = {
+  2: { bg: "#eff8ff", fg: "#0369a1" },
+  3: { bg: "#eff8ff", fg: "#0369a1" },
+  4: { bg: "#eff8ff", fg: "#0369a1" },
+  5: { bg: "#fff5f5", fg: "#dc2626" },
+  6: { bg: "#fff5f5", fg: "#dc2626" },
+  7: { bg: "#fff5f5", fg: "#dc2626" },
+  8: { bg: "#f0fdf4", fg: "#16a34a" },
+  9: { bg: "#f0fdf4", fg: "#16a34a" },
+  10: { bg: "#f0fdf4", fg: "#16a34a" },
+};
+
+var ASSESSMENT_ROW_HEIGHT = 28;
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function getSpreadsheet() {
+  return SpreadsheetApp.openById(SPREADSHEET_ID);
+}
+
+function getDriveParentFolder() {
+  var parts = DRIVE_PARENT_FOLDER_URL.split("/folders/");
+  var folderId = parts[parts.length - 1].split("?")[0];
+  try {
+    return DriveApp.getFolderById(folderId);
+  } catch (e) {
+    writeLog("DRIVE_FOLDER_ERROR", "", e.message);
+    return DriveApp.getRootFolder();
+  }
+}
+
+function toBulletLines(items) {
+  return items
+    .filter(Boolean)
+    .map(function (i) {
+      return "• " + i.trim();
+    })
+    .join("\n");
+}
+
+function jsonResponse(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(
+    ContentService.MimeType.JSON,
+  );
+}
+
+function now() {
+  return new Date().toLocaleString("en-PH", { timeZone: "Asia/Manila" });
+}
+
+function formatTimestamp(isoString) {
+  if (!isoString) return now();
+  try {
+    var d = new Date(isoString);
+    return d.toLocaleString("en-PH", {
+      timeZone: "Asia/Manila",
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+  } catch (e) {
+    return now();
+  }
+}
+
+function writeLog(event, email, info) {
+  var ss = getSpreadsheet();
+  var sheet = ss.getSheetByName(LOGS_NAME);
+  if (!sheet) {
+    sheet = ss.insertSheet(LOGS_NAME);
+    setupLogsSheet(sheet);
+  }
+  sheet.appendRow([now(), event, email || "", info || ""]);
+}
+
+// ── FIX 1: verifyToken now checks expiry, not just value ──────────────────────
+function verifyToken(token) {
+  if (!token) return false;
+  var props = PropertiesService.getScriptProperties();
+  var stored = props.getProperty("SESSION_TOKEN");
+  var expiry = parseInt(props.getProperty("SESSION_TOKEN_EXPIRY") || "0", 10);
+  return token === stored && Date.now() < expiry;
+}
+
+function patchSupabase(supabaseId, fields) {
+  var props = PropertiesService.getScriptProperties();
+  var supabaseUrl = props.getProperty("SUPABASE_URL");
+  var supabaseKey = props.getProperty("SUPABASE_SERVICE_KEY");
+  if (!supabaseUrl || !supabaseKey || !supabaseId) return;
+
+  var response = UrlFetchApp.fetch(
+    supabaseUrl + "/rest/v1/applications?id=eq." + supabaseId,
+    {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: supabaseKey,
+        Authorization: "Bearer " + supabaseKey,
+        Prefer: "return=minimal",
+      },
+      payload: JSON.stringify(fields),
+      muteHttpExceptions: true,
+    },
+  );
+
+  var code = response.getResponseCode();
+  if (code < 200 || code >= 300) {
+    writeLog(
+      "SUPABASE_PATCH_ERROR",
+      "",
+      "HTTP " + code + ": " + response.getContentText(),
+    );
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ── SINGLE ENTRY POINT ──────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+function doPost(e) {
+  try {
+    var data;
+    try {
+      data = JSON.parse(e.postData.contents);
+    } catch (err) {
+      return jsonResponse({ result: "error", message: "Invalid JSON" });
+    }
+
+    // ── Route 1: Supabase webhooks (INSERT / UPDATE) ──────────────────────
+    if (data.type === "INSERT" || data.type === "UPDATE") {
+      if (data.table === "assessments") return handleWebhookAssessment(data);
+      return data.type === "INSERT"
+        ? handleWebhookInsert(data)
+        : handleWebhookUpdate(data);
+    }
+
+    // ── Route 2: Firebase frontend assessment submissions ─────────────────
+    if (data.assessmentType) {
+      return handleSaveAssessment(data);
+    }
+
+    // ── Route 3: Admin panel actions ──────────────────────────────────────
+    switch (data.action) {
+      case "login":
+        return handleLogin(data);
+      case "getData":
+        return handleGetData(data);
+      case "submit":
+        return handleSubmit(data);
+      case "getJobs":
+        return handleGetJobs();
+      case "addJob":
+        return handleAddJob(data);
+      case "toggleJob":
+        return handleToggleJob(data);
+      case "getCounts":
+        return handleGetCounts(data);
+      case "updateStatus":
+        return handleUpdateStatus(data);
+      case "updateApplicant":
+        return handleUpdateApplicant(data); // ← NEW
+      case "search":
+        return handleSearch(data);
+      case "addApplicant":
+        return handleAddApplicant(data);
+      case "deleteApplicant":
+        return handleDeleteApplicant(data);
+      case "sendEmail":
+        return handleSendEmail(data);
+      default:
+        return jsonResponse({
+          result: "error",
+          message: "Unknown action: " + (data.action || "none"),
+        });
+    }
+  } catch (err) {
+    return jsonResponse({
+      result: "error",
+      message: "Server error: " + err.message,
+    });
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ── SUPABASE WEBHOOK HANDLERS ───────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+function handleWebhookInsert(data) {
+  var ss = getSpreadsheet();
+  var sheet = ss.getSheetByName(SHEET_NAME);
+  if (!sheet) {
+    sheet = ss.insertSheet(SHEET_NAME);
+    setupSheet(sheet);
+  } else if (sheet.getLastRow() === 0) {
+    setupSheet(sheet);
+  }
+
+  var r = data.record;
+
+  // Check for duplicate by Supabase ID first, then email
+  var lastRow = sheet.getLastRow();
+  if (lastRow > 1) {
+    var ids = sheet.getRange(2, HEADERS.length, lastRow - 1, 1).getValues();
+    for (var i = 0; i < ids.length; i++) {
+      if (ids[i][0] && ids[i][0] === r.id) {
+        writeLog(
+          "WEBHOOK_DUPLICATE_SKIPPED",
+          r.email || "",
+          r.full_name + " (ID already exists)",
+        );
+        return jsonResponse({ result: "success", action: "skipped_duplicate" });
+      }
+    }
+  }
+
+  try {
+    var result = migrateAllFilesToDrive(
+      r.full_name,
+      r.resume_link,
+      r.other_docs_link,
+      r.id,
+    );
+    var patch = {};
+    var changed = false;
+    if (result.resumeLink && result.resumeLink !== r.resume_link) {
+      patch.resume_link = result.resumeLink;
+      r.resume_link = result.resumeLink;
+      changed = true;
+    }
+    if (result.otherDocsLink && result.otherDocsLink !== r.other_docs_link) {
+      patch.other_docs_link = result.otherDocsLink;
+      r.other_docs_link = result.otherDocsLink;
+      changed = true;
+    }
+    if (result.folderUrl) {
+      patch.drive_folder_link = result.folderUrl;
+      r.drive_folder_link = result.folderUrl;
+      changed = true;
+    }
+    if (changed) patchSupabase(r.id, patch);
+  } catch (err) {
+    writeLog("DRIVE_MIGRATE_FAILED", r.email || "", err.message);
+  }
+
+  var row = buildRowFromWebhook(r);
+  var newRowIndex = sheet.getLastRow() + 1;
+  sheet.appendRow(row);
+  formatDataRow(sheet, newRowIndex);
+  applyStatusColor(sheet, newRowIndex, r.status || "For Interview");
+  writeLog("WEBHOOK_INSERT", r.email || "", r.full_name || "");
+
+  return jsonResponse({ result: "success" });
+}
+
+function handleWebhookUpdate(data) {
+  var ss = getSpreadsheet();
+  var sheet = ss.getSheetByName(SHEET_NAME);
+  if (!sheet)
+    return jsonResponse({ result: "error", message: "Sheet not found" });
+
+  var lastRow = sheet.getLastRow();
+  if (lastRow < 2) return jsonResponse({ result: "error", message: "No rows" });
+
+  var idCol = HEADERS.length;
+  var ids = sheet.getRange(2, idCol, lastRow - 1, 1).getValues();
+  var targetRow = -1;
+
+  for (var i = 0; i < ids.length; i++) {
+    if (ids[i][0] === data.record.id) {
+      targetRow = i + 2;
+      break;
+    }
+  }
+
+  if (targetRow === -1) {
+    var row = buildRowFromWebhook(data.record);
+    var newRowIndex = sheet.getLastRow() + 1;
+    sheet.appendRow(row);
+    formatDataRow(sheet, newRowIndex);
+    var statusInsert = data.record.status || "For Interview";
+    applyStatusColor(sheet, newRowIndex, statusInsert);
+    writeLog(
+      "WEBHOOK_INSERT_FALLBACK",
+      data.record.email || "",
+      data.record.full_name || "",
+    );
+    return jsonResponse({ result: "success", action: "inserted" });
+  }
+
+  var r = data.record;
+  var webhookRow = buildRowFromWebhook(r);
+  var existingRow = sheet
+    .getRange(targetRow, 1, 1, HEADERS.length)
+    .getValues()[0];
+  var statusCol =
+    HEADERS.findIndex(function (h) {
+      return h.toLowerCase() === "status";
+    }) + 1;
+  var status = r.status || "For Interview";
+
+  // Only overwrite a cell if the webhook value is non-empty — prevents
+  // empty Supabase fields (e.g. full_name) from wiping existing sheet data
+  for (var col = 2; col <= HEADERS.length - 1; col++) {
+    if (col === statusCol) continue;
+    var newVal = webhookRow[col - 1];
+    sheet
+      .getRange(targetRow, col)
+      .setValue(newVal || existingRow[col - 1] || "");
+  }
+  if (statusCol > 0) {
+    sheet.getRange(targetRow, statusCol).setValue(status);
+  }
+  applyStatusColor(sheet, targetRow, status);
+  writeLog(
+    "WEBHOOK_UPDATE",
+    r.email || "",
+    (existingRow[1] || r.full_name || "") + " → " + status,
+  );
+  return jsonResponse({ result: "success", action: "updated" });
+}
+
+function handleWebhookAssessment(data) {
+  var ss = getSpreadsheet();
+  var sheet = ss.getSheetByName(ASSESSMENTS_SHEET_NAME);
+  if (!sheet) {
+    sheet = ss.insertSheet(ASSESSMENTS_SHEET_NAME);
+    setupAssessmentsSheet(sheet);
+  } else if (sheet.getLastRow() < 2) {
+    setupAssessmentsSheet(sheet);
+  }
+
+  var r = data.record;
+  var applicant = fetchApplicantById(r.applicant_id);
+  var fullName = applicant ? applicant.full_name || "" : "";
+  var email = applicant ? applicant.email || "" : "";
+
+  var col = TEST_KEY_TO_COL[r.test_key];
+  if (!col) {
+    writeLog("ASSESSMENT_UNKNOWN_KEY", email, r.test_key || "");
+    return jsonResponse({ result: "error", message: "Unknown test_key" });
+  }
+
+  var result = r.result || {};
+  var score = r.score !== undefined ? r.score : "";
+  var accuracy = result.acc !== undefined ? result.acc + "%" : "";
+  var extra =
+    result.wpm !== undefined
+      ? "WPM: " + result.wpm
+      : result.words !== undefined
+        ? result.words + " words"
+        : "";
+
+  var cellVal = score !== "" ? String(score) : "";
+  if (accuracy) cellVal += (cellVal ? " · " : "") + accuracy;
+  if (extra) cellVal += (cellVal ? "\n" : "") + extra;
+
+  var lastRow = sheet.getLastRow();
+  var targetRow = -1;
+
+  if (lastRow > 2 && email) {
+    var names = sheet.getRange(3, 1, lastRow - 2, 1).getValues();
+    for (var i = 0; i < names.length; i++) {
+      if (sheet.getRange(i + 3, 1).getNote() === email) {
+        targetRow = i + 3;
+        break;
+      }
+    }
+  }
+
+  if (targetRow === -1) {
+    targetRow = sheet.getLastRow() + 1;
+    sheet
+      .getRange(targetRow, 1)
+      .setValue(fullName || email)
+      .setNote(email)
+      .setBackground(targetRow % 2 === 0 ? "#f0f4ff" : "#ffffff")
+      .setFontFamily("Arial")
+      .setFontSize(10)
+      .setFontColor("#1e293b")
+      .setFontWeight("bold")
+      .setVerticalAlignment("middle")
+      .setHorizontalAlignment("left");
+    sheet.setRowHeight(targetRow, ASSESSMENT_ROW_HEIGHT);
+  }
+
+  var colors = TEST_COLORS[col] || { bg: "#f8fafc", fg: "#475569" };
+  sheet
+    .getRange(targetRow, col)
+    .setValue(cellVal)
+    .setBackground(colors.bg)
+    .setFontColor(colors.fg)
+    .setFontFamily("Arial")
+    .setFontSize(10)
+    .setFontWeight("bold")
+    .setHorizontalAlignment("center")
+    .setVerticalAlignment("middle")
+    .setWrap(true);
+
+  writeLog(
+    "ASSESSMENT_WRITE",
+    email,
+    "supabase · " + r.test_key + " → col " + col,
+  );
+  return jsonResponse({ result: "success" });
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ── FIREBASE FRONTEND ASSESSMENT HANDLER ────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+function handleSaveAssessment(data) {
+  try {
+    var ss = getSpreadsheet();
+    var sheet = ss.getSheetByName(ASSESSMENTS_SHEET_NAME);
+    if (!sheet) {
+      sheet = ss.insertSheet(ASSESSMENTS_SHEET_NAME);
+      setupAssessmentsSheet(sheet);
+    } else if (sheet.getLastRow() < 2) {
+      setupAssessmentsSheet(sheet);
+    }
+
+    var row = findOrCreateAssessmentRow(sheet, data.name, 3);
+    var aCol, cellVal;
+
+    switch (data.assessmentType) {
+      case "typing":
+        aCol = ACOL.typingAssessment;
+        cellVal = (data.wpm || 0) + " WPM · " + (data.accuracy || 0) + "%";
+        break;
+      case "word-typing":
+        aCol = ACOL.wordTyping;
+        cellVal = (data.wpm || 0) + " WPM · " + (data.accuracy || 0) + "%";
+        break;
+      case "knowledge-test":
+        aCol = ACOL.knowledgeTest;
+        cellVal =
+          (data.score || 0) +
+          "/" +
+          (data.totalItems || 15) +
+          " · " +
+          (data.accuracy || 0) +
+          "%";
+        break;
+      case "verbal-comm": {
+        var link = (data.link || "").trim();
+        cellVal = link || "Missing";
+        writeAssessmentCell(
+          sheet,
+          row,
+          ACOL.verbalComm,
+          cellVal,
+          TEST_COLORS[5],
+        );
+        SpreadsheetApp.flush();
+        writeLog("ASSESSMENT_WRITE", "", "firebase · verbal-comm → row " + row);
+        return jsonResponse({ result: "success" });
+      }
+      case "conflict-resolution":
+        aCol = ACOL.conflictReso;
+        cellVal =
+          (data.score || 0) +
+          "/" +
+          (data.totalItems || 20) +
+          " · " +
+          (data.accuracy || 0) +
+          "%";
+        break;
+      case "grammar-test":
+        aCol = ACOL.grammarTest;
+        cellVal =
+          (data.score || 0) +
+          "/" +
+          (data.totalItems || 20) +
+          " · " +
+          (data.accuracy || 0) +
+          "%";
+        break;
+      case "excel":
+        aCol = ACOL.dataEntry;
+        cellVal = "Pending";
+        break;
+      default:
+        return jsonResponse({
+          result: "error",
+          message: "Unknown assessmentType: " + data.assessmentType,
+        });
+    }
+
+    writeAssessmentCell(sheet, row, aCol, cellVal, TEST_COLORS[aCol]);
+    SpreadsheetApp.flush();
+    writeLog(
+      "ASSESSMENT_WRITE",
+      "",
+      "firebase · " + data.assessmentType + " → row " + row + " col " + aCol,
+    );
+    return jsonResponse({
+      result: "success",
+      row: row,
+      col: aCol,
+      value: cellVal,
+    });
+  } catch (err) {
+    return jsonResponse({ result: "error", message: err.toString() });
+  }
+}
+
+function writeAssessmentCell(sheet, row, col, value, colors) {
+  colors = colors || { bg: "#f8fafc", fg: "#475569" };
+  sheet
+    .getRange(row, col)
+    .setValue(value)
+    .setBackground(colors.bg)
+    .setFontColor(colors.fg)
+    .setFontFamily("Arial")
+    .setFontSize(10)
+    .setFontWeight("bold")
+    .setHorizontalAlignment("center")
+    .setVerticalAlignment("middle")
+    .setWrap(true);
+  sheet.setRowHeight(row, ASSESSMENT_ROW_HEIGHT);
+}
+
+function findOrCreateAssessmentRow(sheet, name, dataStartRow) {
+  var lastRow = sheet.getLastRow();
+  var searchName = (name || "").toString().trim().toLowerCase();
+
+  if (lastRow >= dataStartRow) {
+    var names = sheet
+      .getRange(dataStartRow, 1, lastRow - dataStartRow + 1, 1)
+      .getValues();
+    for (var i = 0; i < names.length; i++) {
+      if ((names[i][0] || "").toString().trim().toLowerCase() === searchName) {
+        sheet.setRowHeight(dataStartRow + i, ASSESSMENT_ROW_HEIGHT);
+        return dataStartRow + i;
+      }
+    }
+  }
+
+  var newRow = Math.max(lastRow + 1, dataStartRow);
+  sheet
+    .getRange(newRow, 1)
+    .setValue(name || "")
+    .setBackground("#ffffff")
+    .setFontColor("#1e293b")
+    .setFontFamily("Arial")
+    .setFontSize(10)
+    .setFontWeight("bold")
+    .setVerticalAlignment("middle")
+    .setHorizontalAlignment("left");
+  sheet.setRowHeight(newRow, ASSESSMENT_ROW_HEIGHT);
+  return newRow;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ── ADMIN PANEL HANDLERS ────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+function fetchApplicantById(applicantId) {
+  if (!applicantId) return null;
+  var props = PropertiesService.getScriptProperties();
+  var supabaseUrl = props.getProperty("SUPABASE_URL");
+  var supabaseKey = props.getProperty("SUPABASE_SERVICE_KEY");
+  if (!supabaseUrl || !supabaseKey) return null;
+  try {
+    var response = UrlFetchApp.fetch(
+      supabaseUrl +
+        "/rest/v1/applications?id=eq." +
+        applicantId +
+        "&select=full_name,email,phone,positions,status",
+      {
+        method: "GET",
+        headers: {
+          apikey: supabaseKey,
+          Authorization: "Bearer " + supabaseKey,
+        },
+        muteHttpExceptions: true,
+      },
+    );
+    var parsed = JSON.parse(response.getContentText());
+    return Array.isArray(parsed) && parsed.length > 0 ? parsed[0] : null;
+  } catch (e) {
+    writeLog("FETCH_APPLICANT_ERROR", "", e.message);
+    return null;
+  }
+}
+
+function migrateAllFilesToDrive(
+  fullName,
+  resumeLink,
+  otherDocsLink,
+  supabaseId,
+) {
+  var hasResume = resumeLink && resumeLink.trim();
+  var hasOther = otherDocsLink && otherDocsLink.trim();
+  if (!hasResume && !hasOther)
+    return {
+      resumeLink: resumeLink,
+      otherDocsLink: otherDocsLink,
+      folderUrl: "",
+    };
+
+  var parent = getDriveParentFolder();
+  var folderName = (fullName || "Applicant").trim();
+  var existing = parent.getFoldersByName(folderName);
+  var folder = existing.hasNext()
+    ? existing.next()
+    : parent.createFolder(folderName);
+  try {
+    folder.setSharing(
+      DriveApp.Access.ANYONE_WITH_LINK,
+      DriveApp.Permission.VIEW,
+    );
+  } catch (e) {
+    writeLog("DRIVE_SHARING_WARN", "", "Folder: " + e.message);
+  }
+
+  var folderUrl = "https://drive.google.com/drive/folders/" + folder.getId();
+  return {
+    resumeLink: hasResume
+      ? migrateLinksToFolder(resumeLink, folder)
+      : resumeLink,
+    otherDocsLink: hasOther
+      ? migrateLinksToFolder(otherDocsLink, folder)
+      : otherDocsLink,
+    folderUrl: folderUrl,
+  };
+}
+
+function migrateLinksToFolder(linkStr, folder) {
+  var props = PropertiesService.getScriptProperties();
+  var anonKey = props.getProperty("SUPABASE_ANON_KEY");
+  var links = linkStr.split("\n").filter(Boolean);
+  var driveLinks = [];
+
+  links.forEach(function (url) {
+    url = url.trim();
+    if (!url) return;
+    if (url.indexOf("drive.google.com") !== -1) {
+      driveLinks.push(url);
+      return;
+    }
+    try {
+      var fetchOptions = { muteHttpExceptions: true, followRedirects: true };
+      if (url.indexOf("supabase.co") !== -1 && anonKey) {
+        fetchOptions.headers = {
+          apikey: anonKey,
+          Authorization: "Bearer " + anonKey,
+        };
+      }
+      var response = UrlFetchApp.fetch(url, fetchOptions);
+      var code = response.getResponseCode();
+      if (code !== 200) {
+        driveLinks.push(url);
+        return;
+      }
+      var blob = response.getBlob();
+      var segments = url.split("?")[0].split("/");
+      var fileName =
+        decodeURIComponent(segments[segments.length - 1]) || "file";
+      blob.setName(fileName);
+      var file = folder.createFile(blob);
+      try {
+        file.setSharing(
+          DriveApp.Access.ANYONE_WITH_LINK,
+          DriveApp.Permission.VIEW,
+        );
+      } catch (e) {
+        writeLog("DRIVE_SHARING_WARN", "", "File: " + e.message);
+      }
+      var driveUrl =
+        "https://drive.google.com/file/d/" + file.getId() + "/view";
+      driveLinks.push(driveUrl);
+      writeLog("DRIVE_MIGRATE_OK", "", fileName + " → " + driveUrl);
+    } catch (err) {
+      driveLinks.push(url);
+      writeLog("DRIVE_MIGRATE_ERROR", "", url + ": " + err.message);
+    }
+  });
+
+  return driveLinks.join("\n");
+}
+
+function buildRowFromWebhook(r) {
+  return [
+    r.status || "For Interview",
+    r.full_name || "",
+    r.email || "",
+    r.phone || "",
+    r.address || "",
+    r.positions || "",
+    r.employment_type || "",
+    r.work_setup || "",
+    r.work_schedule || "",
+    r.education_level || "",
+    r.school || "",
+    r.course || "",
+    r.skills || "",
+    r.tools || "",
+    r.interview_slots || "",
+    r.referral_source
+      ? r.referral_code
+        ? r.referral_source.replace(
+            "Referral",
+            "Referral [" + r.referral_code + "]",
+          )
+        : r.referral_source
+      : "",
+    r.resume_link || "",
+    r.notes || "",
+    r.portfolio_link || "",
+    r.video_link || r.video_intro_link || "",
+    r.other_docs_link || "",
+    r.drive_folder_link || "",
+    formatTimestamp(r.created_at),
+    r.id || "",
+  ];
+}
+
+// ── handleLogin: checks admin credentials + ALLOWED_USERS for role/name ────────
+function handleLogin(data) {
+  var props = PropertiesService.getScriptProperties();
+  var validEmail    = props.getProperty("ADMIN_EMAIL");
+  var validPassword = props.getProperty("ADMIN_PASSWORD");
+
+  if (data.email !== validEmail || data.password !== validPassword) {
+    writeLog("LOGIN_FAILED", data.googleEmail || data.email, "Wrong credentials");
+    return jsonResponse({ result: "error", message: "Invalid credentials" });
+  }
+
+  // Check the Google account against ALLOWED_USERS (stored in Script Properties)
+  // Format: {"user@gmail.com":{"role":"hr","name":"Full Name"}, ...}
+  var googleEmail = (data.googleEmail || "").toLowerCase().trim();
+  var allowedRaw  = props.getProperty("ALLOWED_USERS") || "{}";
+  var allowed = {};
+  try { allowed = JSON.parse(allowedRaw); } catch(e) {}
+
+  var userEntry = null;
+  Object.keys(allowed).forEach(function(key) {
+    if (key.toLowerCase() === googleEmail) userEntry = allowed[key];
+  });
+
+  if (!userEntry) {
+    writeLog("LOGIN_DENIED", googleEmail, "Email not in ALLOWED_USERS");
+    return jsonResponse({ result: "error", message: "Access denied. This Google account is not authorized." });
+  }
+
+  var token  = Utilities.getUuid().replace(/-/g, "") + Utilities.getUuid().replace(/-/g, "");
+  var expiry = Date.now() + (30 * 24 * 60 * 60 * 1000);
+  props.setProperty("SESSION_TOKEN",        token);
+  props.setProperty("SESSION_TOKEN_EXPIRY", String(expiry));
+  writeLog("LOGIN_SUCCESS", googleEmail, "Token issued, role: " + userEntry.role);
+  return jsonResponse({ result: "success", token: token, role: userEntry.role, name: userEntry.name });
+}
+
+// ── Get applications ──────────────────────────────────────────────────────────
+function handleGetData(data) {
+  if (!verifyToken(data.token)) {
+    writeLog("UNAUTHORIZED_ACCESS", "", "getData");
+    return jsonResponse({ result: "error", message: "Unauthorized" });
+  }
+
+  var ss = getSpreadsheet();
+  var sheet = ss.getSheetByName(SHEET_NAME);
+  if (!sheet || sheet.getLastRow() < 2)
+    return jsonResponse({ result: "success", data: [], total: 0 });
+
+  // Build assessment lookup map keyed by lowercased applicant name
+  var assessmentMap = {};
+  var aSheet = ss.getSheetByName(ASSESSMENTS_SHEET_NAME);
+  if (aSheet && aSheet.getLastRow() >= 2) {
+    var aRows = aSheet.getRange(2, 1, aSheet.getLastRow() - 1, 10).getValues();
+    aRows.forEach(function (ar) {
+      var key = String(ar[0]).trim().toLowerCase();
+      if (key) assessmentMap[key] = {
+        typingScore:     ar[ACOL.typingAssessment - 1] || "",
+        wordTyping:      ar[ACOL.wordTyping - 1]       || "",
+        knowledgeScore:  ar[ACOL.knowledgeTest - 1]    || "",
+        verbalLink:      ar[ACOL.verbalComm - 1]       || "",
+        conflictScore:   ar[ACOL.conflictReso - 1]     || "",
+        grammarScore:    ar[ACOL.grammarTest - 1]      || "",
+        dataEntryScore:  ar[ACOL.dataEntry - 1]        || "",
+        formattingScore: ar[ACOL.formatting - 1]       || "",
+        sortingScore:    ar[ACOL.sorting - 1]          || "",
+      };
+    });
+  }
+
+  var rows = sheet
+    .getRange(2, 1, sheet.getLastRow() - 1, HEADERS.length)
+    .getValues();
+  var all = rows
+    .map(function (row) {
+      var scores = assessmentMap[String(row[1]).trim().toLowerCase()] || {};
+      return {
+        status: row[0],
+        fullName: row[1],
+        email: row[2],
+        phone: row[3],
+        address: row[4],
+        positions: row[5],
+        employmentType: row[6],
+        workSetup: row[7],
+        workSchedule: row[8],
+        educationLevel: row[9],
+        school: row[10],
+        course: row[11],
+        skills: row[12],
+        tools: row[13],
+        interviewSlots: row[14],
+        referralSource: row[15],
+        resumeLink: row[16],
+        notes: row[17],
+        portfolioLink: row[18],
+        videoIntroLink: row[19],
+        otherDocsLink: row[20],
+        driveFolderLink: row[21],
+        timestamp: row[22],
+        supabaseId: row[23],
+        typingScore:     scores.typingScore     || "",
+        wordTyping:      scores.wordTyping      || "",
+        knowledgeScore:  scores.knowledgeScore  || "",
+        verbalLink:      scores.verbalLink      || "",
+        conflictScore:   scores.conflictScore   || "",
+        grammarScore:    scores.grammarScore    || "",
+        dataEntryScore:  scores.dataEntryScore  || "",
+        formattingScore: scores.formattingScore || "",
+        sortingScore:    scores.sortingScore    || "",
+      };
+    })
+    .filter(function (r) {
+      return r.fullName || r.email;
+    });
+
+  if (data.status && data.status !== "All")
+    all = all.filter(function (r) {
+      return r.status === data.status;
+    });
+  all = all.reverse();
+
+  var total = all.length;
+  var limit = data.limit || 500;
+  var page = data.page || 1;
+  var start = (page - 1) * limit;
+
+  return jsonResponse({
+    result: "success",
+    data: all.slice(start, start + limit),
+    total: total,
+  });
+}
+
+// ── Get status counts ─────────────────────────────────────────────────────────
+function handleGetCounts(data) {
+  if (!verifyToken(data.token))
+    return jsonResponse({ result: "error", message: "Unauthorized" });
+
+  var ss = getSpreadsheet();
+  var sheet = ss.getSheetByName(SHEET_NAME);
+  var counts = { total: 0 };
+  Object.keys(STATUS_COLORS).forEach(function (s) {
+    counts[s] = 0;
+  });
+
+  if (!sheet || sheet.getLastRow() < 2)
+    return jsonResponse({ result: "success", counts: counts });
+
+  sheet
+    .getRange(2, STATUS_COL, sheet.getLastRow() - 1, 1)
+    .getValues()
+    .forEach(function (row) {
+      var s = row[0];
+      if (counts[s] !== undefined) counts[s]++;
+      counts.total++;
+    });
+
+  return jsonResponse({ result: "success", counts: counts });
+}
+
+// ── Update application status ─────────────────────────────────────────────────
+function handleUpdateStatus(data) {
+  if (!verifyToken(data.token))
+    return jsonResponse({ result: "error", message: "Unauthorized" });
+
+  var ss = getSpreadsheet();
+  var sheet = ss.getSheetByName(SHEET_NAME);
+  if (!sheet)
+    return jsonResponse({ result: "error", message: "Sheet not found" });
+
+  var rows = sheet
+    .getRange(2, 1, sheet.getLastRow() - 1, HEADERS.length)
+    .getValues();
+  var targetRow = -1;
+  var supabaseId = "";
+
+  for (var i = 0; i < rows.length; i++) {
+    if (rows[i][2] === data.email) {
+      targetRow = i + 2;
+      supabaseId = rows[i][HEADERS.length - 1];
+      break;
+    }
+  }
+
+  if (targetRow === -1)
+    return jsonResponse({ result: "error", message: "Applicant not found" });
+
+  sheet.getRange(targetRow, STATUS_COL).setValue(data.status);
+  applyStatusColor(sheet, targetRow, data.status);
+
+  if (supabaseId) {
+    var patch = { status: data.status };
+    if (data.status === "Rejected")
+      patch.rejected_at = new Date().toISOString();
+    else patch.rejected_at = null;
+    patchSupabase(supabaseId, patch);
+  }
+
+  writeLog("STATUS_UPDATED", data.email, data.fullName + " → " + data.status);
+  return jsonResponse({ result: "success" });
+}
+
+// ── NEW: Update all applicant fields (called when dashboard edits and saves) ──
+function handleUpdateApplicant(data) {
+  if (!verifyToken(data.token))
+    return jsonResponse({ result: "error", message: "Unauthorized" });
+
+  var a = data.applicant || {};
+  var ss = getSpreadsheet();
+  var sheet = ss.getSheetByName(SHEET_NAME);
+  if (!sheet)
+    return jsonResponse({ result: "error", message: "Sheet not found" });
+
+  var lastRow = sheet.getLastRow();
+  if (lastRow < 2)
+    return jsonResponse({ result: "error", message: "No records" });
+
+  var rows = sheet.getRange(2, 1, lastRow - 1, HEADERS.length).getValues();
+  var targetRow = -1;
+  var supabaseId = (a.supabase_id || "").toString().trim();
+  var email = (a.email || "").toLowerCase().trim();
+
+  for (var i = 0; i < rows.length; i++) {
+    var rowId = (rows[i][HEADERS.length - 1] || "").toString().trim();
+    var rowEmail = (rows[i][2] || "").toLowerCase().trim();
+    if (supabaseId && rowId === supabaseId) {
+      targetRow = i + 2;
+      break;
+    }
+    if (!supabaseId && email && rowEmail === email) {
+      targetRow = i + 2;
+      break;
+    }
+  }
+
+  if (targetRow === -1)
+    return jsonResponse({ result: "error", message: "Applicant not found" });
+
+  var existing = rows[targetRow - 2];
+
+  // Only overwrite a column if the incoming value is not undefined/null
+  function _val(newVal, existingVal) {
+    return newVal !== undefined && newVal !== null ? newVal : existingVal;
+  }
+
+  var updated = [
+    _val(a.status || a.partner_status, existing[0]),
+    _val(a.full_name, existing[1]),
+    _val(a.email, existing[2]),
+    _val(a.phone, existing[3]),
+    _val(a.address, existing[4]),
+    _val(a.positions || a.position, existing[5]),
+    _val(a.employment_type, existing[6]),
+    _val(a.work_setup, existing[7]),
+    _val(a.work_schedule, existing[8]),
+    _val(a.education_level, existing[9]),
+    _val(a.school, existing[10]),
+    _val(a.course, existing[11]),
+    _val(a.skills, existing[12]),
+    _val(a.tools, existing[13]),
+    _val(a.interview_slots, existing[14]),
+    _val(a.referral_source, existing[15]),
+    _val(a.resume_link, existing[16]),
+    _val(a.notes, existing[17]),
+    _val(a.portfolio_link, existing[18]),
+    _val(a.video_intro_link, existing[19]),
+    _val(a.other_docs_link, existing[20]),
+    _val(a.drive_folder_link, existing[21]),
+    existing[22], // Timestamp — never overwrite
+    existing[23], // Supabase ID — never overwrite
+  ];
+
+  sheet.getRange(targetRow, 1, 1, HEADERS.length).setValues([updated]);
+
+  // Re-apply status color if status changed
+  if (updated[0] !== existing[0]) {
+    applyStatusColor(sheet, targetRow, updated[0]);
+  }
+
+  // Mirror to Supabase
+  var sid = existing[23] || supabaseId;
+  if (sid) {
+    var supaFields = {};
+    if (a.status || a.partner_status)
+      supaFields.status = a.status || a.partner_status;
+    if (a.full_name) supaFields.full_name = a.full_name;
+    if (a.phone !== undefined) supaFields.phone = a.phone;
+    if (a.address !== undefined) supaFields.address = a.address;
+    if (a.positions || a.position)
+      supaFields.positions = a.positions || a.position;
+    if (a.employment_type !== undefined)
+      supaFields.employment_type = a.employment_type;
+    if (a.work_setup !== undefined) supaFields.work_setup = a.work_setup;
+    if (a.work_schedule !== undefined)
+      supaFields.work_schedule = a.work_schedule;
+    if (a.education_level !== undefined)
+      supaFields.education_level = a.education_level;
+    if (a.school !== undefined) supaFields.school = a.school;
+    if (a.course !== undefined) supaFields.course = a.course;
+    if (a.skills !== undefined) supaFields.skills = a.skills;
+    if (a.tools !== undefined) supaFields.tools = a.tools;
+    if (a.interview_slots !== undefined)
+      supaFields.interview_slots = a.interview_slots;
+    if (a.referral_source !== undefined)
+      supaFields.referral_source = a.referral_source;
+    if (a.resume_link !== undefined) supaFields.resume_link = a.resume_link;
+    if (a.notes !== undefined) supaFields.notes = a.notes;
+    if (a.portfolio_link !== undefined)
+      supaFields.portfolio_link = a.portfolio_link;
+    if (a.video_intro_link !== undefined)
+      supaFields.video_intro_link = a.video_intro_link;
+    if (a.other_docs_link !== undefined)
+      supaFields.other_docs_link = a.other_docs_link;
+    if (a.drive_folder_link !== undefined)
+      supaFields.drive_folder_link = a.drive_folder_link;
+    if (Object.keys(supaFields).length > 0) patchSupabase(sid, supaFields);
+  }
+
+  // ── Write Excel Test scores back to Assessments sheet ───────────────────
+  var hasExcelScores = a.data_entry_score !== undefined ||
+                       a.formatting_score !== undefined ||
+                       a.sorting_score    !== undefined;
+
+  if (hasExcelScores) {
+    var aSheet = ss.getSheetByName(ASSESSMENTS_SHEET_NAME);
+    if (!aSheet) {
+      aSheet = ss.insertSheet(ASSESSMENTS_SHEET_NAME);
+      setupAssessmentsSheet(aSheet);
+    } else if (aSheet.getLastRow() < 2) {
+      setupAssessmentsSheet(aSheet);
+    }
+
+    var applicantName = a.full_name || a.name || "";
+    var aRow = findOrCreateAssessmentRow(aSheet, applicantName, 3);
+
+    if (a.data_entry_score !== undefined && a.data_entry_score !== "") {
+      writeAssessmentCell(aSheet, aRow, ACOL.dataEntry,  a.data_entry_score,  TEST_COLORS[ACOL.dataEntry]);
+    }
+    if (a.formatting_score !== undefined && a.formatting_score !== "") {
+      writeAssessmentCell(aSheet, aRow, ACOL.formatting, a.formatting_score, TEST_COLORS[ACOL.formatting]);
+    }
+    if (a.sorting_score !== undefined && a.sorting_score !== "") {
+      writeAssessmentCell(aSheet, aRow, ACOL.sorting,    a.sorting_score,    TEST_COLORS[ACOL.sorting]);
+    }
+
+    SpreadsheetApp.flush();
+  }
+
+  writeLog("APPLICANT_UPDATED", email, a.full_name || "");
+  return jsonResponse({ result: "success" });
+}
+
+// ── FIX 3: handleAddApplicant accepts snake_case + email duplicate guard ───────
+function handleAddApplicant(data) {
+  if (!verifyToken(data.token))
+    return jsonResponse({ result: "error", message: "Unauthorized" });
+
+  var a = data.applicant || {};
+  if (!a.full_name && !a.fullName && !a.email)
+    return jsonResponse({
+      result: "error",
+      message: "fullName or email required",
+    });
+
+  var props = PropertiesService.getScriptProperties();
+  var supabaseUrl = props.getProperty("SUPABASE_URL");
+  var supabaseKey = props.getProperty("SUPABASE_SERVICE_KEY");
+
+  var incomingEmail = (a.email || "").trim().toLowerCase();
+
+  var ss = getSpreadsheet();
+  var sheet = ss.getSheetByName(SHEET_NAME);
+  if (!sheet) {
+    sheet = ss.insertSheet(SHEET_NAME);
+    setupSheet(sheet);
+  } else if (sheet.getLastRow() === 0) {
+    setupSheet(sheet);
+  }
+
+  if (incomingEmail && sheet.getLastRow() > 1) {
+    var existingEmails = sheet
+      .getRange(2, 3, sheet.getLastRow() - 1, 1)
+      .getValues();
+    for (var ei = 0; ei < existingEmails.length; ei++) {
+      if (
+        String(existingEmails[ei][0] || "")
+          .trim()
+          .toLowerCase() === incomingEmail
+      ) {
+        var existingRow = sheet
+          .getRange(ei + 2, 1, 1, HEADERS.length)
+          .getValues()[0];
+        var existingSupaId = String(
+          existingRow[HEADERS.length - 1] || "",
+        ).trim();
+        writeLog(
+          "ADD_DUPLICATE_SKIPPED",
+          incomingEmail,
+          "Already exists in sheet",
+        );
+        return jsonResponse({ result: "success", supabaseId: existingSupaId });
+      }
+    }
+  }
+
+  var record = {
+    status: a.status || "For Interview",
+    full_name: a.full_name || a.fullName || "",
+    email: incomingEmail,
+    phone: a.phone || a.applicant_phone || "",
+    address: a.address || "",
+    positions: a.positions || a.position || "",
+    employment_type: a.employment_type || a.employmentType || "",
+    work_setup: a.work_setup || a.workSetup || "",
+    work_schedule: a.work_schedule || a.workSchedule || "",
+    education_level: a.education_level || a.educationLevel || "",
+    school: a.school || "",
+    course: a.course || "",
+    skills: a.skills || "",
+    tools: a.tools || "",
+    interview_slots: a.interview_slots || a.interviewSlots || "",
+    referral_source: a.referral_source || a.referralSource || "",
+    resume_link: a.resume_link || a.resumeLink || "",
+    notes: a.notes || "",
+    portfolio_link: a.portfolio_link || a.portfolioLink || "",
+    video_link:
+      a.video_intro_link ||
+      a.videoIntroLink ||
+      a.video_link ||
+      a.videoLink ||
+      "",
+    other_docs_link: a.other_docs_link || a.otherDocsLink || "",
+    drive_folder_link: a.drive_folder_link || a.driveFolderLink || "",
+  };
+
+  var supabaseId = "";
+
+  if (supabaseUrl && supabaseKey) {
+    try {
+      var insertResp = UrlFetchApp.fetch(
+        supabaseUrl + "/rest/v1/applications",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: supabaseKey,
+            Authorization: "Bearer " + supabaseKey,
+            Prefer: "return=representation",
+          },
+          payload: JSON.stringify(record),
+          muteHttpExceptions: true,
+        },
+      );
+      var code = insertResp.getResponseCode();
+      if (code >= 200 && code < 300) {
+        var inserted = JSON.parse(insertResp.getContentText());
+        if (Array.isArray(inserted) && inserted[0]) {
+          supabaseId = inserted[0].id || "";
+          record = inserted[0];
+        }
+      } else {
+        writeLog(
+          "SUPABASE_INSERT_ERROR",
+          record.email,
+          "HTTP " + code + ": " + insertResp.getContentText(),
+        );
+      }
+    } catch (err) {
+      writeLog("SUPABASE_INSERT_ERROR", record.email, err.message);
+    }
+  }
+
+  try {
+    var migrate = migrateAllFilesToDrive(
+      record.full_name,
+      record.resume_link,
+      record.other_docs_link,
+      supabaseId,
+    );
+    if (migrate.resumeLink) record.resume_link = migrate.resumeLink;
+    if (migrate.otherDocsLink) record.other_docs_link = migrate.otherDocsLink;
+    if (migrate.folderUrl) record.drive_folder_link = migrate.folderUrl;
+    if (supabaseId && migrate.folderUrl) {
+      patchSupabase(supabaseId, {
+        resume_link: record.resume_link,
+        other_docs_link: record.other_docs_link,
+        drive_folder_link: record.drive_folder_link,
+      });
+    }
+  } catch (err) {
+    writeLog("DRIVE_MIGRATE_FAILED", record.email || "", err.message);
+  }
+
+  record.id = supabaseId;
+  record.created_at = record.created_at || new Date().toISOString();
+
+  var row = buildRowFromWebhook(record);
+  var rowIndex = sheet.getLastRow() + 1;
+  sheet.appendRow(row);
+  formatDataRow(sheet, rowIndex);
+  applyStatusColor(sheet, rowIndex, record.status || "For Interview");
+
+  writeLog("APPLICANT_ADDED", record.email || "", record.full_name || "");
+  return jsonResponse({ result: "success", supabaseId: supabaseId });
+}
+
+// ── Delete applicant ──────────────────────────────────────────────────────────
+function handleDeleteApplicant(data) {
+  if (!verifyToken(data.token))
+    return jsonResponse({ result: "error", message: "Unauthorized" });
+
+  var ss = getSpreadsheet();
+  var sheet = ss.getSheetByName(SHEET_NAME);
+  if (!sheet)
+    return jsonResponse({ result: "error", message: "Sheet not found" });
+
+  var lastRow = sheet.getLastRow();
+  if (lastRow < 2)
+    return jsonResponse({ result: "error", message: "No records" });
+
+  var rows = sheet.getRange(2, 1, lastRow - 1, HEADERS.length).getValues();
+  var targetRow = -1;
+  var supabaseId = data.supabaseId || "";
+
+  for (var i = 0; i < rows.length; i++) {
+    var rowId = rows[i][HEADERS.length - 1];
+    var rowEmail = rows[i][2];
+    if (
+      (supabaseId && rowId === supabaseId) ||
+      (!supabaseId && rowEmail === data.email)
+    ) {
+      targetRow = i + 2;
+      if (!supabaseId) supabaseId = rowId;
+      break;
+    }
+  }
+
+  if (targetRow === -1)
+    return jsonResponse({ result: "error", message: "Applicant not found" });
+
+  var deletedEmail = rows[targetRow - 2][2];
+  var deletedName = rows[targetRow - 2][1];
+
+  sheet.deleteRow(targetRow);
+
+  if (supabaseId) {
+    var props = PropertiesService.getScriptProperties();
+    var supabaseUrl = props.getProperty("SUPABASE_URL");
+    var supabaseKey = props.getProperty("SUPABASE_SERVICE_KEY");
+    if (supabaseUrl && supabaseKey) {
+      try {
+        UrlFetchApp.fetch(
+          supabaseUrl + "/rest/v1/applications?id=eq." + supabaseId,
+          {
+            method: "DELETE",
+            headers: {
+              apikey: supabaseKey,
+              Authorization: "Bearer " + supabaseKey,
+              Prefer: "return=minimal",
+            },
+            muteHttpExceptions: true,
+          },
+        );
+      } catch (err) {
+        writeLog("SUPABASE_DELETE_ERROR", deletedEmail, err.message);
+      }
+    }
+  }
+
+  writeLog("APPLICANT_DELETED", deletedEmail, deletedName);
+  return jsonResponse({ result: "success" });
+}
+
+// ── Send email via MailApp (free Gmail, no domain needed) ────────────────────
+function handleSendEmail(data) {
+  if (!verifyToken(data.token))
+    return jsonResponse({ result: "error", message: "Unauthorized" });
+
+  if (!data.to || !data.subject || !data.body)
+    return jsonResponse({
+      result: "error",
+      message: "to, subject, and body are required",
+    });
+
+  try {
+    MailApp.sendEmail({
+      to: data.to,
+      subject: data.subject,
+      htmlBody: data.body,
+      name: data.fromName || "Upstaff HR",
+    });
+
+    writeLog("EMAIL_SENT", data.to, data.subject);
+    return jsonResponse({ result: "success" });
+  } catch (err) {
+    writeLog("EMAIL_ERROR", data.to, err.message);
+    return jsonResponse({ result: "error", message: err.message });
+  }
+}
+
+// ── Search ────────────────────────────────────────────────────────────────────
+function handleSearch(data) {
+  var props = PropertiesService.getScriptProperties();
+  var validKey = props.getProperty("SEARCH_API_KEY");
+
+  if (!validKey || data.searchApiKey !== validKey) {
+    writeLog("UNAUTHORIZED_SEARCH", "", "Bad or missing API key");
+    return jsonResponse({ result: "error", message: "Unauthorized" });
+  }
+
+  var ss = getSpreadsheet();
+  var sheet = ss.getSheetByName(SHEET_NAME);
+  if (!sheet || sheet.getLastRow() < 2)
+    return jsonResponse({ result: "success", data: [] });
+
+  var query = (data.query || "").toLowerCase().trim();
+  if (!query) return jsonResponse({ result: "success", data: [] });
+
+  var results = [];
+  sheet
+    .getRange(2, 1, sheet.getLastRow() - 1, HEADERS.length)
+    .getValues()
+    .forEach(function (row, idx) {
+      if (
+        [row[1], row[2], row[5], row[0]]
+          .join(" ")
+          .toLowerCase()
+          .indexOf(query) !== -1
+      ) {
+        var supaId = row[23] || "";
+        results.push({
+          status: row[0],
+          fullName: row[1],
+          email: row[2],
+          phone: row[3],
+          address: row[4],
+          positions: row[5],
+          employmentType: row[6],
+          workSetup: row[7],
+          workSchedule: row[8],
+          educationLevel: row[9],
+          school: row[10],
+          course: row[11],
+          skills: row[12],
+          tools: row[13],
+          interviewSlots: row[14],
+          referralSource: row[15],
+          resumeLink: row[16],
+          notes: row[17],
+          portfolioLink: row[18],
+          videoIntroLink: row[19],
+          otherDocsLink: row[20],
+          driveFolderLink: row[21],
+          timestamp: row[22],
+          supabaseId: supaId,
+          id: supaId,            // ← so frontend `app.id` works
+          sheetRow: idx + 2,     // ← actual sheet row number
+          source: supaId ? "supabase" : "sheets", // ← explicit
+        });
+      }
+    });
+
+  return jsonResponse({ result: "success", data: results.reverse() });
+}
+
+// ── Submit (legacy fallback) ──────────────────────────────────────────────────
+function handleSubmit(data) {
+  var ss = getSpreadsheet();
+  var sheet = ss.getSheetByName(SHEET_NAME);
+  if (!sheet) sheet = ss.insertSheet(SHEET_NAME);
+  if (sheet.getLastRow() === 0) setupSheet(sheet);
+
+  if (data.files && data.files.length > 0) {
+    var links = saveFilesToDrive(data.firstName, data.lastName, data.files);
+    data.resumeLink = links.resumeLink;
+    if (links.videoLink) data.videoLink = links.videoLink;
+  }
+
+  var row = buildRow(data);
+  var newRowIndex = sheet.getLastRow() + 1;
+  sheet.appendRow(row);
+  formatDataRow(sheet, newRowIndex);
+  applyStatusColor(sheet, newRowIndex, row[STATUS_COL - 1]);
+  writeLog(
+    "APPLICATION_SUBMITTED",
+    data.email || "",
+    (data.firstName || "") + " " + (data.lastName || ""),
+  );
+  return jsonResponse({ result: "success" });
+}
+
+function saveFilesToDrive(firstName, lastName, files) {
+  var parent = getDriveParentFolder();
+  var folderName =
+    [firstName, lastName].filter(Boolean).join(" ") ||
+    "Applicant_" + Date.now();
+  var folder = parent.createFolder(folderName);
+  try {
+    folder.setSharing(
+      DriveApp.Access.ANYONE_WITH_LINK,
+      DriveApp.Permission.VIEW,
+    );
+  } catch (e) {
+    writeLog("DRIVE_SHARING_WARN", "", e.message);
+  }
+
+  var resumeLinks = [];
+  var videoLink = "";
+
+  files.forEach(function (file) {
+    try {
+      var blob = Utilities.newBlob(
+        Utilities.base64Decode(file.data),
+        file.mimeType || "application/octet-stream",
+        file.name,
+      );
+      var saved = folder.createFile(blob);
+      try {
+        saved.setSharing(
+          DriveApp.Access.ANYONE_WITH_LINK,
+          DriveApp.Permission.VIEW,
+        );
+      } catch (e) {
+        writeLog("DRIVE_SHARING_WARN", "", e.message);
+      }
+      var fileUrl =
+        "https://drive.google.com/file/d/" + saved.getId() + "/view";
+      if (file.mimeType && file.mimeType.indexOf("video/") === 0)
+        videoLink = fileUrl;
+      else resumeLinks.push(fileUrl);
+    } catch (e) {
+      writeLog("FILE_UPLOAD_ERROR", "", file.name + ": " + e.message);
+    }
+  });
+
+  return { resumeLink: resumeLinks.join("\n"), videoLink: videoLink };
+}
+
+// ── Jobs ──────────────────────────────────────────────────────────────────────
+function handleGetJobs() {
+  var ss = getSpreadsheet();
+  var sheet = ss.getSheetByName(JOBS_NAME);
+  if (!sheet || sheet.getLastRow() < 2)
+    return jsonResponse({ result: "success", data: [] });
+
+  var jobs = sheet
+    .getRange(2, 1, sheet.getLastRow() - 1, 3)
+    .getValues()
+    .map(function (row, i) {
+      return {
+        index: i + 2,
+        title: row[0],
+        active: row[1] === true || row[1] === "TRUE" || row[1] === "Active",
+      };
+    })
+    .filter(function (j) {
+      return j.title;
+    });
+
+  return jsonResponse({ result: "success", data: jobs });
+}
+
+function handleAddJob(data) {
+  if (!verifyToken(data.token))
+    return jsonResponse({ result: "error", message: "Unauthorized" });
+  if (!data.title || !data.title.trim())
+    return jsonResponse({ result: "error", message: "Title is required" });
+
+  var ss = getSpreadsheet();
+  var sheet = ss.getSheetByName(JOBS_NAME);
+  if (!sheet) {
+    sheet = ss.insertSheet(JOBS_NAME);
+    setupJobsSheet(sheet);
+  }
+
+  sheet.appendRow([data.title.trim(), true, now()]);
+  writeLog("JOB_ADDED", "", data.title.trim());
+  return jsonResponse({ result: "success" });
+}
+
+function handleToggleJob(data) {
+  if (!verifyToken(data.token))
+    return jsonResponse({ result: "error", message: "Unauthorized" });
+
+  var ss = getSpreadsheet();
+  var sheet = ss.getSheetByName(JOBS_NAME);
+  if (!sheet)
+    return jsonResponse({ result: "error", message: "Jobs sheet not found" });
+
+  var current = sheet.getRange(data.index, 2).getValue();
+  sheet
+    .getRange(data.index, 2)
+    .setValue(
+      !(current === true || current === "TRUE" || current === "Active"),
+    );
+  return jsonResponse({ result: "success" });
+}
+
+// ── Build row (legacy) ────────────────────────────────────────────────────────
+function buildRow(d) {
+  var fullName =
+    [d.firstName, d.lastName].filter(Boolean).join(" ") || d.fullName || "";
+  var positions = toBulletLines([d.position1, d.position2, d.position3]);
+  var skills = d.skillsList ? toBulletLines(d.skillsList.split(",")) : "";
+
+  var scheduleList = d.workSchedule
+    ? d.workSchedule
+        .split(",")
+        .map(function (s) {
+          return s.trim();
+        })
+        .filter(Boolean)
+    : [];
+  var workSchedule =
+    scheduleList.length >= 4 || scheduleList.indexOf("Flexible") !== -1
+      ? "Flexible"
+      : toBulletLines(scheduleList);
+
+  var referralParts = d.referralSource
+    ? d.referralSource.split(",").map(function (s) {
+        return s.trim();
+      })
+    : [];
+  var referralDisplay = toBulletLines(
+    referralParts.map(function (s) {
+      return s === "Referral" && d.referralCode && d.referralCode.trim()
+        ? "Referral [" + d.referralCode.trim() + "]"
+        : s;
+    }),
+  );
+
+  return [
+    "For Interview",
+    fullName,
+    d.email || "",
+    d.phone || "",
+    d.address || "",
+    positions,
+    d.employmentType || "",
+    d.workSetup ? toBulletLines(d.workSetup.split(",")) : "",
+    workSchedule,
+    d.educationLevel || "",
+    d.school || "",
+    d.course || "",
+    skills,
+    toBulletLines(
+      [].concat(
+        d.tools ? d.tools.split(",") : [],
+        d.otherTools ? d.otherTools.split(",") : [],
+      ),
+    ),
+    d.interviewSlots || "",
+    referralDisplay,
+    d.resumeLink || "",
+    d.notes || "",
+    d.portfolioLink || "",
+    d.videoLink || "",
+    d.otherDocsLink || "",
+    d.driveFolderLink || "",
+    d.timestamp || now(),
+    d.supabaseId || "",
+  ];
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ── SHEET EDIT TRIGGER ──────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+function onSheetEdit(e) {
+  var sheet = e.range.getSheet();
+  if (sheet.getName() !== SHEET_NAME) return;
+
+  var col = e.range.getColumn();
+  var row = e.range.getRow();
+  if (row < 2) return;
+
+  if (col === STATUS_COL) applyStatusColor(sheet, row, e.range.getValue());
+
+  var field = COL_TO_FIELD[col];
+  if (!field) return;
+
+  var newValue = e.range.getValue();
+  if (e.oldValue === undefined) return;
+  if (String(newValue) === String(e.oldValue)) return;
+
+  var supabaseId = sheet.getRange(row, HEADERS.length).getValue();
+  if (!supabaseId) return;
+
+  try {
+    var payload = {};
+    payload[field] = newValue || null;
+    if (field === "status" && newValue === "Rejected")
+      payload.rejected_at = new Date().toISOString();
+    if (field === "status" && newValue !== "Rejected")
+      payload.rejected_at = null;
+    patchSupabase(supabaseId, payload);
+    writeLog(
+      "SHEETS_SYNC",
+      "",
+      "Row " + row + " [" + field + "] → " + newValue,
+    );
+  } catch (err) {
+    writeLog("SHEETS_SYNC_ERROR", "", err.message);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ── SHEET SETUP ─────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+function setupSheet(sheet) {
+  sheet.appendRow(HEADERS);
+  var headerRange = sheet.getRange(1, 1, 1, HEADERS.length);
+  headerRange
+    .setBackground(HEADER_COLOR)
+    .setFontColor("#ffffff")
+    .setFontFamily("Arial")
+    .setFontSize(10)
+    .setFontWeight("bold")
+    .setHorizontalAlignment("center")
+    .setVerticalAlignment("middle")
+    .setWrap(true);
+  sheet.setFrozenRows(1);
+  sheet.setFrozenColumns(2);
+  sheet.setRowHeight(1, 40);
+  headerRange.setBorder(
+    false,
+    false,
+    true,
+    false,
+    false,
+    false,
+    ACCENT_COLOR,
+    SpreadsheetApp.BorderStyle.SOLID_MEDIUM,
+  );
+  addStatusDropdown(sheet, 2, 1000);
+}
+
+function setupLogsSheet(sheet) {
+  sheet.appendRow(LOG_HEADERS);
+  var range = sheet.getRange(1, 1, 1, LOG_HEADERS.length);
+  range
+    .setBackground("#0f172a")
+    .setFontColor("#ffffff")
+    .setFontFamily("Arial")
+    .setFontSize(10)
+    .setFontWeight("bold")
+    .setHorizontalAlignment("center")
+    .setVerticalAlignment("middle");
+  sheet.setFrozenRows(1);
+  sheet.setRowHeight(1, 36);
+  range.setBorder(
+    false,
+    false,
+    true,
+    false,
+    false,
+    false,
+    ACCENT_COLOR,
+    SpreadsheetApp.BorderStyle.SOLID_MEDIUM,
+  );
+  [200, 180, 240, 280].forEach(function (w, i) {
+    sheet.setColumnWidth(i + 1, w);
+  });
+}
+
+function setupJobsSheet(sheet) {
+  sheet.appendRow(JOBS_HEADERS);
+  var range = sheet.getRange(1, 1, 1, JOBS_HEADERS.length);
+  range
+    .setBackground(HEADER_COLOR)
+    .setFontColor("#ffffff")
+    .setFontFamily("Arial")
+    .setFontSize(10)
+    .setFontWeight("bold")
+    .setHorizontalAlignment("center")
+    .setVerticalAlignment("middle");
+  sheet.setFrozenRows(1);
+  sheet.setRowHeight(1, 36);
+  range.setBorder(
+    false,
+    false,
+    true,
+    false,
+    false,
+    false,
+    ACCENT_COLOR,
+    SpreadsheetApp.BorderStyle.SOLID_MEDIUM,
+  );
+  [300, 100, 200].forEach(function (w, i) {
+    sheet.setColumnWidth(i + 1, w);
+  });
+}
+
+function setupAssessmentsSheet(sheet) {
+  sheet
+    .getRange(1, 1, 2, 1)
+    .merge()
+    .setValue("Applicant Name")
+    .setBackground("#0d1117")
+    .setFontColor("#ffffff")
+    .setFontFamily("Arial")
+    .setFontSize(10)
+    .setFontWeight("bold")
+    .setHorizontalAlignment("center")
+    .setVerticalAlignment("middle")
+    .setWrap(true);
+
+  [
+    { label: "Typing Test", col: 2, span: 3, bg: "#1e3a5f", fg: "#38bdf8" },
+    { label: "Verbal Test", col: 5, span: 3, bg: "#3b1f1f", fg: "#f87171" },
+    { label: "Excel Test", col: 8, span: 3, bg: "#14301f", fg: "#34d399" },
+  ].forEach(function (g) {
+    sheet
+      .getRange(1, g.col, 1, g.span)
+      .merge()
+      .setValue(g.label)
+      .setBackground(g.bg)
+      .setFontColor(g.fg)
+      .setFontFamily("Arial")
+      .setFontSize(10)
+      .setFontWeight("bold")
+      .setHorizontalAlignment("center")
+      .setVerticalAlignment("middle");
+  });
+
+  [
+    { col: 2, label: "Typing Assessment", bg: "#172c45" },
+    { col: 3, label: "Word Typing", bg: "#172c45" },
+    { col: 4, label: "Knowledge Test", bg: "#172c45" },
+    { col: 5, label: "Verbal Comm", bg: "#2d1515" },
+    { col: 6, label: "Conflict Reso", bg: "#2d1515" },
+    { col: 7, label: "Grammar Test", bg: "#2d1515" },
+    { col: 8, label: "Data Entry", bg: "#0f2318" },
+    { col: 9, label: "Formatting", bg: "#0f2318" },
+    { col: 10, label: "Sorting", bg: "#0f2318" },
+  ].forEach(function (h) {
+    sheet
+      .getRange(2, h.col)
+      .setValue(h.label)
+      .setBackground(h.bg)
+      .setFontColor("#94a3b8")
+      .setFontFamily("Arial")
+      .setFontSize(9)
+      .setFontWeight("bold")
+      .setHorizontalAlignment("center")
+      .setVerticalAlignment("middle");
+  });
+
+  sheet.setFrozenRows(2);
+  sheet.setFrozenColumns(1);
+  sheet.setRowHeight(1, 32);
+  sheet.setRowHeight(2, 28);
+  sheet.setColumnWidth(1, 200);
+  [2, 3, 4, 5, 6, 7, 8, 9, 10].forEach(function (c) {
+    sheet.setColumnWidth(c, 130);
+  });
+}
+
+function addStatusDropdown(sheet, fromRow, toRow) {
+  var ss = getSpreadsheet();
+  var helper =
+    ss.getSheetByName("_StatusList") || ss.insertSheet("_StatusList");
+  helper.hideSheet();
+  Object.keys(STATUS_COLORS).forEach(function (s, i) {
+    helper.getRange(i + 1, 1).setValue(s);
+  });
+  var range = helper.getRange(1, 1, Object.keys(STATUS_COLORS).length, 1);
+  var rule = SpreadsheetApp.newDataValidation()
+    .requireValueInRange(range, true)
+    .setAllowInvalid(false)
+    .build();
+  sheet
+    .getRange(fromRow, STATUS_COL, toRow - fromRow + 1, 1)
+    .setDataValidation(rule);
+}
+
+function formatDataRow(sheet, rowIndex) {
+  var range = sheet.getRange(rowIndex, 1, 1, HEADERS.length);
+  var isEven = rowIndex % 2 === 0;
+  range
+    .setBackground(isEven ? "#f0f4ff" : "#ffffff")
+    .setFontFamily("Arial")
+    .setFontSize(10)
+    .setFontColor("#1e293b")
+    .setVerticalAlignment("middle")
+    .setHorizontalAlignment("left")
+    .setWrap(false);
+  sheet.setRowHeight(rowIndex, 21);
+  sheet.getRange(rowIndex, 4).setHorizontalAlignment("center");
+  [5, 11, 12, 13, 14, 17, 18, 19, 20, 21, 22].forEach(function (c) {
+    sheet.getRange(rowIndex, c).setWrap(true);
+  });
+  range.setBorder(
+    false,
+    false,
+    true,
+    false,
+    false,
+    false,
+    "#e2e8f0",
+    SpreadsheetApp.BorderStyle.SOLID,
+  );
+  addStatusDropdown(sheet, rowIndex, rowIndex);
+}
+
+function applyStatusColor(sheet, rowIndex, statusValue) {
+  var colors = STATUS_COLORS[statusValue] || {
+    bg: "#f1f5f9",
+    fg: "#64748b",
+    tint: "#f8fafc",
+  };
+  sheet.getRange(rowIndex, 1, 1, HEADERS.length).setBackground(colors.tint);
+  sheet
+    .getRange(rowIndex, STATUS_COL)
+    .setBackground(colors.bg)
+    .setFontColor(colors.fg)
+    .setFontWeight("bold")
+    .setHorizontalAlignment("center")
+    .setBorder(
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+      colors.fg + "55",
+      SpreadsheetApp.BorderStyle.SOLID,
+    );
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ── ONE-TIME UTILITIES ───────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+function createApplicationsSheet() {
+  var ss = getSpreadsheet();
+  var sheet = ss.getSheetByName(SHEET_NAME);
+  if (sheet) {
+    SpreadsheetApp.getUi().alert("Already exists.");
+    return;
+  }
+  setupSheet(ss.insertSheet(SHEET_NAME));
+  SpreadsheetApp.getUi().alert("Applications sheet created!");
+}
+
+function createAssessmentsSheet() {
+  var ss = getSpreadsheet();
+  var sheet = ss.getSheetByName(ASSESSMENTS_SHEET_NAME);
+  if (sheet) {
+    SpreadsheetApp.getUi().alert("Already exists.");
+    return;
+  }
+  setupAssessmentsSheet(ss.insertSheet(ASSESSMENTS_SHEET_NAME));
+  SpreadsheetApp.getUi().alert("Assessments sheet created!");
+}
+
+function fixHeaderRow() {
+  var ss = getSpreadsheet();
+  var sheet = ss.getSheetByName(SHEET_NAME) || ss.getActiveSheet();
+  var range = sheet.getRange(1, 1, 1, sheet.getLastColumn());
+  range
+    .setBackground(HEADER_COLOR)
+    .setFontColor("#ffffff")
+    .setFontFamily("Arial")
+    .setFontSize(10)
+    .setFontWeight("bold")
+    .setHorizontalAlignment("center")
+    .setVerticalAlignment("middle")
+    .setWrap(true);
+  sheet.setRowHeight(1, 40);
+  sheet.setFrozenRows(1);
+  sheet.setFrozenColumns(2);
+  range.setBorder(
+    false,
+    false,
+    true,
+    false,
+    false,
+    false,
+    ACCENT_COLOR,
+    SpreadsheetApp.BorderStyle.SOLID_MEDIUM,
+  );
+  SpreadsheetApp.getUi().alert("Header row fixed.");
+}
+
+function resizeColumns() {
+  var ss = getSpreadsheet();
+  var sheet = ss.getSheetByName(SHEET_NAME) || ss.getActiveSheet();
+  [
+    240, 220, 280, 160, 300, 250, 180, 160, 160, 180, 250, 260, 300, 300, 230,
+    240, 340, 320, 320, 320, 340, 300, 200, 200,
+  ].forEach(function (w, i) {
+    sheet.setColumnWidth(i + 1, w);
+  });
+  SpreadsheetApp.getUi().alert("Column widths updated.");
+}
+
+function reformatExistingSheet() {
+  var ss = getSpreadsheet();
+  var sheet = ss.getSheetByName(SHEET_NAME) || ss.getActiveSheet();
+  var last = sheet.getLastRow();
+  if (last < 2) return;
+  for (var r = 2; r <= last; r++) {
+    formatDataRow(sheet, r);
+    var status = sheet.getRange(r, STATUS_COL).getValue();
+    if (status) applyStatusColor(sheet, r, status);
+  }
+  SpreadsheetApp.getUi().alert("Sheet reformatted.");
+}
+
+function reformatTimestamps() {
+  var ss = getSpreadsheet();
+  var sheet = ss.getSheetByName(SHEET_NAME);
+  if (!sheet || sheet.getLastRow() < 2) return;
+  var lastRow = sheet.getLastRow();
+  var tsCol = sheet.getRange(2, 23, lastRow - 1, 1).getValues();
+  for (var i = 0; i < tsCol.length; i++) {
+    var val = tsCol[i][0];
+    if (!val) continue;
+    var str = String(val);
+    if (str.indexOf("T") !== -1 && str.indexOf("+") !== -1)
+      sheet.getRange(i + 2, 23).setValue(formatTimestamp(str));
+  }
+  SpreadsheetApp.getUi().alert("Timestamps reformatted.");
+}
+
+function fixAllAssessmentRowHeights() {
+  var ss = getSpreadsheet();
+  var sheet = ss.getSheetByName(ASSESSMENTS_SHEET_NAME);
+  if (!sheet) return;
+  for (var r = 3; r <= sheet.getLastRow(); r++)
+    sheet.setRowHeight(r, ASSESSMENT_ROW_HEIGHT);
+  SpreadsheetApp.getUi().alert("Assessment row heights fixed.");
+}
+
+function refetchFromSupabase() {
+  var props = PropertiesService.getScriptProperties();
+  var supabaseUrl = props.getProperty("SUPABASE_URL");
+  var supabaseKey = props.getProperty("SUPABASE_SERVICE_KEY");
+  if (!supabaseUrl || !supabaseKey) {
+    SpreadsheetApp.getUi().alert("Supabase keys not set.");
+    return;
+  }
+
+  var response = UrlFetchApp.fetch(
+    supabaseUrl + "/rest/v1/applications?select=*&order=created_at.asc",
+    {
+      method: "GET",
+      headers: { apikey: supabaseKey, Authorization: "Bearer " + supabaseKey },
+      muteHttpExceptions: true,
+    },
+  );
+  var code = response.getResponseCode();
+  if (code < 200 || code >= 300) {
+    SpreadsheetApp.getUi().alert("Supabase error: HTTP " + code);
+    return;
+  }
+
+  var records = JSON.parse(response.getContentText());
+  if (!Array.isArray(records) || records.length === 0) {
+    SpreadsheetApp.getUi().alert("No records found.");
+    return;
+  }
+
+  var ss = getSpreadsheet();
+  var sheet = ss.getSheetByName(SHEET_NAME);
+  if (!sheet) {
+    sheet = ss.insertSheet(SHEET_NAME);
+  } else {
+    sheet.clearContents();
+    sheet.clearFormats();
+  }
+
+  setupSheet(sheet);
+  for (var i = 0; i < records.length; i++) {
+    var r = records[i];
+    var row = buildRowFromWebhook(r);
+    var rowIndex = sheet.getLastRow() + 1;
+    sheet.appendRow(row);
+    formatDataRow(sheet, rowIndex);
+    applyStatusColor(sheet, rowIndex, r.status || "For Interview");
+  }
+  sheet.autoResizeColumns(1, HEADERS.length);
+  SpreadsheetApp.flush();
+  writeLog("REFETCH_COMPLETE", "", records.length + " records imported");
+  SpreadsheetApp.getUi().alert(
+    "Done! " + records.length + " records imported.",
+  );
+}
+
+function refetchAssessmentsFromSupabase() {
+  var props = PropertiesService.getScriptProperties();
+  var supabaseUrl = props.getProperty("SUPABASE_URL");
+  var supabaseKey = props.getProperty("SUPABASE_SERVICE_KEY");
+  if (!supabaseUrl || !supabaseKey) {
+    SpreadsheetApp.getUi().alert("Supabase keys not set.");
+    return;
+  }
+
+  var response = UrlFetchApp.fetch(
+    supabaseUrl + "/rest/v1/assessments?select=*&order=created_at.asc",
+    {
+      method: "GET",
+      headers: { apikey: supabaseKey, Authorization: "Bearer " + supabaseKey },
+      muteHttpExceptions: true,
+    },
+  );
+  var records = JSON.parse(response.getContentText());
+  if (!Array.isArray(records) || records.length === 0) {
+    SpreadsheetApp.getUi().alert("No assessment records found.");
+    return;
+  }
+
+  var ss = getSpreadsheet();
+  var sheet = ss.getSheetByName(ASSESSMENTS_SHEET_NAME);
+  if (!sheet) {
+    sheet = ss.insertSheet(ASSESSMENTS_SHEET_NAME);
+  } else {
+    sheet.clearContents();
+    sheet.clearFormats();
+    sheet.clearNotes();
+  }
+
+  setupAssessmentsSheet(sheet);
+  for (var i = 0; i < records.length; i++)
+    handleWebhookAssessment({ record: records[i], table: "assessments" });
+  SpreadsheetApp.getUi().alert(
+    "Done! " + records.length + " assessment records imported.",
+  );
+}
+
+function authorizeDrive() {
+  var folder = DriveApp.getRootFolder();
+  Logger.log("Drive authorized: " + folder.getName());
+}
