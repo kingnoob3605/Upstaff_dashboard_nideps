@@ -410,16 +410,14 @@ function toggleBulkMoveStageMenu(e) {
     const idx = STAGE_ORDER.indexOf(statuses[0]);
     const fwd = idx >= 0 ? STAGE_ORDER.slice(idx + 1).filter(s => !TERMINAL_STAGES.includes(s)) : [];
     const othersOpts = OTHERS_STATUSES.filter(s => s !== statuses[0]);
-    const btnStyle = `display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:8px;font-size:12px;font-weight:600;font-family:'Montserrat',sans-serif;color:var(--muted);cursor:pointer;background:transparent;border:none;width:100%;text-align:left;white-space:nowrap;`;
-    const btnHover = `onmouseover="this.style.background='var(--surface-3)';this.style.color='var(--text)'" onmouseout="this.style.background='transparent';this.style.color='var(--muted)'"`;
     if (!fwd.length && !othersOpts.length) {
       menu.innerHTML = `<div style="padding:8px 12px;font-size:12px;font-weight:600;font-family:'Montserrat',sans-serif;color:var(--muted);">No stages available.</div>`;
     } else {
-      let html = fwd.map(stage => `<button onclick="bulkMoveToStage('${stage}')" style="${btnStyle}" ${btnHover}>${stage}</button>`).join('');
+      let html = fwd.map(stage => `<button onclick="bulkMoveToStage('${stage}')" class="stage-menu-btn">${stage}</button>`).join('');
       if (othersOpts.length) {
         if (fwd.length) html += `<div style="margin:4px 8px;border-top:1px solid var(--border);"></div>`;
         html += `<div style="padding:4px 12px 2px;font-size:10px;font-weight:700;color:var(--muted);font-family:'Montserrat',sans-serif;text-transform:uppercase;letter-spacing:.5px;">Others</div>`;
-        html += othersOpts.map(stage => `<button onclick="bulkMoveToStage('${stage}')" style="${btnStyle}" ${btnHover}>${stage}</button>`).join('');
+        html += othersOpts.map(stage => `<button onclick="bulkMoveToStage('${stage}')" class="stage-menu-btn">${stage}</button>`).join('');
       }
       menu.innerHTML = html;
     }

@@ -5827,11 +5827,7 @@ function renderSettingsCalendarList() {
       <div style="display:flex;gap:6px;flex-shrink:0;">
         <button onclick="toggleCalendarVisibility('${cal.calendarId}')"
           title="${hiddenCalendars.has(cal.calendarId) ? "Show" : "Hide"} in calendar"
-          style="all:unset;cursor:pointer;padding:5px 10px;border-radius:8px;font-size:11px;font-weight:700;
-                 font-family:'Montserrat',sans-serif;border:1.5px solid var(--border);
-                 background:var(--surface-1);color:var(--muted);transition:all .15s;"
-          onmouseover="this.style.borderColor='var(--cyan)';this.style.color='var(--cyan)'"
-          onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">
+          class="btn-cal-toggle">
           ${hiddenCalendars.has(cal.calendarId) ? "👁 Show" : "🚫 Hide"}
         </button>
         ${
@@ -5839,11 +5835,7 @@ function renderSettingsCalendarList() {
             ? `
         <button onclick="handleDeleteCalendar('${cal.calendarId}', '${cal.calendarName.replace(/'/g, "\'")}', this)"
           title="Delete this calendar from Google"
-          style="all:unset;cursor:pointer;padding:5px 10px;border-radius:8px;font-size:11px;font-weight:700;
-                 font-family:'Montserrat',sans-serif;border:1.5px solid #fca5a5;
-                 background:rgba(220,38,38,.06);color:#dc2626;transition:all .15s;"
-          onmouseover="this.style.background='rgba(220,38,38,.14)'"
-          onmouseout="this.style.background='rgba(220,38,38,.06)'">
+          class="btn-cal-delete">
           🗑 Delete
         </button>`
             : ""
@@ -8886,8 +8878,8 @@ function moveCandidateFolder(taskId, btnEl) {
     .map(
       (f) => `
     <div onclick="assignFolder(${taskId},'${f.includes("Remove") ? "" : f}');document.getElementById('folder-picker-popup').remove();"
-      style="padding:9px 14px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;transition:background .12s;color:${f.includes("Remove") ? "#ef4444" : "var(--text)"};"
-      onmouseover="this.style.background='var(--surface-4)'" onmouseout="this.style.background=''">${f}</div>`,
+      class="folder-picker-item"
+      style="color:${f.includes("Remove") ? "#ef4444" : "var(--text)"};">${f}</div>`,
     )
     .join("");
   document.body.appendChild(popup);

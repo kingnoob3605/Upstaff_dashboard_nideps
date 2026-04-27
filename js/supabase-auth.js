@@ -16,9 +16,17 @@
 window.SupabaseAuth = (function () {
   const CONFIG_KEY = 'upstaff_api_config';
 
+  const DEFAULT_URL = 'https://pbabqydgzgrciqzidugd.supabase.co';
+  const DEFAULT_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBiYWJxeWRnemdyY2lxemlkdWdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyNzEyMTMsImV4cCI6MjA5MTg0NzIxM30.-V7A3KVdA2KyrIjH0jz7PpSGfHo91wTllFy_LxMi-Zg';
+
   function _config() {
-    try { return JSON.parse(localStorage.getItem(CONFIG_KEY) || '{}'); }
-    catch (_) { return {}; }
+    try {
+      var c = JSON.parse(localStorage.getItem(CONFIG_KEY) || '{}');
+      if (!c.supabaseUrl)     c.supabaseUrl     = DEFAULT_URL;
+      if (!c.supabaseAnonKey) c.supabaseAnonKey = DEFAULT_KEY;
+      return c;
+    }
+    catch (_) { return { supabaseUrl: DEFAULT_URL, supabaseAnonKey: DEFAULT_KEY }; }
   }
 
   function _saveConfig(c) {

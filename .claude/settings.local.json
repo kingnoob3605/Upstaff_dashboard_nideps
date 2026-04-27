@@ -3,7 +3,11 @@
     "allow": [
       "Bash(wc -l /c/Users/Internship/Desktop/SUPERBASE/index.html /c/Users/Internship/Desktop/SUPERBASE/js/*.js /c/Users/Internship/Desktop/SUPERBASE/css/*.css)",
       "Bash(grep -n \"querySelector\\\\|getElementById\\\\|\\\\\\\\.value\\\\|\\\\.textContent\" /c/Users/Internship/Desktop/SUPERBASE/js/pm-ui-views.js)",
-      "Bash(grep -n \"window\\\\.location\\\\|document\\\\.cookie\\\\|eval\\\\|new Function\" /c/Users/Internship/Desktop/SUPERBASE/js/*.js)"
+      "Bash(grep -n \"window\\\\.location\\\\|document\\\\.cookie\\\\|eval\\\\|new Function\" /c/Users/Internship/Desktop/SUPERBASE/js/*.js)",
+      "Bash(git fetch *)",
+      "mcp__Claude_Preview__preview_start",
+      "mcp__1f15390d-fd40-4904-afa4-0ddf14a633e3__list_projects",
+      "mcp__1f15390d-fd40-4904-afa4-0ddf14a633e3__list_tables"
     ]
   }
 }
