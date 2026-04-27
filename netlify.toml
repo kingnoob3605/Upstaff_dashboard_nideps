@@ -1,8 +1,9 @@
-[build]
-  publish = "."
+# netlify.toml — Upstaff Dashboard deployment config
 
 [[headers]]
   for = "/*"
   [headers.values]
-    Cross-Origin-Opener-Policy = "unsafe-none"
+    # Allow Google OAuth popup to call window.opener (required for Calendar sync)
+    # "same-origin-allow-popups" lets popups opened by this page communicate back.
+    Cross-Origin-Opener-Policy = "same-origin-allow-popups"
     Cross-Origin-Embedder-Policy = "unsafe-none"

@@ -2,10 +2,10 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "upstaff-dashboard",
+      "name": "superbase-dashboard",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["serve", "-p", "3456", "."],
-      "port": 3456
+      "runtimeArgs": ["serve", "-p", "3457", "."],
+      "port": 3457
     }
   ]
 }

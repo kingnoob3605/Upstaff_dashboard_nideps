@@ -4,8 +4,8 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <link rel="icon" type="image/png" href="css/Logo-NavBar.png"/>
-<!-- Required for Google OAuth popup to communicate back via window.opener -->
-<meta http-equiv="Cross-Origin-Opener-Policy" content="unsafe-none"/>
+<!-- Supabase auth does not need Cross-Origin-Opener-Policy -->
+
 <title>upstaff — Project Board</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&family=Syne:wght@600;700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet"/>
@@ -15,7 +15,10 @@
      which lets us connect to Google Calendar.
 ══════════════════════════════════════════════ -->
 <script src="https://apis.google.com/js/api.js"></script>
+<!-- GIS client kept for Google Calendar OAuth (not used for login) -->
 <script src="https://accounts.google.com/gsi/client" async defer></script>
+<!-- Supabase JS SDK -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
   <link rel="stylesheet" href="css/pm-ui-base.css">
 <link rel="stylesheet" href="css/pm-ui-components.css">
@@ -774,53 +777,73 @@
           <!-- ── Partner API Integration ── -->
           <div class="settings-panel" id="setting-partner-api">
 
-            <!-- Account Credentials Card -->
+            <!-- Supabase Auth Card -->
             <div class="settings-card" style="margin-bottom:12px;">
-              <div class="settings-card-title">🔐 Account Credentials</div>
-              <div class="settings-card-desc">Enter your Apps Script admin credentials. These are stored locally in your browser — never in the source code.</div>
-              <form onsubmit="return false;" autocomplete="on">
+              <div class="settings-card-title">🔐 Supabase Authentication</div>
+              <div class="settings-card-desc">Connect to your Supabase project for login. These values are stored locally in your browser — never in the source code.</div>
+              <form onsubmit="return false;" autocomplete="off">
 
-              <!-- Web App URL -->
+              <!-- Supabase URL -->
               <div style="margin-bottom:12px;">
-                <label class="settings-label">Google Apps Script Web App URL</label>
-                <div class="settings-row-sub" style="margin-bottom:6px;">The <code>/exec</code> URL from your Apps Script deployment.</div>
+                <label class="settings-label">Supabase Project URL</label>
+                <div class="settings-row-sub" style="margin-bottom:6px;">Found in Supabase → Project Settings → API.</div>
                 <input id="api-cred-url" type="url"
-                  placeholder="https://script.google.com/macros/s/.../exec"
+                  placeholder="https://xxxx.supabase.co"
                   style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid var(--border,rgba(255,255,255,.08));background:var(--surface-2,#0f1629);color:var(--text,#e2e8f0);font-size:12px;outline:none;font-family:monospace;"/>
               </div>
 
-              <!-- ADMIN_EMAIL -->
-              <div style="margin-bottom:12px;">
-                <label class="settings-label">ADMIN_EMAIL</label>
-                <div class="settings-row-sub" style="margin-bottom:6px;">From Script Properties in your Apps Script project.</div>
-                <input id="api-cred-email" type="email"
-                  placeholder="qwerty123@example.com"
-                  style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid var(--border,rgba(255,255,255,.08));background:var(--surface-2,#0f1629);color:var(--text,#e2e8f0);font-size:13px;outline:none;"/>
-              </div>
-
-              <!-- ADMIN_PASSWORD -->
+              <!-- Supabase Anon Key -->
               <div style="margin-bottom:16px;">
-                <label class="settings-label">ADMIN_PASSWORD</label>
-                <div class="settings-row-sub" style="margin-bottom:6px;">From Script Properties in your Apps Script project.</div>
+                <label class="settings-label">Supabase Anon Key</label>
+                <div class="settings-row-sub" style="margin-bottom:6px;">The public <code>anon</code> key from Supabase → Project Settings → API.</div>
                 <div style="display:flex;gap:8px;align-items:center;">
                   <input id="api-cred-password" type="password"
-                    placeholder="••••••••"
-                    style="flex:1;padding:10px 12px;border-radius:10px;border:1px solid var(--border,rgba(255,255,255,.08));background:var(--surface-2,#0f1629);color:var(--text,#e2e8f0);font-size:13px;outline:none;"/>
+                    placeholder="eyJh..." autocomplete="off"
+                    style="flex:1;padding:10px 12px;border-radius:10px;border:1px solid var(--border,rgba(255,255,255,.08));background:var(--surface-2,#0f1629);color:var(--text,#e2e8f0);font-size:12px;outline:none;font-family:monospace;"/>
                   <button onclick="toggleApiPasswordVisibility()" title="Show/hide"
                     style="padding:10px 12px;border-radius:10px;border:1px solid var(--border,rgba(255,255,255,.08));background:var(--surface-2,#0f1629);color:var(--muted,#64748b);cursor:pointer;font-size:13px;">👁</button>
                 </div>
               </div>
 
               <div style="display:flex;gap:8px;align-items:center;">
-                <button class="settings-save-btn" onclick="saveApiCredentials()" style="flex:1;">Save Credentials</button>
+                <button class="settings-save-btn" onclick="saveApiCredentials()" style="flex:1;">Save</button>
               </div>
               <div id="api-cred-status" style="margin-top:8px;font-size:11px;color:var(--muted);min-height:16px;"></div>
               </form>
             </div>
 
+            <!-- Apps Script Data Card -->
+            <div class="settings-card" style="margin-bottom:12px;">
+              <div class="settings-card-title">📊 Apps Script Data Source</div>
+              <div class="settings-card-desc">The Apps Script Web App URL is used to fetch applicant data from Google Sheets. Stored locally — never in source code.</div>
+              <form onsubmit="return false;" autocomplete="on">
+              <div style="margin-bottom:12px;">
+                <label class="settings-label">Web App URL</label>
+                <div class="settings-row-sub" style="margin-bottom:6px;">The <code>/exec</code> URL from your Apps Script deployment.</div>
+                <input id="api-cred-appscript-url" type="url"
+                  placeholder="https://script.google.com/macros/s/.../exec"
+                  style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid var(--border,rgba(255,255,255,.08));background:var(--surface-2,#0f1629);color:var(--text,#e2e8f0);font-size:12px;outline:none;font-family:monospace;"/>
+              </div>
+              <div style="margin-bottom:12px;">
+                <label class="settings-label">ADMIN_EMAIL</label>
+                <input id="api-cred-email" type="email"
+                  placeholder="admin@example.com" autocomplete="username"
+                  style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid var(--border,rgba(255,255,255,.08));background:var(--surface-2,#0f1629);color:var(--text,#e2e8f0);font-size:13px;outline:none;"/>
+              </div>
+              <div style="margin-bottom:16px;">
+                <label class="settings-label">ADMIN_PASSWORD</label>
+                <input id="api-cred-appscript-password" type="password"
+                  placeholder="••••••••" autocomplete="current-password"
+                  style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid var(--border,rgba(255,255,255,.08));background:var(--surface-2,#0f1629);color:var(--text,#e2e8f0);font-size:13px;outline:none;"/>
+              </div>
+              <button class="settings-save-btn" onclick="saveAppScriptCredentials()" style="width:100%;">Save Data Source</button>
+              <div id="api-appscript-status" style="margin-top:8px;font-size:11px;color:var(--muted);min-height:16px;"></div>
+              </form>
+            </div>
+
             <!-- Connection Status Card -->
             <div class="settings-card">
-              <div class="settings-card-title">🔗 Connection</div>
+              <div class="settings-card-title">🔗 Session</div>
               <div class="settings-row">
                 <div>
                   <div class="settings-row-label">Logged in as</div>
@@ -830,7 +853,7 @@
               </div>
               <div class="settings-row" style="margin-top:4px;">
                 <div>
-                  <div class="settings-row-label">Connection Status</div>
+                  <div class="settings-row-label">Data Connection</div>
                   <div class="settings-row-sub" id="api-status-text">Checking…</div>
                 </div>
                 <button class="settings-save-btn" onclick="syncApplicantsFromApi()">Sync Now</button>
@@ -2035,6 +2058,7 @@
 </div>
 
 <script src="js/pm-ui-api.js"></script>
+<script src="js/supabase-auth.js"></script>
 <script src="js/pm-ui-core.js"></script>
 <script src="js/pm-ui-views.js"></script>
 <script src="js/pm-ui-gcal.js"></script>
@@ -2078,141 +2102,158 @@
 <!-- ══ LOGIN GATE MODAL ══ -->
 <div id="login-gate-overlay" style="display:flex;position:fixed;inset:0;z-index:9999;background:var(--bg,#0f1629);align-items:center;justify-content:center;">
   <div style="width:100%;max-width:400px;padding:32px;background:var(--surface,#1a1f35);border:1px solid var(--border,rgba(255,255,255,.08));border-radius:20px;box-shadow:0 24px 64px rgba(0,0,0,.5);">
-    <div style="text-align:center;margin-bottom:32px;">
+    <div style="text-align:center;margin-bottom:28px;">
       <div style="font-size:32px;font-weight:900;font-family:Syne,sans-serif;background:linear-gradient(135deg,var(--cyan,#3ecfdf),var(--violet,#6c63ff));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:6px;">upstaff</div>
       <div style="font-size:13px;color:var(--light,#8892b0);">Sign in to continue</div>
     </div>
-    <!-- Step 1: API Credentials (shown if not configured yet) -->
+
+    <!-- Step 1: Supabase setup (shown if not configured yet) -->
     <div id="gate-setup-section" style="display:none;margin-bottom:20px;">
       <div style="font-size:11px;font-weight:700;color:var(--cyan,#3ecfdf);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;">⚙️ First-Time Setup</div>
-      <form onsubmit="return false;" autocomplete="on">
-      <div style="margin-bottom:10px;">
-        <label style="display:block;font-size:11px;font-weight:600;color:var(--muted,#64748b);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px;">Web App URL</label>
-        <input id="gate-setup-url" type="url" placeholder="https://script.google.com/macros/s/.../exec"
-          style="width:100%;box-sizing:border-box;padding:9px 12px;border-radius:9px;border:1px solid var(--border,rgba(255,255,255,.08));background:var(--surface-2,#0f1629);color:var(--text,#e2e8f0);font-size:11px;outline:none;font-family:monospace;"/>
-      </div>
-      <div style="margin-bottom:10px;">
-        <label style="display:block;font-size:11px;font-weight:600;color:var(--muted,#64748b);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px;">ADMIN_EMAIL</label>
-        <input id="gate-setup-email" type="email" placeholder="qwerty123@example.com"
-          style="width:100%;box-sizing:border-box;padding:9px 12px;border-radius:9px;border:1px solid var(--border,rgba(255,255,255,.08));background:var(--surface-2,#0f1629);color:var(--text,#e2e8f0);font-size:13px;outline:none;"/>
-      </div>
-      <div style="margin-bottom:12px;">
-        <label style="display:block;font-size:11px;font-weight:600;color:var(--muted,#64748b);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px;">ADMIN_PASSWORD</label>
-        <input id="gate-setup-password" type="password" placeholder="••••••••"
-          style="width:100%;box-sizing:border-box;padding:9px 12px;border-radius:9px;border:1px solid var(--border,rgba(255,255,255,.08));background:var(--surface-2,#0f1629);color:var(--text,#e2e8f0);font-size:13px;outline:none;"/>
-      </div>
-      <button onclick="saveGateCredentials()"
-        style="width:100%;padding:10px;border-radius:10px;border:none;background:var(--cyan,#3ecfdf);color:#0f1629;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:4px;">
-        Save & Continue
-      </button>
-      <div id="gate-setup-status" style="font-size:11px;color:var(--muted,#64748b);min-height:16px;margin-top:6px;text-align:center;"></div>
+      <form onsubmit="return false;" autocomplete="off">
+        <div style="margin-bottom:10px;">
+          <label style="display:block;font-size:11px;font-weight:600;color:var(--muted,#64748b);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px;">Supabase Project URL</label>
+          <input id="gate-setup-url" type="url" placeholder="https://xxxx.supabase.co"
+            style="width:100%;box-sizing:border-box;padding:9px 12px;border-radius:9px;border:1px solid var(--border,rgba(255,255,255,.08));background:var(--surface-2,#0f1629);color:var(--text,#e2e8f0);font-size:11px;outline:none;font-family:monospace;"/>
+        </div>
+        <div style="margin-bottom:12px;">
+          <label style="display:block;font-size:11px;font-weight:600;color:var(--muted,#64748b);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px;">Supabase Anon Key</label>
+          <input id="gate-setup-key" type="password" placeholder="eyJh..." autocomplete="off"
+            style="width:100%;box-sizing:border-box;padding:9px 12px;border-radius:9px;border:1px solid var(--border,rgba(255,255,255,.08));background:var(--surface-2,#0f1629);color:var(--text,#e2e8f0);font-size:11px;outline:none;font-family:monospace;"/>
+        </div>
+        <button onclick="saveGateCredentials()"
+          style="width:100%;padding:10px;border-radius:10px;border:none;background:var(--cyan,#3ecfdf);color:#0f1629;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:4px;">
+          Save & Continue
+        </button>
+        <div id="gate-setup-status" style="font-size:11px;color:var(--muted,#64748b);min-height:16px;margin-top:6px;text-align:center;"></div>
       </form>
       <div style="border-top:1px solid var(--border,rgba(255,255,255,.06));margin:16px 0;"></div>
     </div>
 
-    <!-- Step 2: Google Sign-In -->
-    <div style="display:flex;justify-content:center;margin-bottom:8px;">
-      <div id="g_id_onload"
-        data-callback="handleGoogleSignIn"
-        data-auto_prompt="false">
+    <!-- Step 2: Email / Password login -->
+    <form id="gate-login-form" onsubmit="return false;" autocomplete="on">
+      <div style="margin-bottom:12px;">
+        <label style="display:block;font-size:11px;font-weight:600;color:var(--muted,#64748b);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px;">Email</label>
+        <input id="gate-email" type="email" placeholder="you@company.com" autocomplete="username"
+          style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid var(--border,rgba(255,255,255,.08));background:var(--surface-2,#0f1629);color:var(--text,#e2e8f0);font-size:13px;outline:none;"/>
       </div>
-      <div class="g_id_signin"
-        data-type="standard"
-        data-theme="filled_black"
-        data-text="sign_in_with"
-        data-shape="pill"
-        data-size="large"
-        data-logo_alignment="left">
+      <div style="margin-bottom:16px;">
+        <label style="display:block;font-size:11px;font-weight:600;color:var(--muted,#64748b);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px;">Password</label>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input id="gate-password" type="password" placeholder="••••••••" autocomplete="current-password"
+            style="flex:1;padding:10px 12px;border-radius:10px;border:1px solid var(--border,rgba(255,255,255,.08));background:var(--surface-2,#0f1629);color:var(--text,#e2e8f0);font-size:13px;outline:none;"/>
+          <button type="button" onclick="toggleGatePassword()" title="Show/hide"
+            style="padding:10px 12px;border-radius:10px;border:1px solid var(--border,rgba(255,255,255,.08));background:var(--surface-2,#0f1629);color:var(--muted,#64748b);cursor:pointer;font-size:13px;flex-shrink:0;">👁</button>
+        </div>
       </div>
-    </div>
-    <div id="gate-status" style="margin-top:8px;text-align:center;font-size:12px;color:var(--muted,#64748b);min-height:18px;"></div>
-    <div style="margin-top:12px;text-align:center;font-size:11px;color:var(--muted,#64748b);">Only authorized accounts can sign in.</div>
+      <button type="submit" onclick="handleEmailLogin()"
+        style="width:100%;padding:11px;border-radius:10px;border:none;background:linear-gradient(135deg,var(--cyan,#3ecfdf),var(--violet,#6c63ff));color:#fff;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:.3px;">
+        Sign In
+      </button>
+    </form>
+
+    <div id="gate-status" style="margin-top:10px;text-align:center;font-size:12px;color:var(--muted,#64748b);min-height:18px;"></div>
     <div style="margin-top:14px;text-align:center;">
-      <button onclick="document.getElementById('gate-setup-section').style.display='block'" style="background:none;border:none;color:var(--muted,#64748b);font-size:11px;cursor:pointer;text-decoration:underline;padding:0;">⚙ Change credentials</button>
+      <button onclick="document.getElementById('gate-setup-section').style.display='block'" style="background:none;border:none;color:var(--muted,#64748b);font-size:11px;cursor:pointer;text-decoration:underline;padding:0;">⚙ Change Supabase settings</button>
     </div>
   </div>
 </div>
 
 <script>
-/* ══ LOGIN GATE MODAL ══ */
+/* ══ LOGIN GATE ══ */
 function _showLoginGate() {
   var overlay = document.getElementById('login-gate-overlay');
   if (overlay) overlay.style.display = 'flex';
 
-  // Auto-show setup section if credentials are not yet configured
-  var cfg     = window.UpstaffAPI ? UpstaffAPI.getConfig() : {};
+  // Auto-show setup section if Supabase is not yet configured
   var section = document.getElementById('gate-setup-section');
   if (section) {
-    var needsSetup = !cfg.webAppUrl || !cfg.adminEmail || !cfg.adminPassword;
+    var needsSetup = !window.SupabaseAuth || !SupabaseAuth.isConfigured();
     section.style.display = needsSetup ? 'block' : 'none';
-    // Pre-fill if partially saved
-    if (cfg.webAppUrl)     document.getElementById('gate-setup-url').value      = cfg.webAppUrl;
-    if (cfg.adminEmail)    document.getElementById('gate-setup-email').value    = cfg.adminEmail;
-    if (cfg.adminPassword) document.getElementById('gate-setup-password').value = cfg.adminPassword;
-  }
-}
-
-window.saveGateCredentials = function() {
-  var url      = (document.getElementById('gate-setup-url')?.value      || '').trim();
-  var email    = (document.getElementById('gate-setup-email')?.value    || '').trim();
-  var password = (document.getElementById('gate-setup-password')?.value || '').trim();
-  var statusEl = document.getElementById('gate-setup-status');
-
-  if (!url || !url.startsWith('https://script.google.com/macros/s/') || !url.endsWith('/exec')) {
-    statusEl.textContent = '❌ Invalid URL — must end in /exec';
-    statusEl.style.color = '#ef4444';
-    return;
-  }
-  if (!email || !password) {
-    statusEl.textContent = '❌ All fields are required.';
-    statusEl.style.color = '#ef4444';
-    return;
   }
 
-  var cfg = window.UpstaffAPI ? UpstaffAPI.getConfig() : {};
-  cfg.webAppUrl     = url;
-  cfg.adminEmail    = email;
-  cfg.adminPassword = password;
-  if (window.UpstaffAPI) UpstaffAPI.saveConfig(cfg);
-
-  statusEl.textContent = '✅ Saved! Now sign in with Google below.';
-  statusEl.style.color = 'var(--green,#10b981)';
-  // Hide setup after short delay
+  // Focus email input for quick keyboard entry
   setTimeout(function() {
-    document.getElementById('gate-setup-section').style.display = 'none';
-  }, 1500);
-};
+    var el = document.getElementById('gate-email');
+    if (el) el.focus();
+  }, 120);
+}
 
 function _hideLoginGate() {
   var overlay = document.getElementById('login-gate-overlay');
   if (overlay) overlay.style.display = 'none';
 }
 
-// Google Sign-In callback — called by GIS library after user picks account
-window.handleGoogleSignIn = async function(response) {
+window.saveGateCredentials = function() {
+  var url = (document.getElementById('gate-setup-url')?.value || '').trim();
+  var key = (document.getElementById('gate-setup-key')?.value || '').trim();
+  var statusEl = document.getElementById('gate-setup-status');
+
+  if (!url || !url.startsWith('https://') || !url.includes('supabase.co')) {
+    statusEl.textContent = '❌ Enter a valid Supabase project URL (https://xxxx.supabase.co).';
+    statusEl.style.color = '#ef4444';
+    return;
+  }
+  if (!key || !key.startsWith('eyJ')) {
+    statusEl.textContent = '❌ Enter your Supabase Anon (public) key.';
+    statusEl.style.color = '#ef4444';
+    return;
+  }
+
+  SupabaseAuth.saveSettings(url, key);
+  statusEl.textContent = '✅ Saved! Sign in below.';
+  statusEl.style.color = 'var(--green,#10b981)';
+  setTimeout(function() {
+    document.getElementById('gate-setup-section').style.display = 'none';
+    document.getElementById('gate-email')?.focus();
+  }, 1200);
+};
+
+window.toggleGatePassword = function() {
+  var input = document.getElementById('gate-password');
+  if (input) input.type = input.type === 'password' ? 'text' : 'password';
+};
+
+// Email / password login — called by Sign In button and Enter key
+window.handleEmailLogin = async function() {
+  var email    = (document.getElementById('gate-email')?.value    || '').trim();
+  var password = (document.getElementById('gate-password')?.value || '');
   var statusEl = document.getElementById('gate-status');
+
+  if (!email || !password) {
+    statusEl.textContent = '❌ Please enter your email and password.';
+    statusEl.style.color = '#ef4444';
+    return;
+  }
+
   statusEl.textContent = 'Signing in…';
   statusEl.style.color = 'var(--muted,#64748b)';
 
   try {
-    // Decode JWT payload (base64url → JSON)
-    var parts   = response.credential.split('.');
-    var payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
-
-    // Reject expired Google credential tokens
-    if (payload.exp && Math.floor(Date.now() / 1000) > payload.exp) {
-      throw new Error('Sign-in token expired. Please refresh the page and try again.');
-    }
-
-    var result = await UpstaffAPI.loginWithGoogle(payload);
+    var result = await SupabaseAuth.login(email, password);
     _applyRoleRestrictions(result.role);
     _updateTopbarAvatar();
     _fetchAndMergeEmailJSConfig();
+
+    // Re-apply GCal config now that Supabase has populated it, then re-init
+    try {
+      var gcalSaved = JSON.parse(localStorage.getItem('upstaff_gcal_api_config') || '{}');
+      if (typeof GCAL_CONFIG !== 'undefined') {
+        if (gcalSaved.apiKey)   GCAL_CONFIG.API_KEY   = gcalSaved.apiKey;
+        if (gcalSaved.clientId) GCAL_CONFIG.CLIENT_ID = gcalSaved.clientId;
+        // Re-run gcalInit now that keys are set
+        if (typeof gcalInit === 'function') gcalInit();
+      }
+    } catch (_) {}
+
     statusEl.textContent = '✅ Welcome, ' + result.name + '!';
     statusEl.style.color = 'var(--green,#10b981)';
     setTimeout(function() {
       _hideLoginGate();
-      if (typeof syncApplicantsFromApi === 'function') syncApplicantsFromApi();
+      var cfg = window.UpstaffAPI ? UpstaffAPI.getConfig() : {};
+      if (cfg.token && cfg.webAppUrl && typeof syncApplicantsFromApi === 'function') {
+        syncApplicantsFromApi();
+      }
     }, 700);
   } catch (err) {
     statusEl.textContent = '❌ ' + (err.message || 'Sign in failed.');
@@ -2220,27 +2261,40 @@ window.handleGoogleSignIn = async function(response) {
   }
 };
 
-// Update topbar avatar initials and dropdown labels from stored profile / API config
+// Keyboard shortcuts inside the login form
+document.addEventListener('DOMContentLoaded', function() {
+  var emailInput = document.getElementById('gate-email');
+  var pwInput    = document.getElementById('gate-password');
+  if (emailInput) emailInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') { e.preventDefault(); pwInput?.focus(); }
+  });
+  if (pwInput) pwInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') { e.preventDefault(); handleEmailLogin(); }
+  });
+});
+
+// Update topbar avatar initials and dropdown labels
 function _updateTopbarAvatar() {
   var el = document.querySelector('.topbar-avatar');
   if (!el) return;
-  var profile = {};
-  try { profile = JSON.parse(localStorage.getItem('upstaff_profile') || '{}'); } catch (_) {}
-  var cfg = (window.UpstaffAPI ? UpstaffAPI.getConfig() : {});
-  var name = [profile.firstName, profile.lastName].filter(Boolean).join(' ') || cfg.name || '';
+  var name  = window.SupabaseAuth ? SupabaseAuth.getName()  : '';
+  var email = window.SupabaseAuth ? SupabaseAuth.getEmail() : '';
+  if (!name) {
+    try {
+      var p = JSON.parse(localStorage.getItem('upstaff_profile') || '{}');
+      name  = [p.firstName, p.lastName].filter(Boolean).join(' ');
+      email = email || p.email || '';
+    } catch (_) {}
+  }
   var initials = name.split(' ').filter(Boolean).map(function(w) { return w[0]; }).join('').toUpperCase().slice(0, 2) || 'HR';
   el.textContent = initials;
-  // Also update the dropdown labels so they reflect the current user immediately
-  var nameLbl = document.getElementById('avatar-name-label');
+  var nameLbl  = document.getElementById('avatar-name-label');
   var emailLbl = document.getElementById('avatar-email-label');
   if (nameLbl && name) nameLbl.textContent = name;
-  if (emailLbl) emailLbl.textContent = cfg.email || profile.email || 'Not connected';
+  if (emailLbl) emailLbl.textContent = email || 'Not connected';
 }
 
-// Apply role-based UI restrictions.
-// Uses a CSS class on <body> rather than inline styles so that dynamically
-// rendered buttons (pipeline actions, member list) stay hidden even after
-// JS re-renders that set element.style.display directly.
+// Apply role-based UI restrictions via a CSS body class.
 // CSS rule in pm-ui-base.css:
 //   body.role-assistant [data-role-hide="hr"] { display: none !important; }
 function _applyRoleRestrictions(role) {
@@ -2250,14 +2304,10 @@ function _applyRoleRestrictions(role) {
 // Re-apply restrictions and update avatar on page load if already logged in
 document.addEventListener('DOMContentLoaded', function() {
   _updateTopbarAvatar();
-  if (window.UpstaffAPI) {
-    var cfg = UpstaffAPI.getConfig();
-    if (cfg.role) _applyRoleRestrictions(cfg.role);
-  }
+  if (window.SupabaseAuth) _applyRoleRestrictions(SupabaseAuth.getRole());
 });
 
 // Fetch EmailJS credentials from Apps Script and merge into local config.
-// This keeps Service ID, Template ID, and Public Key out of the frontend.
 function _fetchAndMergeEmailJSConfig() {
   if (!window.UpstaffAPI) return;
   UpstaffAPI.getEmailJSConfig().then(function(res) {
@@ -2269,32 +2319,40 @@ function _fetchAndMergeEmailJSConfig() {
       if (res.publicKey)  saved.publicKey  = res.publicKey;
       localStorage.setItem('upstaff_emailjs_config', JSON.stringify(saved));
     } catch (_) {}
-  }).catch(function() {});  // silent — falls back to whatever is in localStorage
+  }).catch(function() {});
 }
 </script>
 
 <script>
-/* ══ AUTO-SYNC FROM PARTNER API ON LOAD ══ */
+/* ══ AUTO-SYNC ON LOAD ══ */
 (function() {
   window.addEventListener('DOMContentLoaded', function() {
-    if (!window.UpstaffAPI) return;
-    if (UpstaffAPI.isConfigured()) {
-      // Verify token — auto silent re-login if expired, only show gate if that fails too
-      UpstaffAPI.verifySession().then(function(ok) {
-        if (ok) {
-          // Re-apply role restrictions (in case silent re-login refreshed config)
-          var cfg = UpstaffAPI.getConfig();
-          if (cfg.role) _applyRoleRestrictions(cfg.role);
-          _updateTopbarAvatar();
-          _hideLoginGate();
-          _fetchAndMergeEmailJSConfig();
-          syncApplicantsFromApi();
-        } else {
-          _showLoginGate();
+    if (!window.SupabaseAuth || !SupabaseAuth.isConfigured()) {
+      _showLoginGate();
+      return;
+    }
+    if (SupabaseAuth.isLoggedIn()) {
+      _applyRoleRestrictions(SupabaseAuth.getRole());
+      _updateTopbarAvatar();
+      _hideLoginGate();
+      _fetchAndMergeEmailJSConfig();
+
+      // Re-apply GCal config from localStorage (populated during last login)
+      try {
+        var gcalSaved = JSON.parse(localStorage.getItem('upstaff_gcal_api_config') || '{}');
+        if (typeof GCAL_CONFIG !== 'undefined') {
+          if (gcalSaved.apiKey)   GCAL_CONFIG.API_KEY   = gcalSaved.apiKey;
+          if (gcalSaved.clientId) GCAL_CONFIG.CLIENT_ID = gcalSaved.clientId;
+          if (typeof gcalInit === 'function') gcalInit();
         }
-      });
+      } catch (_) {}
+
+      // Only sync if Apps Script token is available
+      var cfg = window.UpstaffAPI ? UpstaffAPI.getConfig() : {};
+      if (cfg.token && cfg.webAppUrl && typeof syncApplicantsFromApi === 'function') {
+        syncApplicantsFromApi();
+      }
     } else {
-      // Credentials not configured — show login gate
       _showLoginGate();
     }
   });

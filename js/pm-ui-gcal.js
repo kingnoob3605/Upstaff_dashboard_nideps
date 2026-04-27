@@ -12,12 +12,11 @@ const GCAL_CONFIG = {
   //   → Create Credentials → API Key
   //   → Restrict it to "Google Calendar API" only
   //
-  // API_KEY is fetched at runtime from Apps Script Script Properties (GCAL_API_KEY).
-  // It is never stored in this file — set it in Apps Script → Script Properties.
-  API_KEY: "AIzaSyCtvFs7-4tc6jUnXmrPc0zdmBrTdrAu-cI",
+  // API_KEY is fetched from Supabase config table after login — never hardcoded.
+  API_KEY: "",
 
-  // CLIENT_ID must be present at page load to render the Google Sign-In button.
-  // It is a public identifier (visible in every OAuth URL) — not a secret.
+  // CLIENT_ID is a public identifier used by google.accounts.oauth2 for Calendar OAuth.
+  // It is visible in every OAuth URL — not a secret.
   CLIENT_ID:
     "320953058285-4se6egb1i6v6ssfqvau8m8nonr05ll7o.apps.googleusercontent.com",
   // ══════════════════════════════════════════════════════════════════
@@ -130,17 +129,30 @@ function gcalInit() {
     GCAL_CONFIG.API_KEY === "YOUR_API_KEY_HERE" ||
     GCAL_CONFIG.CLIENT_ID === "YOUR_CLIENT_ID_HERE.apps.googleusercontent.com"
   ) {
-    console.warn(
-      "[Google Calendar] ⚠️  Please fill in your API_KEY and CLIENT_ID in Settings → Calendars.",
-    );
+    // Only warn if the user is already logged in — keys should be present but aren't.
+    // Before login the keys haven't been fetched from Supabase yet, so silence is correct.
+    const _isLoggedIn = window.SupabaseAuth && SupabaseAuth.isLoggedIn();
+    if (_isLoggedIn) {
+      console.warn(
+        "[Google Calendar] ⚠️  API_KEY or CLIENT_ID missing. Log out and back in to re-fetch credentials from Supabase, or check Settings → Calendars.",
+      );
+    }
     const _unconfigBtn = document.getElementById("gcal-sync-btn");
     if (_unconfigBtn) {
       _unconfigBtn.title =
-        "GCal not configured — add API Key and Client ID in Settings → Calendars";
+        _isLoggedIn
+          ? "GCal not configured — log out and back in to refresh credentials"
+          : "Sign in to enable Google Calendar sync";
       _unconfigBtn.setAttribute("data-unconfigured", "true");
       _unconfigBtn.style.opacity = "0.45";
       _unconfigBtn.style.cursor = "not-allowed";
     }
+    return;
+  }
+
+  // GIS library is loaded async — guard against calling before it's ready.
+  // The window.load handler polls for GIS and will call gcalInit() once ready.
+  if (!window.google || !window.google.accounts || !window.google.accounts.oauth2) {
     return;
   }
 
@@ -228,7 +240,18 @@ function gcalInit() {
         updateSyncBtnState("Sync Google Cal", false);
       }
     } catch (err) {
-      console.error("[GCal] ❌ gapi init error:", err);
+      const status = err && (err.status || (err.result && err.result.error && err.result.error.code));
+      if (status === 400 || status === 403) {
+        console.error(
+          "[GCal] ❌ gapi init error (HTTP " + status + "). " +
+          "Check your API key in Google Cloud Console → APIs & Services → Credentials. " +
+          "Make sure: (1) Google Calendar API is enabled, " +
+          "(2) HTTP referrer restrictions include this site's domain.",
+          err
+        );
+      } else {
+        console.error("[GCal] ❌ gapi init error:", err);
+      }
     }
   });
 }
@@ -1601,42 +1624,27 @@ window.addEventListener("load", () => {
   }
 
   // Load API Key + Client ID from Settings UI (localStorage) into GCAL_CONFIG
-  // Must run BEFORE _initGIS() so any saved client_id is used at init time
+  // Must run BEFORE gcalInit() so any saved keys are used at init time
   const _gcalSaved = (() => {
     try { return JSON.parse(localStorage.getItem("upstaff_gcal_api_config") || "{}"); } catch (_) { return {}; }
   })();
   if (_gcalSaved.apiKey)   GCAL_CONFIG.API_KEY   = _gcalSaved.apiKey;
   if (_gcalSaved.clientId) GCAL_CONFIG.CLIENT_ID = _gcalSaved.clientId;
 
-  // GIS script is loaded in the HTML head — wait for it to be ready then init
-  function _initGIS() {
-    if (window.google && google.accounts && google.accounts.id) {
-      google.accounts.id.initialize({
-        client_id: GCAL_CONFIG.CLIENT_ID,
-        // Use an indirect lookup so handleGoogleSignIn is resolved at callback
-        // time, not at init time (pm-ui-gcal.js runs before the inline script
-        // that defines window.handleGoogleSignIn)
-        callback: function(r) { if (window.handleGoogleSignIn) window.handleGoogleSignIn(r); },
-        auto_select: false,
-      });
-      google.accounts.id.renderButton(document.querySelector(".g_id_signin"), {
-        theme: "filled_black",
-        size: "large",
-        shape: "pill",
-        text: "sign_in_with",
-      });
-    }
-  }
-  if (window.google && google.accounts) {
-    _initGIS();
+  // google.accounts.oauth2 (used by gcalInit) is part of the GIS library.
+  // We no longer use google.accounts.id (Sign-In / One Tap) — that was
+  // removed when login was migrated to Supabase. Wait for the GIS library
+  // to be ready, then run gcalInit().
+  if (window.google && window.google.accounts) {
+    gcalInit();
   } else {
     // GIS loaded with async defer — poll briefly until ready (max ~2s)
     let _gisAttempts = 0;
     const _gisTimer = setInterval(() => {
       _gisAttempts++;
-      if (window.google && google.accounts) {
+      if (window.google && window.google.accounts) {
         clearInterval(_gisTimer);
-        _initGIS();
+        gcalInit();
       } else if (_gisAttempts > 20) {
         clearInterval(_gisTimer);
         console.warn("[GCal] Could not load GIS script — offline or blocked?");
@@ -1645,8 +1653,6 @@ window.addEventListener("load", () => {
       }
     }, 100);
   }
-
-  gcalInit();
 
   // Restore cached calendars into dropdowns / sidebar — persistLoad() already
   // hydrated UPSTAFF_CALENDARS from localStorage but the DOM functions haven't

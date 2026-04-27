@@ -2696,8 +2696,8 @@ async function handleLogout() {
   );
   if (!confirmed) return;
 
-  // Clear API token
-  if (window.UpstaffAPI) UpstaffAPI.logout();
+  // Sign out of Supabase and clear session
+  if (window.SupabaseAuth) await SupabaseAuth.logout();
 
   // Clear Google Calendar auth
   if (typeof getUserGcalAuthKey === "function") {
@@ -2711,68 +2711,120 @@ async function handleLogout() {
 }
 
 function populateApiSettings() {
-  const cfg = UpstaffAPI.getConfig();
+  const cfg = window.UpstaffAPI ? UpstaffAPI.getConfig() : {};
 
-  // Populate credential fields
-  const urlEl = document.getElementById("api-cred-url");
-  const emailEl = document.getElementById("api-cred-email");
-  const passEl = document.getElementById("api-cred-password");
-  if (urlEl) urlEl.value = cfg.webAppUrl || "";
-  if (emailEl) emailEl.value = cfg.adminEmail || "";
-  if (passEl) passEl.value = cfg.adminPassword || "";
+  // Supabase auth fields
+  const urlEl  = document.getElementById("api-cred-url");
+  const keyEl  = document.getElementById("api-cred-password");
+  if (urlEl) urlEl.value = cfg.supabaseUrl     || "";
+  if (keyEl) keyEl.value = cfg.supabaseAnonKey || "";
 
+  // Apps Script data fields
+  const asUrlEl  = document.getElementById("api-cred-appscript-url");
+  const emailEl  = document.getElementById("api-cred-email");
+  const asPassEl = document.getElementById("api-cred-appscript-password");
+  if (asUrlEl)  asUrlEl.value  = cfg.webAppUrl      || "";
+  if (emailEl)  emailEl.value  = cfg.adminEmail     || "";
+  if (asPassEl) asPassEl.value = cfg.adminPassword  || "";
+
+  // Session status
   const loggedInEl = document.getElementById("api-logged-in-as");
   if (loggedInEl) {
-    loggedInEl.textContent = cfg.name
-      ? `${cfg.name} (${cfg.email}) — ${cfg.role === "hr" ? "HR" : "Assistant"}`
+    const name  = window.SupabaseAuth ? SupabaseAuth.getName()  : cfg.name  || "";
+    const email = window.SupabaseAuth ? SupabaseAuth.getEmail() : cfg.email || "";
+    const role  = window.SupabaseAuth ? SupabaseAuth.getRole()  : cfg.role  || "";
+    loggedInEl.textContent = name
+      ? `${name} (${email}) — ${role === "hr" ? "HR" : "Assistant"}`
       : "Not signed in";
   }
 
   const statusEl = document.getElementById("api-status-text");
   if (statusEl) {
-    statusEl.textContent = cfg.token ? "Connected ✅" : "Not connected";
-    statusEl.style.color = cfg.token ? "var(--green)" : "";
+    const connected = cfg.webAppUrl && cfg.token;
+    statusEl.textContent = connected ? "Connected ✅" : "Not connected";
+    statusEl.style.color = connected ? "var(--green)" : "";
   }
 }
 
+// Save Supabase URL + Anon Key
 window.saveApiCredentials = function () {
   const url = (document.getElementById("api-cred-url")?.value || "").trim();
-  const email = (document.getElementById("api-cred-email")?.value || "").trim();
-  const password = (
-    document.getElementById("api-cred-password")?.value || ""
-  ).trim();
+  const key = (document.getElementById("api-cred-password")?.value || "").trim();
   const statusEl = document.getElementById("api-cred-status");
 
-  if (
-    !url ||
-    !url.startsWith("https://script.google.com/macros/s/") ||
-    !url.endsWith("/exec")
-  ) {
-    statusEl.textContent =
-      "❌ Invalid URL — must be a valid Apps Script /exec URL.";
+  if (!url || !url.startsWith("https://") || !url.includes("supabase.co")) {
+    statusEl.textContent = "❌ Enter a valid Supabase project URL.";
     statusEl.style.color = "#ef4444";
     return;
   }
-  if (!email) {
-    statusEl.textContent = "❌ ADMIN_EMAIL is required.";
+  if (!key || !key.startsWith("eyJ")) {
+    statusEl.textContent = "❌ Enter your Supabase Anon key.";
     statusEl.style.color = "#ef4444";
     return;
   }
-  if (!password) {
-    statusEl.textContent = "❌ ADMIN_PASSWORD is required.";
+
+  SupabaseAuth.saveSettings(url, key);
+  statusEl.textContent = "✅ Supabase settings saved.";
+  statusEl.style.color = "var(--green,#10b981)";
+};
+
+// Save Apps Script data source credentials
+window.saveAppScriptCredentials = function () {
+  const url      = (document.getElementById("api-cred-appscript-url")?.value      || "").trim();
+  const email    = (document.getElementById("api-cred-email")?.value              || "").trim();
+  const password = (document.getElementById("api-cred-appscript-password")?.value || "").trim();
+  const statusEl = document.getElementById("api-appscript-status");
+
+  if (!url || !url.startsWith("https://script.google.com/macros/s/") || !url.endsWith("/exec")) {
+    statusEl.textContent = "❌ Invalid URL — must be a valid Apps Script /exec URL.";
+    statusEl.style.color = "#ef4444";
+    return;
+  }
+  if (!email || !password) {
+    statusEl.textContent = "❌ ADMIN_EMAIL and ADMIN_PASSWORD are required.";
     statusEl.style.color = "#ef4444";
     return;
   }
 
   const cfg = UpstaffAPI.getConfig();
-  cfg.webAppUrl = url;
-  cfg.adminEmail = email;
+  cfg.webAppUrl     = url;
+  cfg.adminEmail    = email;
   cfg.adminPassword = password;
   UpstaffAPI.saveConfig(cfg);
 
-  statusEl.textContent =
-    "✅ Credentials saved. Sign in with Google to connect.";
-  statusEl.style.color = "var(--green,#10b981)";
+  statusEl.textContent = "⏳ Connecting…";
+  statusEl.style.color = "var(--muted,#64748b)";
+
+  // Fetch Apps Script token then sync data automatically
+  fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain" },
+    body: JSON.stringify({
+      action:      "login",
+      email:       email,
+      password:    password,
+      googleEmail: (window.SupabaseAuth ? SupabaseAuth.getEmail() : "") || "",
+    }),
+  })
+    .then((r) => r.json())
+    .then((json) => {
+      if (json.result === "success" && json.token) {
+        const c = UpstaffAPI.getConfig();
+        c.token = json.token;
+        UpstaffAPI.saveConfig(c);
+        statusEl.textContent = "✅ Connected! Syncing data…";
+        statusEl.style.color = "var(--green,#10b981)";
+        if (typeof syncApplicantsFromApi === "function") syncApplicantsFromApi();
+        populateApiSettings();
+      } else {
+        statusEl.textContent = "⚠️ Saved but login failed — check ADMIN_EMAIL and ADMIN_PASSWORD.";
+        statusEl.style.color = "#f59e0b";
+      }
+    })
+    .catch(() => {
+      statusEl.textContent = "⚠️ Saved but could not reach Apps Script — check the URL.";
+      statusEl.style.color = "#f59e0b";
+    });
 };
 
 window.toggleApiPasswordVisibility = function () {
