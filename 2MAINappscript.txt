@@ -289,6 +289,8 @@ function doPost(e) {
         return handleDeleteApplicant(data);
       case "sendEmail":
         return handleSendEmail(data);
+      case "getEmailJSConfig":
+        return handleGetEmailJSConfig(data);
       default:
         return jsonResponse({
           result: "error",
@@ -835,7 +837,7 @@ function buildRowFromWebhook(r) {
   ];
 }
 
-// ── handleLogin: checks admin credentials + ALLOWED_USERS for role/name ────────
+// ── handleLogin: checks admin credentials — any Google account is allowed ────
 function handleLogin(data) {
   var props = PropertiesService.getScriptProperties();
   var validEmail    = props.getProperty("ADMIN_EMAIL");
@@ -846,10 +848,11 @@ function handleLogin(data) {
     return jsonResponse({ result: "error", message: "Invalid credentials" });
   }
 
-  // Check the Google account against ALLOWED_USERS (stored in Script Properties)
-  // Format: {"user@gmail.com":{"role":"hr","name":"Full Name"}, ...}
   var googleEmail = (data.googleEmail || "").toLowerCase().trim();
-  var allowedRaw  = props.getProperty("ALLOWED_USERS") || "{}";
+
+  // Optional: if ALLOWED_USERS is set, check it for a custom role/name.
+  // If empty or the email is not listed, fall back to default role "hr".
+  var allowedRaw = props.getProperty("ALLOWED_USERS") || "{}";
   var allowed = {};
   try { allowed = JSON.parse(allowedRaw); } catch(e) {}
 
@@ -858,9 +861,14 @@ function handleLogin(data) {
     if (key.toLowerCase() === googleEmail) userEntry = allowed[key];
   });
 
+  // Any Google account can log in — use ALLOWED_USERS entry if found,
+  // otherwise default to role "hr" and derive name from email.
   if (!userEntry) {
-    writeLog("LOGIN_DENIED", googleEmail, "Email not in ALLOWED_USERS");
-    return jsonResponse({ result: "error", message: "Access denied. This Google account is not authorized." });
+    var namePart = googleEmail.split("@")[0].replace(/[._]/g, " ");
+    userEntry = {
+      role: "hr",
+      name: namePart.replace(/\b\w/g, function(c) { return c.toUpperCase(); })
+    };
   }
 
   var token  = Utilities.getUuid().replace(/-/g, "") + Utilities.getUuid().replace(/-/g, "");
@@ -1420,9 +1428,7 @@ function handleSendEmail(data) {
     });
 
   try {
-    MailApp.sendEmail({
-      to: data.to,
-      subject: data.subject,
+    MailApp.sendEmail(data.to, data.subject, "", {
       htmlBody: data.body,
       name: data.fromName || "Upstaff HR",
     });
@@ -1433,6 +1439,25 @@ function handleSendEmail(data) {
     writeLog("EMAIL_ERROR", data.to, err.message);
     return jsonResponse({ result: "error", message: err.message });
   }
+}
+
+// ── Return EmailJS credentials stored in Script Properties ───────────────────
+// Keeps Service ID, Template ID, and Public Key off the frontend source code.
+// Set these in Apps Script → Project Settings → Script Properties:
+//   EMAILJS_SERVICE_ID  → your EmailJS service_xxxxxxx
+//   EMAILJS_TEMPLATE_ID → your EmailJS template_xxxxxxx
+//   EMAILJS_PUBLIC_KEY  → your EmailJS public key
+function handleGetEmailJSConfig(data) {
+  if (!verifyToken(data.token))
+    return jsonResponse({ result: "error", message: "Unauthorized" });
+
+  var props = PropertiesService.getScriptProperties();
+  return jsonResponse({
+    result:     "success",
+    serviceId:  props.getProperty("EMAILJS_SERVICE_ID")  || "",
+    templateId: props.getProperty("EMAILJS_TEMPLATE_ID") || "",
+    publicKey:  props.getProperty("EMAILJS_PUBLIC_KEY")  || "",
+  });
 }
 
 // ── Search ────────────────────────────────────────────────────────────────────

@@ -2541,6 +2541,7 @@ const EMAILJS_DEFAULTS = {
   publicKey: "",
   portalUrl: "https://f--asessment-portal.web.app/",
   expiryHours: 72,
+  autoSend: false,
 };
 function loadEmailJSConfig() {
   let saved = {};
@@ -2562,6 +2563,7 @@ function saveEmailJSConfig() {
     expiryHours: parseInt(
       document.getElementById("s-assess-expiry")?.value || "72",
     ),
+    autoSend: document.getElementById("s-emailjs-autosend")?.checked || false,
   };
   localStorage.setItem("upstaff_emailjs_config", JSON.stringify(config));
   showToast("✅ EmailJS settings saved.");
@@ -2578,6 +2580,55 @@ function populateEmailJSSettings() {
   set("s-assess-portal-url", c.portalUrl);
   const expEl = document.getElementById("s-assess-expiry");
   if (expEl && c.expiryHours) expEl.value = String(c.expiryHours);
+  const autoEl = document.getElementById("s-emailjs-autosend");
+  if (autoEl) autoEl.checked = !!c.autoSend;
+}
+
+/* Auto-send assessment email for a specific task (no open modal needed) */
+async function autoSendAssessmentEmail(task) {
+  const ejsConfig = loadEmailJSConfig();
+  if (!ejsConfig.autoSend) return;
+  if (!ejsConfig.serviceId || !ejsConfig.templateId || !ejsConfig.publicKey) return;
+  if (!task || !task.applicant_email) return;
+  if (task.assess_completed || task.assess_token) return; // already sent or done
+
+  try {
+    const token = generateAssessToken();
+    const link  = buildAssessmentLink(task, token);
+    const firstName = (task.applicant_name || task.name || "Applicant").split(" ")[0];
+    const position  = task.position || "the role";
+    let hrName = "HR Team";
+    try {
+      const p = JSON.parse(localStorage.getItem("upstaff_profile") || "{}");
+      hrName = [p.firstName, p.lastName].filter(Boolean).join(" ") || hrName;
+    } catch (_) {}
+
+    await emailjs.send(
+      ejsConfig.serviceId,
+      ejsConfig.templateId,
+      {
+        to_email:      task.applicant_email,
+        first_name:    firstName,
+        from_name:     hrName,
+        subject:       `Your Assessment Invitation – ${position} at Upstaff`,
+        website_link:  link,
+        position:      position,
+        company_name:  "Upstaff",
+        company_email: "hr@upstaff.com",
+      },
+      ejsConfig.publicKey,
+    );
+
+    task.assess_token      = token;
+    task.assess_sent_at    = new Date().toISOString();
+    task.assess_completed  = false;
+    task.assess_completed_at = null;
+    persistSave();
+    showToast(`📧 Assessment invite auto-sent to ${task.applicant_email}`);
+  } catch (err) {
+    console.error("[AutoSend] EmailJS error:", err);
+    showToast(`⚠️ Auto-send failed for ${task.applicant_name || task.name}: ${err?.text || err?.message || "Unknown error"}`);
+  }
 }
 
 /* ══════════════════════════════════════════════

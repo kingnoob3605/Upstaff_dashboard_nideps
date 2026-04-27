@@ -210,6 +210,12 @@ window.UpstaffAPI = (function () {
     });
   }
 
+  // ── EmailJS config — fetched from Apps Script Script Properties ────────────
+  async function getEmailJSConfig() {
+    var c = _config();
+    return _post({ action: "getEmailJSConfig", token: c.token });
+  }
+
   // ── Applicants ──────────────────────────────────────────────────────────────
   async function getApplicants(opts) {
     var c = _config();
@@ -477,6 +483,7 @@ window.UpstaffAPI = (function () {
     loginWithGoogle: loginWithGoogle,
     logout: logout,
     sendEmail: sendEmail,
+    getEmailJSConfig: getEmailJSConfig,
     getApplicants: getApplicants,
     getCounts: getCounts,
     updateStatus: updateStatus,

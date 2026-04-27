@@ -730,17 +730,17 @@
           <div class="settings-panel" id="setting-emailjs">
             <div class="settings-card">
               <div class="settings-card-title">📧 EmailJS Integration</div>
-              <div class="settings-card-desc">Required for sending assessment invitation emails to applicants. Get your free keys at <a href="https://emailjs.com" target="_blank" style="color:var(--violet)">emailjs.com</a></div>
+              <div class="settings-card-desc">Credentials are auto-filled from Apps Script after login. You can also enter them manually below as a fallback.</div>
               <div class="settings-row">
-                <div><div class="settings-row-label">Service ID</div><div class="settings-row-sub">Your EmailJS service identifier</div></div>
+                <div><div class="settings-row-label">Service ID</div><div class="settings-row-sub">Auto-filled from Apps Script · or enter manually</div></div>
                 <input class="settings-input" id="s-emailjs-service" placeholder="service_xxxxxxx"/>
               </div>
               <div class="settings-row">
-                <div><div class="settings-row-label">Template ID</div><div class="settings-row-sub">Your assessment email template ID</div></div>
+                <div><div class="settings-row-label">Template ID</div><div class="settings-row-sub">Auto-filled from Apps Script · or enter manually</div></div>
                 <input class="settings-input" id="s-emailjs-template" placeholder="template_xxxxxxx"/>
               </div>
               <div class="settings-row">
-                <div><div class="settings-row-label">Public Key</div><div class="settings-row-sub">Your EmailJS account public key</div></div>
+                <div><div class="settings-row-label">Public Key</div><div class="settings-row-sub">Auto-filled from Apps Script · or enter manually</div></div>
                 <input class="settings-input" id="s-emailjs-pubkey" placeholder="xxxxxxxxxxxxxxxxxxxx"/>
               </div>
               <div class="settings-row">
@@ -755,8 +755,18 @@
                   <option value="72" selected>72 hours</option>
                 </select>
               </div>
+              <div class="settings-row">
+                <div>
+                  <div class="settings-row-label">Auto-send on "For Interview"</div>
+                  <div class="settings-row-sub">Automatically email the assessment invite when an applicant is moved to the For Interview stage</div>
+                </div>
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                  <input type="checkbox" id="s-emailjs-autosend" style="width:16px;height:16px;accent-color:var(--cyan,#3ecfdf);cursor:pointer;">
+                  <span style="font-size:12px;color:var(--muted,#64748b);">Enabled</span>
+                </label>
+              </div>
               <div style="display:flex;justify-content:flex-end;margin-top:12px;">
-                <button class="settings-save-btn" onclick="saveEmailJSConfig();showToast('✅ EmailJS settings saved.')">Save Credentials</button>
+                <button class="settings-save-btn" onclick="saveEmailJSConfig();showToast('✅ EmailJS settings saved.')">Save Settings</button>
               </div>
             </div>
           </div>
@@ -2117,6 +2127,9 @@
     </div>
     <div id="gate-status" style="margin-top:8px;text-align:center;font-size:12px;color:var(--muted,#64748b);min-height:18px;"></div>
     <div style="margin-top:12px;text-align:center;font-size:11px;color:var(--muted,#64748b);">Only authorized accounts can sign in.</div>
+    <div style="margin-top:14px;text-align:center;">
+      <button onclick="document.getElementById('gate-setup-section').style.display='block'" style="background:none;border:none;color:var(--muted,#64748b);font-size:11px;cursor:pointer;text-decoration:underline;padding:0;">⚙ Change credentials</button>
+    </div>
   </div>
 </div>
 
@@ -2194,6 +2207,7 @@ window.handleGoogleSignIn = async function(response) {
     var result = await UpstaffAPI.loginWithGoogle(payload);
     _applyRoleRestrictions(result.role);
     _updateTopbarAvatar();
+    _fetchAndMergeEmailJSConfig();
     statusEl.textContent = '✅ Welcome, ' + result.name + '!';
     statusEl.style.color = 'var(--green,#10b981)';
     setTimeout(function() {
@@ -2241,6 +2255,22 @@ document.addEventListener('DOMContentLoaded', function() {
     if (cfg.role) _applyRoleRestrictions(cfg.role);
   }
 });
+
+// Fetch EmailJS credentials from Apps Script and merge into local config.
+// This keeps Service ID, Template ID, and Public Key out of the frontend.
+function _fetchAndMergeEmailJSConfig() {
+  if (!window.UpstaffAPI) return;
+  UpstaffAPI.getEmailJSConfig().then(function(res) {
+    if (res.result !== 'success') return;
+    try {
+      var saved = JSON.parse(localStorage.getItem('upstaff_emailjs_config') || '{}');
+      if (res.serviceId)  saved.serviceId  = res.serviceId;
+      if (res.templateId) saved.templateId = res.templateId;
+      if (res.publicKey)  saved.publicKey  = res.publicKey;
+      localStorage.setItem('upstaff_emailjs_config', JSON.stringify(saved));
+    } catch (_) {}
+  }).catch(function() {});  // silent — falls back to whatever is in localStorage
+}
 </script>
 
 <script>
@@ -2257,6 +2287,7 @@ document.addEventListener('DOMContentLoaded', function() {
           if (cfg.role) _applyRoleRestrictions(cfg.role);
           _updateTopbarAvatar();
           _hideLoginGate();
+          _fetchAndMergeEmailJSConfig();
           syncApplicantsFromApi();
         } else {
           _showLoginGate();

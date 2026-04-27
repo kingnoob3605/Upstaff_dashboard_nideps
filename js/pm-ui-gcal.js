@@ -96,6 +96,25 @@ let gcalSignedIn = false; // True once we have a valid access token
 let gcalSyncedIds = new Set(); // Track which events came from Google
 let remindersFired = new Set(); // Track reminders already shown (key: eventId+minutesBefore)
 let reminderTimer = null; // setInterval handle for reminder checks
+let gcalAutoSyncTimer = null; // setInterval handle for auto-sync
+const GCAL_AUTO_SYNC_INTERVAL = 5 * 60 * 1000; // Auto-sync every 5 minutes
+
+function gcalStartAutoSync() {
+  if (gcalAutoSyncTimer) return; // already running
+  gcalAutoSyncTimer = setInterval(function () {
+    if (!gcalSignedIn) return;
+    gcalFetchAllCalendars().catch(function (e) {
+      console.warn("[GCal] Auto-sync failed:", e);
+    });
+  }, GCAL_AUTO_SYNC_INTERVAL);
+}
+
+function gcalStopAutoSync() {
+  if (gcalAutoSyncTimer) {
+    clearInterval(gcalAutoSyncTimer);
+    gcalAutoSyncTimer = null;
+  }
+}
 
 /* ══════════════════════════════════════════════
    PART 1: GOOGLE CALENDAR SYNC
@@ -137,6 +156,7 @@ function gcalInit() {
         (window._gapiReadyPromise || Promise.resolve())
           .then(() => gcalFetchCalendarList())
           .then(() => gcalFetchAllCalendars())
+          .then(() => gcalStartAutoSync())
           .catch((err) =>
             console.warn("[GCal] ⚠️ Post-auth fetch failed:", err),
           );
@@ -190,6 +210,7 @@ function gcalInit() {
         updateSyncBtnState("Syncing…");
         gcalFetchCalendarList()
           .then(() => gcalFetchAllCalendars())
+          .then(() => gcalStartAutoSync())
           .catch((err) =>
             console.warn("[GCal] ⚠️ Post-redirect fetch failed:", err),
           );
@@ -1579,12 +1600,23 @@ window.addEventListener("load", () => {
     }
   }
 
+  // Load API Key + Client ID from Settings UI (localStorage) into GCAL_CONFIG
+  // Must run BEFORE _initGIS() so any saved client_id is used at init time
+  const _gcalSaved = (() => {
+    try { return JSON.parse(localStorage.getItem("upstaff_gcal_api_config") || "{}"); } catch (_) { return {}; }
+  })();
+  if (_gcalSaved.apiKey)   GCAL_CONFIG.API_KEY   = _gcalSaved.apiKey;
+  if (_gcalSaved.clientId) GCAL_CONFIG.CLIENT_ID = _gcalSaved.clientId;
+
   // GIS script is loaded in the HTML head — wait for it to be ready then init
   function _initGIS() {
     if (window.google && google.accounts && google.accounts.id) {
       google.accounts.id.initialize({
         client_id: GCAL_CONFIG.CLIENT_ID,
-        callback: window.handleGoogleSignIn || function () {},
+        // Use an indirect lookup so handleGoogleSignIn is resolved at callback
+        // time, not at init time (pm-ui-gcal.js runs before the inline script
+        // that defines window.handleGoogleSignIn)
+        callback: function(r) { if (window.handleGoogleSignIn) window.handleGoogleSignIn(r); },
         auto_select: false,
       });
       google.accounts.id.renderButton(document.querySelector(".g_id_signin"), {
@@ -1614,12 +1646,6 @@ window.addEventListener("load", () => {
     }, 100);
   }
 
-  // Load API Key + Client ID from Settings UI (localStorage) into GCAL_CONFIG
-  const _gcalSaved = (() => {
-    try { return JSON.parse(localStorage.getItem("upstaff_gcal_api_config") || "{}"); } catch (_) { return {}; }
-  })();
-  if (_gcalSaved.apiKey)   GCAL_CONFIG.API_KEY   = _gcalSaved.apiKey;
-  if (_gcalSaved.clientId) GCAL_CONFIG.CLIENT_ID = _gcalSaved.clientId;
   gcalInit();
 
   // Restore cached calendars into dropdowns / sidebar — persistLoad() already

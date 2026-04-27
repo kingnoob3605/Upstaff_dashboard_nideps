@@ -15,7 +15,25 @@
       "Bash(sed -n '1496,1550p' \"C:\\\\Users\\\\Internship\\\\Desktop\\\\appscript.txt\")",
       "Bash(grep -n \"function autoProgressStatuses\" /c/Users/Internship/Desktop/Upstaff_dashboard/js/*.js)",
       "mcp__Claude_Preview__preview_start",
-      "Bash(grep -n \"function buildCSVDownload\\\\|const buildCSVDownload\" /c/Users/Internship/Desktop/Upstaff_dashboard/js/*.js)"
+      "Bash(grep -n \"function buildCSVDownload\\\\|const buildCSVDownload\" /c/Users/Internship/Desktop/Upstaff_dashboard/js/*.js)",
+      "Bash(node -c js/pm-ui-api.js)",
+      "Bash(node -c js/pm-ui-core.js)",
+      "Bash(node -c js/pm-ui-views.js)",
+      "Bash(grep -n \"_taskSyncToGcal\\\\|function _taskSyncToGcal\" /c/Users/Internship/Desktop/Upstaff_dashboard/js/pm-ui-*.js)",
+      "Bash(npx --yes serve -p 3456 .)",
+      "Bash(node -e \"const fs=require\\('fs'\\); const h=fs.readFileSync\\('index.html','utf8'\\); const scripts=h.match\\(/<script[^>]*>\\([\\\\s\\\\S]*?\\)<\\\\/script>/g\\)||[]; let ok=true; scripts.forEach\\(\\(s,i\\)=>{ const code=s.replace\\(/<\\\\/?script[^>]*>/g,''\\); try{ new Function\\(code\\); }catch\\(e\\){ console.log\\('Script block '+i+': '+e.message\\); ok=false; } }\\); if\\(ok\\) console.log\\('All inline scripts OK'\\);\")",
+      "Bash(node --check js/pm-ui-api.js)",
+      "Bash(node --check js/pm-ui-views.js)",
+      "Bash(node --check js/pm-ui-core.js)",
+      "Bash(node --check js/pm-ui-gcal.js)",
+      "Bash(node -e ':*)",
+      "Bash(npx serve:*)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3457/)",
+      "Bash(find \"C:\\\\\\\\Users\\\\\\\\Internship\\\\\\\\Desktop\\\\\\\\SUPERBASE\" -name \"*.js\" -type f)",
+      "Bash(grep -n \"syncApplicantsFromApi\\\\|UpstaffAPI\" \"C:\\\\\\\\Users\\\\\\\\Internship\\\\\\\\Desktop\\\\\\\\SUPERBASE\\\\\\\\js\\\\\\\\pm-ui-core.js\")",
+      "Bash(grep -n \"function syncApplicantsFromApi\\\\|const syncApplicantsFromApi\\\\|var syncApplicantsFromApi\" \"C:\\\\\\\\Users\\\\\\\\Internship\\\\\\\\Desktop\\\\\\\\SUPERBASE\\\\\\\\js\\\\\\\\pm-ui-core.js\")",
+      "Bash(grep -rn \"syncApplicantsFromApi\" \"C:\\\\\\\\Users\\\\\\\\Internship\\\\\\\\Desktop\\\\\\\\SUPERBASE\\\\\\\\js\\\\\\\\\")",
+      "Bash(grep -n \"getApplicants\\\\|getEmailJSConfig\" \"C:\\\\\\\\Users\\\\\\\\Internship\\\\\\\\Desktop\\\\\\\\SUPERBASE\\\\\\\\js\\\\\\\\pm-ui-api.js\")"
     ]
   }
 }
