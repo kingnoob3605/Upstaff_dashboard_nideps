@@ -419,8 +419,8 @@ window.UpstaffAPI = (function () {
       verbal_link:      r.verbal_link      || r.verbalLink      || "",
       conflict_score:   r.conflict_score   || r.conflictScore   || "",
       grammar_score:    r.grammar_score    || r.grammarScore    || "",
-      data_entry_score: r.data_entry_score || r.dataEntryScore  || "",
-      formatting_score: r.formatting_score || r.formattingScore || "",
+      data_entry_score: r.data_entry_score || r.dataEntryScore  || r.excelFile || "",
+      formatting_score: r.formatting_score || r.formattingScore || r.excelTime || "",
       sorting_score:    r.sorting_score    || r.sortingScore    || "",
 
       // Defaults for fields the dashboard expects

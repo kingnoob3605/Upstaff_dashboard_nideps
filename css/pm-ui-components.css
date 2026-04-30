@@ -1,3 +1,264 @@
+/* ══ LOGIN GATE ══ */
+.login-gate-overlay {
+  display: flex;
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 0%, rgba(44,180,200,.35) 0%, transparent 70%),
+    radial-gradient(ellipse 60% 40% at 80% 100%, rgba(30,100,160,.25) 0%, transparent 60%),
+    linear-gradient(180deg, #071e30 0%, #040f1c 60%, #020a14 100%);
+  align-items: center;
+  justify-content: center;
+}
+
+.login-gate-card {
+  width: 100%;
+  max-width: 420px;
+  padding: 40px 36px 32px;
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 18px;
+  box-shadow: 0 32px 80px rgba(0,0,0,.5);
+  backdrop-filter: blur(12px);
+}
+
+.login-gate-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.login-gate-brand {
+  font-size: 28px;
+  font-weight: 900;
+  font-family: 'Syne', sans-serif;
+  color: #fff;
+  letter-spacing: -0.5px;
+}
+
+.login-gate-title {
+  text-align: center;
+  font-size: 20px;
+  font-weight: 700;
+  color: #fff;
+  font-family: 'Syne', sans-serif;
+  margin-bottom: 24px;
+}
+
+.login-gate-section-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #44d7e9;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  margin-bottom: 12px;
+}
+
+.login-gate-field {
+  margin-bottom: 16px;
+  position: relative;
+}
+
+.login-gate-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255,255,255,.7);
+  margin-bottom: 6px;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.login-gate-required {
+  color: #44d7e9;
+}
+
+.login-gate-input-wrap {
+  position: relative;
+}
+
+.login-gate-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1.5px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.07);
+  color: #fff;
+  font-size: 13px;
+  font-family: 'DM Sans', sans-serif;
+  outline: none;
+  transition: border-color .15s;
+}
+
+.login-gate-input::placeholder {
+  color: rgba(255,255,255,.3);
+}
+
+.login-gate-input:focus {
+  border-color: #44d7e9;
+}
+
+.login-gate-input-wrap .login-gate-input {
+  padding-right: 44px;
+}
+
+.login-gate-eye {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: rgba(255,255,255,.4);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  transition: color .15s;
+}
+
+.login-gate-eye:hover {
+  color: rgba(255,255,255,.8);
+}
+
+.login-gate-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.login-gate-remember {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  color: rgba(255,255,255,.6);
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.login-gate-btn {
+  width: 100%;
+  padding: 13px;
+  border-radius: 10px;
+  border: none;
+  background: linear-gradient(135deg, #44d7e9, #38bcd1);
+  color: #071526;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: 'Montserrat', sans-serif;
+  letter-spacing: .3px;
+  transition: opacity .15s, transform .1s;
+}
+
+.login-gate-btn:hover {
+  opacity: .92;
+  transform: translateY(-1px);
+}
+
+.login-gate-btn:active {
+  transform: translateY(0);
+}
+
+.login-gate-status {
+  text-align: center;
+  font-size: 12px;
+  color: rgba(255,255,255,.5);
+  min-height: 18px;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.login-gate-footer {
+  margin-top: 20px;
+  text-align: center;
+  border-top: 1px solid rgba(255,255,255,.07);
+  padding-top: 16px;
+}
+
+.login-gate-link {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,.35);
+  font-size: 11px;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  transition: color .15s;
+}
+
+.login-gate-link:hover {
+  color: rgba(255,255,255,.6);
+}
+
+/* ══ SUPER FILTER PANEL ══ */
+.super-filter-panel {
+  background: var(--surface-1);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 20px;
+  animation: sfSlideDown .15s ease;
+}
+@keyframes sfSlideDown {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.super-filter-inner {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+  max-width: 1200px;
+}
+.super-filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.super-filter-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--muted);
+  font-family: 'Montserrat', sans-serif;
+}
+.super-filter-sep {
+  width: 1px;
+  height: 32px;
+  background: var(--border);
+  align-self: flex-end;
+}
+.super-filter-spacer {
+  flex: 1;
+}
+.super-filter-clear {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1.5px solid #fca5a5;
+  background: rgba(220,38,38,.06);
+  color: #dc2626;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: 'Montserrat', sans-serif;
+  transition: background .15s;
+  height: 32px;
+}
+.super-filter-clear:hover {
+  background: rgba(220,38,38,.14);
+}
+#topbar-filter-btn.active {
+  background: var(--violet);
+  color: #fff;
+  border-color: var(--violet);
+}
+
 /* ── Hover utility classes (replaces inline onmouseover/onmouseout) ── */
 .btn-cal-toggle {
   all: unset;

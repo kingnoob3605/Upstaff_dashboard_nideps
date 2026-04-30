@@ -106,9 +106,8 @@ var ACOL = {
   verbalComm: 5,
   conflictReso: 6,
   grammarTest: 7,
-  dataEntry: 8,
-  formatting: 9,
-  sorting: 10,
+  excelFile: 8,
+  excelTime: 9,
 };
 
 var PASS_SCORES = {
@@ -120,15 +119,14 @@ var PASS_SCORES = {
 };
 
 var TEST_COLORS = {
-  2: { bg: "#eff8ff", fg: "#0369a1" },
-  3: { bg: "#eff8ff", fg: "#0369a1" },
-  4: { bg: "#eff8ff", fg: "#0369a1" },
-  5: { bg: "#fff5f5", fg: "#dc2626" },
-  6: { bg: "#fff5f5", fg: "#dc2626" },
-  7: { bg: "#fff5f5", fg: "#dc2626" },
-  8: { bg: "#f0fdf4", fg: "#16a34a" },
-  9: { bg: "#f0fdf4", fg: "#16a34a" },
-  10: { bg: "#f0fdf4", fg: "#16a34a" },
+  2:  { bg: "#eff8ff", fg: "#0369a1" },
+  3:  { bg: "#eff8ff", fg: "#0369a1" },
+  4:  { bg: "#eff8ff", fg: "#0369a1" },
+  5:  { bg: "#fff5f5", fg: "#dc2626" },
+  6:  { bg: "#fff5f5", fg: "#dc2626" },
+  7:  { bg: "#fff5f5", fg: "#dc2626" },
+  8:  { bg: "#f0fdf4", fg: "#16a34a" },
+  9:  { bg: "#f0fdf4", fg: "#16a34a" },
 };
 
 var ASSESSMENT_ROW_HEIGHT = 28;
@@ -541,7 +539,7 @@ function handleSaveAssessment(data) {
       setupAssessmentsSheet(sheet);
     }
 
-    var row = findOrCreateAssessmentRow(sheet, data.name, 3);
+    var row = findOrCreateAssessmentRow(sheet, data.name, data.email, 3);
     var aCol, cellVal;
 
     switch (data.assessmentType) {
@@ -597,8 +595,16 @@ function handleSaveAssessment(data) {
           (data.accuracy || 0) +
           "%";
         break;
+      case "excel-practical": {
+        var aRow = findOrCreateAssessmentRow(sheet, data.name, data.email, 3);
+        writeAssessmentCell(sheet, aRow, ACOL.excelFile, data.fileName || "—", TEST_COLORS[8]);
+        writeAssessmentCell(sheet, aRow, ACOL.excelTime, data.timeUsed || "—", TEST_COLORS[9]);
+        SpreadsheetApp.flush();
+        writeLog("ASSESSMENT_WRITE", "", "firebase · excel-practical → row " + aRow);
+        return jsonResponse({ result: "success" });
+      }
       case "excel":
-        aCol = ACOL.dataEntry;
+        aCol = ACOL.excelFile;
         cellVal = "Pending";
         break;
       default:
@@ -626,6 +632,21 @@ function handleSaveAssessment(data) {
   }
 }
 
+function resetAssessmentsHeaders() {
+  var ss = getSpreadsheet();
+  var sheet = ss.getSheetByName(ASSESSMENTS_SHEET_NAME);
+  if (!sheet) {
+    SpreadsheetApp.getUi().alert("Assessments sheet not found.");
+    return;
+  }
+  // Clear only rows 1 and 2 (the header rows)
+  sheet.getRange(1, 1, 2, 11).clearContent().clearFormat();
+  // Re-run the setup to redraw headers
+  setupAssessmentsSheet(sheet);
+  SpreadsheetApp.flush();
+  SpreadsheetApp.getUi().alert("Assessments headers have been reset!");
+}
+
 function writeAssessmentCell(sheet, row, col, value, colors) {
   colors = colors || { bg: "#f8fafc", fg: "#475569" };
   sheet
@@ -642,16 +663,35 @@ function writeAssessmentCell(sheet, row, col, value, colors) {
   sheet.setRowHeight(row, ASSESSMENT_ROW_HEIGHT);
 }
 
-function findOrCreateAssessmentRow(sheet, name, dataStartRow) {
+function findOrCreateAssessmentRow(sheet, name, email, dataStartRow) {
+  // Support legacy 3-arg call: findOrCreateAssessmentRow(sheet, name, dataStartRow)
+  if (typeof email === "number") { dataStartRow = email; email = ""; }
+
   var lastRow = sheet.getLastRow();
-  var searchName = (name || "").toString().trim().toLowerCase();
+  var searchName  = (name  || "").toString().trim().toLowerCase();
+  var searchEmail = (email || "").toString().trim().toLowerCase();
 
   if (lastRow >= dataStartRow) {
     var names = sheet
       .getRange(dataStartRow, 1, lastRow - dataStartRow + 1, 1)
       .getValues();
+    var notes = sheet
+      .getRange(dataStartRow, 1, lastRow - dataStartRow + 1, 1)
+      .getNotes();
     for (var i = 0; i < names.length; i++) {
-      if ((names[i][0] || "").toString().trim().toLowerCase() === searchName) {
+      var rowNote = (notes[i][0] || "").trim().toLowerCase();
+      var rowName = (names[i][0] || "").toString().trim().toLowerCase();
+      // Match by email (note) first — most reliable
+      if (searchEmail && rowNote === searchEmail) {
+        sheet.setRowHeight(dataStartRow + i, ASSESSMENT_ROW_HEIGHT);
+        return dataStartRow + i;
+      }
+      // Fall back to exact name match
+      if (searchName && rowName === searchName) {
+        // Backfill email note if missing
+        if (searchEmail && !rowNote) {
+          sheet.getRange(dataStartRow + i, 1).setNote(searchEmail);
+        }
         sheet.setRowHeight(dataStartRow + i, ASSESSMENT_ROW_HEIGHT);
         return dataStartRow + i;
       }
@@ -659,8 +699,7 @@ function findOrCreateAssessmentRow(sheet, name, dataStartRow) {
   }
 
   var newRow = Math.max(lastRow + 1, dataStartRow);
-  sheet
-    .getRange(newRow, 1)
+  var cell = sheet.getRange(newRow, 1)
     .setValue(name || "")
     .setBackground("#ffffff")
     .setFontColor("#1e293b")
@@ -669,6 +708,7 @@ function findOrCreateAssessmentRow(sheet, name, dataStartRow) {
     .setFontWeight("bold")
     .setVerticalAlignment("middle")
     .setHorizontalAlignment("left");
+  if (searchEmail) sheet.getRange(newRow, 1).setNote(searchEmail);
   sheet.setRowHeight(newRow, ASSESSMENT_ROW_HEIGHT);
   return newRow;
 }
@@ -891,25 +931,33 @@ function handleGetData(data) {
   if (!sheet || sheet.getLastRow() < 2)
     return jsonResponse({ result: "success", data: [], total: 0 });
 
-  // Build assessment lookup map keyed by lowercased applicant name
-  var assessmentMap = {};
+  // Build assessment lookup — primary key: email (stored as cell note),
+  // fallback key: lowercased applicant name. Data rows start at row 3.
+  var assessmentMap      = {};  // keyed by lowercased name
+  var assessmentByEmail  = {};  // keyed by lowercased email
   var aSheet = ss.getSheetByName(ASSESSMENTS_SHEET_NAME);
-  if (aSheet && aSheet.getLastRow() >= 2) {
-    var aRows = aSheet.getRange(2, 1, aSheet.getLastRow() - 1, 10).getValues();
-    aRows.forEach(function (ar) {
-      var key = String(ar[0]).trim().toLowerCase();
-      if (key) assessmentMap[key] = {
-        typingScore:     ar[ACOL.typingAssessment - 1] || "",
-        wordTyping:      ar[ACOL.wordTyping - 1]       || "",
-        knowledgeScore:  ar[ACOL.knowledgeTest - 1]    || "",
-        verbalLink:      ar[ACOL.verbalComm - 1]       || "",
-        conflictScore:   ar[ACOL.conflictReso - 1]     || "",
-        grammarScore:    ar[ACOL.grammarTest - 1]      || "",
-        dataEntryScore:  ar[ACOL.dataEntry - 1]        || "",
-        formattingScore: ar[ACOL.formatting - 1]       || "",
-        sortingScore:    ar[ACOL.sorting - 1]          || "",
+  if (aSheet && aSheet.getLastRow() >= 3) {
+    var aDataStart = 3;
+    var aDataCount = aSheet.getLastRow() - aDataStart + 1;
+    var aRows  = aSheet.getRange(aDataStart, 1, aDataCount, 9).getValues();
+    var aNotes = aSheet.getRange(aDataStart, 1, aDataCount, 1).getNotes();
+    for (var ai = 0; ai < aRows.length; ai++) {
+      var ar     = aRows[ai];
+      var aName  = String(ar[0]).trim().toLowerCase();
+      var aEmail = (aNotes[ai][0] || "").trim().toLowerCase();
+      var aScores = {
+        typingScore:    ar[ACOL.typingAssessment - 1] || "",
+        wordTyping:     ar[ACOL.wordTyping - 1]       || "",
+        knowledgeScore: ar[ACOL.knowledgeTest - 1]    || "",
+        verbalLink:     ar[ACOL.verbalComm - 1]       || "",
+        conflictScore:  ar[ACOL.conflictReso - 1]     || "",
+        grammarScore:   ar[ACOL.grammarTest - 1]      || "",
+        excelFile:      ar[ACOL.excelFile - 1]        || "",
+        excelTime:      ar[ACOL.excelTime - 1]        || "",
       };
-    });
+      if (aName)  assessmentMap[aName]       = aScores;
+      if (aEmail) assessmentByEmail[aEmail]  = aScores;
+    }
   }
 
   var rows = sheet
@@ -917,7 +965,9 @@ function handleGetData(data) {
     .getValues();
   var all = rows
     .map(function (row) {
-      var scores = assessmentMap[String(row[1]).trim().toLowerCase()] || {};
+      var nameKey  = String(row[1]).trim().toLowerCase();
+      var emailKey = String(row[2]).trim().toLowerCase();
+      var scores = assessmentByEmail[emailKey] || assessmentMap[nameKey] || {};
       return {
         status: row[0],
         fullName: row[1],
@@ -943,15 +993,14 @@ function handleGetData(data) {
         driveFolderLink: row[21],
         timestamp: row[22],
         supabaseId: row[23],
-        typingScore:     scores.typingScore     || "",
-        wordTyping:      scores.wordTyping      || "",
-        knowledgeScore:  scores.knowledgeScore  || "",
-        verbalLink:      scores.verbalLink      || "",
-        conflictScore:   scores.conflictScore   || "",
-        grammarScore:    scores.grammarScore    || "",
-        dataEntryScore:  scores.dataEntryScore  || "",
-        formattingScore: scores.formattingScore || "",
-        sortingScore:    scores.sortingScore    || "",
+        typingScore:   scores.typingScore   || "",
+        wordTyping:    scores.wordTyping     || "",
+        knowledgeScore: scores.knowledgeScore || "",
+        verbalLink:    scores.verbalLink     || "",
+        conflictScore: scores.conflictScore  || "",
+        grammarScore:  scores.grammarScore   || "",
+        excelFile:     scores.excelFile      || "",
+        excelTime:     scores.excelTime      || "",
       };
     })
     .filter(function (r) {
@@ -1161,35 +1210,7 @@ function handleUpdateApplicant(data) {
     if (Object.keys(supaFields).length > 0) patchSupabase(sid, supaFields);
   }
 
-  // ── Write Excel Test scores back to Assessments sheet ───────────────────
-  var hasExcelScores = a.data_entry_score !== undefined ||
-                       a.formatting_score !== undefined ||
-                       a.sorting_score    !== undefined;
-
-  if (hasExcelScores) {
-    var aSheet = ss.getSheetByName(ASSESSMENTS_SHEET_NAME);
-    if (!aSheet) {
-      aSheet = ss.insertSheet(ASSESSMENTS_SHEET_NAME);
-      setupAssessmentsSheet(aSheet);
-    } else if (aSheet.getLastRow() < 2) {
-      setupAssessmentsSheet(aSheet);
-    }
-
-    var applicantName = a.full_name || a.name || "";
-    var aRow = findOrCreateAssessmentRow(aSheet, applicantName, 3);
-
-    if (a.data_entry_score !== undefined && a.data_entry_score !== "") {
-      writeAssessmentCell(aSheet, aRow, ACOL.dataEntry,  a.data_entry_score,  TEST_COLORS[ACOL.dataEntry]);
-    }
-    if (a.formatting_score !== undefined && a.formatting_score !== "") {
-      writeAssessmentCell(aSheet, aRow, ACOL.formatting, a.formatting_score, TEST_COLORS[ACOL.formatting]);
-    }
-    if (a.sorting_score !== undefined && a.sorting_score !== "") {
-      writeAssessmentCell(aSheet, aRow, ACOL.sorting,    a.sorting_score,    TEST_COLORS[ACOL.sorting]);
-    }
-
-    SpreadsheetApp.flush();
-  }
+  
 
   writeLog("APPLICANT_UPDATED", email, a.full_name || "");
   return jsonResponse({ result: "success" });
@@ -1851,7 +1872,7 @@ function setupJobsSheet(sheet) {
     sheet.setColumnWidth(i + 1, w);
   });
 }
-
+//start -------------------------///////////////////////
 function setupAssessmentsSheet(sheet) {
   sheet
     .getRange(1, 1, 2, 1)
@@ -1869,7 +1890,7 @@ function setupAssessmentsSheet(sheet) {
   [
     { label: "Typing Test", col: 2, span: 3, bg: "#1e3a5f", fg: "#38bdf8" },
     { label: "Verbal Test", col: 5, span: 3, bg: "#3b1f1f", fg: "#f87171" },
-    { label: "Excel Test", col: 8, span: 3, bg: "#14301f", fg: "#34d399" },
+    { label: "Excel Test",  col: 8, span: 2, bg: "#14301f", fg: "#34d399" },
   ].forEach(function (g) {
     sheet
       .getRange(1, g.col, 1, g.span)
@@ -1886,14 +1907,13 @@ function setupAssessmentsSheet(sheet) {
 
   [
     { col: 2, label: "Typing Assessment", bg: "#172c45" },
-    { col: 3, label: "Word Typing", bg: "#172c45" },
-    { col: 4, label: "Knowledge Test", bg: "#172c45" },
-    { col: 5, label: "Verbal Comm", bg: "#2d1515" },
-    { col: 6, label: "Conflict Reso", bg: "#2d1515" },
-    { col: 7, label: "Grammar Test", bg: "#2d1515" },
-    { col: 8, label: "Data Entry", bg: "#0f2318" },
-    { col: 9, label: "Formatting", bg: "#0f2318" },
-    { col: 10, label: "Sorting", bg: "#0f2318" },
+    { col: 3, label: "Word Typing",       bg: "#172c45" },
+    { col: 4, label: "Knowledge Test",    bg: "#172c45" },
+    { col: 5, label: "Verbal Comm",       bg: "#2d1515" },
+    { col: 6, label: "Conflict Reso",     bg: "#2d1515" },
+    { col: 7, label: "Grammar Test",      bg: "#2d1515" },
+    { col: 8, label: "Skill Test",        bg: "#0f2318" },
+    { col: 9, label: "Time Used",         bg: "#0f2318" },
   ].forEach(function (h) {
     sheet
       .getRange(2, h.col)
@@ -1912,10 +1932,11 @@ function setupAssessmentsSheet(sheet) {
   sheet.setRowHeight(1, 32);
   sheet.setRowHeight(2, 28);
   sheet.setColumnWidth(1, 200);
-  [2, 3, 4, 5, 6, 7, 8, 9, 10].forEach(function (c) {
-    sheet.setColumnWidth(c, 130);
+  [2, 3, 4, 5, 6, 7, 8, 9].forEach(function (c) {
+    sheet.setColumnWidth(c, 150);
   });
 }
+//end///////////////////////////////////////////////////
 
 function addStatusDropdown(sheet, fromRow, toRow) {
   var ss = getSpreadsheet();

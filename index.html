@@ -104,13 +104,15 @@
     </div>
     <span id="last-saved-indicator" title="Last save time"></span>
     <div class="topbar-spacer"></div>
-    <button class="topbar-btn" id="topbar-filter-btn" aria-label="Filter">
+    <button class="topbar-btn" id="topbar-filter-btn" aria-label="Filter" onclick="toggleSuperFilter()">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="20" y2="12"/><line x1="12" y1="18" x2="20" y2="18"/></svg>
       Filter
+      <span id="filter-active-badge" style="display:none;background:var(--violet);color:#fff;border-radius:99px;font-size:9px;font-weight:800;padding:1px 5px;margin-left:2px;"></span>
     </button>
-    <button class="topbar-btn" id="btn-global-search" aria-label="Open search">
+    <button class="topbar-btn" id="btn-global-search" aria-label="Open search" onclick="openGlobalSearch()">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       Search
+      <kbd style="font-size:9px;padding:1px 4px;border-radius:4px;border:1px solid var(--border);color:var(--muted);margin-left:2px;">⌘K</kbd>
     </button>
     <button class="topbar-btn primary" id="btn-add-task" aria-label="Add applicant">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -150,6 +152,98 @@
       <svg class="icon-moon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z"/></svg>
       <svg class="icon-sun"  width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
     </button>
+  </div>
+
+  <!-- Super Filter Panel -->
+  <div id="super-filter-panel" class="super-filter-panel" style="display:none;">
+
+    <!-- LIST / BOARD / TABLE filters -->
+    <div id="sf-list-section" class="super-filter-inner">
+      <div class="super-filter-group">
+        <label class="super-filter-label">Position</label>
+        <select class="list-filter-select" id="list-filter-position" onchange="renderList();updateFilterBadge()">
+          <option value="">All Positions</option>
+        </select>
+      </div>
+      <div class="super-filter-group">
+        <label class="super-filter-label">Assignee</label>
+        <select class="list-filter-select" id="list-filter-assignee" onchange="renderList();updateFilterBadge()">
+          <option value="">All Assignees</option>
+          <option>Assistant</option><option>Manager</option>
+        </select>
+      </div>
+      <div class="super-filter-group">
+        <label class="super-filter-label">Priority</label>
+        <select class="list-filter-select" id="list-filter-priority" onchange="renderList();updateFilterBadge()">
+          <option value="">All Priorities</option>
+          <option>Low</option><option>Medium</option><option>High</option><option>Urgent</option>
+        </select>
+      </div>
+      <div class="super-filter-group">
+        <label class="super-filter-label">Due From</label>
+        <input type="date" class="list-filter-select" id="list-filter-date-from" onchange="renderList();updateFilterBadge()" style="height:32px;"/>
+      </div>
+      <div class="super-filter-group">
+        <label class="super-filter-label">Due To</label>
+        <input type="date" class="list-filter-select" id="list-filter-date-to" onchange="renderList();updateFilterBadge()" style="height:32px;"/>
+      </div>
+      <div class="super-filter-sep"></div>
+      <div class="super-filter-group">
+        <label class="super-filter-label">Sort By</label>
+        <select class="list-filter-select" id="list-sort" onchange="renderList()">
+          <option value="due-asc">Due Date ↑</option>
+          <option value="due-desc">Due Date ↓</option>
+          <option value="name-asc">Name A–Z</option>
+          <option value="name-desc">Name Z–A</option>
+          <option value="priority-desc">Priority (High–Low)</option>
+          <option value="created-desc">Newest First</option>
+        </select>
+      </div>
+      <div class="super-filter-spacer"></div>
+      <button class="super-filter-clear" id="super-filter-clear-btn" onclick="clearAllFilters()" style="display:none;">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        Clear All
+      </button>
+    </div>
+
+    <!-- CALENDAR filters -->
+    <div id="sf-cal-section" class="super-filter-inner" style="display:none;">
+      <div class="super-filter-group">
+        <label class="super-filter-label">Calendar</label>
+        <select class="list-filter-select" id="cal-filter-calendar"><option value="">All Calendars</option></select>
+      </div>
+      <div class="super-filter-group">
+        <label class="super-filter-label">Position</label>
+        <select class="list-filter-select" id="cal-filter-position"><option value="">All Positions</option></select>
+      </div>
+      <div class="super-filter-group">
+        <label class="super-filter-label">Status</label>
+        <select class="list-filter-select" id="cal-filter-status">
+          <option value="">All Statuses</option>
+          <option>Scheduled</option><option>Completed</option><option>Rescheduled</option><option>Cancelled</option>
+        </select>
+      </div>
+      <div class="super-filter-group">
+        <label class="super-filter-label">Type</label>
+        <select class="list-filter-select" id="cal-filter-type">
+          <option value="">All Types</option><option>Face-to-Face</option><option>Virtual</option>
+        </select>
+      </div>
+      <div class="super-filter-group">
+        <label class="super-filter-label">Date From</label>
+        <input type="date" class="list-filter-select" id="cal-filter-date-from" onchange="renderCalendar();updateCalFilterBadge()" style="height:32px;"/>
+      </div>
+      <div class="super-filter-group">
+        <label class="super-filter-label">Date To</label>
+        <input type="date" class="list-filter-select" id="cal-filter-date-to" onchange="renderCalendar();updateCalFilterBadge()" style="height:32px;"/>
+      </div>
+      <div class="super-filter-spacer"></div>
+      <button class="super-filter-clear" id="cal-filter-clear-btn" onclick="clearCalFilters()" style="display:none;">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        Clear All
+      </button>
+    </div>
+
   </div>
 
   <!-- View Tabs Bar — hidden on Settings page -->
@@ -192,31 +286,8 @@
      <!-- Status Tab Bar -->
       <div class="list-status-tabs" id="list-status-tabs"></div>
 
-      <!-- Filter Bar -->
+      <!-- Inline search bar (filter controls moved to super filter panel) -->
       <div class="list-filter-bar">
-        <span class="filter-label">Filter</span>
-        <select class="list-filter-select" id="list-filter-priority" onchange="renderList()">
-          <option value="">All Priorities</option>
-          <option>Low</option><option>Medium</option><option>High</option><option>Urgent</option>
-        </select>
-        <select class="list-filter-select" id="list-filter-position" onchange="renderList()">
-          <option value="">All Positions</option>
-        </select>
-        <select class="list-filter-select" id="list-filter-assignee" onchange="renderList()">
-          <option value="">All Assignees</option>
-          <option>Assistant</option><option>Manager</option>
-        </select>
-        <div class="list-filter-sep"></div>
-        <span class="filter-label">Sort</span>
-        <select class="list-filter-select" id="list-sort" onchange="renderList()">
-          <option value="due-asc">Due Date ↑</option>
-          <option value="due-desc">Due Date ↓</option>
-          <option value="name-asc">Name A–Z</option>
-          <option value="name-desc">Name Z–A</option>
-          <option value="priority-desc">Priority (High–Low)</option>
-          <option value="created-desc">Newest First</option>
-        </select>
-        <div class="list-filter-spacer"></div>
         <div class="list-search-wrap">
           <svg class="list-search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           <input type="text" placeholder="Search applicants…" id="list-search"/>
@@ -279,20 +350,12 @@
           </div>
         </div>
         <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between">
-          <div class="cal-filters">
-            <select class="cal-filter-select" id="cal-filter-calendar"><option value="">All Calendars</option></select>
-            <select class="cal-filter-select" id="cal-filter-position"><option value="">All Positions</option><option>Intake Caller</option><option>CSR</option><option>Google Ads Specialist</option><option>HR Assistant</option><option>Team Leader</option><option>Google Calendar</option></select>
-            <select class="cal-filter-select" id="cal-filter-status"><option value="">All Statuses</option><option>Scheduled</option><option>Completed</option><option>Rescheduled</option><option>Cancelled</option></select>
-            <select class="cal-filter-select" id="cal-filter-type"><option value="">All Types</option><option>Face-to-Face</option><option>Virtual</option></select>
-          </div>
-          <div id="cal-legend-dynamic" class="cal-legend">
-            <!-- populated by renderCalendarLegend() -->
-          </div>
-          <!-- Google Calendar sync status badge -->
+          <div id="cal-legend-dynamic" class="cal-legend"></div>
           <div id="gcal-status-badge" style="display:none;align-items:center;gap:6px;font-size:11px;font-weight:600;padding:5px 10px;border-radius:8px;background:rgba(66,133,244,.1);color:#4285F4;border:1px solid rgba(66,133,244,.2)">
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span id="gcal-status-text">Synced</span>
           </div>
+          <div id="cal-active-filter-tags" class="list-active-filters" style="display:none;"></div>
         </div>
         <div class="cal-layout">
           <div id="cal-main-area"></div>
@@ -1433,17 +1496,14 @@
       <div class="assessment-section assess-panel" id="assess-excel" style="display:none">
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label">Data Entry <span class="u-light u-fw-400">(score)</span></label>
-            <input type="text" class="form-input" id="f-data-entry-score" placeholder="e.g. Passed"/>
+            <label class="form-label">Skill Test <span class="u-light u-fw-400">(file link)</span></label>
+            <input type="text" class="form-input" id="f-data-entry-score" placeholder="https://…"/>
           </div>
           <div class="form-group">
-            <label class="form-label">Formatting <span class="u-light u-fw-400">(score)</span></label>
-            <input type="text" class="form-input" id="f-formatting-score" placeholder="e.g. Passed"/>
+            <label class="form-label">Time Used</label>
+            <input type="text" class="form-input" id="f-formatting-score" placeholder="e.g. 1:38"/>
           </div>
-          <div class="form-group">
-            <label class="form-label">Sorting <span class="u-light u-fw-400">(score)</span></label>
-            <input type="text" class="form-input" id="f-sorting-score" placeholder="e.g. Passed"/>
-          </div>
+          <input type="hidden" id="f-sorting-score"/>
         </div>
       </div>
 
@@ -1585,6 +1645,18 @@
           <label class="form-label">Interviewer</label>
           <input type="text" class="form-input" id="iv-interviewer" placeholder="e.g. Assistant"/>
         </div>
+      </div>
+
+      <!-- Row 4: Format -->
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Interview Format</label>
+          <select class="form-select" id="iv-format">
+            <option value="Face-to-Face">Face-to-Face</option>
+            <option value="Virtual">Virtual</option>
+          </select>
+        </div>
+        <div class="form-group"></div>
       </div>
 
       <!-- Meeting Link — with platform toggle + generate -->
@@ -2100,61 +2172,66 @@
 </script>
 
 <!-- ══ LOGIN GATE MODAL ══ -->
-<div id="login-gate-overlay" style="display:flex;position:fixed;inset:0;z-index:9999;background:var(--bg,#0f1629);align-items:center;justify-content:center;">
-  <div style="width:100%;max-width:400px;padding:32px;background:var(--surface,#1a1f35);border:1px solid var(--border,rgba(255,255,255,.08));border-radius:20px;box-shadow:0 24px 64px rgba(0,0,0,.5);">
-    <div style="text-align:center;margin-bottom:28px;">
-      <div style="font-size:32px;font-weight:900;font-family:Syne,sans-serif;background:linear-gradient(135deg,var(--cyan,#3ecfdf),var(--violet,#6c63ff));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:6px;">upstaff</div>
-      <div style="font-size:13px;color:var(--light,#8892b0);">Sign in to continue</div>
+<div id="login-gate-overlay" class="login-gate-overlay">
+  <div class="login-gate-card">
+
+    <!-- Logo -->
+    <div class="login-gate-logo">
+      <img src="css/Logo-Footer.png" alt="upstaff" style="height:36px;object-fit:contain;"/>
     </div>
+
+    <div class="login-gate-title">Log in</div>
 
     <!-- Step 1: Supabase setup (shown if not configured yet) -->
     <div id="gate-setup-section" style="display:none;margin-bottom:20px;">
-      <div style="font-size:11px;font-weight:700;color:var(--cyan,#3ecfdf);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;">⚙️ First-Time Setup</div>
+      <div class="login-gate-section-label">⚙️ First-Time Setup</div>
       <form onsubmit="return false;" autocomplete="off">
-        <div style="margin-bottom:10px;">
-          <label style="display:block;font-size:11px;font-weight:600;color:var(--muted,#64748b);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px;">Supabase Project URL</label>
-          <input id="gate-setup-url" type="url" placeholder="https://xxxx.supabase.co"
-            style="width:100%;box-sizing:border-box;padding:9px 12px;border-radius:9px;border:1px solid var(--border,rgba(255,255,255,.08));background:var(--surface-2,#0f1629);color:var(--text,#e2e8f0);font-size:11px;outline:none;font-family:monospace;"/>
+        <div class="login-gate-field">
+          <label class="login-gate-label">Supabase Project URL</label>
+          <input id="gate-setup-url" type="url" placeholder="https://xxxx.supabase.co" class="login-gate-input" style="font-family:monospace;font-size:11px;"/>
         </div>
-        <div style="margin-bottom:12px;">
-          <label style="display:block;font-size:11px;font-weight:600;color:var(--muted,#64748b);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px;">Supabase Anon Key</label>
-          <input id="gate-setup-key" type="password" placeholder="eyJh..." autocomplete="off"
-            style="width:100%;box-sizing:border-box;padding:9px 12px;border-radius:9px;border:1px solid var(--border,rgba(255,255,255,.08));background:var(--surface-2,#0f1629);color:var(--text,#e2e8f0);font-size:11px;outline:none;font-family:monospace;"/>
+        <div class="login-gate-field">
+          <label class="login-gate-label">Supabase Anon Key</label>
+          <input id="gate-setup-key" type="password" placeholder="eyJh..." autocomplete="off" class="login-gate-input" style="font-family:monospace;font-size:11px;"/>
         </div>
-        <button onclick="saveGateCredentials()"
-          style="width:100%;padding:10px;border-radius:10px;border:none;background:var(--cyan,#3ecfdf);color:#0f1629;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:4px;">
-          Save & Continue
-        </button>
-        <div id="gate-setup-status" style="font-size:11px;color:var(--muted,#64748b);min-height:16px;margin-top:6px;text-align:center;"></div>
+        <button onclick="saveGateCredentials()" class="login-gate-btn">Save & Continue</button>
+        <div id="gate-setup-status" class="login-gate-status"></div>
       </form>
-      <div style="border-top:1px solid var(--border,rgba(255,255,255,.06));margin:16px 0;"></div>
+      <div style="border-top:1px solid rgba(255,255,255,.08);margin:16px 0;"></div>
     </div>
 
-    <!-- Step 2: Email / Password login -->
+    <!-- Email / Password login -->
     <form id="gate-login-form" onsubmit="return false;" autocomplete="on">
-      <div style="margin-bottom:12px;">
-        <label style="display:block;font-size:11px;font-weight:600;color:var(--muted,#64748b);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px;">Email</label>
-        <input id="gate-email" type="email" placeholder="you@company.com" autocomplete="username"
-          style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid var(--border,rgba(255,255,255,.08));background:var(--surface-2,#0f1629);color:var(--text,#e2e8f0);font-size:13px;outline:none;"/>
+      <div class="login-gate-field">
+        <label class="login-gate-label">Email <span class="login-gate-required">*</span></label>
+        <input id="gate-email" type="email" placeholder="you@company.com" autocomplete="username" class="login-gate-input"/>
       </div>
-      <div style="margin-bottom:16px;">
-        <label style="display:block;font-size:11px;font-weight:600;color:var(--muted,#64748b);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px;">Password</label>
-        <div style="display:flex;gap:8px;align-items:center;">
-          <input id="gate-password" type="password" placeholder="••••••••" autocomplete="current-password"
-            style="flex:1;padding:10px 12px;border-radius:10px;border:1px solid var(--border,rgba(255,255,255,.08));background:var(--surface-2,#0f1629);color:var(--text,#e2e8f0);font-size:13px;outline:none;"/>
-          <button type="button" onclick="toggleGatePassword()" title="Show/hide"
-            style="padding:10px 12px;border-radius:10px;border:1px solid var(--border,rgba(255,255,255,.08));background:var(--surface-2,#0f1629);color:var(--muted,#64748b);cursor:pointer;font-size:13px;flex-shrink:0;">👁</button>
+      <div class="login-gate-field">
+        <label class="login-gate-label">Password <span class="login-gate-required">*</span></label>
+        <div class="login-gate-input-wrap">
+          <input id="gate-password" type="password" placeholder="••••••••" autocomplete="current-password" class="login-gate-input"/>
+          <button type="button" onclick="toggleGatePassword()" class="login-gate-eye" title="Show/hide password">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
         </div>
       </div>
-      <button type="submit" onclick="handleEmailLogin()"
-        style="width:100%;padding:11px;border-radius:10px;border:none;background:linear-gradient(135deg,var(--cyan,#3ecfdf),var(--violet,#6c63ff));color:#fff;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:.3px;">
+
+      <div class="login-gate-row">
+        <label class="login-gate-remember">
+          <input type="checkbox" id="gate-remember" style="accent-color:var(--cyan,#44d7e9);"/>
+          <span>Remember me</span>
+        </label>
+      </div>
+
+      <button type="submit" onclick="handleEmailLogin()" class="login-gate-btn" style="margin-top:8px;">
         Sign In
       </button>
     </form>
 
-    <div id="gate-status" style="margin-top:10px;text-align:center;font-size:12px;color:var(--muted,#64748b);min-height:18px;"></div>
-    <div style="margin-top:14px;text-align:center;">
-      <button onclick="document.getElementById('gate-setup-section').style.display='block'" style="background:none;border:none;color:var(--muted,#64748b);font-size:11px;cursor:pointer;text-decoration:underline;padding:0;">⚙ Change Supabase settings</button>
+    <div id="gate-status" class="login-gate-status" style="margin-top:10px;"></div>
+
+    <div class="login-gate-footer">
+      <button onclick="document.getElementById('gate-setup-section').style.display='block'" class="login-gate-link">⚙ Change Supabase settings</button>
     </div>
   </div>
 </div>

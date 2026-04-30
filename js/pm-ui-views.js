@@ -52,6 +52,11 @@ function switchView(v) {
   _s("view-candidates", "none");
   _s("view-onboarding", "none");
   _s("topbar-filter-btn", "");
+  // Close super filter panel on view switch
+  const sfp = document.getElementById("super-filter-panel");
+  if (sfp) sfp.style.display = "none";
+  const sfBtn = document.getElementById("topbar-filter-btn");
+  if (sfBtn) sfBtn.classList.remove("active");
 
   // Update tab active state
   document
@@ -299,8 +304,98 @@ function getListFilters() {
     priority: document.getElementById("list-filter-priority")?.value || "",
     position: document.getElementById("list-filter-position")?.value || "",
     assignee: document.getElementById("list-filter-assignee")?.value || "",
+    dateFrom: document.getElementById("list-filter-date-from")?.value || "",
+    dateTo: document.getElementById("list-filter-date-to")?.value || "",
     sort: document.getElementById("list-sort")?.value || "due-asc",
   };
+}
+
+function _getActiveView() {
+  return document.querySelector(".view-tab.active")?.dataset.view || "list";
+}
+
+function toggleSuperFilter() {
+  const panel = document.getElementById("super-filter-panel");
+  const btn   = document.getElementById("topbar-filter-btn");
+  if (!panel) return;
+  const isOpen = panel.style.display !== "none";
+  if (isOpen) {
+    panel.style.display = "none";
+    btn.classList.remove("active");
+    return;
+  }
+  // Show correct section based on current view
+  const view = _getActiveView();
+  const isCal = view === "calendar";
+  document.getElementById("sf-list-section").style.display = isCal ? "none" : "";
+  document.getElementById("sf-cal-section").style.display  = isCal ? ""     : "none";
+  panel.style.display = "";
+  btn.classList.add("active");
+}
+
+function updateFilterBadge() {
+  const f = getListFilters();
+  const count = [f.priority, f.position, f.assignee, f.dateFrom, f.dateTo].filter(Boolean).length;
+  const badge  = document.getElementById("filter-active-badge");
+  const clearBtn = document.getElementById("super-filter-clear-btn");
+  if (badge)    { badge.textContent = count; badge.style.display = count ? "" : "none"; }
+  if (clearBtn) clearBtn.style.display = count ? "" : "none";
+}
+
+function updateCalFilterBadge() {
+  const cal    = document.getElementById("cal-filter-calendar")?.value || "";
+  const pos    = document.getElementById("cal-filter-position")?.value  || "";
+  const status = document.getElementById("cal-filter-status")?.value    || "";
+  const type   = document.getElementById("cal-filter-type")?.value      || "";
+  const from   = document.getElementById("cal-filter-date-from")?.value || "";
+  const to     = document.getElementById("cal-filter-date-to")?.value   || "";
+  const count  = [cal, pos, status, type, from, to].filter(Boolean).length;
+  const badge  = document.getElementById("filter-active-badge");
+  const clearBtn = document.getElementById("cal-filter-clear-btn");
+  const tagsEl   = document.getElementById("cal-active-filter-tags");
+  if (badge)    { badge.textContent = count; badge.style.display = count ? "" : "none"; }
+  if (clearBtn) clearBtn.style.display = count ? "" : "none";
+  // Show active filter tags below cal toolbar
+  if (tagsEl) {
+    const labels = [
+      cal    && { key: "cal",    label: `Calendar: ${cal}` },
+      pos    && { key: "pos",    label: `Position: ${pos}` },
+      status && { key: "status", label: `Status: ${status}` },
+      type   && { key: "type",   label: `Type: ${type}` },
+      from   && { key: "from",   label: `From: ${from}` },
+      to     && { key: "to",     label: `To: ${to}` },
+    ].filter(Boolean);
+    tagsEl.style.display = labels.length ? "" : "none";
+    tagsEl.innerHTML = labels.map(t =>
+      `<span class="list-filter-tag" onclick="clearCalFilter('${t.key}')">${sanitize(t.label)}
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </span>`
+    ).join("");
+  }
+}
+
+function clearCalFilter(key) {
+  const map = { cal:"cal-filter-calendar", pos:"cal-filter-position", status:"cal-filter-status", type:"cal-filter-type", from:"cal-filter-date-from", to:"cal-filter-date-to" };
+  const el = document.getElementById(map[key]);
+  if (el) el.value = "";
+  updateCalFilterBadge();
+  renderCalendar();
+}
+
+function clearCalFilters() {
+  ["cal-filter-calendar","cal-filter-position","cal-filter-status","cal-filter-type","cal-filter-date-from","cal-filter-date-to"].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = "";
+  });
+  updateCalFilterBadge();
+  renderCalendar();
+}
+
+function clearAllFilters() {
+  ["list-filter-priority","list-filter-position","list-filter-assignee","list-filter-date-from","list-filter-date-to"].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = "";
+  });
+  updateFilterBadge();
+  renderList();
 }
 
 function renderList() {
@@ -320,6 +415,8 @@ function renderList() {
     if (f.priority && t.priority !== f.priority) return false;
     if (f.position && t.position !== f.position) return false;
     if (f.assignee && t.assignee !== f.assignee) return false;
+    if (f.dateFrom && t.due && t.due < f.dateFrom) return false;
+    if (f.dateTo && t.due && t.due > f.dateTo) return false;
     return true;
   });
 
@@ -945,13 +1042,18 @@ function renderPositionSelects() {
     if (!el) return;
     const cur = el.value;
     el.innerHTML = opts;
-    // Restore selection if still valid
     if ([...el.options].some((o) => o.value === cur)) el.value = cur;
     else el.value = JOB_POSITIONS[0];
   });
-  // Also populate hire modal position select and list filter
   const hfPos = document.getElementById("hf-position");
   if (hfPos) hfPos.innerHTML = opts;
+  // Populate cal-filter-position dynamically
+  const calPos = document.getElementById("cal-filter-position");
+  if (calPos) {
+    const cur = calPos.value;
+    calPos.innerHTML = '<option value="">All Positions</option>' + opts;
+    if (cur && [...calPos.options].some((o) => o.value === cur)) calPos.value = cur;
+  }
   populateListPositionFilter();
 }
 
@@ -2095,9 +2197,8 @@ function _refreshScoreSummary() {
       _scoreRow("Grammar Test", grammar, 20, 15),
     ])}
     ${_categoryBlock("📊", "Excel Test", [
-      _scoreRow("Data Entry", dataEntry),
-      _scoreRow("Formatting", formatting),
-      _scoreRow("Sorting", sorting),
+      dataEntry ? `<div class="score-item"><span class="score-label">Skill Test</span><span class="score-val">${dataEntry.startsWith("http") ? `<a href="${dataEntry}" target="_blank" style="color:var(--cyan);">View File</a>` : dataEntry}</span></div>` : "",
+      _scoreRow("Time Used", formatting),
     ])}
     ${notes ? `<div class="score-category"><div class="score-category-title">💬 Interview Notes</div><div class="score-summary-grid"><div class="score-item score-item-full"><span class="score-val" style="font-weight:400;color:var(--muted);font-size:12px;">${notes.slice(0, 120)}${notes.length > 120 ? "…" : ""}</span></div></div></div>` : ""}
   `;
@@ -3906,7 +4007,7 @@ function saveInterviewSchedule() {
   const meetingLink = document.getElementById("iv-meeting-link").value.trim();
   const interviewer = document.getElementById("iv-interviewer").value.trim();
   const notes = document.getElementById("iv-notes").value.trim();
-  const isVirtual = meetingLink.length > 0;
+  const isVirtual = (document.getElementById("iv-format")?.value || "Face-to-Face") === "Virtual";
 
   if (!date || !startTime) {
     showToast("⚠️ Please enter a date and start time.");
@@ -5440,17 +5541,22 @@ document.getElementById("export-csv-btn")?.addEventListener("click", () => {
    [SECTION: CALENDAR] — Calendar Views (Month/Week/Day/Agenda)
 ══════════════════════════════════════════════ */
 function getFiltered() {
-  const calFilter = document.getElementById("cal-filter-calendar").value;
-  const pos = document.getElementById("cal-filter-position").value;
-  const status = document.getElementById("cal-filter-status").value;
-  const type = document.getElementById("cal-filter-type").value;
+  const calFilter = document.getElementById("cal-filter-calendar")?.value || "";
+  const pos       = document.getElementById("cal-filter-position")?.value  || "";
+  const status    = document.getElementById("cal-filter-status")?.value    || "";
+  const type      = document.getElementById("cal-filter-type")?.value      || "";
+  const dateFrom  = document.getElementById("cal-filter-date-from")?.value || "";
+  const dateTo    = document.getElementById("cal-filter-date-to")?.value   || "";
   return calEvents.filter((e) => {
     const evCalId = e.calendarId || e.sourceCalendar || "primary";
     if (hiddenCalendars.has(evCalId)) return false;
     if (calFilter && evCalId !== calFilter) return false;
-    if (pos && e.position !== pos) return false;
+    // Only filter by position if event has a position (skip GCal-only events)
+    if (pos && e.position && e.position !== pos) return false;
     if (status && e.status !== status) return false;
-    if (type && e.type !== type) return false;
+    if (type && e.type && e.type !== type) return false;
+    if (dateFrom && e.date && e.date < dateFrom) return false;
+    if (dateTo   && e.date && e.date > dateTo)   return false;
     return true;
   });
 }
@@ -6588,9 +6694,12 @@ document.querySelectorAll(".cal-view-tab").forEach((btn) => {
 document
   .getElementById("cal-add-btn")
   .addEventListener("click", () => openNewAt(fmtDate(calDate), "09:00"));
-["cal-filter-position", "cal-filter-status", "cal-filter-type"].forEach(
+["cal-filter-calendar", "cal-filter-position", "cal-filter-status", "cal-filter-type"].forEach(
   (id) => {
-    document.getElementById(id).addEventListener("change", renderCalendar);
+    document.getElementById(id)?.addEventListener("change", () => {
+      renderCalendar();
+      updateCalFilterBadge();
+    });
   },
 );
 
