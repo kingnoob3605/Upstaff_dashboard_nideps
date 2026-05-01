@@ -9656,12 +9656,30 @@ function applyAccentColor(hex) {
 function applyTheme(key) {
   const t = COLOR_THEMES[key];
   if (!t) return;
-  // Apply sidebar colors
+  // Derive light-mode tints from the accent colour (mix with white)
+  const r = parseInt(t.accent.slice(1,3),16);
+  const g = parseInt(t.accent.slice(3,5),16);
+  const b = parseInt(t.accent.slice(5,7),16);
+  const tint = (a) => `rgb(${Math.round(r*a+255*(1-a))},${Math.round(g*a+255*(1-a))},${Math.round(b*a+255*(1-a))})`;
+  // Apply sidebar + light & dark surface overrides
   let el = document.getElementById("theme-sidebar-override");
   if (!el) { el = document.createElement("style"); el.id = "theme-sidebar-override"; document.head.appendChild(el); }
   el.textContent = [
+    // Sidebar always uses the dark gradient regardless of light/dark mode
     `#sidebar{background:linear-gradient(160deg,${t.navy} 0%,${t.slate} 100%) !important;}`,
-    `:root{--navy:${t.navy};--slate:${t.slate};}`,
+    // Light-mode: tint every surface with the accent colour so it's not plain white
+    `:root{`,
+    `--navy:${t.navy};--slate:${t.slate};`,
+    `--bg:${tint(0.07)};--surface-2:${tint(0.07)};`,
+    `--card:${tint(0.04)};--surface-1:${tint(0.04)};`,
+    `--surface-3:${tint(0.06)};--surface-4:${tint(0.10)};`,
+    `--topbar-bg:${tint(0.05)};--input-bg:${tint(0.05)};`,
+    `--row-hover:${tint(0.12)};--row-alt:${tint(0.07)};`,
+    `--board-col-bg:${tint(0.10)};`,
+    `--cal-other-month:${tint(0.04)};--agenda-item-bg:${tint(0.06)};`,
+    `--cal-today-bg:${tint(0.12)};--cal-hour-hover:${tint(0.08)};`,
+    `}`,
+    // Dark-mode: use the theme's deep navy/slate palette
     `[data-theme="dark"]{`,
     `--bg:${t.navy};--surface-2:${t.navy};`,
     `--surface-1:${t.slate};--surface-3:${t.surface3};--surface-4:${t.surface3};`,
