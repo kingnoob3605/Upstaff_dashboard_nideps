@@ -9788,25 +9788,20 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 // ══════════════════════════════════════════════════════════════════════════════
-// ── TEAM MEMBERS ─────────────────────────────────────────────────────────────
+// ── TEAM MEMBERS (Supabase-backed) ───────────────────────────────────────────
 // ══════════════════════════════════════════════════════════════════════════════
-const TEAM_STORAGE_KEY = "upstaff_team_members";
 const MAX_MEMBERS = 10;
 
-function _getTeamMembers() {
-  try { return JSON.parse(localStorage.getItem(TEAM_STORAGE_KEY) || "[]"); }
-  catch (_) { return []; }
-}
-
-function _saveTeamMembers(members) {
-  localStorage.setItem(TEAM_STORAGE_KEY, JSON.stringify(members));
-}
-
-function renderMembersList() {
-  const list = document.getElementById("members-list");
+async function renderMembersList() {
+  const list    = document.getElementById("members-list");
   const counter = document.getElementById("members-count");
   if (!list) return;
-  const members = _getTeamMembers();
+
+  list.innerHTML = '<div style="font-size:12px;color:var(--muted);padding:12px 0;">Loading members…</div>';
+
+  const members   = window.SupabaseAuth ? await SupabaseAuth.getMembers() : [];
+  const myId      = window.SupabaseAuth ? SupabaseAuth.getCurrentUserId() : null;
+
   if (counter) counter.textContent = `${members.length} / ${MAX_MEMBERS}`;
   const inviteBtn = document.getElementById("invite-member-btn");
   if (inviteBtn) inviteBtn.disabled = members.length >= MAX_MEMBERS;
@@ -9819,14 +9814,15 @@ function renderMembersList() {
     <div class="member-row">
       <div class="member-avatar">${(m.name || m.email || "?")[0].toUpperCase()}</div>
       <div class="member-info">
-        <div class="member-name">${sanitize(m.name || m.email)}</div>
-        <div class="member-email">${sanitize(m.email)}</div>
+        <div class="member-name">${sanitize(m.name || m.email || "")}</div>
+        <div class="member-email">${sanitize(m.email || "")}</div>
       </div>
-      <span class="member-role-badge ${m.role}">${m.role}</span>
-      <span class="member-status-badge ${m.status}">${m.status}</span>
-      <button class="member-remove-btn" onclick="removeMember('${m.email}')" title="Remove member">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
+      <span class="member-role-badge ${m.role === "hr" ? "hr" : "assistant"}">${m.role === "hr" ? "HR" : "Assistant"}</span>
+      ${m.id !== myId
+        ? `<button class="member-remove-btn" onclick="removeMember('${m.id}')" title="Remove member">
+             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+           </button>`
+        : `<span style="font-size:10px;color:var(--muted);padding:0 8px;">You</span>`}
     </div>`).join("");
 }
 
@@ -9839,60 +9835,41 @@ function toggleInviteForm() {
 }
 
 async function sendMemberInvite() {
-  const email = (document.getElementById("invite-email")?.value || "").trim().toLowerCase();
-  const role  = document.getElementById("invite-role")?.value || "hr";
+  const email    = (document.getElementById("invite-email")?.value || "").trim().toLowerCase();
+  const role     = document.getElementById("invite-role")?.value || "assistant";
   const statusEl = document.getElementById("invite-status");
 
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     if (statusEl) { statusEl.textContent = "❌ Enter a valid email address."; statusEl.style.color = "#ef4444"; }
     return;
   }
-  const members = _getTeamMembers();
-  if (members.length >= MAX_MEMBERS) {
-    if (statusEl) { statusEl.textContent = "❌ Maximum 10 members reached."; statusEl.style.color = "#ef4444"; }
-    return;
-  }
-  if (members.find((m) => m.email === email)) {
-    if (statusEl) { statusEl.textContent = "❌ This email is already a member."; statusEl.style.color = "#ef4444"; }
-    return;
-  }
-
   if (statusEl) { statusEl.textContent = "⏳ Sending invite…"; statusEl.style.color = "var(--muted)"; }
 
-  // Try Supabase invite if available
-  let invited = false;
-  if (window.SupabaseAuth) {
-    try {
-      const client = SupabaseAuth.getClient?.();
-      if (client) {
-        const { error } = await client.auth.admin?.inviteUserByEmail
-          ? client.auth.admin.inviteUserByEmail(email, { data: { role } })
-          : Promise.resolve({ error: null });
-        if (!error) invited = true;
-      }
-    } catch (_) {}
+  try {
+    await SupabaseAuth.inviteMember(email, role, "");
+    if (statusEl) {
+      statusEl.textContent = `✅ Invite sent to ${email}. They'll receive an email to set their password.`;
+      statusEl.style.color = "var(--green)";
+    }
+    document.getElementById("invite-email").value = "";
+    showToast(`✅ Invite sent to ${email}`);
+    setTimeout(toggleInviteForm, 2000);
+    renderMembersList();
+  } catch (err) {
+    if (statusEl) { statusEl.textContent = "❌ " + (err.message || "Invite failed."); statusEl.style.color = "#ef4444"; }
   }
-
-  // Store member locally
-  members.push({ email, role, status: "pending", name: "", invitedAt: new Date().toISOString() });
-  _saveTeamMembers(members);
-  renderMembersList();
-
-  if (statusEl) {
-    statusEl.textContent = invited
-      ? `✅ Invite sent to ${email}! They'll receive an email to set up their account.`
-      : `✅ Member added. Share the dashboard link with ${email} and have them sign up.`;
-    statusEl.style.color = "var(--green)";
-  }
-  document.getElementById("invite-email").value = "";
 }
 
-function removeMember(email) {
-  if (!confirm(`Remove ${email} from the team?`)) return;
-  const members = _getTeamMembers().filter((m) => m.email !== email);
-  _saveTeamMembers(members);
-  renderMembersList();
-  showToast("Member removed.");
+async function removeMember(memberId) {
+  const confirmed = await uiConfirm("Remove this member? They will lose access immediately.", { icon: "⚠️", title: "Remove Member", okText: "Remove" });
+  if (!confirmed) return;
+  try {
+    await SupabaseAuth.removeMember(memberId);
+    renderMembersList();
+    showToast("Member removed.");
+  } catch (err) {
+    showToast("❌ " + (err.message || "Could not remove member."));
+  }
 }
 
 // Render when navigating to workspace settings

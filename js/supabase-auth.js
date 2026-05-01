@@ -94,6 +94,7 @@ window.SupabaseAuth = (function () {
     c.supabaseToken        = data.session.access_token;
     c.supabaseRefreshToken = data.session.refresh_token;
     c.email                = data.user.email;
+    c.userId               = data.user.id;
     c.role                 = profile.role;
     c.name                 = profile.name || data.user.email.split('@')[0];
     c.login_at             = Date.now();
@@ -229,5 +230,47 @@ window.SupabaseAuth = (function () {
     if (error) throw new Error(error.message);
   }
 
-  return { login, logout, isConfigured, isLoggedIn, getRole, getName, getEmail, saveSettings, changePassword, sendPasswordReset };
+  // Fetch all profiles (HR sees all via RLS policy; assistants see only own)
+  async function getMembers() {
+    var c = _config();
+    if (!c.supabaseUrl || !c.supabaseToken) return [];
+    try {
+      var resp = await fetch(c.supabaseUrl + '/rest/v1/profiles?select=id,role,name,email&order=role.asc,name.asc', {
+        headers: { 'apikey': c.supabaseAnonKey, 'Authorization': 'Bearer ' + c.supabaseToken },
+      });
+      if (!resp.ok) return [];
+      return await resp.json();
+    } catch (_) { return []; }
+  }
+
+  // Invite a new member via the invite-member Edge Function (uses service key server-side)
+  async function inviteMember(email, role, name) {
+    var c = _config();
+    if (!c.supabaseUrl || !c.supabaseToken) throw new Error('Not logged in.');
+    var resp = await fetch(c.supabaseUrl + '/functions/v1/invite-member', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + c.supabaseToken,
+        'apikey': c.supabaseAnonKey,
+      },
+      body: JSON.stringify({ email: email.trim().toLowerCase(), role, name: name || email.split('@')[0] }),
+    });
+    var json = await resp.json();
+    if (!resp.ok) throw new Error(json.error || 'Invite failed.');
+    return json;
+  }
+
+  // Remove a member by deleting their profiles row (blocks login; HR only via RLS)
+  async function removeMember(memberId) {
+    var client = _getClient();
+    if (!client) throw new Error('Not connected to Supabase.');
+    var { error } = await client.from('profiles').delete().eq('id', memberId);
+    if (error) throw new Error(error.message);
+  }
+
+  function getCurrentUserId() { return _config().userId || null; }
+
+  return { login, logout, isConfigured, isLoggedIn, getRole, getName, getEmail, saveSettings,
+           changePassword, sendPasswordReset, getMembers, inviteMember, removeMember, getCurrentUserId };
 })();
