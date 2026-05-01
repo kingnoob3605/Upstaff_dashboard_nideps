@@ -8771,6 +8771,15 @@ function showAnalytics() {
 
   renderAnalytics();
   _renderApiCountsBanner();
+
+  // Pull fresh data from Google Sheet then re-render so analytics reflects sheet state
+  if (window.UpstaffAPI && UpstaffAPI.isConfigured()) {
+    syncApplicantsFromApi({ silent: true }).then(() => {
+      if (document.getElementById("view-analytics").style.display !== "none") {
+        renderAnalytics();
+      }
+    }).catch(() => {});
+  }
 }
 
 /* ── Fetch live counts from partner API and show in analytics ── */
