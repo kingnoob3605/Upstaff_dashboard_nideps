@@ -2814,24 +2814,6 @@ window.handleChangePassword = async function () {
   }
 };
 
-// ── Forgot password (sends reset email) ──────────────────────────────────────
-window.handleForgotPassword = async function () {
-  const email    = (document.getElementById("gate-email")?.value || "").trim();
-  const statusEl = document.getElementById("gate-reset-status");
-  if (!email) {
-    statusEl.textContent = "Enter your email above first.";
-    statusEl.style.color = "#f59e0b"; return;
-  }
-  statusEl.textContent = "Sending reset link…"; statusEl.style.color = "var(--muted)";
-  try {
-    await SupabaseAuth.sendPasswordReset(email);
-    statusEl.textContent = "✅ Reset link sent to " + email + " — check your inbox.";
-    statusEl.style.color = "var(--green)";
-  } catch (err) {
-    statusEl.textContent = "❌ " + (err.message || "Could not send reset email.");
-    statusEl.style.color = "#ef4444";
-  }
-};
 
 async function handleLogout() {
   const menu = document.getElementById("avatar-menu");
