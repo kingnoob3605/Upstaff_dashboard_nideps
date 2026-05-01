@@ -243,10 +243,11 @@ window.SupabaseAuth = (function () {
     } catch (_) { return []; }
   }
 
-  // Invite a new member via the invite-member Edge Function (uses service key server-side)
-  async function inviteMember(email, role, name) {
+  // Create a new member via the invite-member Edge Function (HR sets password directly)
+  async function inviteMember(email, role, name, password) {
     var c = _config();
     if (!c.supabaseUrl || !c.supabaseToken) throw new Error('Not logged in.');
+    if (!password || password.length < 6) throw new Error('Password must be at least 6 characters.');
     var resp = await fetch(c.supabaseUrl + '/functions/v1/invite-member', {
       method: 'POST',
       headers: {
@@ -254,10 +255,15 @@ window.SupabaseAuth = (function () {
         'Authorization': 'Bearer ' + c.supabaseToken,
         'apikey': c.supabaseAnonKey,
       },
-      body: JSON.stringify({ email: email.trim().toLowerCase(), role, name: name || email.split('@')[0] }),
+      body: JSON.stringify({
+        email:    email.trim().toLowerCase(),
+        role,
+        name:     name || email.split('@')[0],
+        password,
+      }),
     });
     var json = await resp.json();
-    if (!resp.ok) throw new Error(json.error || 'Invite failed.');
+    if (!resp.ok) throw new Error(json.error || 'Failed to create account.');
     return json;
   }
 

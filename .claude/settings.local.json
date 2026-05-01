@@ -7,7 +7,9 @@
       "Bash(git fetch *)",
       "mcp__Claude_Preview__preview_start",
       "mcp__1f15390d-fd40-4904-afa4-0ddf14a633e3__list_projects",
-      "mcp__1f15390d-fd40-4904-afa4-0ddf14a633e3__list_tables"
+      "mcp__1f15390d-fd40-4904-afa4-0ddf14a633e3__list_tables",
+      "mcp__1f15390d-fd40-4904-afa4-0ddf14a633e3__execute_sql",
+      "mcp__1f15390d-fd40-4904-afa4-0ddf14a633e3__get_logs"
     ]
   }
 }

@@ -763,9 +763,17 @@
               <!-- Invite form -->
               <div id="invite-form" style="display:none;background:var(--surface-3);border-radius:10px;padding:14px;margin-bottom:16px;border:1px solid var(--border);">
                 <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+                  <div style="flex:1;min-width:160px;">
+                    <label class="settings-label">Full Name</label>
+                    <input type="text" class="settings-input" id="invite-name" placeholder="Jane Doe"/>
+                  </div>
                   <div style="flex:1;min-width:180px;">
                     <label class="settings-label">Email Address</label>
-                    <input type="email" class="settings-input" id="invite-email" placeholder="member@email.com"/>
+                    <input type="email" class="settings-input" id="invite-email" placeholder="member@upstaff.app"/>
+                  </div>
+                  <div style="flex:1;min-width:160px;">
+                    <label class="settings-label">Initial Password</label>
+                    <input type="password" class="settings-input" id="invite-password" placeholder="Min. 6 characters" autocomplete="new-password"/>
                   </div>
                   <div style="min-width:130px;">
                     <label class="settings-label">Role</label>
@@ -774,7 +782,9 @@
                       <option value="assistant">Assistant</option>
                     </select>
                   </div>
-                  <button class="settings-save-btn" onclick="sendMemberInvite()">Send Invite</button>
+                </div>
+                <div style="display:flex;gap:8px;margin-top:10px;">
+                  <button class="settings-save-btn" onclick="sendMemberInvite()">Create Account</button>
                   <button class="settings-save-btn" style="background:var(--surface-2);color:var(--muted);border:1px solid var(--border);" onclick="toggleInviteForm()">Cancel</button>
                 </div>
                 <div id="invite-status" style="margin-top:8px;font-size:12px;"></div>

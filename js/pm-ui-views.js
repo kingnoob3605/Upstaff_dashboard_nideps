@@ -9817,28 +9817,40 @@ function toggleInviteForm() {
 }
 
 async function sendMemberInvite() {
+  const name     = (document.getElementById("invite-name")?.value || "").trim();
   const email    = (document.getElementById("invite-email")?.value || "").trim().toLowerCase();
+  const password = (document.getElementById("invite-password")?.value || "").trim();
   const role     = document.getElementById("invite-role")?.value || "assistant";
   const statusEl = document.getElementById("invite-status");
 
+  if (!name) {
+    if (statusEl) { statusEl.textContent = "❌ Full name is required."; statusEl.style.color = "#ef4444"; }
+    return;
+  }
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     if (statusEl) { statusEl.textContent = "❌ Enter a valid email address."; statusEl.style.color = "#ef4444"; }
     return;
   }
-  if (statusEl) { statusEl.textContent = "⏳ Sending invite…"; statusEl.style.color = "var(--muted)"; }
+  if (!password || password.length < 6) {
+    if (statusEl) { statusEl.textContent = "❌ Password must be at least 6 characters."; statusEl.style.color = "#ef4444"; }
+    return;
+  }
+  if (statusEl) { statusEl.textContent = "⏳ Creating account…"; statusEl.style.color = "var(--muted)"; }
 
   try {
-    await SupabaseAuth.inviteMember(email, role, "");
+    await SupabaseAuth.inviteMember(email, role, name, password);
     if (statusEl) {
-      statusEl.textContent = `✅ Invite sent to ${email}. They'll receive an email to set their password.`;
+      statusEl.textContent = `✅ Account created for ${name}. Share their email and password with them directly.`;
       statusEl.style.color = "var(--green)";
     }
+    document.getElementById("invite-name").value = "";
     document.getElementById("invite-email").value = "";
-    showToast(`✅ Invite sent to ${email}`);
-    setTimeout(toggleInviteForm, 2000);
+    document.getElementById("invite-password").value = "";
+    showToast(`✅ Account created for ${name}`);
+    setTimeout(toggleInviteForm, 2500);
     renderMembersList();
   } catch (err) {
-    if (statusEl) { statusEl.textContent = "❌ " + (err.message || "Invite failed."); statusEl.style.color = "#ef4444"; }
+    if (statusEl) { statusEl.textContent = "❌ " + (err.message || "Failed to create account."); statusEl.style.color = "#ef4444"; }
   }
 }
 

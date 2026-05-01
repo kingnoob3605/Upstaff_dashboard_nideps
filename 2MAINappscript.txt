@@ -858,7 +858,7 @@ function buildRowFromWebhook(r) {
   ];
 }
 
-// ── handleLogin: checks admin credentials — any Google account is allowed ────
+// ── handleLogin: checks admin credentials only — no per-user allowlist ───────
 function handleLogin(data) {
   var props = PropertiesService.getScriptProperties();
   var validEmail    = props.getProperty("ADMIN_EMAIL");
@@ -870,34 +870,12 @@ function handleLogin(data) {
   }
 
   var googleEmail = (data.googleEmail || "").toLowerCase().trim();
-
-  // Optional: if ALLOWED_USERS is set, check it for a custom role/name.
-  // If empty or the email is not listed, fall back to default role "hr".
-  var allowedRaw = props.getProperty("ALLOWED_USERS") || "{}";
-  var allowed = {};
-  try { allowed = JSON.parse(allowedRaw); } catch(e) {}
-
-  var userEntry = null;
-  Object.keys(allowed).forEach(function(key) {
-    if (key.toLowerCase() === googleEmail) userEntry = allowed[key];
-  });
-
-  // Any Google account can log in — use ALLOWED_USERS entry if found,
-  // otherwise default to role "hr" and derive name from email.
-  if (!userEntry) {
-    var namePart = googleEmail.split("@")[0].replace(/[._]/g, " ");
-    userEntry = {
-      role: "hr",
-      name: namePart.replace(/\b\w/g, function(c) { return c.toUpperCase(); })
-    };
-  }
-
   var token  = Utilities.getUuid().replace(/-/g, "") + Utilities.getUuid().replace(/-/g, "");
   var expiry = Date.now() + (30 * 24 * 60 * 60 * 1000);
   props.setProperty("SESSION_TOKEN",        token);
   props.setProperty("SESSION_TOKEN_EXPIRY", String(expiry));
-  writeLog("LOGIN_SUCCESS", googleEmail, "Token issued, role: " + userEntry.role);
-  return jsonResponse({ result: "success", token: token, role: userEntry.role, name: userEntry.name });
+  writeLog("LOGIN_SUCCESS", googleEmail, "Token issued");
+  return jsonResponse({ result: "success", token: token });
 }
 
 // ── Get applications ──────────────────────────────────────────────────────────
