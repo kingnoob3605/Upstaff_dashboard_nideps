@@ -539,7 +539,7 @@ function handleSaveAssessment(data) {
       setupAssessmentsSheet(sheet);
     }
 
-    var row = findOrCreateAssessmentRow(sheet, data.name, data.email, 3);
+    var row = findOrCreateAssessmentRow(sheet, data.name, 3);
     var aCol, cellVal;
 
     switch (data.assessmentType) {
@@ -596,7 +596,7 @@ function handleSaveAssessment(data) {
           "%";
         break;
       case "excel-practical": {
-        var aRow = findOrCreateAssessmentRow(sheet, data.name, data.email, 3);
+        var aRow = findOrCreateAssessmentRow(sheet, data.name, 3);
         writeAssessmentCell(sheet, aRow, ACOL.excelFile, data.fileName || "—", TEST_COLORS[8]);
         writeAssessmentCell(sheet, aRow, ACOL.excelTime, data.timeUsed || "—", TEST_COLORS[9]);
         SpreadsheetApp.flush();
@@ -663,35 +663,16 @@ function writeAssessmentCell(sheet, row, col, value, colors) {
   sheet.setRowHeight(row, ASSESSMENT_ROW_HEIGHT);
 }
 
-function findOrCreateAssessmentRow(sheet, name, email, dataStartRow) {
-  // Support legacy 3-arg call: findOrCreateAssessmentRow(sheet, name, dataStartRow)
-  if (typeof email === "number") { dataStartRow = email; email = ""; }
-
+function findOrCreateAssessmentRow(sheet, name, dataStartRow) {
   var lastRow = sheet.getLastRow();
-  var searchName  = (name  || "").toString().trim().toLowerCase();
-  var searchEmail = (email || "").toString().trim().toLowerCase();
+  var searchName = (name || "").toString().trim().toLowerCase();
 
   if (lastRow >= dataStartRow) {
     var names = sheet
       .getRange(dataStartRow, 1, lastRow - dataStartRow + 1, 1)
       .getValues();
-    var notes = sheet
-      .getRange(dataStartRow, 1, lastRow - dataStartRow + 1, 1)
-      .getNotes();
     for (var i = 0; i < names.length; i++) {
-      var rowNote = (notes[i][0] || "").trim().toLowerCase();
-      var rowName = (names[i][0] || "").toString().trim().toLowerCase();
-      // Match by email (note) first — most reliable
-      if (searchEmail && rowNote === searchEmail) {
-        sheet.setRowHeight(dataStartRow + i, ASSESSMENT_ROW_HEIGHT);
-        return dataStartRow + i;
-      }
-      // Fall back to exact name match
-      if (searchName && rowName === searchName) {
-        // Backfill email note if missing
-        if (searchEmail && !rowNote) {
-          sheet.getRange(dataStartRow + i, 1).setNote(searchEmail);
-        }
+      if ((names[i][0] || "").toString().trim().toLowerCase() === searchName) {
         sheet.setRowHeight(dataStartRow + i, ASSESSMENT_ROW_HEIGHT);
         return dataStartRow + i;
       }
@@ -699,7 +680,8 @@ function findOrCreateAssessmentRow(sheet, name, email, dataStartRow) {
   }
 
   var newRow = Math.max(lastRow + 1, dataStartRow);
-  var cell = sheet.getRange(newRow, 1)
+  sheet
+    .getRange(newRow, 1)
     .setValue(name || "")
     .setBackground("#ffffff")
     .setFontColor("#1e293b")
@@ -708,7 +690,6 @@ function findOrCreateAssessmentRow(sheet, name, email, dataStartRow) {
     .setFontWeight("bold")
     .setVerticalAlignment("middle")
     .setHorizontalAlignment("left");
-  if (searchEmail) sheet.getRange(newRow, 1).setNote(searchEmail);
   sheet.setRowHeight(newRow, ASSESSMENT_ROW_HEIGHT);
   return newRow;
 }
@@ -931,33 +912,24 @@ function handleGetData(data) {
   if (!sheet || sheet.getLastRow() < 2)
     return jsonResponse({ result: "success", data: [], total: 0 });
 
-  // Build assessment lookup — primary key: email (stored as cell note),
-  // fallback key: lowercased applicant name. Data rows start at row 3.
-  var assessmentMap      = {};  // keyed by lowercased name
-  var assessmentByEmail  = {};  // keyed by lowercased email
+  // Build assessment lookup map keyed by lowercased applicant name
+  var assessmentMap = {};
   var aSheet = ss.getSheetByName(ASSESSMENTS_SHEET_NAME);
-  if (aSheet && aSheet.getLastRow() >= 3) {
-    var aDataStart = 3;
-    var aDataCount = aSheet.getLastRow() - aDataStart + 1;
-    var aRows  = aSheet.getRange(aDataStart, 1, aDataCount, 9).getValues();
-    var aNotes = aSheet.getRange(aDataStart, 1, aDataCount, 1).getNotes();
-    for (var ai = 0; ai < aRows.length; ai++) {
-      var ar     = aRows[ai];
-      var aName  = String(ar[0]).trim().toLowerCase();
-      var aEmail = (aNotes[ai][0] || "").trim().toLowerCase();
-      var aScores = {
-        typingScore:    ar[ACOL.typingAssessment - 1] || "",
-        wordTyping:     ar[ACOL.wordTyping - 1]       || "",
-        knowledgeScore: ar[ACOL.knowledgeTest - 1]    || "",
-        verbalLink:     ar[ACOL.verbalComm - 1]       || "",
-        conflictScore:  ar[ACOL.conflictReso - 1]     || "",
-        grammarScore:   ar[ACOL.grammarTest - 1]      || "",
-        excelFile:      ar[ACOL.excelFile - 1]        || "",
-        excelTime:      ar[ACOL.excelTime - 1]        || "",
+  if (aSheet && aSheet.getLastRow() >= 2) {
+    var aRows = aSheet.getRange(2, 1, aSheet.getLastRow() - 1, 10).getValues();
+    aRows.forEach(function (ar) {
+      var key = String(ar[0]).trim().toLowerCase();
+      if (key) assessmentMap[key] = {
+        typingScore:  ar[ACOL.typingAssessment - 1] || "",
+        wordTyping:   ar[ACOL.wordTyping - 1]       || "",
+        knowledgeScore: ar[ACOL.knowledgeTest - 1]  || "",
+        verbalLink:   ar[ACOL.verbalComm - 1]       || "",
+        conflictScore: ar[ACOL.conflictReso - 1]    || "",
+        grammarScore: ar[ACOL.grammarTest - 1]      || "",
+        excelFile:    ar[ACOL.excelFile - 1]        || "",
+        excelTime:    ar[ACOL.excelTime - 1]        || "",
       };
-      if (aName)  assessmentMap[aName]       = aScores;
-      if (aEmail) assessmentByEmail[aEmail]  = aScores;
-    }
+    });
   }
 
   var rows = sheet
@@ -965,9 +937,7 @@ function handleGetData(data) {
     .getValues();
   var all = rows
     .map(function (row) {
-      var nameKey  = String(row[1]).trim().toLowerCase();
-      var emailKey = String(row[2]).trim().toLowerCase();
-      var scores = assessmentByEmail[emailKey] || assessmentMap[nameKey] || {};
+      var scores = assessmentMap[String(row[1]).trim().toLowerCase()] || {};
       return {
         status: row[0],
         fullName: row[1],
