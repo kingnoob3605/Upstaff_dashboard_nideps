@@ -2913,9 +2913,9 @@ window.saveAppScriptCredentials = function () {
         const c = UpstaffAPI.getConfig();
         c.token = json.token;
         UpstaffAPI.saveConfig(c);
-        statusEl.textContent = "✅ Connected! Syncing data…";
+        statusEl.textContent = "✅ Connected!";
         statusEl.style.color = "var(--green,#10b981)";
-        if (typeof syncApplicantsFromApi === "function") syncApplicantsFromApi();
+        // syncApplicantsFromApi(); — disabled: manual-entry mode
         populateApiSettings();
       } else {
         statusEl.textContent = "⚠️ Saved but login failed — check ADMIN_EMAIL and ADMIN_PASSWORD.";
@@ -3060,10 +3060,10 @@ async function syncApplicantsFromApi(opts) {
   }
 }
 
-// ── Auto-sync every 60 seconds (silent background pull) ──────────────────────
+// ── Auto-sync disabled — applicants are added manually only ──────────────────
 (function _startAutoSync() {
   setInterval(function () {
-    syncApplicantsFromApi({ silent: true });
+    // syncApplicantsFromApi({ silent: true }); // disabled: manual-entry mode
     checkFollowUpReminders();
   }, 60 * 1000);
 })();
@@ -9587,3 +9587,271 @@ if (document.readyState === "loading") {
 } else {
   _initSidebarTippys();
 }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ── ACCENT COLOR PICKER ──────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+// ── Theme presets ─────────────────────────────────────────────────────────────
+// border = slightly lighter than slate; surface3 = mid-point between navy and slate
+const COLOR_THEMES = {
+  ocean:    { navy: "#0f172a", slate: "#1e293b", accent: "#44d7e9", border: "#2d3f55", surface3: "#162032" },
+  midnight: { navy: "#050810", slate: "#0d1117", accent: "#3b82f6", border: "#1a2233", surface3: "#090f1c" },
+  violet:   { navy: "#1a0533", slate: "#2d1b4e", accent: "#8b5cf6", border: "#4a2d7a", surface3: "#221040" },
+  forest:   { navy: "#0a1f0f", slate: "#142a1a", accent: "#10b981", border: "#1e4228", surface3: "#102615" },
+  sunset:   { navy: "#1a0a05", slate: "#2d1a08", accent: "#f59e0b", border: "#4a2d0e", surface3: "#221205" },
+  rose:     { navy: "#1a0512", slate: "#2d0d1e", accent: "#ec4899", border: "#4a1530", surface3: "#220818" },
+  aurora:   { navy: "#021b14", slate: "#063824", accent: "#34d399", border: "#0d5c3a", surface3: "#042d1c" },
+  crimson:  { navy: "#1a0505", slate: "#2e0a0a", accent: "#ef4444", border: "#5a1414", surface3: "#240808" },
+  steel:    { navy: "#111318", slate: "#1c2028", accent: "#94a3b8", border: "#2e3540", surface3: "#171b22" },
+  electric: { navy: "#020817", slate: "#0a1628", accent: "#38bdf8", border: "#15304e", surface3: "#060f20" },
+  copper:   { navy: "#180f04", slate: "#2c1a08", accent: "#fb923c", border: "#4a2d10", surface3: "#201406" },
+  arctic:   { navy: "#0a0e14", slate: "#141c26", accent: "#e2e8f0", border: "#1e2d3d", surface3: "#0e141e" },
+};
+
+function applyAccentColor(hex) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  const lt     = `rgb(${Math.round(r*.15+255*.85)},${Math.round(g*.15+255*.85)},${Math.round(b*.15+255*.85)})`;
+  const ltDark = `rgba(${r},${g},${b},0.12)`;
+  let el = document.getElementById("accent-override");
+  if (!el) { el = document.createElement("style"); el.id = "accent-override"; document.head.appendChild(el); }
+  el.textContent = `:root{--cyan:${hex};--cyan-lt:${lt};--s-inprog:${hex};}[data-theme="dark"]{--cyan:${hex};--cyan-lt:${ltDark};}`;
+  localStorage.setItem("upstaff_accent_color", hex);
+  document.querySelectorAll(".accent-swatch").forEach((s) =>
+    s.classList.toggle("active", s.dataset.color === hex)
+  );
+  const customEl = document.getElementById("s-accent-custom");
+  if (customEl) customEl.value = hex;
+}
+
+function applyTheme(key) {
+  const t = COLOR_THEMES[key];
+  if (!t) return;
+  // Apply sidebar colors
+  let el = document.getElementById("theme-sidebar-override");
+  if (!el) { el = document.createElement("style"); el.id = "theme-sidebar-override"; document.head.appendChild(el); }
+  el.textContent = [
+    `#sidebar{background:linear-gradient(160deg,${t.navy} 0%,${t.slate} 100%) !important;}`,
+    `:root{--navy:${t.navy};--slate:${t.slate};}`,
+    `[data-theme="dark"]{`,
+    `--bg:${t.navy};--surface-2:${t.navy};`,
+    `--surface-1:${t.slate};--surface-3:${t.surface3};--surface-4:${t.surface3};`,
+    `--card:${t.slate};--topbar-bg:${t.slate};`,
+    `--border:${t.border};--row-hover:${t.surface3};--row-alt:${t.surface3};`,
+    `--input-bg:${t.surface3};--input-border:${t.border};`,
+    `--cal-cell-border:${t.border};--board-col-bg:${t.surface3};`,
+    `--agenda-item-bg:${t.surface3};--cal-other-month:${t.navy};`,
+    `--cal-today-bg:${t.surface3};--cal-hour-hover:${t.surface3};`,
+    `}`,
+  ].join("");
+  // Apply accent
+  applyAccentColor(t.accent);
+  localStorage.setItem("upstaff_color_theme", key);
+  // Update theme card active state
+  document.querySelectorAll(".theme-card").forEach((c) =>
+    c.classList.toggle("active", c.dataset.theme === key)
+  );
+}
+
+function resetTheme() {
+  localStorage.removeItem("upstaff_color_theme");
+  localStorage.removeItem("upstaff_accent_color");
+  ["accent-override", "theme-sidebar-override"].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.remove();
+  });
+  document.querySelectorAll(".theme-card").forEach((c) =>
+    c.classList.toggle("active", c.dataset.theme === "ocean")
+  );
+  document.querySelectorAll(".accent-swatch").forEach((s) =>
+    s.classList.toggle("active", s.dataset.color === "#44d7e9")
+  );
+  const customEl = document.getElementById("s-accent-custom");
+  if (customEl) customEl.value = "#44d7e9";
+}
+
+// ── Config Export / Import ────────────────────────────────────────────────────
+window.exportConfig = function () {
+  const KEYS = ["upstaff_api_config", "upstaff_emailjs_config", "upstaff_gcal_api_config"];
+  const bundle = {};
+  KEYS.forEach(function (k) {
+    try { bundle[k] = JSON.parse(localStorage.getItem(k) || "{}"); } catch (_) { bundle[k] = {}; }
+  });
+  // Strip session-only fields — token expires, loggedOut is session state
+  if (bundle.upstaff_api_config) {
+    delete bundle.upstaff_api_config.token;
+    delete bundle.upstaff_api_config.loggedOut;
+  }
+  const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: "application/json" });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement("a");
+  a.href     = url;
+  a.download = "upstaff-config-" + new Date().toISOString().slice(0, 10) + ".json";
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast("✅ Config exported — save this file to Google Drive or email.");
+};
+
+window.importConfig = function (event) {
+  const file     = event.target.files[0];
+  const statusEl = document.getElementById("config-import-status");
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    try {
+      const bundle = JSON.parse(e.target.result);
+      const KEYS   = ["upstaff_api_config", "upstaff_emailjs_config", "upstaff_gcal_api_config"];
+      let count    = 0;
+      KEYS.forEach(function (k) {
+        if (bundle[k] && typeof bundle[k] === "object" && Object.keys(bundle[k]).length > 0) {
+          localStorage.setItem(k, JSON.stringify(bundle[k]));
+          count++;
+        }
+      });
+      // Repopulate settings forms so inputs reflect loaded values
+      if (typeof populateApiSettings     === "function") populateApiSettings();
+      if (typeof populateEmailJSSettings === "function") populateEmailJSSettings();
+      if (typeof populateGCalApiSettings === "function") populateGCalApiSettings();
+      if (statusEl) { statusEl.textContent = "✅ Imported " + count + " config section(s). All fields auto-filled."; statusEl.style.color = "var(--green)"; }
+      showToast("✅ Config imported — credentials loaded.");
+    } catch (_) {
+      if (statusEl) { statusEl.textContent = "❌ Invalid file — must be a valid Upstaff config JSON."; statusEl.style.color = "#ef4444"; }
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = ""; // allow re-importing same file
+};
+
+// Apply saved theme + accent on load
+(function () {
+  const savedTheme  = localStorage.getItem("upstaff_color_theme");
+  const savedAccent = localStorage.getItem("upstaff_accent_color");
+  if (savedTheme)  applyTheme(savedTheme);
+  else if (savedAccent) applyAccentColor(savedAccent);
+})();
+
+// Wire up swatches + custom picker
+document.addEventListener("DOMContentLoaded", function () {
+  document.getElementById("accent-swatches")?.addEventListener("click", function (e) {
+    const swatch = e.target.closest(".accent-swatch");
+    if (swatch) applyAccentColor(swatch.dataset.color);
+  });
+  const customPicker = document.getElementById("s-accent-custom");
+  if (customPicker) customPicker.addEventListener("input", (e) => applyAccentColor(e.target.value));
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ── TEAM MEMBERS ─────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+const TEAM_STORAGE_KEY = "upstaff_team_members";
+const MAX_MEMBERS = 10;
+
+function _getTeamMembers() {
+  try { return JSON.parse(localStorage.getItem(TEAM_STORAGE_KEY) || "[]"); }
+  catch (_) { return []; }
+}
+
+function _saveTeamMembers(members) {
+  localStorage.setItem(TEAM_STORAGE_KEY, JSON.stringify(members));
+}
+
+function renderMembersList() {
+  const list = document.getElementById("members-list");
+  const counter = document.getElementById("members-count");
+  if (!list) return;
+  const members = _getTeamMembers();
+  if (counter) counter.textContent = `${members.length} / ${MAX_MEMBERS}`;
+  const inviteBtn = document.getElementById("invite-member-btn");
+  if (inviteBtn) inviteBtn.disabled = members.length >= MAX_MEMBERS;
+
+  if (!members.length) {
+    list.innerHTML = `<div style="text-align:center;padding:24px;color:var(--muted);font-size:13px;">No team members yet. Click <strong>Invite Member</strong> to add someone.</div>`;
+    return;
+  }
+  list.innerHTML = members.map((m) => `
+    <div class="member-row">
+      <div class="member-avatar">${(m.name || m.email || "?")[0].toUpperCase()}</div>
+      <div class="member-info">
+        <div class="member-name">${sanitize(m.name || m.email)}</div>
+        <div class="member-email">${sanitize(m.email)}</div>
+      </div>
+      <span class="member-role-badge ${m.role}">${m.role}</span>
+      <span class="member-status-badge ${m.status}">${m.status}</span>
+      <button class="member-remove-btn" onclick="removeMember('${m.email}')" title="Remove member">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>`).join("");
+}
+
+function toggleInviteForm() {
+  const form = document.getElementById("invite-form");
+  if (!form) return;
+  const open = form.style.display === "none";
+  form.style.display = open ? "block" : "none";
+  if (open) document.getElementById("invite-email")?.focus();
+}
+
+async function sendMemberInvite() {
+  const email = (document.getElementById("invite-email")?.value || "").trim().toLowerCase();
+  const role  = document.getElementById("invite-role")?.value || "hr";
+  const statusEl = document.getElementById("invite-status");
+
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (statusEl) { statusEl.textContent = "❌ Enter a valid email address."; statusEl.style.color = "#ef4444"; }
+    return;
+  }
+  const members = _getTeamMembers();
+  if (members.length >= MAX_MEMBERS) {
+    if (statusEl) { statusEl.textContent = "❌ Maximum 10 members reached."; statusEl.style.color = "#ef4444"; }
+    return;
+  }
+  if (members.find((m) => m.email === email)) {
+    if (statusEl) { statusEl.textContent = "❌ This email is already a member."; statusEl.style.color = "#ef4444"; }
+    return;
+  }
+
+  if (statusEl) { statusEl.textContent = "⏳ Sending invite…"; statusEl.style.color = "var(--muted)"; }
+
+  // Try Supabase invite if available
+  let invited = false;
+  if (window.SupabaseAuth) {
+    try {
+      const client = SupabaseAuth.getClient?.();
+      if (client) {
+        const { error } = await client.auth.admin?.inviteUserByEmail
+          ? client.auth.admin.inviteUserByEmail(email, { data: { role } })
+          : Promise.resolve({ error: null });
+        if (!error) invited = true;
+      }
+    } catch (_) {}
+  }
+
+  // Store member locally
+  members.push({ email, role, status: "pending", name: "", invitedAt: new Date().toISOString() });
+  _saveTeamMembers(members);
+  renderMembersList();
+
+  if (statusEl) {
+    statusEl.textContent = invited
+      ? `✅ Invite sent to ${email}! They'll receive an email to set up their account.`
+      : `✅ Member added. Share the dashboard link with ${email} and have them sign up.`;
+    statusEl.style.color = "var(--green)";
+  }
+  document.getElementById("invite-email").value = "";
+}
+
+function removeMember(email) {
+  if (!confirm(`Remove ${email} from the team?`)) return;
+  const members = _getTeamMembers().filter((m) => m.email !== email);
+  _saveTeamMembers(members);
+  renderMembersList();
+  showToast("Member removed.");
+}
+
+// Render when navigating to workspace settings
+document.addEventListener("DOMContentLoaded", function () {
+  document.querySelectorAll(".settings-nav-item[data-setting='workspace']").forEach((btn) => {
+    btn.addEventListener("click", renderMembersList);
+  });
+});

@@ -2959,3 +2959,121 @@ tr:has(.bulk-cb:checked) td {
   color: #1e293b;
 }
 
+
+
+/* ══ ACCENT COLOR SWATCHES ══ */
+.accent-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+.accent-swatch {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  cursor: pointer;
+  transition: transform .15s, border-color .15s;
+  outline: none;
+}
+.accent-swatch:hover { transform: scale(1.15); }
+.accent-swatch.active {
+  border-color: var(--text);
+  transform: scale(1.15);
+}
+
+/* ══ TEAM MEMBERS LIST ══ */
+.member-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+.member-row:last-child { border-bottom: none; }
+.member-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--violet), var(--cyan));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+}
+.member-info { flex: 1; min-width: 0; }
+.member-name { font-size: 13px; font-weight: 600; color: var(--text); }
+.member-email { font-size: 11px; color: var(--muted); margin-top: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.member-role-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 99px;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+}
+.member-role-badge.hr   { background: rgba(68,215,233,.12); color: var(--cyan); }
+.member-role-badge.assistant { background: rgba(108,99,255,.12); color: var(--violet); }
+.member-status-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 99px;
+}
+.member-status-badge.active  { background: rgba(67,233,123,.12); color: var(--green); }
+.member-status-badge.pending { background: rgba(250,130,49,.12); color: var(--orange); }
+.member-remove-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+}
+.member-remove-btn:hover { background: rgba(239,68,68,.1); color: #ef4444; }
+
+/* ══ SYSTEM THEME CARDS ══ */
+.theme-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 14px;
+}
+.theme-card {
+  background: none;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  padding: 4px;
+  cursor: pointer;
+  transition: border-color .15s, transform .15s;
+}
+.theme-card:hover { transform: translateY(-2px); border-color: var(--muted); }
+.theme-card.active { border-color: var(--cyan); }
+.theme-card-preview {
+  width: 72px;
+  height: 52px;
+  border-radius: 8px;
+  display: flex;
+  align-items: flex-end;
+  padding: 6px;
+}
+.theme-card-bar {
+  width: 100%;
+  height: 5px;
+  border-radius: 99px;
+  opacity: .9;
+}
+.theme-card-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text);
+  text-align: center;
+  margin-top: 5px;
+}

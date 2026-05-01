@@ -497,6 +497,10 @@
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>
             My Profile
           </button>
+          <button class="settings-nav-item" data-setting="appearance">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
+            Appearance
+          </button>
           <button class="settings-nav-item" data-setting="notifications">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
             Notifications
@@ -606,10 +610,159 @@
           </div>
 
           <!-- ── Workspace / Team Members ── -->
+          <!-- ── Appearance ── -->
+          <div class="settings-panel" id="setting-appearance">
+
+            <!-- System Theme -->
+            <div class="settings-card">
+              <div class="settings-card-title">🖥️ System Theme</div>
+              <div class="settings-card-desc">Changes the sidebar, topbar, and overall color palette. Light / Dark mode toggle still works on top of any theme.</div>
+              <div class="theme-cards" id="theme-cards">
+
+                <button class="theme-card active" data-theme="ocean" onclick="applyTheme('ocean')">
+                  <div class="theme-card-preview" style="background:linear-gradient(160deg,#0f172a 0%,#1e293b 100%)">
+                    <div class="theme-card-bar" style="background:#44d7e9"></div>
+                  </div>
+                  <span class="theme-card-label">Ocean</span>
+                </button>
+
+                <button class="theme-card" data-theme="midnight" onclick="applyTheme('midnight')">
+                  <div class="theme-card-preview" style="background:linear-gradient(160deg,#050810 0%,#0d1117 100%)">
+                    <div class="theme-card-bar" style="background:#3b82f6"></div>
+                  </div>
+                  <span class="theme-card-label">Midnight</span>
+                </button>
+
+                <button class="theme-card" data-theme="violet" onclick="applyTheme('violet')">
+                  <div class="theme-card-preview" style="background:linear-gradient(160deg,#1a0533 0%,#2d1b4e 100%)">
+                    <div class="theme-card-bar" style="background:#8b5cf6"></div>
+                  </div>
+                  <span class="theme-card-label">Violet</span>
+                </button>
+
+                <button class="theme-card" data-theme="forest" onclick="applyTheme('forest')">
+                  <div class="theme-card-preview" style="background:linear-gradient(160deg,#0a1f0f 0%,#142a1a 100%)">
+                    <div class="theme-card-bar" style="background:#10b981"></div>
+                  </div>
+                  <span class="theme-card-label">Forest</span>
+                </button>
+
+                <button class="theme-card" data-theme="sunset" onclick="applyTheme('sunset')">
+                  <div class="theme-card-preview" style="background:linear-gradient(160deg,#1a0a05 0%,#2d1a08 100%)">
+                    <div class="theme-card-bar" style="background:#f59e0b"></div>
+                  </div>
+                  <span class="theme-card-label">Sunset</span>
+                </button>
+
+                <button class="theme-card" data-theme="rose" onclick="applyTheme('rose')">
+                  <div class="theme-card-preview" style="background:linear-gradient(160deg,#1a0512 0%,#2d0d1e 100%)">
+                    <div class="theme-card-bar" style="background:#ec4899"></div>
+                  </div>
+                  <span class="theme-card-label">Rose</span>
+                </button>
+
+                <button class="theme-card" data-theme="aurora" onclick="applyTheme('aurora')">
+                  <div class="theme-card-preview" style="background:linear-gradient(160deg,#021b14 0%,#063824 100%)">
+                    <div class="theme-card-bar" style="background:#34d399"></div>
+                  </div>
+                  <span class="theme-card-label">Aurora</span>
+                </button>
+
+                <button class="theme-card" data-theme="crimson" onclick="applyTheme('crimson')">
+                  <div class="theme-card-preview" style="background:linear-gradient(160deg,#1a0505 0%,#2e0a0a 100%)">
+                    <div class="theme-card-bar" style="background:#ef4444"></div>
+                  </div>
+                  <span class="theme-card-label">Crimson</span>
+                </button>
+
+                <button class="theme-card" data-theme="steel" onclick="applyTheme('steel')">
+                  <div class="theme-card-preview" style="background:linear-gradient(160deg,#111318 0%,#1c2028 100%)">
+                    <div class="theme-card-bar" style="background:#94a3b8"></div>
+                  </div>
+                  <span class="theme-card-label">Steel</span>
+                </button>
+
+                <button class="theme-card" data-theme="electric" onclick="applyTheme('electric')">
+                  <div class="theme-card-preview" style="background:linear-gradient(160deg,#020817 0%,#0a1628 100%)">
+                    <div class="theme-card-bar" style="background:#38bdf8"></div>
+                  </div>
+                  <span class="theme-card-label">Electric</span>
+                </button>
+
+                <button class="theme-card" data-theme="copper" onclick="applyTheme('copper')">
+                  <div class="theme-card-preview" style="background:linear-gradient(160deg,#180f04 0%,#2c1a08 100%)">
+                    <div class="theme-card-bar" style="background:#fb923c"></div>
+                  </div>
+                  <span class="theme-card-label">Copper</span>
+                </button>
+
+                <button class="theme-card" data-theme="arctic" onclick="applyTheme('arctic')">
+                  <div class="theme-card-preview" style="background:linear-gradient(160deg,#0a0e14 0%,#141c26 100%)">
+                    <div class="theme-card-bar" style="background:#e2e8f0"></div>
+                  </div>
+                  <span class="theme-card-label">Arctic</span>
+                </button>
+
+              </div>
+            </div>
+
+            <!-- Accent Color override -->
+            <div class="settings-card" style="margin-top:14px;">
+              <div class="settings-card-title">🎨 Accent Color Override</div>
+              <div class="settings-card-desc">Fine-tune the highlight color independently from the theme.</div>
+              <div class="accent-swatches" id="accent-swatches">
+                <button class="accent-swatch active" data-color="#44d7e9" style="background:#44d7e9" title="Cyan"></button>
+                <button class="accent-swatch" data-color="#8b5cf6" style="background:#8b5cf6" title="Purple"></button>
+                <button class="accent-swatch" data-color="#3b82f6" style="background:#3b82f6" title="Blue"></button>
+                <button class="accent-swatch" data-color="#10b981" style="background:#10b981" title="Green"></button>
+                <button class="accent-swatch" data-color="#f59e0b" style="background:#f59e0b" title="Amber"></button>
+                <button class="accent-swatch" data-color="#ec4899" style="background:#ec4899" title="Pink"></button>
+                <button class="accent-swatch" data-color="#ef4444" style="background:#ef4444" title="Red"></button>
+              </div>
+              <div style="margin-top:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                <label class="settings-label" style="margin:0">Custom</label>
+                <input type="color" id="s-accent-custom" value="#44d7e9" style="width:40px;height:32px;border-radius:8px;border:2px solid var(--border);cursor:pointer;background:none;padding:2px;"/>
+                <button class="settings-save-btn" onclick="resetTheme()">Reset All</button>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- ── Workspace / Team Members ── -->
           <div class="settings-panel" id="setting-workspace">
             <div class="settings-card">
-              <div class="settings-card-title">Team Members</div>
-              <div class="settings-card-desc">Manage the people who have access to this dashboard.</div>
+              <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:4px">
+                <div>
+                  <div class="settings-card-title">Team Members <span id="members-count" style="font-size:11px;font-weight:600;color:var(--muted);background:var(--surface-4);padding:2px 8px;border-radius:99px;margin-left:6px;">0 / 10</span></div>
+                  <div class="settings-card-desc">Invite people to access this dashboard. Maximum 10 members.</div>
+                </div>
+                <button class="settings-save-btn" id="invite-member-btn" onclick="toggleInviteForm()">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  Invite Member
+                </button>
+              </div>
+
+              <!-- Invite form -->
+              <div id="invite-form" style="display:none;background:var(--surface-3);border-radius:10px;padding:14px;margin-bottom:16px;border:1px solid var(--border);">
+                <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+                  <div style="flex:1;min-width:180px;">
+                    <label class="settings-label">Email Address</label>
+                    <input type="email" class="settings-input" id="invite-email" placeholder="member@email.com"/>
+                  </div>
+                  <div style="min-width:130px;">
+                    <label class="settings-label">Role</label>
+                    <select class="form-select" id="invite-role" style="height:36px;font-size:13px;">
+                      <option value="hr">HR</option>
+                      <option value="assistant">Assistant</option>
+                    </select>
+                  </div>
+                  <button class="settings-save-btn" onclick="sendMemberInvite()">Send Invite</button>
+                  <button class="settings-save-btn" style="background:var(--surface-2);color:var(--muted);border:1px solid var(--border);" onclick="toggleInviteForm()">Cancel</button>
+                </div>
+                <div id="invite-status" style="margin-top:8px;font-size:12px;"></div>
+              </div>
+
+              <!-- Members list -->
               <div id="members-list"></div>
             </div>
           </div>
@@ -839,6 +992,20 @@
 
           <!-- ── Partner API Integration ── -->
           <div class="settings-panel" id="setting-partner-api">
+
+            <!-- Config Backup / Restore Card -->
+            <div class="settings-card" style="margin-bottom:12px;">
+              <div class="settings-card-title">📦 Config Backup</div>
+              <div class="settings-card-desc">Export all credentials (Apps Script, EmailJS, Calendar) to a file. Import that file on any device — no more manual copy-pasting.</div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">
+                <button onclick="exportConfig()" class="settings-save-btn" style="flex:1;min-width:120px;">⬇ Export Config</button>
+                <label class="settings-save-btn" style="flex:1;min-width:120px;cursor:pointer;text-align:center;">
+                  ⬆ Import Config
+                  <input type="file" accept=".json" onchange="importConfig(event)" style="display:none;">
+                </label>
+              </div>
+              <div id="config-import-status" style="margin-top:8px;font-size:11px;color:var(--muted);min-height:16px;"></div>
+            </div>
 
             <!-- Supabase Auth Card -->
             <div class="settings-card" style="margin-bottom:12px;">
@@ -2328,9 +2495,7 @@ window.handleEmailLogin = async function() {
     setTimeout(function() {
       _hideLoginGate();
       var cfg = window.UpstaffAPI ? UpstaffAPI.getConfig() : {};
-      if (cfg.token && cfg.webAppUrl && typeof syncApplicantsFromApi === 'function') {
-        syncApplicantsFromApi();
-      }
+      // syncApplicantsFromApi(); — disabled: manual-entry mode
     }, 700);
   } catch (err) {
     statusEl.textContent = '❌ ' + (err.message || 'Sign in failed.');
@@ -2424,11 +2589,7 @@ function _fetchAndMergeEmailJSConfig() {
         }
       } catch (_) {}
 
-      // Only sync if Apps Script token is available
-      var cfg = window.UpstaffAPI ? UpstaffAPI.getConfig() : {};
-      if (cfg.token && cfg.webAppUrl && typeof syncApplicantsFromApi === 'function') {
-        syncApplicantsFromApi();
-      }
+      // syncApplicantsFromApi(); — disabled: manual-entry mode
     } else {
       _showLoginGate();
     }
