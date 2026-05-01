@@ -211,5 +211,23 @@ window.SupabaseAuth = (function () {
     _saveConfig(c);
   }
 
-  return { login, logout, isConfigured, isLoggedIn, getRole, getName, getEmail, saveSettings };
+  // Change password for the currently logged-in user
+  async function changePassword(newPassword) {
+    var client = _getClient();
+    if (!client) throw new Error('Not connected to Supabase.');
+    var { error } = await client.auth.updateUser({ password: newPassword });
+    if (error) throw new Error(error.message);
+  }
+
+  // Send password reset email (works even when logged out)
+  async function sendPasswordReset(email) {
+    var client = _getClient();
+    if (!client) throw new Error('Not connected to Supabase.');
+    var { error } = await client.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
+      redirectTo: window.location.href,
+    });
+    if (error) throw new Error(error.message);
+  }
+
+  return { login, logout, isConfigured, isLoggedIn, getRole, getName, getEmail, saveSettings, changePassword, sendPasswordReset };
 })();

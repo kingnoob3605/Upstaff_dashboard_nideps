@@ -2787,6 +2787,52 @@ function _closeAvatarMenu(e) {
   }
 }
 
+// ── Password change (logged-in user) ─────────────────────────────────────────
+window.handleChangePassword = async function () {
+  const newPw  = (document.getElementById("s-new-password")?.value  || "").trim();
+  const confPw = (document.getElementById("s-confirm-password")?.value || "").trim();
+  const statusEl = document.getElementById("change-pw-status");
+  if (!newPw || newPw.length < 8) {
+    statusEl.textContent = "❌ Password must be at least 8 characters.";
+    statusEl.style.color = "#ef4444"; return;
+  }
+  if (newPw !== confPw) {
+    statusEl.textContent = "❌ Passwords do not match.";
+    statusEl.style.color = "#ef4444"; return;
+  }
+  statusEl.textContent = "Updating…"; statusEl.style.color = "var(--muted)";
+  try {
+    await SupabaseAuth.changePassword(newPw);
+    document.getElementById("s-new-password").value = "";
+    document.getElementById("s-confirm-password").value = "";
+    statusEl.textContent = "✅ Password updated successfully.";
+    statusEl.style.color = "var(--green)";
+    showToast("✅ Password changed.");
+  } catch (err) {
+    statusEl.textContent = "❌ " + (err.message || "Failed to update password.");
+    statusEl.style.color = "#ef4444";
+  }
+};
+
+// ── Forgot password (sends reset email) ──────────────────────────────────────
+window.handleForgotPassword = async function () {
+  const email    = (document.getElementById("gate-email")?.value || "").trim();
+  const statusEl = document.getElementById("gate-reset-status");
+  if (!email) {
+    statusEl.textContent = "Enter your email above first.";
+    statusEl.style.color = "#f59e0b"; return;
+  }
+  statusEl.textContent = "Sending reset link…"; statusEl.style.color = "var(--muted)";
+  try {
+    await SupabaseAuth.sendPasswordReset(email);
+    statusEl.textContent = "✅ Reset link sent to " + email + " — check your inbox.";
+    statusEl.style.color = "var(--green)";
+  } catch (err) {
+    statusEl.textContent = "❌ " + (err.message || "Could not send reset email.");
+    statusEl.style.color = "#ef4444";
+  }
+};
+
 async function handleLogout() {
   const menu = document.getElementById("avatar-menu");
   if (menu) menu.style.display = "none";

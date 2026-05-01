@@ -572,6 +572,24 @@
                 Save Profile
               </button>
             </div>
+
+            <!-- Change Password Card -->
+            <div class="settings-card" style="margin-top:12px;">
+              <div class="settings-card-title">🔑 Change Password</div>
+              <div class="settings-card-desc">Update your Supabase login password. You must be logged in.</div>
+              <div class="settings-form-group" style="margin-top:12px;">
+                <label class="settings-label">New Password</label>
+                <input class="settings-input" id="s-new-password" type="password" placeholder="Min. 8 characters" autocomplete="new-password"/>
+              </div>
+              <div class="settings-form-group">
+                <label class="settings-label">Confirm New Password</label>
+                <input class="settings-input" id="s-confirm-password" type="password" placeholder="Repeat new password" autocomplete="new-password"/>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;margin-top:12px;">
+                <button class="settings-save-btn" onclick="handleChangePassword()" style="flex:1;">Change Password</button>
+              </div>
+              <div id="change-pw-status" style="margin-top:8px;font-size:11px;color:var(--muted);min-height:16px;"></div>
+            </div>
           </div>
 
           <!-- ── Notifications ── -->
@@ -2398,8 +2416,11 @@
     <div id="gate-status" class="login-gate-status" style="margin-top:10px;"></div>
 
     <div class="login-gate-footer">
+      <button onclick="handleForgotPassword()" class="login-gate-link">Forgot password?</button>
+      <span style="color:var(--border,rgba(255,255,255,.15));margin:0 6px;">·</span>
       <button onclick="document.getElementById('gate-setup-section').style.display='block'" class="login-gate-link">⚙ Change Supabase settings</button>
     </div>
+    <div id="gate-reset-status" style="font-size:11px;text-align:center;margin-top:8px;min-height:14px;"></div>
   </div>
 </div>
 
