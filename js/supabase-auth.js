@@ -230,10 +230,17 @@ window.SupabaseAuth = (function () {
     if (error) throw new Error(error.message);
   }
 
+  function _jwtExpired(token) {
+    try {
+      var payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+      return Date.now() / 1000 > payload.exp;
+    } catch (_) { return true; }
+  }
+
   // Fetch all profiles (HR sees all via RLS policy; assistants see only own)
   async function getMembers() {
     var c = _config();
-    if (!c.supabaseUrl || !c.supabaseToken) return [];
+    if (!c.supabaseUrl || !c.supabaseToken || _jwtExpired(c.supabaseToken)) return [];
     try {
       var resp = await fetch(c.supabaseUrl + '/rest/v1/profiles?select=id,role,name,email&order=role.asc,name.asc', {
         headers: { 'apikey': c.supabaseAnonKey, 'Authorization': 'Bearer ' + c.supabaseToken },

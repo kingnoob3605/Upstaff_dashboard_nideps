@@ -5637,6 +5637,27 @@ function getFiltered() {
   });
 }
 
+function _layoutOverlap(timeGroups) {
+  const slots = Object.keys(timeGroups).map(time => {
+    const [h, m] = (time || "09:00").split(":").map(Number);
+    const startMin = h * 60 + m;
+    return { time, grp: timeGroups[time], startMin, endMin: startMin + 60 };
+  }).sort((a, b) => a.startMin - b.startMin);
+  const colEnds = [];
+  slots.forEach(s => {
+    let col = colEnds.findIndex(end => end <= s.startMin);
+    if (col === -1) { col = colEnds.length; colEnds.push(s.endMin); }
+    else colEnds[col] = s.endMin;
+    s.col = col;
+  });
+  slots.forEach(s => {
+    s.totalCols = slots
+      .filter(o => o.startMin < s.endMin && o.endMin > s.startMin)
+      .reduce((mx, o) => Math.max(mx, o.col + 1), 1);
+  });
+  return slots;
+}
+
 function renderMonth() {
   const y = calDate.getFullYear(),
     mo = calDate.getMonth();
@@ -5771,16 +5792,19 @@ function renderWeek() {
       const isDarkW =
         document.documentElement.getAttribute("data-theme") === "dark";
       const evColorW = isDarkW ? "#ffffff" : "#0f172a";
-      const evts = Object.entries(wkGroups)
-        .map(([time, grp]) => {
+      const evts = _layoutOverlap(wkGroups)
+        .map(({ time, grp, col, totalCols }) => {
           const [eh, em] = (time || "09:00").split(":").map(Number);
           const top = (eh - 7 + em / 60) * HH;
           const bg = getEventColor(grp[0]);
+          const w = `${100 / totalCols}%`;
+          const l = `${(col / totalCols) * 100}%`;
+          const base = `top:${top}px;height:${HH}px;width:${w};left:${l};background:${bg};color:${evColorW};border:1px solid ${bg};`;
           if (grp.length === 1) {
             const e = grp[0];
-            return `<div class="cal-week-event" style="top:${top}px;height:${HH}px;background:${bg};color:${evColorW};border:1px solid ${bg};" onclick="event.stopPropagation();openEventPreview('${e.id}')">${fmtTime(time)} ${sanitize((e.name || "").split(" ")[0])}</div>`;
+            return `<div class="cal-week-event" style="${base}" onclick="event.stopPropagation();openEventPreview('${e.id}')">${fmtTime(time)} ${sanitize((e.name || "").split(" ")[0])}</div>`;
           } else {
-            return `<div class="cal-week-event cal-event-grouped" style="top:${top}px;height:${HH}px;background:${bg};color:${evColorW};border:1px solid ${bg};" onclick="event.stopPropagation();openGroupSlot('${ds}','${time}')">${fmtTime(time)} · <strong>${grp.length}</strong> ${grp.every((e) => !e.isGoogleEvent) ? `Applicant${grp.length > 1 ? "s" : ""}` : "Events"}</div>`;
+            return `<div class="cal-week-event cal-event-grouped" style="${base}" onclick="event.stopPropagation();openGroupSlot('${ds}','${time}')">${fmtTime(time)} · <strong>${grp.length}</strong> ${grp.every((e) => !e.isGoogleEvent) ? `Applicant${grp.length > 1 ? "s" : ""}` : "Events"}</div>`;
           }
         })
         .join("");
@@ -5832,20 +5856,20 @@ function renderDay() {
   const isDarkD =
     document.documentElement.getAttribute("data-theme") === "dark";
   const evColorD = isDarkD ? "#ffffff" : "#0f172a";
-  const evts = Object.entries(dayGroups)
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([time, grp]) => {
+  const evts = _layoutOverlap(dayGroups)
+    .map(({ time, grp, col, totalCols }) => {
       const [eh, em] = (time || "09:00").split(":").map(Number);
       const top = (eh - 7 + em / 60) * HH;
       const bg = getEventColor(grp[0]);
+      const w = `${100 / totalCols}%`;
+      const l = `${(col / totalCols) * 100}%`;
+      const base = `top:${top}px;height:${HH}px;width:${w};left:${l};background:${bg};color:${evColorD};border:1px solid ${bg};`;
       if (grp.length === 1) {
         const e = grp[0];
-        return `<div class="cal-day-event" style="top:${top}px;height:${HH}px;background:${bg};color:${evColorD};border:1px solid ${bg};" onclick="event.stopPropagation();openEventPreview('${e.id}')"><strong>${fmtTime(time)}</strong> — ${sanitize(e.name || "")} (${sanitize(e.position || "")})<br><span style="font-size:10px;opacity:.85;">${sanitize(e.round || "")} · ${sanitize(e.type || "")}</span></div>`;
+        return `<div class="cal-day-event" style="${base}" onclick="event.stopPropagation();openEventPreview('${e.id}')"><strong>${fmtTime(time)}</strong> — ${sanitize(e.name || "")} (${sanitize(e.position || "")})<br><span style="font-size:10px;opacity:.85;">${sanitize(e.round || "")} · ${sanitize(e.type || "")}</span></div>`;
       } else {
-        const nameList = grp
-          .map((e) => sanitize(e.name || "Unknown"))
-          .join(", ");
-        return `<div class="cal-day-event cal-event-grouped" style="top:${top}px;height:${HH}px;background:${bg};color:${evColorD};border:1px solid ${bg};" onclick="event.stopPropagation();openGroupSlot('${ds}','${time}')"><strong>${fmtTime(time)}</strong> — ${grp.length} ${grp.every((e) => !e.isGoogleEvent) ? `Applicant${grp.length > 1 ? "s" : ""}` : "Events"}<br><span style="font-size:10px;opacity:.85;">${nameList}</span></div>`;
+        const nameList = grp.map((e) => sanitize(e.name || "Unknown")).join(", ");
+        return `<div class="cal-day-event cal-event-grouped" style="${base}" onclick="event.stopPropagation();openGroupSlot('${ds}','${time}')"><strong>${fmtTime(time)}</strong> — ${grp.length} ${grp.every((e) => !e.isGoogleEvent) ? `Applicant${grp.length > 1 ? "s" : ""}` : "Events"}<br><span style="font-size:10px;opacity:.85;">${nameList}</span></div>`;
       }
     })
     .join("");
