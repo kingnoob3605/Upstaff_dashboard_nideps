@@ -6213,7 +6213,7 @@ function openGroupSlot(date, time) {
     .map(
       (
         e,
-      ) => `<div class="cal-group-popup-row" onclick="document.getElementById('cal-group-popup').remove();openEdit(${e.id})">
+      ) => `<div class="cal-group-popup-row" onclick="document.getElementById('cal-group-popup').remove();openEventPreview('${e.id}')">
       <div class="cal-group-popup-dot" style="background:${getEventColor(e)};"></div>
       <div class="cal-group-popup-info">
         <div class="cal-group-popup-name">${sanitize(e.name || "Unknown")}</div>
