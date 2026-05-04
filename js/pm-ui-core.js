@@ -829,6 +829,17 @@ function persistLoad() {
       if (!t.stage_history) t.stage_history = [];
     });
 
+    // One-time purge: remove all auto-imported Sheet applicants (manual-entry mode migration)
+    if (!localStorage.getItem("upstaff_manual_mode_v1")) {
+      const before = TASKS.length;
+      TASKS = TASKS.filter((t) => t._source !== "api");
+      localStorage.setItem("upstaff_manual_mode_v1", "1");
+      if (TASKS.length !== before) {
+        localStorage.setItem(LS_KEYS.TASKS, JSON.stringify(TASKS));
+        dbg(`[Persist] 🧹 Purged ${before - TASKS.length} auto-imported Sheet task(s) — manual-entry mode active`);
+      }
+    }
+
     dbg(
       `[Persist] ✅ Restored ${calEvents.length} event(s), ${TASKS.length} task(s), ${UPSTAFF_CALENDARS.length} calendar(s)`,
     );
@@ -1323,20 +1334,25 @@ function _showDialog({
     cancelBtn.style.display = showCancel ? "" : "none";
     cancelBtn.textContent = cancelText;
     overlay.style.display = "flex";
+    let _dialogDone = false;
     const cleanup = (result) => {
+      if (_dialogDone) return;
+      _dialogDone = true;
       overlay.style.display = "none";
-      const newOk = okBtn.cloneNode(true);
-      const newCancel = cancelBtn.cloneNode(true);
-      okBtn.parentNode.replaceChild(newOk, okBtn);
-      cancelBtn.parentNode.replaceChild(newCancel, cancelBtn);
+      if (okBtn.parentNode) {
+        okBtn.parentNode.replaceChild(okBtn.cloneNode(true), okBtn);
+      }
+      if (cancelBtn.parentNode) {
+        cancelBtn.parentNode.replaceChild(cancelBtn.cloneNode(true), cancelBtn);
+      }
       resolve(result);
     };
     document
       .getElementById("upstaff-dialog-ok")
-      .addEventListener("click", () => cleanup(true));
+      .addEventListener("click", () => cleanup(true), { once: true });
     document
       .getElementById("upstaff-dialog-cancel")
-      .addEventListener("click", () => cleanup(false));
+      .addEventListener("click", () => cleanup(false), { once: true });
   });
 }
 function uiAlert(msg, { icon = "ℹ️", title = "Notice" } = {}) {
