@@ -9961,17 +9961,17 @@ function applyTheme(key) {
   el.textContent = [
     // Sidebar always uses the dark gradient regardless of light/dark mode
     `#sidebar{background:linear-gradient(160deg,${t.navy} 0%,${t.slate} 100%) !important;}`,
-    // Light-mode: tint every surface with the accent colour so it's not plain white
+    // Light-mode: main surfaces stay near-white; accent tint only in interactive/hover states
     `:root{`,
     `--navy:${t.navy};--slate:${t.slate};`,
-    `--bg:${tint(0.07)};--surface-2:${tint(0.07)};`,
-    `--card:${tint(0.04)};--surface-1:${tint(0.04)};`,
-    `--surface-3:${tint(0.06)};--surface-4:${tint(0.10)};`,
-    `--topbar-bg:${tint(0.05)};--input-bg:${tint(0.05)};`,
-    `--row-hover:${tint(0.12)};--row-alt:${tint(0.07)};`,
-    `--board-col-bg:${tint(0.10)};`,
-    `--cal-other-month:${tint(0.04)};--agenda-item-bg:${tint(0.06)};`,
-    `--cal-today-bg:${tint(0.12)};--cal-hour-hover:${tint(0.08)};`,
+    `--bg:${tint(0.02)};--surface-2:${tint(0.03)};`,
+    `--card:${tint(0.02)};--surface-1:${tint(0.02)};`,
+    `--surface-3:${tint(0.03)};--surface-4:${tint(0.04)};`,
+    `--topbar-bg:${tint(0.02)};--input-bg:${tint(0.02)};`,
+    `--row-hover:${tint(0.06)};--row-alt:${tint(0.03)};`,
+    `--board-col-bg:${tint(0.04)};`,
+    `--cal-other-month:${tint(0.02)};--agenda-item-bg:${tint(0.03)};`,
+    `--cal-today-bg:${tint(0.07)};--cal-hour-hover:${tint(0.04)};`,
     `}`,
     // Dark-mode: use the theme's deep navy/slate palette
     `[data-theme="dark"]{`,
