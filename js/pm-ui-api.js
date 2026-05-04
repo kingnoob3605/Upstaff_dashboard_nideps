@@ -260,7 +260,12 @@ window.UpstaffAPI = (function () {
 
   async function search(query) {
     var c = _config();
-    return _post({ action: "search", token: c.token, query: query });
+    return _post({
+      action: "search",
+      token: c.token,
+      searchApiKey: c.searchApiKey || "",
+      query: query,
+    });
   }
 
   // ── Jobs ────────────────────────────────────────────────────────────────────

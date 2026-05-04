@@ -315,6 +315,8 @@ function _getActiveView() {
 }
 
 function toggleSuperFilter() {
+  // In calendar view, redirect to the inline cal filter bar
+  if (_getActiveView() === "calendar") { toggleCalFilterBar(); return; }
   const panel = document.getElementById("super-filter-panel");
   const btn   = document.getElementById("topbar-filter-btn");
   if (!panel) return;
@@ -324,13 +326,19 @@ function toggleSuperFilter() {
     btn.classList.remove("active");
     return;
   }
-  // Show correct section based on current view
-  const view = _getActiveView();
-  const isCal = view === "calendar";
-  document.getElementById("sf-list-section").style.display = isCal ? "none" : "";
-  document.getElementById("sf-cal-section").style.display  = isCal ? ""     : "none";
+  document.getElementById("sf-list-section").style.display = "";
+  document.getElementById("sf-cal-section").style.display  = "none";
   panel.style.display = "";
   btn.classList.add("active");
+}
+
+function toggleCalFilterBar() {
+  const bar = document.getElementById("cal-filter-bar");
+  const btn = document.getElementById("cal-filter-btn");
+  if (!bar) return;
+  const open = bar.style.display !== "none";
+  bar.style.display = open ? "none" : "";
+  if (btn) btn.style.background = open ? "" : "var(--surface-3, var(--surface-2))";
 }
 
 function updateFilterBadge() {
@@ -350,11 +358,13 @@ function updateCalFilterBadge() {
   const from   = document.getElementById("cal-filter-date-from")?.value || "";
   const to     = document.getElementById("cal-filter-date-to")?.value   || "";
   const count  = [cal, pos, status, type, from, to].filter(Boolean).length;
-  const badge  = document.getElementById("filter-active-badge");
-  const clearBtn = document.getElementById("cal-filter-clear-btn");
-  const tagsEl   = document.getElementById("cal-active-filter-tags");
-  if (badge)    { badge.textContent = count; badge.style.display = count ? "" : "none"; }
-  if (clearBtn) clearBtn.style.display = count ? "" : "none";
+  const badge       = document.getElementById("filter-active-badge");
+  const toolbarBadge= document.getElementById("cal-toolbar-filter-badge");
+  const clearBtn    = document.getElementById("cal-filter-clear-btn");
+  const tagsEl      = document.getElementById("cal-active-filter-tags");
+  if (badge)        { badge.textContent = count; badge.style.display = count ? "" : "none"; }
+  if (toolbarBadge) { toolbarBadge.textContent = count; toolbarBadge.style.display = count ? "" : "none"; }
+  if (clearBtn)     clearBtn.style.display = count ? "" : "none";
   // Show active filter tags below cal toolbar
   if (tagsEl) {
     const labels = [
@@ -5669,7 +5679,7 @@ function renderMonth() {
         const ml = grp.some((e) => e.meeting_link || e.meetingLink);
         if (grp.length === 1) {
           const e = grp[0];
-          return `<div class="cal-event" style="background:${bg} !important;color:#0f172a !important;border:2px solid ${bg} !important;" onclick="event.stopPropagation();openEdit(${e.id})">
+          return `<div class="cal-event" style="background:${bg} !important;color:#0f172a !important;border:2px solid ${bg} !important;" onclick="event.stopPropagation();openEventPreview('${e.id}')">
                   <div class="cal-event-dot" style="background:rgba(0,0,0,0.3);flex-shrink:0;"></div>
           ${sanitize((e.name || "").split(" ")[0])} ${fmtTime(time)}
           ${ml ? `<span style="margin-left:3px;opacity:.7;" title="Has meeting link">📹</span>` : ""}
@@ -5768,7 +5778,7 @@ function renderWeek() {
           const bg = getEventColor(grp[0]);
           if (grp.length === 1) {
             const e = grp[0];
-            return `<div class="cal-week-event" style="top:${top}px;height:${HH}px;background:${bg};color:${evColorW};border:1px solid ${bg};" onclick="event.stopPropagation();openEdit(${e.id})">${fmtTime(time)} ${sanitize((e.name || "").split(" ")[0])}</div>`;
+            return `<div class="cal-week-event" style="top:${top}px;height:${HH}px;background:${bg};color:${evColorW};border:1px solid ${bg};" onclick="event.stopPropagation();openEventPreview('${e.id}')">${fmtTime(time)} ${sanitize((e.name || "").split(" ")[0])}</div>`;
           } else {
             return `<div class="cal-week-event cal-event-grouped" style="top:${top}px;height:${HH}px;background:${bg};color:${evColorW};border:1px solid ${bg};" onclick="event.stopPropagation();openGroupSlot('${ds}','${time}')">${fmtTime(time)} · <strong>${grp.length}</strong> ${grp.every((e) => !e.isGoogleEvent) ? `Applicant${grp.length > 1 ? "s" : ""}` : "Events"}</div>`;
           }
@@ -5830,7 +5840,7 @@ function renderDay() {
       const bg = getEventColor(grp[0]);
       if (grp.length === 1) {
         const e = grp[0];
-        return `<div class="cal-day-event" style="top:${top}px;height:${HH}px;background:${bg};color:${evColorD};border:1px solid ${bg};" onclick="event.stopPropagation();openEdit(${e.id})"><strong>${fmtTime(time)}</strong> — ${sanitize(e.name || "")} (${sanitize(e.position || "")})<br><span style="font-size:10px;opacity:.85;">${sanitize(e.round || "")} · ${sanitize(e.type || "")}</span></div>`;
+        return `<div class="cal-day-event" style="top:${top}px;height:${HH}px;background:${bg};color:${evColorD};border:1px solid ${bg};" onclick="event.stopPropagation();openEventPreview('${e.id}')"><strong>${fmtTime(time)}</strong> — ${sanitize(e.name || "")} (${sanitize(e.position || "")})<br><span style="font-size:10px;opacity:.85;">${sanitize(e.round || "")} · ${sanitize(e.type || "")}</span></div>`;
       } else {
         const nameList = grp
           .map((e) => sanitize(e.name || "Unknown"))
@@ -5866,7 +5876,7 @@ function renderAgenda() {
   el.innerHTML = evts
     .map((e) => {
       const bg = getEventColor(e);
-      return `<div class="agenda-item" style="border-left-color:${bg};" onclick="openEdit(${e.id})"><div class="agenda-time">${fmtTime(e.time)}</div><div class="agenda-body"><div class="agenda-name">${sanitize(e.name)}</div><div class="agenda-meta">${sanitize(e.position)} · ${sanitize(e.round)}</div><div class="agenda-meta" style="margin-top:2px;">${e.type === "Virtual" ? "📹" : "🏢"} ${e.type} · <span style="color:${bg};font-weight:600;">${e.status}</span></div></div></div>`;
+      return `<div class="agenda-item" style="border-left-color:${bg};" onclick="openEventPreview('${e.id}')"><div class="agenda-time">${fmtTime(e.time)}</div><div class="agenda-body"><div class="agenda-name">${sanitize(e.name)}</div><div class="agenda-meta">${sanitize(e.position)} · ${sanitize(e.round)}</div><div class="agenda-meta" style="margin-top:2px;">${e.type === "Virtual" ? "📹" : "🏢"} ${e.type} · <span style="color:${bg};font-weight:600;">${e.status}</span></div></div></div>`;
     })
     .join("");
 }
@@ -6250,6 +6260,103 @@ function openGroupSlot(date, time) {
       }
     });
   }, 0);
+}
+
+function openEventPreview(id) {
+  // Resolve event: support numeric ids (real calEvents) and "iv-N" virtual ids
+  let e = null;
+  if (typeof id === "string" && id.startsWith("iv-")) {
+    const taskId = parseInt(id.replace("iv-", ""), 10);
+    const t = (typeof TASKS !== "undefined" ? TASKS : []).find(t => t.id === taskId);
+    if (t) {
+      e = {
+        id, _isVirtual: true, taskId,
+        name: t.applicant_name || t.name || "",
+        position: t.position || "",
+        status: t.status || "",
+        date: t.interview_date,
+        type: "Interview",
+      };
+    }
+  } else {
+    const _id = typeof id === "string" ? parseInt(id, 10) : id;
+    e = calEvents.find((x) => x.id === _id || x.id === id) || null;
+  }
+  if (!e) { console.warn("[Calendar] openEventPreview: not found", id); return; }
+
+  const overlay = document.getElementById("cal-event-preview-overlay");
+  if (!overlay) return;
+
+  // Name
+  document.getElementById("cep-name").textContent = e.name || e.applicant_name || "Untitled Event";
+
+  // Status badge
+  const sBadge = document.getElementById("cep-status-badge");
+  sBadge.textContent = e.status || "";
+  sBadge.style.display = e.status ? "" : "none";
+
+  // Type badge
+  const tBadge = document.getElementById("cep-type-badge");
+  if (e.type) {
+    tBadge.textContent = e.type === "Virtual" ? "📹 Virtual" : e.type === "Face-to-Face" ? "🤝 Face-to-Face" : e.type;
+    tBadge.style.display = "";
+  } else { tBadge.style.display = "none"; }
+
+  // GCal badge
+  const gBadge = document.getElementById("cep-gcal-badge");
+  if (e.isGoogleEvent) {
+    gBadge.textContent = getCalName(e.calendarId || e.sourceCalendar);
+    gBadge.style.display = "";
+  } else { gBadge.style.display = "none"; }
+
+  // Position
+  const posRow = document.getElementById("cep-position-row");
+  document.getElementById("cep-position").textContent = e.position || "";
+  posRow.style.display = e.position ? "flex" : "none";
+
+  // Date & Time
+  const dt = e.date ? new Date(e.date + "T12:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" }) : "";
+  const tm = (e.time || e.start_time) ? fmtTime(e.time || e.start_time) : "";
+  document.getElementById("cep-datetime").textContent = [dt, tm].filter(Boolean).join(" at ") || "No date set";
+
+  // Round
+  const roundRow = document.getElementById("cep-round-row");
+  document.getElementById("cep-round").textContent = e.round || "";
+  roundRow.style.display = e.round ? "flex" : "none";
+
+  // Meeting link
+  const meetRow = document.getElementById("cep-meeting-row");
+  const meetUrl = e.meeting_link || e.meetingLink || "";
+  if (meetUrl) {
+    const ml = document.getElementById("cep-meeting-link");
+    ml.href = meetUrl;
+    ml.textContent = meetUrl.length > 45 ? meetUrl.slice(0, 45) + "…" : meetUrl;
+    meetRow.style.display = "flex";
+  } else { meetRow.style.display = "none"; }
+
+  // Notes
+  const notesRow = document.getElementById("cep-notes-row");
+  document.getElementById("cep-notes").textContent = e.notes || "";
+  notesRow.style.display = e.notes ? "flex" : "none";
+
+  // Edit button
+  document.getElementById("cep-edit-btn").onclick = () => {
+    overlay.style.display = "none";
+    if (e._isVirtual) openTaskEdit(e.taskId);
+    else openEdit(id);
+  };
+
+  // View Applicant button — link to task if one matches
+  const relTask = e.taskId
+    ? (typeof TASKS !== "undefined" ? TASKS : []).find(t => t.id === e.taskId)
+    : (typeof TASKS !== "undefined" ? TASKS : []).find(t => t.gcalEventId && t.gcalEventId === (e.google_event_id || ""));
+  const viewBtn = document.getElementById("cep-view-applicant-btn");
+  if (relTask) {
+    viewBtn.style.display = "";
+    viewBtn.onclick = () => { overlay.style.display = "none"; openTaskEdit(relTask.id); };
+  } else { viewBtn.style.display = "none"; }
+
+  overlay.style.display = "flex";
 }
 
 function openEdit(id) {

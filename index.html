@@ -206,43 +206,8 @@
       </button>
     </div>
 
-    <!-- CALENDAR filters -->
-    <div id="sf-cal-section" class="super-filter-inner" style="display:none;">
-      <div class="super-filter-group">
-        <label class="super-filter-label">Calendar</label>
-        <select class="list-filter-select" id="cal-filter-calendar"><option value="">All Calendars</option></select>
-      </div>
-      <div class="super-filter-group">
-        <label class="super-filter-label">Position</label>
-        <select class="list-filter-select" id="cal-filter-position"><option value="">All Positions</option></select>
-      </div>
-      <div class="super-filter-group">
-        <label class="super-filter-label">Status</label>
-        <select class="list-filter-select" id="cal-filter-status">
-          <option value="">All Statuses</option>
-          <option>Scheduled</option><option>Completed</option><option>Rescheduled</option><option>Cancelled</option>
-        </select>
-      </div>
-      <div class="super-filter-group">
-        <label class="super-filter-label">Type</label>
-        <select class="list-filter-select" id="cal-filter-type">
-          <option value="">All Types</option><option>Face-to-Face</option><option>Virtual</option>
-        </select>
-      </div>
-      <div class="super-filter-group">
-        <label class="super-filter-label">Date From</label>
-        <input type="date" class="list-filter-select" id="cal-filter-date-from" onchange="renderCalendar();updateCalFilterBadge()" style="height:32px;"/>
-      </div>
-      <div class="super-filter-group">
-        <label class="super-filter-label">Date To</label>
-        <input type="date" class="list-filter-select" id="cal-filter-date-to" onchange="renderCalendar();updateCalFilterBadge()" style="height:32px;"/>
-      </div>
-      <div class="super-filter-spacer"></div>
-      <button class="super-filter-clear" id="cal-filter-clear-btn" onclick="clearCalFilters()" style="display:none;">
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        Clear All
-      </button>
-    </div>
+    <!-- CALENDAR filters — moved to inline cal-filter-bar; keep empty div so JS refs don't error -->
+    <div id="sf-cal-section" class="super-filter-inner" style="display:none;"></div>
 
   </div>
 
@@ -344,11 +309,55 @@
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               <span>Schedule Interview</span>
             </button>
+            <!-- ── Calendar Filter Toggle Button ── -->
+            <button id="cal-filter-btn" onclick="toggleCalFilterBar()" style="display:flex;align-items:center;gap:5px;padding:8px 14px;border-radius:11px;border:1.5px solid var(--border);background:var(--surface-1);font-size:12px;font-weight:700;color:var(--muted);cursor:pointer;transition:all .15s;white-space:nowrap;" title="Filter events">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="20" y2="12"/><line x1="12" y1="18" x2="20" y2="18"/></svg>
+              Filters
+              <span id="cal-toolbar-filter-badge" style="display:none;background:var(--violet);color:#fff;border-radius:99px;font-size:9px;font-weight:800;padding:1px 5px;"></span>
+            </button>
             <!-- ── Google Calendar Sync Button ── -->
             <button id="gcal-sync-btn" data-action="handleGCalSync" style="display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:11px;border:1.5px solid var(--border);background:var(--surface-1);font-size:12px;font-weight:700;color:var(--muted);cursor:pointer;transition:all .15s;white-space:nowrap" title="Sync events from Google Calendar">
               <!-- Google Calendar icon (SVG) -->
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><circle cx="8" cy="16" r="1" fill="currentColor"/><circle cx="12" cy="16" r="1" fill="currentColor"/></svg>
               <span id="gcal-btn-label">Sync Google Cal</span>
+            </button>
+          </div>
+        </div>
+        <!-- ── Inline Calendar Filter Bar ── -->
+        <div id="cal-filter-bar" style="display:none;background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:14px 18px;margin-top:8px;">
+          <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;">
+            <div style="display:flex;flex-direction:column;gap:4px;min-width:140px;">
+              <label style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;">Calendar</label>
+              <select class="list-filter-select" id="cal-filter-calendar" onchange="renderCalendar();updateCalFilterBadge()"><option value="">All Calendars</option></select>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:4px;min-width:140px;">
+              <label style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;">Position</label>
+              <select class="list-filter-select" id="cal-filter-position" onchange="renderCalendar();updateCalFilterBadge()"><option value="">All Positions</option></select>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:4px;min-width:130px;">
+              <label style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;">Status</label>
+              <select class="list-filter-select" id="cal-filter-status" onchange="renderCalendar();updateCalFilterBadge()">
+                <option value="">All Statuses</option>
+                <option>Scheduled</option><option>Completed</option><option>Rescheduled</option><option>Cancelled</option>
+              </select>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:4px;min-width:130px;">
+              <label style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;">Type</label>
+              <select class="list-filter-select" id="cal-filter-type" onchange="renderCalendar();updateCalFilterBadge()">
+                <option value="">All Types</option><option>Face-to-Face</option><option>Virtual</option>
+              </select>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:4px;min-width:120px;">
+              <label style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;">From</label>
+              <input type="date" class="list-filter-select" id="cal-filter-date-from" onchange="renderCalendar();updateCalFilterBadge()" style="height:32px;"/>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:4px;min-width:120px;">
+              <label style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;">To</label>
+              <input type="date" class="list-filter-select" id="cal-filter-date-to" onchange="renderCalendar();updateCalFilterBadge()" style="height:32px;"/>
+            </div>
+            <button id="cal-filter-clear-btn" onclick="clearCalFilters()" style="display:none;align-items:center;gap:5px;padding:6px 12px;border-radius:9px;border:1.5px solid var(--border);background:transparent;font-size:11px;font-weight:700;color:var(--muted);cursor:pointer;">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              Clear All
             </button>
           </div>
         </div>
@@ -2653,5 +2662,60 @@ function _fetchAndMergeEmailJSConfig() {
 </script>
 <!-- Shared list action menu — rendered at body level to escape table stacking contexts -->
 <div id="list-action-menu" class="list-action-menu"></div>
+
+<!-- ── Calendar Event Preview Modal ── -->
+<div id="cal-event-preview-overlay"
+  onclick="if(event.target===this)this.style.display='none'"
+  style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1100;align-items:center;justify-content:center;">
+  <div id="cal-event-preview-modal" style="background:var(--surface-1);border-radius:18px;width:420px;max-width:92vw;box-shadow:0 24px 64px rgba(0,0,0,.28);overflow:hidden;animation:modalIn .18s ease;">
+    <!-- Header -->
+    <div style="padding:20px 20px 14px;border-bottom:1px solid var(--border);">
+      <div style="display:flex;align-items:flex-start;gap:10px;">
+        <div style="flex:1;min-width:0;">
+          <div id="cep-name" style="font-size:16px;font-weight:800;color:var(--text);margin-bottom:8px;line-height:1.35;word-break:break-word;"></div>
+          <div style="display:flex;flex-wrap:wrap;gap:5px;">
+            <span id="cep-status-badge" style="display:none;font-size:10px;font-weight:700;padding:3px 10px;border-radius:8px;background:var(--surface-2);color:var(--text);border:1px solid var(--border);"></span>
+            <span id="cep-type-badge" style="display:none;font-size:10px;font-weight:700;padding:3px 10px;border-radius:8px;background:rgba(99,102,241,.12);color:#6366f1;border:1px solid rgba(99,102,241,.2);"></span>
+            <span id="cep-gcal-badge" style="display:none;font-size:10px;font-weight:700;padding:3px 10px;border-radius:8px;background:rgba(66,133,244,.1);color:#4285F4;border:1px solid rgba(66,133,244,.2);"></span>
+          </div>
+        </div>
+        <button onclick="document.getElementById('cal-event-preview-overlay').style.display='none'"
+          style="flex-shrink:0;background:var(--surface-2);border:none;border-radius:8px;width:28px;height:28px;cursor:pointer;font-size:18px;color:var(--muted);display:flex;align-items:center;justify-content:center;line-height:1;">×</button>
+      </div>
+    </div>
+    <!-- Body -->
+    <div style="padding:16px 20px;display:flex;flex-direction:column;gap:11px;">
+      <div id="cep-position-row" style="display:none;display:flex;align-items:center;gap:10px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="flex-shrink:0;color:var(--muted);"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+        <span id="cep-position" style="font-size:13px;font-weight:600;color:var(--text);"></span>
+      </div>
+      <div id="cep-datetime-row" style="display:flex;align-items:center;gap:10px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="flex-shrink:0;color:var(--muted);"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <span id="cep-datetime" style="font-size:13px;font-weight:600;color:var(--text);"></span>
+      </div>
+      <div id="cep-round-row" style="display:none;display:flex;align-items:center;gap:10px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="flex-shrink:0;color:var(--muted);"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+        <span id="cep-round" style="font-size:13px;font-weight:600;color:var(--text);"></span>
+      </div>
+      <div id="cep-meeting-row" style="display:none;display:flex;align-items:center;gap:10px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="flex-shrink:0;color:var(--muted);"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46a2.78 2.78 0 0 0-1.95 1.96A29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58A2.78 2.78 0 0 0 3.41 19.54C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.96A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z"/><polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02"/></svg>
+        <a id="cep-meeting-link" href="#" target="_blank" rel="noopener" style="font-size:13px;font-weight:600;color:var(--violet);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:320px;">Join Meeting</a>
+      </div>
+      <div id="cep-notes-row" style="display:none;display:flex;align-items:flex-start;gap:10px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="flex-shrink:0;color:var(--muted);margin-top:2px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        <span id="cep-notes" style="font-size:12px;color:var(--muted);line-height:1.55;flex:1;white-space:pre-wrap;"></span>
+      </div>
+    </div>
+    <!-- Footer -->
+    <div style="padding:12px 20px 18px;display:flex;gap:8px;border-top:1px solid var(--border);">
+      <button id="cep-edit-btn" style="flex:1;padding:9px 0;border-radius:11px;border:1.5px solid var(--border);background:var(--surface-2);font-size:12px;font-weight:700;color:var(--text);cursor:pointer;transition:background .12s;">
+        ✏️ Edit Interview
+      </button>
+      <button id="cep-view-applicant-btn" style="flex:1;padding:9px 0;border-radius:11px;border:none;background:var(--violet);font-size:12px;font-weight:700;color:#fff;cursor:pointer;transition:opacity .12s;">
+        View Applicant
+      </button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
