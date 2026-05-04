@@ -1431,12 +1431,15 @@ function handleGetEmailJSConfig(data) {
 
 // ── Search ────────────────────────────────────────────────────────────────────
 function handleSearch(data) {
-  var props = PropertiesService.getScriptProperties();
-  var validKey = props.getProperty("SEARCH_API_KEY");
-
-  if (!validKey || data.searchApiKey !== validKey) {
-    writeLog("UNAUTHORIZED_SEARCH", "", "Bad or missing API key");
-    return jsonResponse({ result: "error", message: "Unauthorized" });
+  // Accept either a valid session token (admin dashboard) or a searchApiKey (public portal)
+  var authed = verifyToken(data.token);
+  if (!authed) {
+    var props = PropertiesService.getScriptProperties();
+    var validKey = props.getProperty("SEARCH_API_KEY");
+    if (!validKey || data.searchApiKey !== validKey) {
+      writeLog("UNAUTHORIZED_SEARCH", "", "Bad or missing API key");
+      return jsonResponse({ result: "error", message: "Unauthorized" });
+    }
   }
 
   var ss = getSpreadsheet();
