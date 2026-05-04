@@ -332,6 +332,9 @@
             <div class="cal-month-label" id="cal-month-label"></div>
             <button class="cal-nav-btn" id="cal-next"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></button>
             <button class="cal-nav-btn" id="cal-today" style="width:auto;padding:0 12px;font-size:11px;font-weight:700">Today</button>
+            <input type="date" id="cal-jump-date" title="Jump to date"
+              style="border:1.5px solid var(--border);background:var(--surface-1);color:var(--text);border-radius:9px;padding:4px 8px;font-size:11px;font-family:'Montserrat',sans-serif;cursor:pointer;height:32px;"
+              onchange="if(this.value){calDate=new Date(this.value+'T12:00');renderCalendar();this.blur()}">
             <div class="cal-view-tabs">
               <button class="cal-view-tab active" data-calview="month">Month</button>
               <button class="cal-view-tab" data-calview="week">Week</button>
@@ -371,6 +374,10 @@
               </div>
               <div id="cal-sidebar-list"></div>
             </div>
+            <div style="height:1px;background:var(--border);margin-bottom:16px"></div>
+            <!-- ── This Week summary ── -->
+            <div class="card-sidebar-title" style="margin-bottom:10px">This Week</div>
+            <div id="cal-week-summary" style="margin-bottom:16px;display:flex;flex-wrap:wrap;gap:8px;"></div>
             <div style="height:1px;background:var(--border);margin-bottom:16px"></div>
             <!-- ── Today's schedule ── -->
             <div class="card-sidebar-title">Today's Schedule</div>
@@ -1313,6 +1320,20 @@
       <button class="modal-close" id="task-modal-close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
 
+    <!-- Sheet Import Strip (new-applicant mode only) -->
+    <div id="sheet-import-strip" style="display:none;padding:8px 14px 10px;border-bottom:1px solid var(--border);background:var(--surface-2);">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="sheet-import-input"
+          placeholder="Search applicant from Sheet to import…"
+          oninput="sheetImportSearch(this.value)"
+          autocomplete="off"
+          style="flex:1;border:none;background:transparent;font-size:12px;font-family:'Montserrat',sans-serif;color:var(--text);outline:none;">
+        <span style="font-size:10px;color:var(--muted);white-space:nowrap;font-family:'Montserrat',sans-serif;">Import from Sheet</span>
+      </div>
+      <div id="sheet-import-results" style="display:none;margin-top:6px;border:1px solid var(--border);border-radius:6px;background:var(--surface);overflow:hidden;max-height:180px;overflow-y:auto;"></div>
+    </div>
+
     <!-- Scrollable body -->
     <div class="modal-scroll-body">
 
@@ -1404,6 +1425,10 @@
         </div>
       </div>
       <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Interview Date</label>
+          <input type="date" class="form-input" id="f-interview-date" title="Date applicant is scheduled to come in for interview"/>
+        </div>
         <div class="form-group">
           <label class="form-label">Follow-up Reminder</label>
           <input type="date" class="form-input" id="f-followup-date" title="Get notified on this date to follow up with the applicant"/>

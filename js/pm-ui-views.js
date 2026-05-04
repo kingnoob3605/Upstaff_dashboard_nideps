@@ -606,7 +606,9 @@ function renderList() {
                             appName && e.date,
                       )
                       .sort((a, b) => (a.date < b.date ? -1 : 1));
-                    let intDateHTML = `<span class="list-int-none">—</span>`;
+                    let intDateHTML = t.interview_date
+                      ? `<div class="list-int-cell list-int-upcoming"><span class="list-int-date">${fmtDue(t.interview_date)}</span></div>`
+                      : `<span class="list-int-none">—</span>`;
                     if (matchEvts.length) {
                       const today2 = new Date();
                       today2.setHours(0, 0, 0, 0);
@@ -1770,6 +1772,7 @@ function renderBoard() {
                 )}${_boardAssignees.length > 2 ? `<span style="font-size:9px;color:var(--muted);margin-left:2px;">+${_boardAssignees.length - 2}</span>` : ""}</div>
             </div>
             ${t.due ? `<div style="margin-top:4px;"><span class="due-date ${dc}" style="font-size:10px;">📅 ${fmtDue(t.due)}</span></div>` : ""}
+            ${t.interview_date ? `<div style="margin-top:4px;"><span style="font-size:10px;font-family:'Montserrat',sans-serif;font-weight:600;color:var(--cyan);padding:2px 6px;background:rgba(62,207,223,.12);border-radius:99px;white-space:nowrap;">🗓 Interview: ${fmtDue(t.interview_date)}</span></div>` : ""}
             ${scoreTag}
             <div class="board-mini-pipeline" title="${t.status}">
               ${STAGE_ORDER.map((_, i) => {
@@ -3638,6 +3641,7 @@ function openTaskNew(status = "New") {
   _updateLinkCard("f-other-docs", "lc-other-docs");
   _updateLinkCard("f-drive-folder", "lc-drive-folder");
   _setField("f-app-date", new Date().toISOString().slice(0, 10));
+  _setField("f-interview-date", "");
   _setField("f-followup-date", "");
   // Reset assessment tabs to first tab (Typing)
   _resetAssessTabs();
@@ -3668,6 +3672,14 @@ function openTaskNew(status = "New") {
     statusEl.textContent = "";
   }
   document.getElementById("btn-task-delete").style.display = "none";
+  // Show sheet import strip for new applicants
+  const _importStrip = document.getElementById("sheet-import-strip");
+  if (_importStrip) {
+    _importStrip.style.display = "";
+    document.getElementById("sheet-import-input").value = "";
+    const res = document.getElementById("sheet-import-results");
+    if (res) { res.style.display = "none"; res.innerHTML = ""; }
+  }
   // Switch to Profile tab
   _switchModalTab("profile");
   _gsapModalOpen("task-modal-overlay", "task-modal");
@@ -3677,6 +3689,9 @@ function openTaskEdit(id, goToAssessment = false) {
   if (!t) return;
   taskEditId = id;
   const _tName = t.applicant_name || t.name;
+  // Hide sheet import strip when editing existing applicant
+  const _importStripEdit = document.getElementById("sheet-import-strip");
+  if (_importStripEdit) _importStripEdit.style.display = "none";
   document.getElementById("task-modal-heading").textContent = _tName;
   _setModalAvatar(_tName, t.status);
   document.getElementById("f-name").value = _tName;
@@ -3715,6 +3730,7 @@ function openTaskEdit(id, goToAssessment = false) {
   _updateLinkCard("f-other-docs", "lc-other-docs");
   _updateLinkCard("f-drive-folder", "lc-drive-folder");
   _setField("f-app-date", t.application_date || t.start || "");
+  _setField("f-interview-date", t.interview_date || "");
   _setField("f-followup-date", t.followup_date || "");
   // Reset assessment tabs to first tab (Typing)
   _resetAssessTabs();
@@ -4412,6 +4428,8 @@ document
         document.getElementById("f-app-date")?.value ||
         existing?.application_date ||
         "",
+      interview_date:
+        document.getElementById("f-interview-date")?.value || "",
       followup_date:
         document.getElementById("f-followup-date")?.value || "",
       followup_notified: existing?.followup_notified || "",
@@ -5575,10 +5593,30 @@ function getFiltered() {
   const type      = document.getElementById("cal-filter-type")?.value      || "";
   const dateFrom  = document.getElementById("cal-filter-date-from")?.value || "";
   const dateTo    = document.getElementById("cal-filter-date-to")?.value   || "";
-  return calEvents.filter((e) => {
+
+  // Virtual events from tasks that have interview_date set (manual scheduling)
+  const virtualEvents = (typeof TASKS !== "undefined" ? TASKS : [])
+    .filter(t => t.interview_date && !t.gcalEventId)
+    .map(t => ({
+      id: "iv-" + t.id,
+      _isVirtual: true,
+      date: t.interview_date,
+      title: (t.applicant_name || t.name || "Applicant") + " — Interview",
+      position: t.position || "",
+      applicant_name: t.applicant_name || t.name || "",
+      taskId: t.id,
+      color: "#3ecfdf",
+      calendarId: "interviews",
+      type: "Interview",
+      status: t.status || "",
+    }));
+
+  const base = [...calEvents, ...virtualEvents];
+
+  return base.filter((e) => {
     const evCalId = e.calendarId || e.sourceCalendar || "primary";
-    if (hiddenCalendars.has(evCalId)) return false;
-    if (calFilter && evCalId !== calFilter) return false;
+    if (!e._isVirtual && hiddenCalendars.has(evCalId)) return false;
+    if (calFilter && !e._isVirtual && evCalId !== calFilter) return false;
     // Only filter by position if event has a position (skip GCal-only events)
     if (pos && e.position && e.position !== pos) return false;
     if (status && e.status !== status) return false;
@@ -5888,6 +5926,29 @@ function renderCalendarSidebar() {
 
   // Also refresh the Settings → Calendars panel if it is visible
   renderSettingsCalendarList();
+
+  // This Week summary
+  const weekEl = document.getElementById("cal-week-summary");
+  if (weekEl) {
+    const today = new Date();
+    const dow = today.getDay(); // 0=Sun
+    const weekStart = new Date(today); weekStart.setDate(today.getDate() - dow);
+    const weekEnd   = new Date(today); weekEnd.setDate(today.getDate() + (6 - dow));
+    const fmt = d => d.toISOString().slice(0, 10);
+    const wStart = fmt(weekStart), wEnd = fmt(weekEnd);
+    const allEvts = getFiltered();
+    const weekEvts = allEvts.filter(e => e.date >= wStart && e.date <= wEnd);
+    const todayEvts = allEvts.filter(e => e.date === fmt(today));
+    const intCount = weekEvts.filter(e => (e.type || "").toLowerCase().includes("interview") || e._isVirtual).length;
+    weekEl.innerHTML = [
+      { label: "Total", val: weekEvts.length, color: "var(--cyan)" },
+      { label: "Today", val: todayEvts.length, color: "var(--violet)" },
+      { label: "Interviews", val: intCount, color: "#43e97b" },
+    ].map(s => `<div style="display:flex;flex-direction:column;align-items:center;padding:8px 12px;border-radius:10px;background:var(--surface-3);min-width:56px;">
+      <div style="font-size:20px;font-weight:800;color:${s.color};font-family:'Syne',sans-serif;line-height:1;">${s.val}</div>
+      <div style="font-size:10px;color:var(--muted);font-family:'Montserrat',sans-serif;margin-top:2px;">${s.label}</div>
+    </div>`).join("");
+  }
 }
 
 /* ──────────────────────────────────────────────
@@ -6962,6 +7023,96 @@ function renderHistoryTab(task) {
     .join("");
 }
 
+/* ── Sheet Import Search ── */
+let _sheetImportTimer = null;
+function sheetImportSearch(query) {
+  clearTimeout(_sheetImportTimer);
+  const resEl = document.getElementById("sheet-import-results");
+  if (!query || query.trim().length < 2) {
+    if (resEl) resEl.style.display = "none";
+    return;
+  }
+  _sheetImportTimer = setTimeout(async () => {
+    if (!window.UpstaffAPI || !UpstaffAPI.isConfigured()) {
+      if (resEl) {
+        resEl.style.display = "";
+        resEl.innerHTML = `<div style="padding:10px 12px;font-size:11px;color:var(--muted);font-family:'Montserrat',sans-serif;">Sheet API not configured.</div>`;
+      }
+      return;
+    }
+    if (resEl) resEl.innerHTML = `<div style="padding:10px 12px;font-size:11px;color:var(--muted);font-family:'Montserrat',sans-serif;">Searching…</div>`;
+    if (resEl) resEl.style.display = "";
+    try {
+      const res = await UpstaffAPI.search(query.trim());
+      const data = res.data || [];
+      if (!data.length) {
+        resEl.innerHTML = `<div style="padding:10px 12px;font-size:11px;color:var(--muted);font-family:'Montserrat',sans-serif;">No applicants found in Sheet.</div>`;
+        return;
+      }
+      resEl.innerHTML = data.slice(0, 8).map((r, i) =>
+        `<div class="sheet-import-row" onclick="sheetImportFill(${i})" data-idx="${i}"
+          style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:2px;">
+          <div style="font-size:12px;font-weight:700;color:var(--text);font-family:'Montserrat',sans-serif;">${sanitize(r.fullName || "—")}</div>
+          <div style="font-size:10px;color:var(--muted);font-family:'Montserrat',sans-serif;">${sanitize(r.positions || r.email || "")}</div>
+        </div>`
+      ).join("");
+      window._sheetImportData = data.slice(0, 8);
+      resEl.querySelectorAll(".sheet-import-row").forEach(row => {
+        row.addEventListener("mouseenter", () => row.style.background = "var(--surface-2)");
+        row.addEventListener("mouseleave", () => row.style.background = "");
+      });
+    } catch (e) {
+      resEl.innerHTML = `<div style="padding:10px 12px;font-size:11px;color:var(--muted);font-family:'Montserrat',sans-serif;">Search failed: ${sanitize(e.message)}</div>`;
+    }
+  }, 350);
+}
+
+function sheetImportFill(idx) {
+  const r = (window._sheetImportData || [])[idx];
+  if (!r) return;
+  // Fill name & position
+  const nameEl = document.getElementById("f-name");
+  if (nameEl) nameEl.value = r.fullName || "";
+  // Position: take first line
+  const pos = (r.positions || "").split("\n").find(l => l.trim().replace(/^•\s*/, "")) || "";
+  _setField("f-position", pos.replace(/^•\s*/, "").trim());
+  // Profile fields
+  _setField("f-email", r.email || "");
+  _setField("f-phone", r.phone || "");
+  _setField("f-address", r.address || "");
+  _setField("f-employment-type", r.employmentType || "");
+  _setField("f-work-setup", r.workSetup || "");
+  _setField("f-work-schedule", r.workSchedule || "");
+  _setField("f-education-level", r.educationLevel || "");
+  _setField("f-school", r.school || "");
+  _setField("f-course", r.course || "");
+  _setField("f-skills", r.skills || "");
+  _setField("f-tools", r.tools || "");
+  _setField("f-interview-slots", r.interviewSlots || "");
+  _setField("f-referral-source", r.referralSource || "");
+  _setField("f-resume", r.resumeLink || "");
+  _setField("f-portfolio", r.portfolioLink || "");
+  _setField("f-video-intro", r.videoIntroLink || "");
+  _setField("f-other-docs", r.otherDocsLink || "");
+  _setField("f-drive-folder", r.driveFolderLink || "");
+  _setField("f-notes", r.notes || "");
+  _notesPreviewUpdate(r.notes || "");
+  // Update link cards
+  _updateLinkCard("f-resume", "lc-resume");
+  _updateLinkCard("f-portfolio", "lc-portfolio");
+  _updateLinkCard("f-video-intro", "lc-video-intro");
+  _updateLinkCard("f-other-docs", "lc-other-docs");
+  _updateLinkCard("f-drive-folder", "lc-drive-folder");
+  // Update avatar
+  _setModalAvatar(r.fullName || "");
+  document.getElementById("task-modal-heading").textContent = r.fullName || "New Applicant";
+  // Hide results
+  const resEl = document.getElementById("sheet-import-results");
+  if (resEl) resEl.style.display = "none";
+  document.getElementById("sheet-import-input").value = "";
+  showToast(`✅ Imported: ${r.fullName}`);
+}
+
 /* ── Positions render ── */
 function renderPositionsList(filter) {
   const el = document.getElementById("positions-list");
@@ -7054,6 +7205,15 @@ document.getElementById("add-position-btn")?.addEventListener("click", () => {
   inp.focus();
 });
 
+function _rebuildPositionFilter() {
+  const sel = document.getElementById("list-filter-position");
+  if (!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = `<option value="">All Positions</option>` +
+    POSITIONS.map(p => `<option value="${p}">${p}</option>`).join("");
+  if (POSITIONS.includes(cur)) sel.value = cur;
+}
+
 function confirmAddPosition() {
   const inp = document.getElementById("position-add-input");
   const name = inp.value.trim();
@@ -7062,6 +7222,7 @@ function confirmAddPosition() {
     renderPositionsList(
       document.getElementById("position-search")?.value || "",
     );
+    _rebuildPositionFilter();
     showToast("✅ Position added!");
   }
   inp.value = "";
@@ -8772,14 +8933,7 @@ function showAnalytics() {
   renderAnalytics();
   _renderApiCountsBanner();
 
-  // Pull fresh data from Google Sheet then re-render so analytics reflects sheet state
-  if (window.UpstaffAPI && UpstaffAPI.isConfigured()) {
-    syncApplicantsFromApi({ silent: true }).then(() => {
-      if (document.getElementById("view-analytics").style.display !== "none") {
-        renderAnalytics();
-      }
-    }).catch(() => {});
-  }
+  // syncApplicantsFromApi({ silent: true }); — disabled: manual-entry mode
 }
 
 /* ── Fetch live counts from partner API and show in analytics ── */
@@ -9899,3 +10053,6 @@ document.addEventListener("DOMContentLoaded", function () {
     btn.addEventListener("click", renderMembersList);
   });
 });
+
+// Populate position filter dropdown on load
+document.addEventListener("DOMContentLoaded", _rebuildPositionFilter);
