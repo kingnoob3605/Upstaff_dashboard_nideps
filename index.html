@@ -556,10 +556,22 @@
               <div class="settings-card-title">My Profile</div>
               <div class="settings-card-desc">Update your personal information shown across the dashboard.</div>
               <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px">
-                <div id="profile-avatar-circle" style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--violet),var(--cyan));display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:#fff;flex-shrink:0">HR</div>
+                <!-- Avatar with upload overlay -->
+                <div style="position:relative;flex-shrink:0">
+                  <div id="profile-avatar-circle" style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--violet),var(--cyan));display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:#fff;overflow:hidden">HR</div>
+                  <label for="profile-photo-input" title="Upload photo" style="position:absolute;bottom:0;right:0;width:22px;height:22px;border-radius:50%;background:var(--cyan);display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 1px 6px rgba(0,0,0,0.35);border:2px solid var(--card)">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                  </label>
+                  <input type="file" id="profile-photo-input" accept="image/png,image/jpeg,image/gif,image/webp" style="display:none" onchange="uploadProfilePhoto(this)"/>
+                </div>
                 <div>
                   <div id="profile-display-name" style="font-size:14px;font-weight:700;color:var(--text)">HR Admin</div>
                   <div id="profile-display-role" style="font-size:12px;color:var(--light);margin-top:2px">Administrator · upstaff</div>
+                  <div style="display:flex;gap:8px;margin-top:6px">
+                    <label for="profile-photo-input" style="font-size:11px;color:var(--cyan);cursor:pointer;font-weight:600;">Upload photo</label>
+                    <span style="font-size:11px;color:var(--muted)">·</span>
+                    <span style="font-size:11px;color:var(--muted);cursor:pointer;" onclick="removeProfilePhoto()">Remove</span>
+                  </div>
                 </div>
               </div>
               <div class="settings-form-row">
@@ -2587,7 +2599,7 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 });
 
-// Update topbar avatar initials and dropdown labels
+// Update topbar avatar initials/photo and dropdown labels
 function _updateTopbarAvatar() {
   var el = document.querySelector('.topbar-avatar');
   if (!el) return;
@@ -2601,12 +2613,71 @@ function _updateTopbarAvatar() {
     } catch (_) {}
   }
   var initials = name.split(' ').filter(Boolean).map(function(w) { return w[0]; }).join('').toUpperCase().slice(0, 2) || 'HR';
-  el.textContent = initials;
+  // Show profile picture if one is stored, otherwise show initials
+  try {
+    var cfg = JSON.parse(localStorage.getItem('upstaff_api_config') || '{}');
+    if (cfg.picture) {
+      el.innerHTML = '<img src="' + cfg.picture + '" alt="' + initials + '" style="width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;" onerror="this.parentElement.textContent=\'' + initials + '\';this.remove()"/>';
+    } else {
+      el.textContent = initials;
+    }
+  } catch (_) {
+    el.textContent = initials;
+  }
   var nameLbl  = document.getElementById('avatar-name-label');
   var emailLbl = document.getElementById('avatar-email-label');
   if (nameLbl && name) nameLbl.textContent = name;
   if (emailLbl) emailLbl.textContent = email || 'Not connected';
 }
+
+// Upload profile photo — reads file as base64, stores in upstaff_api_config.picture
+window.uploadProfilePhoto = function(input) {
+  var file = input.files && input.files[0];
+  if (!file) return;
+  if (file.size > 3 * 1024 * 1024) {
+    if (typeof showToast === 'function') showToast('⚠️ Image must be under 3 MB.');
+    return;
+  }
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var dataUrl = e.target.result;
+    try {
+      var cfg = JSON.parse(localStorage.getItem('upstaff_api_config') || '{}');
+      cfg.picture = dataUrl;
+      localStorage.setItem('upstaff_api_config', JSON.stringify(cfg));
+    } catch (_) {}
+    // Refresh avatar circle in settings
+    var circle = document.getElementById('profile-avatar-circle');
+    if (circle) circle.innerHTML = '<img src="' + dataUrl + '" style="width:64px;height:64px;border-radius:50%;object-fit:cover;display:block;"/>';
+    // Refresh topbar avatar
+    _updateTopbarAvatar();
+    if (typeof showToast === 'function') showToast('✅ Profile photo updated!');
+  };
+  reader.readAsDataURL(file);
+  // Reset input so same file can be re-selected if needed
+  input.value = '';
+};
+
+// Remove profile photo
+window.removeProfilePhoto = function() {
+  try {
+    var cfg = JSON.parse(localStorage.getItem('upstaff_api_config') || '{}');
+    delete cfg.picture;
+    localStorage.setItem('upstaff_api_config', JSON.stringify(cfg));
+  } catch (_) {}
+  // Restore initials in settings circle
+  var circle = document.getElementById('profile-avatar-circle');
+  if (circle) {
+    try {
+      var p = JSON.parse(localStorage.getItem('upstaff_profile') || '{}');
+      var full = [p.firstName, p.lastName].filter(Boolean).join(' ');
+      var inits = full.split(' ').filter(Boolean).map(function(w){ return w[0]; }).join('').toUpperCase().slice(0,2) || 'HR';
+      circle.textContent = inits;
+    } catch(_) { circle.textContent = 'HR'; }
+  }
+  _updateTopbarAvatar();
+  if (typeof showToast === 'function') showToast('🗑️ Profile photo removed.');
+};
 
 // Apply role-based UI restrictions via a CSS body class.
 // CSS rule in pm-ui-base.css:

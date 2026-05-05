@@ -9963,8 +9963,22 @@ function applyTheme(key) {
   let el = document.getElementById("theme-sidebar-override");
   if (!el) { el = document.createElement("style"); el.id = "theme-sidebar-override"; document.head.appendChild(el); }
   el.textContent = [
-    // Sidebar always uses the dark gradient regardless of light/dark mode
-    `#sidebar{background:linear-gradient(160deg,${t.navy} 0%,${t.slate} 100%) !important;}`,
+    // Dark mode: sidebar keeps its navy/slate gradient
+    `[data-theme="dark"] #sidebar{background:linear-gradient(160deg,${t.navy} 0%,${t.slate} 100%)!important;box-shadow:4px 0 28px rgba(0,0,0,0.22)!important;border-right:none!important;}`,
+    // Light mode: sidebar becomes clean white with subtle edge shadow
+    `:root:not([data-theme="dark"]) #sidebar{background:#ffffff!important;box-shadow:1px 0 0 rgba(0,0,0,0.09),4px 0 12px rgba(0,0,0,0.04)!important;}`,
+    // Light mode sidebar text + icon overrides (base CSS hardcodes white-based rgba)
+    `:root:not([data-theme="dark"]) .sidebar-section-label{color:rgba(0,0,0,0.32)!important;}`,
+    `:root:not([data-theme="dark"]) .nav-label{color:rgba(15,15,35,0.65)!important;}`,
+    `:root:not([data-theme="dark"]) .nav-item:not(.active) svg{color:rgba(0,0,0,0.38)!important;}`,
+    `:root:not([data-theme="dark"]) .nav-item.active svg{color:${t.accent}!important;}`,
+    `:root:not([data-theme="dark"]) .nav-item:hover{background:rgba(0,0,0,0.04)!important;}`,
+    `:root:not([data-theme="dark"]) .nav-item.active{background:${t.accent}1a!important;border-left-color:${t.accent}!important;}`,
+    `:root:not([data-theme="dark"]) .nav-item.active .nav-label{color:${t.accent}!important;font-weight:700;}`,
+    `:root:not([data-theme="dark"]) .sidebar-footer{border-top:1px solid rgba(0,0,0,0.07)!important;}`,
+    `:root:not([data-theme="dark"]) #toggle-btn{color:rgba(0,0,0,0.5)!important;}`,
+    `:root:not([data-theme="dark"]) #toggle-btn:hover{background:rgba(0,0,0,0.05)!important;}`,
+    `:root:not([data-theme="dark"]) .sidebar-logo img{filter:none!important;}`,
     // Light-mode: main surfaces stay near-white; accent tint only in interactive/hover states
     `:root{`,
     `--navy:${t.navy};--slate:${t.slate};`,
