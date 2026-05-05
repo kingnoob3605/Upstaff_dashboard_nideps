@@ -9908,6 +9908,7 @@ const COLOR_THEMES = {
   arctic:   { navy: "#0a0e14", slate: "#141c26", accent: "#e2e8f0", border: "#1e2d3d", surface3: "#0e141e" },
 };
 
+// Internal helper — called by applyTheme() only; no longer exposed as standalone override
 function applyAccentColor(hex) {
   const r = parseInt(hex.slice(1, 3), 16);
   const g = parseInt(hex.slice(3, 5), 16);
@@ -9917,12 +9918,6 @@ function applyAccentColor(hex) {
   let el = document.getElementById("accent-override");
   if (!el) { el = document.createElement("style"); el.id = "accent-override"; document.head.appendChild(el); }
   el.textContent = `:root{--cyan:${hex};--cyan-lt:${lt};--s-inprog:${hex};}[data-theme="dark"]{--cyan:${hex};--cyan-lt:${ltDark};}`;
-  localStorage.setItem("upstaff_accent_color", hex);
-  document.querySelectorAll(".accent-swatch").forEach((s) =>
-    s.classList.toggle("active", s.dataset.color === hex)
-  );
-  const customEl = document.getElementById("s-accent-custom");
-  if (customEl) customEl.value = hex;
 }
 
 function applyTheme(key) {
@@ -9988,19 +9983,15 @@ function applyTheme(key) {
 
 function resetTheme() {
   localStorage.removeItem("upstaff_color_theme");
-  localStorage.removeItem("upstaff_accent_color");
+  localStorage.removeItem("upstaff_accent_color"); // clean up legacy key if present
   ["accent-override", "theme-sidebar-override"].forEach((id) => {
     const el = document.getElementById(id);
     if (el) el.remove();
   });
+  applyTheme("ocean"); // re-inject default overrides so light sidebar stays correct
   document.querySelectorAll(".theme-card").forEach((c) =>
     c.classList.toggle("active", c.dataset.theme === "ocean")
   );
-  document.querySelectorAll(".accent-swatch").forEach((s) =>
-    s.classList.toggle("active", s.dataset.color === "#44d7e9")
-  );
-  const customEl = document.getElementById("s-accent-custom");
-  if (customEl) customEl.value = "#44d7e9";
 }
 
 // ── Config Export / Import ────────────────────────────────────────────────────
@@ -10055,23 +10046,15 @@ window.importConfig = function (event) {
   event.target.value = ""; // allow re-importing same file
 };
 
-// Apply saved theme + accent on load
+// Apply saved theme on load (accent is now baked into each theme — no standalone override)
 (function () {
-  const savedTheme  = localStorage.getItem("upstaff_color_theme");
-  const savedAccent = localStorage.getItem("upstaff_accent_color");
-  applyTheme(savedTheme || "ocean"); // always inject light-mode overrides; fallback = default
-  if (!savedTheme && savedAccent) applyAccentColor(savedAccent);
+  const savedTheme = localStorage.getItem("upstaff_color_theme");
+  // Clean up any stale accent override from previous sessions
+  localStorage.removeItem("upstaff_accent_color");
+  const stale = document.getElementById("accent-override");
+  if (stale) stale.remove();
+  applyTheme(savedTheme || "ocean"); // always inject light-mode sidebar overrides
 })();
-
-// Wire up swatches + custom picker
-document.addEventListener("DOMContentLoaded", function () {
-  document.getElementById("accent-swatches")?.addEventListener("click", function (e) {
-    const swatch = e.target.closest(".accent-swatch");
-    if (swatch) applyAccentColor(swatch.dataset.color);
-  });
-  const customPicker = document.getElementById("s-accent-custom");
-  if (customPicker) customPicker.addEventListener("input", (e) => applyAccentColor(e.target.value));
-});
 
 // ══════════════════════════════════════════════════════════════════════════════
 // ── TEAM MEMBERS (Supabase-backed) ───────────────────────────────────────────
