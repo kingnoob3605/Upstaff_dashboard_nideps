@@ -7446,27 +7446,13 @@ document.addEventListener("change", function (e) {
     const avatarEl = document.getElementById("profile-avatar-circle");
     const fullName = `${profile.firstName} ${profile.lastName}`.trim();
     if (avatarEl && fullName) {
-      try {
-        const cfg = JSON.parse(
-          localStorage.getItem("upstaff_api_config") || "{}",
-        );
-        if (cfg.picture) {
-          const initials = fullName
-            .split(" ")
-            .map((w) => w[0])
-            .join("")
-            .toUpperCase()
-            .slice(0, 2);
-          avatarEl.innerHTML = `<img src="${cfg.picture}" style="width:64px;height:64px;border-radius:50%;object-fit:cover;" onerror="this.parentElement.textContent='${initials}'"/>`;
-        } else {
-          avatarEl.textContent = fullName
-            .split(" ")
-            .map((w) => w[0])
-            .join("")
-            .toUpperCase()
-            .slice(0, 2);
-        }
-      } catch (_) {}
+      const picUrl = localStorage.getItem("upstaff_profile_picture");
+      const initials = fullName.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
+      if (picUrl) {
+        avatarEl.innerHTML = `<img src="${picUrl}" style="width:64px;height:64px;border-radius:50%;object-fit:cover;" onerror="this.parentElement.textContent='${initials}'"/>`;
+      } else {
+        avatarEl.textContent = initials;
+      }
     }
 
     // Update header display name
@@ -7498,25 +7484,15 @@ document.addEventListener("change", function (e) {
     if (tzSel && ws.timezone) tzSel.value = ws.timezone;
     if (dfSel && ws.dateFormat) dfSel.value = ws.dateFormat;
 
-    // ── Profile: Show Google profile picture if available ──
+    // ── Profile: Show uploaded profile picture if available ──
     try {
-      const cfg = JSON.parse(
-        localStorage.getItem("upstaff_api_config") || "{}",
-      );
+      const picUrl  = localStorage.getItem("upstaff_profile_picture");
       const avatarEl = document.getElementById("profile-avatar-circle");
-      if (avatarEl && cfg.picture) {
-        avatarEl.innerHTML = `<img src="${cfg.picture}" style="width:64px;height:64px;border-radius:50%;object-fit:cover;" onerror="this.parentElement.textContent=this.parentElement.dataset.initials||'HR'"/>`;
-        // Pre-fill name fields from Google if profile fields are still empty
-        if (!pInputs[0]?.value && cfg.name) {
-          const parts = cfg.name.trim().split(" ");
-          if (pInputs[0]) pInputs[0].value = parts[0] || "";
-          if (pInputs[1]) pInputs[1].value = parts.slice(1).join(" ") || "";
-        }
-        if (!pInputs[2]?.value && cfg.email) {
-          if (pInputs[2]) pInputs[2].value = cfg.email;
-        }
+      if (avatarEl && picUrl) {
+        avatarEl.innerHTML = `<img src="${picUrl}" style="width:64px;height:64px;border-radius:50%;object-fit:cover;" onerror="this.parentElement.textContent=this.parentElement.dataset.initials||'HR'"/>`;
       }
-      // Auto-reflect role from Google auth
+      // Auto-reflect role from Supabase auth
+      const cfg = JSON.parse(localStorage.getItem("upstaff_api_config") || "{}");
       if (cfg.role) {
         const roleLabel = cfg.role === "hr" ? "HR Manager" : cfg.role === "assistant" ? "Assistant" : cfg.role;
         const roleDisplayEl = document.getElementById("profile-display-role");
@@ -7589,15 +7565,13 @@ document.addEventListener("change", function (e) {
         "";
       localStorage.setItem(LS_WORKSPACE, JSON.stringify(ws));
 
-      // Update avatar: show initials (picture is set separately from Google login)
+      // Update avatar: show uploaded picture or fall back to initials
       const avatarEl = document.getElementById("profile-avatar-circle");
       const fullName = `${profile.firstName} ${profile.lastName}`.trim();
       if (avatarEl && fullName) {
-        const cfg = JSON.parse(
-          localStorage.getItem("upstaff_api_config") || "{}",
-        );
-        if (cfg.picture) {
-          avatarEl.innerHTML = `<img src="${cfg.picture}" style="width:64px;height:64px;border-radius:50%;object-fit:cover;" onerror="this.parentElement.textContent='${fullName
+        const picUrl2 = localStorage.getItem("upstaff_profile_picture");
+        if (picUrl2) {
+          avatarEl.innerHTML = `<img src="${picUrl2}" style="width:64px;height:64px;border-radius:50%;object-fit:cover;" onerror="this.parentElement.textContent='${fullName
             .split(" ")
             .map((w) => w[0])
             .join("")
@@ -10085,8 +10059,8 @@ window.importConfig = function (event) {
 (function () {
   const savedTheme  = localStorage.getItem("upstaff_color_theme");
   const savedAccent = localStorage.getItem("upstaff_accent_color");
-  if (savedTheme)  applyTheme(savedTheme);
-  else if (savedAccent) applyAccentColor(savedAccent);
+  applyTheme(savedTheme || "ocean"); // always inject light-mode overrides; fallback = default
+  if (!savedTheme && savedAccent) applyAccentColor(savedAccent);
 })();
 
 // Wire up swatches + custom picker
