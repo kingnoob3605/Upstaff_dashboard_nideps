@@ -237,13 +237,36 @@ window.SupabaseAuth = (function () {
     } catch (_) { return true; }
   }
 
+  // Return a valid access token, refreshing silently if the current one has expired.
+  async function _getFreshToken() {
+    var c = _config();
+    if (!c.supabaseToken) return null;
+    if (!_jwtExpired(c.supabaseToken)) return c.supabaseToken;
+
+    // Token expired — try refresh
+    if (!c.supabaseRefreshToken) return null;
+    try {
+      var client = _getClient();
+      if (!client) return null;
+      var result = await client.auth.refreshSession({ refresh_token: c.supabaseRefreshToken });
+      if (result.error || !result.data || !result.data.session) return null;
+      c.supabaseToken        = result.data.session.access_token;
+      c.supabaseRefreshToken = result.data.session.refresh_token;
+      c.login_at             = Date.now();
+      _saveConfig(c);
+      return c.supabaseToken;
+    } catch (_) { return null; }
+  }
+
   // Fetch all profiles (HR sees all via RLS policy; assistants see only own)
   async function getMembers() {
     var c = _config();
-    if (!c.supabaseUrl || !c.supabaseToken || _jwtExpired(c.supabaseToken)) return [];
+    if (!c.supabaseUrl || !c.supabaseAnonKey) return [];
+    var token = await _getFreshToken();
+    if (!token) return [];
     try {
       var resp = await fetch(c.supabaseUrl + '/rest/v1/profiles?select=id,role,name,email&order=role.asc,name.asc', {
-        headers: { 'apikey': c.supabaseAnonKey, 'Authorization': 'Bearer ' + c.supabaseToken },
+        headers: { 'apikey': c.supabaseAnonKey, 'Authorization': 'Bearer ' + token },
       });
       if (!resp.ok) return [];
       return await resp.json();
@@ -285,5 +308,6 @@ window.SupabaseAuth = (function () {
   function getCurrentUserId() { return _config().userId || null; }
 
   return { login, logout, isConfigured, isLoggedIn, getRole, getName, getEmail, saveSettings,
-           changePassword, sendPasswordReset, getMembers, inviteMember, removeMember, getCurrentUserId };
+           changePassword, sendPasswordReset, getMembers, inviteMember, removeMember,
+           getCurrentUserId, getFreshToken: _getFreshToken };
 })();

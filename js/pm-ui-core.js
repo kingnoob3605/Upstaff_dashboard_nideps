@@ -902,7 +902,14 @@ function _jwtExpiredCore(token) {
 
 async function _supabaseSyncNow() {
   var c = _getSupabaseCfg();
-  if (!c || _jwtExpiredCore(c.supabaseToken)) return;
+  if (!c) return;
+  if (_jwtExpiredCore(c.supabaseToken)) {
+    if (window.SupabaseAuth && SupabaseAuth.getFreshToken) {
+      var fresh = await SupabaseAuth.getFreshToken();
+      if (!fresh) return;
+      c = _getSupabaseCfg(); // re-read after refresh
+    } else { return; }
+  }
 
   var headers = {
     "Content-Type":  "application/json",
@@ -943,7 +950,14 @@ var _syncDebounced = debounce(_supabaseSyncNow, 2000);
 
 async function loadDataFromSupabase() {
   var c = _getSupabaseCfg();
-  if (!c || _jwtExpiredCore(c.supabaseToken)) return;
+  if (!c) return;
+  if (_jwtExpiredCore(c.supabaseToken)) {
+    if (window.SupabaseAuth && SupabaseAuth.getFreshToken) {
+      var fresh = await SupabaseAuth.getFreshToken();
+      if (!fresh) return;
+      c = _getSupabaseCfg();
+    } else { return; }
+  }
 
   var headers = {
     "apikey":        c.supabaseAnonKey,
