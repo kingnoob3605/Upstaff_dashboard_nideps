@@ -783,6 +783,8 @@ function persistSave() {
     const savedEl = document.getElementById("last-saved-indicator");
     if (savedEl) savedEl.textContent = "Saved at " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
     checkStorageQuota();
+    // Mirror to Supabase (debounced — fires 2 s after last save)
+    _syncDebounced();
   } catch (e) {
     console.warn(
       "[Persist] ⚠️ localStorage write failed (storage full or blocked):",
@@ -873,6 +875,152 @@ function persistClearAll() {
   localStorage.removeItem(getUserCalendarsKey());
   localStorage.removeItem(getUserGcalCountKey());
 }
+
+/* ══════════════════════════════════════════════
+   SUPABASE SYNC
+   Mirrors TASKS + local calEvents to Supabase so
+   data survives browser clears and is shared across
+   all team members' devices.
+
+   _supabaseSyncNow()  — upsert current state (fire-and-forget)
+   loadDataFromSupabase() — pull server rows, replace local data
+══════════════════════════════════════════════ */
+function _getSupabaseCfg() {
+  try {
+    var c = JSON.parse(localStorage.getItem("upstaff_api_config") || "{}");
+    if (c.supabaseUrl && c.supabaseToken && c.supabaseAnonKey) return c;
+  } catch (_) {}
+  return null;
+}
+
+function _jwtExpiredCore(token) {
+  try {
+    var p = JSON.parse(atob(token.split(".")[1].replace(/-/g,"+").replace(/_/g,"/")));
+    return Date.now() / 1000 > p.exp;
+  } catch (_) { return true; }
+}
+
+async function _supabaseSyncNow() {
+  var c = _getSupabaseCfg();
+  if (!c || _jwtExpiredCore(c.supabaseToken)) return;
+
+  var headers = {
+    "Content-Type":  "application/json",
+    "apikey":        c.supabaseAnonKey,
+    "Authorization": "Bearer " + c.supabaseToken,
+    "Prefer":        "resolution=merge-duplicates",
+  };
+  var base = c.supabaseUrl + "/rest/v1/";
+
+  // Upsert tasks
+  if (TASKS.length > 0) {
+    var taskRows = TASKS.map(function(t) {
+      return { id: t.id, data: t, updated_at: new Date().toISOString() };
+    });
+    fetch(base + "applicants", {
+      method:  "POST",
+      headers: headers,
+      body:    JSON.stringify(taskRows),
+    }).catch(function() {});
+  }
+
+  // Upsert local calendar events (exclude Google events)
+  var localEvts = calEvents.filter(function(e) { return !e.isGoogleEvent; });
+  if (localEvts.length > 0) {
+    var evtRows = localEvts.map(function(e) {
+      return { id: e.id, data: e, updated_at: new Date().toISOString() };
+    });
+    fetch(base + "cal_events", {
+      method:  "POST",
+      headers: headers,
+      body:    JSON.stringify(evtRows),
+    }).catch(function() {});
+  }
+}
+
+// Debounced version — batches rapid saves into one network call
+var _syncDebounced = debounce(_supabaseSyncNow, 2000);
+
+async function loadDataFromSupabase() {
+  var c = _getSupabaseCfg();
+  if (!c || _jwtExpiredCore(c.supabaseToken)) return;
+
+  var headers = {
+    "apikey":        c.supabaseAnonKey,
+    "Authorization": "Bearer " + c.supabaseToken,
+  };
+  var base = c.supabaseUrl + "/rest/v1/";
+
+  try {
+    // Pull tasks
+    var taskResp = await fetch(base + "applicants?select=id,data&order=id.asc", { headers: headers });
+    if (taskResp.ok) {
+      var taskRows = await taskResp.json();
+      if (Array.isArray(taskRows) && taskRows.length > 0) {
+        var serverTasks = taskRows.map(function(r) { return r.data; });
+        // Migrate: ensure required fields exist on each task
+        serverTasks.forEach(function(t) {
+          if (!t.assignees)     t.assignees     = t.assignee ? [t.assignee] : ["Assistant"];
+          if (!t.assignee)      t.assignee      = t.assignees[0] || "Assistant";
+          if (!t.comments)      t.comments      = [];
+          if (!t.activity)      t.activity      = [];
+          if (!t.attachments)   t.attachments   = [];
+          if (!t.stage_history) t.stage_history = [];
+        });
+        TASKS = serverTasks;
+        // Update counter so new IDs don't collide
+        var maxId = serverTasks.reduce(function(m, t) { return Math.max(m, t.id || 0); }, 0);
+        if (maxId >= taskNextId) taskNextId = maxId + 1;
+        dbg("[Supabase] ✅ Loaded " + TASKS.length + " task(s) from server");
+      }
+    }
+
+    // Pull local calendar events
+    var evtResp = await fetch(base + "cal_events?select=id,data&order=id.asc", { headers: headers });
+    if (evtResp.ok) {
+      var evtRows = await evtResp.json();
+      if (Array.isArray(evtRows) && evtRows.length > 0) {
+        var serverEvts = evtRows.map(function(r) { return r.data; });
+        // Merge: keep Google events already in memory, replace local ones
+        var googleEvts = calEvents.filter(function(e) { return e.isGoogleEvent; });
+        calEvents = googleEvts.concat(serverEvts);
+        var maxEvtId = serverEvts.reduce(function(m, e) { return Math.max(m, e.id || 0); }, 0);
+        if (maxEvtId >= calNextId) calNextId = maxEvtId + 1;
+        dbg("[Supabase] ✅ Loaded " + serverEvts.length + " calendar event(s) from server");
+      }
+    }
+
+    // Persist the freshly-loaded data to localStorage as cache
+    persistSave();
+  } catch (err) {
+    console.warn("[Supabase] ⚠️ loadDataFromSupabase failed:", err);
+  }
+}
+
+// Delete a task row from Supabase when it is removed locally
+async function _supabaseDeleteTask(taskId) {
+  var c = _getSupabaseCfg();
+  if (!c || _jwtExpiredCore(c.supabaseToken)) return;
+  fetch(c.supabaseUrl + "/rest/v1/applicants?id=eq." + taskId, {
+    method:  "DELETE",
+    headers: { "apikey": c.supabaseAnonKey, "Authorization": "Bearer " + c.supabaseToken },
+  }).catch(function() {});
+}
+
+// Delete a cal_event row from Supabase when it is removed locally
+async function _supabaseDeleteCalEvent(evtId) {
+  var c = _getSupabaseCfg();
+  if (!c || _jwtExpiredCore(c.supabaseToken)) return;
+  fetch(c.supabaseUrl + "/rest/v1/cal_events?id=eq." + evtId, {
+    method:  "DELETE",
+    headers: { "apikey": c.supabaseAnonKey, "Authorization": "Bearer " + c.supabaseToken },
+  }).catch(function() {});
+}
+
+// Expose for index.html post-login hook
+window.loadDataFromSupabase    = loadDataFromSupabase;
+window._supabaseDeleteTask     = _supabaseDeleteTask;
+window._supabaseDeleteCalEvent = _supabaseDeleteCalEvent;
 
 /* ── Hydrate on script parse (before first render) ── */
 persistLoad();

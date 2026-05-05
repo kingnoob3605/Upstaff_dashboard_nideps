@@ -2556,11 +2556,19 @@ window.handleEmailLogin = async function() {
 
     statusEl.textContent = '✅ Welcome, ' + result.name + '!';
     statusEl.style.color = 'var(--green,#10b981)';
+
+    // Pull shared data from Supabase before showing the dashboard
+    try {
+      statusEl.textContent = '⏳ Loading your data…';
+      await window.loadDataFromSupabase();
+      statusEl.textContent = '✅ Welcome, ' + result.name + '!';
+    } catch (_) {}
+
     setTimeout(function() {
       _hideLoginGate();
-      var cfg = window.UpstaffAPI ? UpstaffAPI.getConfig() : {};
-      // syncApplicantsFromApi(); — disabled: manual-entry mode
-    }, 700);
+      // Re-render with the freshly loaded server data
+      if (typeof renderAll === 'function') renderAll();
+    }, 400);
   } catch (err) {
     statusEl.textContent = '❌ ' + (err.message || 'Sign in failed.');
     statusEl.style.color = '#ef4444';

@@ -1013,7 +1013,7 @@ async function listDeleteApplicant(taskId) {
         email: t.applicant_email,
         supabaseId: t.supabase_id,
       });
-      if (idx !== -1) TASKS.splice(idx, 1);
+      if (idx !== -1) { window._supabaseDeleteTask && _supabaseDeleteTask(t.id); TASKS.splice(idx, 1); }
       showToast(`🗑️ ${name} deleted.`);
     } catch (e) {
       showToast(`⚠️ Delete failed: ${e.message}`);
@@ -1021,7 +1021,7 @@ async function listDeleteApplicant(taskId) {
     }
   } else {
     // Local-only applicant — safe to remove immediately
-    if (idx !== -1) TASKS.splice(idx, 1);
+    if (idx !== -1) { window._supabaseDeleteTask && _supabaseDeleteTask(t.id); TASKS.splice(idx, 1); }
     showToast(`🗑️ ${name} removed.`);
   }
 
@@ -1490,6 +1490,8 @@ document
           eventId: t.gcalEventId,
         });
         // Remove the matching local shadow event from the calendar view
+        calEvents.filter((e) => e.google_event_id === t.gcalEventId)
+          .forEach((e) => window._supabaseDeleteCalEvent && _supabaseDeleteCalEvent(e.id));
         calEvents = calEvents.filter(
           (e) => e.google_event_id !== t.gcalEventId,
         );
@@ -4150,6 +4152,7 @@ async function deleteIvScheduleEvent(eventId) {
     }))
   )
     return;
+  window._supabaseDeleteCalEvent && _supabaseDeleteCalEvent(eventId);
   calEvents = calEvents.filter((e) => e.id !== eventId);
   persistSave();
   const task = TASKS.find((x) => x.id === window._editingTaskId);
@@ -6876,6 +6879,7 @@ document
           e.calendarId || "primary",
         ).catch((err) => console.warn("[GCal] Delete failed:", err));
       }
+      window._supabaseDeleteCalEvent && _supabaseDeleteCalEvent(calEditId);
       calEvents = calEvents.filter((x) => x.id !== calEditId);
       persistSave();
       closeModal();
