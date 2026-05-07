@@ -9047,32 +9047,29 @@ function applyTheme(key) {
     `:root:not([data-theme="dark"]) .logo-for-light{display:block!important;}`,
     // Light mode content area — very subtle inset shadow to reinforce sidebar edge
     `:root:not([data-theme="dark"]) #content{box-shadow:inset 2px 0 8px rgba(0,0,0,0.03)!important;}`,
-    // Light-mode token system — Gmail-style: visible theme tint on bg, white cards on top.
-    // tint(0.10) = ~10% accent mixed with white. Warm themes (Rose,Copper) → soft pink/amber.
-    // Cool themes (Electric,Steel) → faint blue/grey — still readable, just subtle.
+    // Light-mode token system — Linear/Vercel/shadcn approach.
+    // Surfaces stay NEUTRAL gray; accent shows only on chrome (topbar tint),
+    // active states, focus rings, and primary buttons. Theme color never
+    // floods large structural surfaces.
     `:root{`,
     `--navy:${t.navy};--slate:${t.slate};`,
-    // Page bg: tinted — this IS the visible theme color the user expects
-    `--bg:${tint(0.10)};--surface-2:${tint(0.13)};`,
-    // Cards: pure white — float clearly above tinted bg (key contrast layer)
+    // Page bg & surfaces: neutral gray scale — no theme bleed
+    `--bg:#fafafa;--surface-2:#f5f5f5;`,
     `--card:#ffffff;--surface-1:#ffffff;`,
-    // Structural surfaces: moderate tint — visible depth without competing with cards
-    `--surface-3:${tint(0.08)};--surface-4:${tint(0.12)};`,
-    // Border: slight darkening works on any tinted surface
+    `--surface-3:#f5f5f5;--surface-4:#eeeeee;`,
     `--border:rgba(0,0,0,0.09);`,
-    // Topbar: subtle accent tint so theme color is VISIBLE at top of viewport
-    // (Gmail approach: chrome carries the palette signature, cards stay neutral white)
-    `--topbar-bg:${tint(0.05)};--input-bg:#ffffff;--input-border:rgba(0,0,0,0.12);`,
-    // Row hover: stronger tint for clear interactive feedback
-    `--row-hover:${tint(0.15)};--row-alt:${tint(0.05)};`,
-    // Kanban columns: moderate tint
-    `--board-col-bg:${tint(0.10)};`,
-    // Calendar: other-month slightly lighter; today strongly tinted; agenda white
-    `--cal-other-month:${tint(0.06)};--agenda-item-bg:#ffffff;`,
-    `--cal-today-bg:${tint(0.20)};--cal-hour-hover:${tint(0.08)};`,
-    // Card shadow: stronger drop so white cards lift clearly off tinted bg
-    `--shadow-sm:0 2px 12px rgba(0,0,0,0.10),0 1px 3px rgba(0,0,0,0.06);`,
-    `--shadow-md:0 6px 20px rgba(0,0,0,0.12),0 2px 6px rgba(0,0,0,0.07);`,
+    // Topbar: keep a hint of accent (≤5%) — palette signature only
+    `--topbar-bg:${tint(0.04)};--input-bg:#ffffff;--input-border:rgba(0,0,0,0.12);`,
+    // Row hover/alt: neutral, not theme-tinted
+    `--row-hover:#f0f0f0;--row-alt:#fafafa;`,
+    // Kanban columns: neutral
+    `--board-col-bg:#f5f5f5;`,
+    // Calendar: only "today" gets a small accent wash (tiny surface, OK to tint)
+    `--cal-other-month:#fafafa;--agenda-item-bg:#ffffff;`,
+    `--cal-today-bg:${la(0.10)};--cal-hour-hover:#f5f5f5;`,
+    // Subtle shadows — Linear-style hairline lift
+    `--shadow-sm:0 1px 2px rgba(0,0,0,0.04),0 1px 3px rgba(0,0,0,0.06);`,
+    `--shadow-md:0 4px 6px rgba(0,0,0,0.05),0 2px 4px rgba(0,0,0,0.06);`,
     `}`,
     // Dark-mode: use the theme's deep navy/slate palette
     `[data-theme="dark"]{`,
