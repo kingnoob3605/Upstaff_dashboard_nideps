@@ -6410,7 +6410,7 @@ function openEdit(id) {
     showCalToast("⚠️ Could not load event details. Try refreshing.");
     return;
   }
-  calEditId = id;
+  calEditId = _id;   // use normalized integer — raw string fails strict === against numeric event IDs
   document.getElementById("cal-modal-heading").textContent = "Edit Interview";
   // ── Append Google Calendar badge for synced events ──
   setTimeout(() => {
@@ -6515,8 +6515,9 @@ function openEdit(id) {
 function autoEndTime(startTime) {
   if (!startTime) return "10:00";
   const [h, m] = startTime.split(":").map(Number);
-  const endH = Math.min(h + 1, 23);
-  return `${String(endH).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+  // Cap at 23:59 — Math.min(h+1,23) would produce zero-duration for 23:xx starts
+  if (h >= 23) return "23:59";
+  return `${String(h + 1).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
 }
 
 /* Live preview meeting link as user types */
@@ -6632,6 +6633,8 @@ function closeModal() {
   if (preview) preview.style.display = "none";
   const mlInput = document.getElementById("cal-f-meeting-link");
   if (mlInput) mlInput.value = "";
+  // Reset edit state — prevents stale ID leaking into next open/delete action
+  calEditId = null;
 }
 document
   .getElementById("cal-modal-close-btn")
@@ -6651,6 +6654,14 @@ document.getElementById("cal-btn-save")?.addEventListener("click", async () => {
     await uiAlert("Please enter the applicant's name.", {
       icon: "⚠️",
       title: "Name Required",
+    });
+    return;
+  }
+  const dateVal = document.getElementById("cal-f-date").value;
+  if (!dateVal) {
+    await uiAlert("Please select a date for the interview.", {
+      icon: "⚠️",
+      title: "Date Required",
     });
     return;
   }
@@ -6685,7 +6696,7 @@ document.getElementById("cal-btn-save")?.addEventListener("click", async () => {
     // ── Legacy fields (kept for rendering compatibility) ─────────
     name,
     position: document.getElementById("cal-f-position").value,
-    date: document.getElementById("cal-f-date").value,
+    date: dateVal,
     time: startTime,
     type: document.getElementById("cal-f-type").value,
     round,
@@ -9928,6 +9939,11 @@ function applyTheme(key) {
   const g = parseInt(t.accent.slice(3,5),16);
   const b = parseInt(t.accent.slice(5,7),16);
   const tint = (a) => `rgb(${Math.round(r*a+255*(1-a))},${Math.round(g*a+255*(1-a))},${Math.round(b*a+255*(1-a))})`;
+  // Luminance gate: darken accent for light-mode text/icon if accent is too light (e.g. Steel #94a3b8)
+  const lum = (r*299 + g*587 + b*114) / 1000;
+  const lightAccent = lum > 160
+    ? `rgb(${Math.round(r*0.55)},${Math.round(g*0.55)},${Math.round(b*0.55)})`
+    : t.accent;
   // Apply sidebar + light & dark surface overrides
   let el = document.getElementById("theme-sidebar-override");
   if (!el) { el = document.createElement("style"); el.id = "theme-sidebar-override"; document.head.appendChild(el); }
@@ -9940,14 +9956,20 @@ function applyTheme(key) {
     `:root:not([data-theme="dark"]) .sidebar-section-label{color:rgba(0,0,0,0.32)!important;}`,
     `:root:not([data-theme="dark"]) .nav-label{color:rgba(15,15,35,0.65)!important;}`,
     `:root:not([data-theme="dark"]) .nav-item:not(.active) svg{color:rgba(0,0,0,0.38)!important;}`,
-    `:root:not([data-theme="dark"]) .nav-item.active svg{color:${t.accent}!important;}`,
+    // Use lightAccent (darkened if needed) so Steel/Arctic stay readable on white bg
+    `:root:not([data-theme="dark"]) .nav-item.active svg{color:${lightAccent}!important;}`,
     `:root:not([data-theme="dark"]) .nav-item:hover{background:rgba(0,0,0,0.04)!important;}`,
-    `:root:not([data-theme="dark"]) .nav-item.active{background:${t.accent}1a!important;border-left-color:${t.accent}!important;}`,
-    `:root:not([data-theme="dark"]) .nav-item.active .nav-label{color:${t.accent}!important;font-weight:700;}`,
+    `:root:not([data-theme="dark"]) .nav-item.active{background:${lightAccent}1a!important;border-left-color:${lightAccent}!important;}`,
+    `:root:not([data-theme="dark"]) .nav-item.active .nav-label{color:${lightAccent}!important;font-weight:700;}`,
     `:root:not([data-theme="dark"]) .sidebar-footer{border-top:1px solid rgba(0,0,0,0.07)!important;}`,
     `:root:not([data-theme="dark"]) #toggle-btn{color:rgba(0,0,0,0.5)!important;}`,
     `:root:not([data-theme="dark"]) #toggle-btn:hover{background:rgba(0,0,0,0.05)!important;}`,
     `:root:not([data-theme="dark"]) .sidebar-logo img{filter:none!important;}`,
+    // Fix 4 — sidebar logo: CSS-swap dark/light logo images with data-theme
+    `[data-theme="dark"] .logo-for-light{display:none!important;}`,
+    `[data-theme="dark"] .logo-for-dark{display:block!important;}`,
+    `:root:not([data-theme="dark"]) .logo-for-dark{display:none!important;}`,
+    `:root:not([data-theme="dark"]) .logo-for-light{display:block!important;}`,
     // Light-mode: main surfaces stay near-white; accent tint only in interactive/hover states
     `:root{`,
     `--navy:${t.navy};--slate:${t.slate};`,
@@ -10079,20 +10101,28 @@ async function renderMembersList() {
     list.innerHTML = `<div style="text-align:center;padding:24px;color:var(--muted);font-size:13px;">No team members yet. Click <strong>Invite Member</strong> to add someone.</div>`;
     return;
   }
-  list.innerHTML = members.map((m) => `
+  const myPicUrl = localStorage.getItem("upstaff_profile_picture");
+  list.innerHTML = members.map((m) => {
+    const initial = (m.name || m.email || "?")[0].toUpperCase();
+    const isMe    = m.id === myId;
+    const avatarHtml = (isMe && myPicUrl)
+      ? `<div class="member-avatar" style="padding:0;overflow:hidden"><img src="${myPicUrl}" alt="${initial}" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.parentElement.style.padding='';this.parentElement.textContent='${initial}';this.remove()"/></div>`
+      : `<div class="member-avatar">${initial}</div>`;
+    return `
     <div class="member-row">
-      <div class="member-avatar">${(m.name || m.email || "?")[0].toUpperCase()}</div>
+      ${avatarHtml}
       <div class="member-info">
         <div class="member-name">${sanitize(m.name || m.email || "")}</div>
         <div class="member-email">${sanitize(m.email || "")}</div>
       </div>
       <span class="member-role-badge ${m.role === "hr" ? "hr" : "assistant"}">${m.role === "hr" ? "HR" : "Assistant"}</span>
-      ${m.id !== myId
+      ${!isMe
         ? `<button class="member-remove-btn" onclick="removeMember('${m.id}')" title="Remove member">
              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
            </button>`
         : `<span style="font-size:10px;color:var(--muted);padding:0 8px;">You</span>`}
-    </div>`).join("");
+    </div>`;
+  }).join("");
 }
 
 function toggleInviteForm() {

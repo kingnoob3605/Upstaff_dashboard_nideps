@@ -927,8 +927,9 @@ function gcalInjectEvents(googleEvents) {
    calendar and counts in analytics — WITHOUT touching Google Calendar.
 
    Format handled (from Apps Script buildRow):
-     "• Jan 15, 2024 @ 2:30 PM\n• Jan 16, 2024 @ 10:00 AM"
-     "• 2024-01-15 @ 09:00\n• 2024-01-16 @ 14:00"
+     "• 2026-05-04 @ 19:50• 2026-05-06 @ 13:00"  (bullet-only, up to 3 slots)
+     "• 2026-05-04 @ 19:50\n• 2026-05-06 @ 13:00" (newline-separated)
+     "Jan 15, 2024 @ 2:30 PM\n Jan 16, 2024 @ 10:00 AM" (legacy month format)
 
    Duplicate prevention:
      Slots are keyed by "taskId|date|time" so re-syncing is safe.
@@ -944,10 +945,10 @@ function injectInterviewSlotsAsEvents(tasks) {
     const raw = task.interview_slots;
     if (!raw || !raw.trim()) return;
 
-    // Split by newline — each line is one slot
+    // Split by newline OR bullet — handles both \n-separated and •-only formats
     const lines = raw
-      .split(/\n/)
-      .map((l) => l.replace(/^[•\-]\s*/, "").trim())
+      .split(/[\n•]/)
+      .map((l) => l.replace(/^[•\-\s]+/, "").trim())
       .filter(Boolean);
 
     lines.forEach((line) => {

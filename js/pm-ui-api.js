@@ -402,8 +402,14 @@ window.UpstaffAPI = (function () {
       course: r.course || "",
       skills: r.skills || "",
       tools: r.tools || "",
-      // Interview slots may come as "• 2026-04-02 @ 21:10" — strip bullet prefix
-      interview_slots: (r.interviewSlots || r.interview_slots || "").replace(/^•\s*/, "").trim(),
+      // Normalize multi-slot field: split on • or \n, trim each, rejoin with \n
+      // Handles: "• 2026-05-04 @ 19:50• 2026-05-06 @ 13:00" (bullet-only)
+      //      and: "• 2026-05-04 @ 19:50\n• 2026-05-06 @ 13:00" (newline-separated)
+      interview_slots: (r.interviewSlots || r.interview_slots || "")
+        .split(/[•\n]/)
+        .map(function(s) { return s.trim(); })
+        .filter(Boolean)
+        .join("\n"),
       referral_source: r.referralSource || r.referral_source || "",
       referral_code: r.referralCode || r.referral_code || "",
       video_intro_link:
