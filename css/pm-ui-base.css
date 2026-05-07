@@ -191,6 +191,14 @@ body {
   border-bottom: 1px solid rgba(255, 255, 255, 0.09);
   flex-shrink: 0;
 }
+/* Both logo variants share identical box so neither appears smaller */
+.sidebar-logo-img {
+  height: 32px;
+  width: 160px;
+  object-fit: contain;
+  object-position: left center;
+  flex-shrink: 0;
+}
 .logo-icon {
   width: 34px;
   height: 34px;

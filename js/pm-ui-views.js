@@ -5,7 +5,6 @@
  *  [SECTION: VIEW-SWITCH]    switchView, showSettings
  *  [SECTION: LIST-VIEW]      renderList, renderListStatusTabs, getListFilters, pagination, sorting
  *  [SECTION: QUICK-ADD]      quickAddApplicant, listCancelApplicant, listAdvanceStage
- *  [SECTION: TODO-VIEW]      renderTodos, openTodoModal, saveTodo, toggleTodoDone
  *  [SECTION: BOARD-VIEW]     renderBoard, boardDragStart, boardDragEnd, boardDrop
  *  [SECTION: MODAL-TABS]     _switchModalTab, tab population helpers
  *  [SECTION: MODAL-OPEN]     openTaskNew, openTaskEdit
@@ -31,7 +30,7 @@
 /* ══════════════════════════════════════════════
    [SECTION: VIEW-SWITCH] — project views + settings
 ══════════════════════════════════════════════ */
-const PROJECT_VIEWS = ["list", "board", "calendar", "table", "mytasks", "jobs"];
+const PROJECT_VIEWS = ["list", "board", "calendar", "table", "jobs"];
 
 /**
  * switchView(v) — switches between the 5 project board views.
@@ -44,7 +43,7 @@ function switchView(v) {
     const tb = document.getElementById("bulk-toolbar");
     if (tb) tb.style.display = "none";
   }
-  // Show view bar, hide settings, analytics, candidates, todos
+  // Show view bar, hide settings, analytics, candidates
   const _s = (id, val) => { const e = document.getElementById(id); if (e) e.style.display = val; };
   _s("view-bar", "");
   _s("view-settings", "none");
@@ -63,9 +62,9 @@ function switchView(v) {
     .querySelectorAll(".view-tab")
     .forEach((t) => t.classList.toggle("active", t.dataset.view === v));
 
-  // Show/hide project view panels (includes mytasks panel)
+  // Show/hide project view panels
   PROJECT_VIEWS.forEach((id) => {
-    const panelId = id === "mytasks" ? "view-todos" : "view-" + id;
+    const panelId = "view-" + id;
     const el = document.getElementById(panelId);
     if (el) el.style.display = id === v ? "block" : "none";
   });
@@ -76,21 +75,19 @@ function switchView(v) {
     board: "Kanban Board",
     calendar: "Interview Calendar",
     table: "Data Table",
-    mytasks: "My Tasks",
   };
   const crumbCurrent = document.getElementById("crumb-current");
   const crumbParent  = document.getElementById("crumb-parent");
   const btnAddTask   = document.getElementById("btn-add-task");
   if (crumbCurrent) crumbCurrent.textContent = labels[v] || v;
   if (crumbParent)  crumbParent.textContent  = "Recruitment";
-  if (btnAddTask)   btnAddTask.style.display  = v === "calendar" || v === "mytasks" ? "none" : "";
+  if (btnAddTask)   btnAddTask.style.display  = v === "calendar" ? "none" : "";
 
   // Render content
   if (v === "list") renderList();
   else if (v === "board") renderBoard();
   else if (v === "calendar") renderCalendar();
   else if (v === "table") renderTable();
-  else if (v === "mytasks") renderTodos();
   else if (v === "jobs") loadJobsView();
 }
 
@@ -98,9 +95,9 @@ function switchView(v) {
  * showSettings() — shows the Settings panel (not a project view).
  */
 function showSettings() {
-  // Hide all project view panels (includes mytasks/view-todos via PROJECT_VIEWS)
+  // Hide all project view panels
   PROJECT_VIEWS.forEach((id) => {
-    const panelId = id === "mytasks" ? "view-todos" : "view-" + id;
+    const panelId = "view-" + id;
     const el = document.getElementById(panelId);
     if (el) el.style.display = "none";
   });
@@ -1095,545 +1092,6 @@ document
   ?.addEventListener("keydown", (e) => {
     if (e.key === "Enter") listQuickAdd();
   });
-document
-  .getElementById("todo-quickadd-input")
-  ?.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") todoQuickAdd();
-  });
-
-/* ══════════════════════════════════════════════
-   [SECTION: TODO-VIEW] — Personal Task Manager
-   Persisted separately from recruitment TASKS.
-══════════════════════════════════════════════ */
-const TODO_CAT_COLORS = {
-  Personal: "#6c63ff",
-  Work: "#44d7e9",
-  HR: "#fa8231",
-  Recruitment: "#43e97b",
-  Meeting: "#ff6584",
-  "Follow-up": "#f59e0b",
-};
-const LS_KEY_TODOS = "upstaff_todos";
-const LS_KEY_TODOID = "upstaff_todoNextId";
-let TODOS = [];
-let todoNextId = 1;
-let _todoEditId = null;
-let _todoFilter = "all";
-
-(function todoLoad() {
-  try {
-    const raw = localStorage.getItem(LS_KEY_TODOS);
-    const rawId = localStorage.getItem(LS_KEY_TODOID);
-    if (raw) TODOS = JSON.parse(raw);
-    if (rawId) todoNextId = parseInt(rawId, 10) || 1;
-  } catch (e) {
-    TODOS = [];
-  }
-})();
-
-function todoSave() {
-  try {
-    localStorage.setItem(LS_KEY_TODOS, JSON.stringify(TODOS));
-    localStorage.setItem(LS_KEY_TODOID, String(todoNextId));
-  } catch (e) {
-    dbg("[todoSave] localStorage write failed:", e);
-  }
-}
-/* ── Show todos view (now via unified switchView) ── */
-function showTodos() {
-  // Route through the Recruitment view-bar system — My Tasks is now tab #5
-  switchView("mytasks");
-  // Highlight Recruitment in sidebar nav
-  document
-    .querySelectorAll(".nav-item")
-    .forEach((x) => x.classList.remove("active"));
-  const navRec = document.querySelector('.nav-item[data-space="recruitment"]');
-  if (navRec) navRec.classList.add("active");
-}
-
-/* ── Filter ── */
-function setTodoFilter(f, btnEl) {
-  _todoFilter = f;
-  document
-    .querySelectorAll(".todo-filter-tab")
-    .forEach((b) => b.classList.remove("active"));
-  if (btnEl) btnEl.classList.add("active");
-  renderTodos();
-}
-
-/* ── Render ── */
-function renderTodos() {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const filterPr = document.getElementById("todo-filter-priority")?.value || "";
-  const filterCt = document.getElementById("todo-filter-category")?.value || "";
-
-  // Stats
-  const statsEl = document.getElementById("todo-stats-row");
-  if (statsEl) {
-    const tot = TODOS.length;
-    const done = TODOS.filter((t) => t.completed).length;
-    const ov = TODOS.filter(
-      (t) => !t.completed && t.dueDate && new Date(t.dueDate) < today,
-    ).length;
-    const due = TODOS.filter(
-      (t) =>
-        !t.completed &&
-        t.dueDate &&
-        new Date(t.dueDate + "T00:00").toDateString() === today.toDateString(),
-    ).length;
-    statsEl.innerHTML = `
-      <div class="todo-stat-chip"><span class="todo-stat-val">${tot}</span>Total</div>
-      <div class="todo-stat-chip"><span class="todo-stat-val" style="color:var(--green);">${done}</span>Done</div>
-      <div class="todo-stat-chip"><span class="todo-stat-val" style="color:#ef4444;">${ov}</span>Overdue</div>
-      <div class="todo-stat-chip"><span class="todo-stat-val" style="color:var(--orange);">${due}</span>Due Today</div>
-    `;
-  }
-
-  let todos = [...TODOS];
-  if (_todoFilter === "active") todos = todos.filter((t) => !t.completed);
-  if (_todoFilter === "completed") todos = todos.filter((t) => t.completed);
-  if (_todoFilter === "overdue")
-    todos = todos.filter(
-      (t) => !t.completed && t.dueDate && new Date(t.dueDate) < today,
-    );
-  if (_todoFilter === "today")
-    todos = todos.filter(
-      (t) =>
-        !t.completed &&
-        t.dueDate &&
-        new Date(t.dueDate + "T00:00").toDateString() === today.toDateString(),
-    );
-  if (filterPr) todos = todos.filter((t) => t.priority === filterPr);
-  if (filterCt) todos = todos.filter((t) => t.category === filterCt);
-
-  const container = document.getElementById("todo-list-container");
-  if (!container) return;
-
-  if (!todos.length) {
-    container.innerHTML = `<div class="todo-empty">
-      <div class="todo-empty-icon">✅</div>
-      <div class="todo-empty-title">${_todoFilter === "completed" ? "No completed tasks yet" : _todoFilter === "overdue" ? "You're all caught up!" : _todoFilter === "today" ? "Nothing due today!" : "No tasks found"}</div>
-      <div class="todo-empty-sub">${_todoFilter === "all" ? "Use the quick-add bar above to get started." : "Try a different filter."}</div>
-    </div>`;
-    return;
-  }
-
-  // Group into sections
-  const G = { overdue: [], today: [], upcoming: [], nodate: [], completed: [] };
-  todos.forEach((t) => {
-    if (t.completed) {
-      G.completed.push(t);
-      return;
-    }
-    if (!t.dueDate) {
-      G.nodate.push(t);
-      return;
-    }
-    const dd = new Date(t.dueDate);
-    if (dd < today) G.overdue.push(t);
-    else if (dd.toDateString() === today.toDateString()) G.today.push(t);
-    else G.upcoming.push(t);
-  });
-
-  const secs = [
-    { key: "overdue", label: "⚠ Overdue", color: "#ef4444" },
-    { key: "today", label: "🔥 Due Today", color: "#fa8231" },
-    { key: "upcoming", label: "📅 Upcoming", color: "var(--cyan)" },
-    { key: "nodate", label: "📌 No Due Date", color: "var(--muted)" },
-    { key: "completed", label: "✅ Completed", color: "var(--green)" },
-  ];
-
-  let html = "";
-  secs.forEach((sec) => {
-    const items = G[sec.key];
-    if (!items.length) return;
-    // Sort by priority desc within section
-    items.sort(
-      (a, b) =>
-        (PRIORITY_ORDER[b.priority] || 0) - (PRIORITY_ORDER[a.priority] || 0),
-    );
-    html += `<div class="todo-section">
-      <div class="todo-section-header">
-        <span class="todo-section-label" style="color:${sec.color};">${sec.label}</span>
-        <span class="todo-section-count">${items.length}</span>
-      </div>
-      ${items.map((t) => _buildTodoItemHTML(t, today)).join("")}
-    </div>`;
-  });
-
-  container.innerHTML = html;
-}
-
-function _buildTodoItemHTML(t, today) {
-  const pc = PRIORITY_COLORS[t.priority] || "#9ca3af";
-  const cc = TODO_CAT_COLORS[t.category] || "var(--cyan)";
-  let dueChip = "";
-  if (t.dueDate) {
-    const dd = new Date(t.dueDate);
-    const timeStr = t.dueTime ? " · " + fmtTime(t.dueTime) : "";
-    if (dd < today)
-      dueChip = `<span class="todo-pill todo-due-overdue">⚠ ${fmtDue(t.dueDate)}${timeStr}</span>`;
-    else if (dd.toDateString() === today.toDateString())
-      dueChip = `<span class="todo-pill todo-due-today">🔥 Today${timeStr}</span>`;
-    else
-      dueChip = `<span class="todo-pill todo-due-upcoming">📅 ${fmtDue(t.dueDate)}${timeStr}</span>`;
-  }
-  return `<div class="todo-item ${t.completed ? "t-completed" : ""}">
-    <div class="todo-check-box ${t.completed ? "t-done" : ""}" onclick="toggleTodoDone(${t.id})" title="${t.completed ? "Mark active" : "Mark done"}">
-      ${t.completed ? `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>` : ""}
-    </div>
-    <div class="todo-item-body">
-      <div class="todo-item-title">${sanitize(t.title)}</div>
-      <div class="todo-item-meta">
-        <span class="todo-pill" style="background:${pc}18;color:${pc};">${t.priority}</span>
-        ${t.category ? `<span class="todo-pill todo-cat-pill" style="background:${cc}18;color:${cc};">${t.category}</span>` : ""}
-        ${dueChip}
-        ${t.gcalEventId ? '<span class="todo-gcal-badge">☁️ GCal</span>' : ""}
-      </div>
-      ${t.notes ? `<div class="todo-item-notes">${sanitize(t.notes)}</div>` : ""}
-    </div>
-    <div class="todo-item-actions">
-      <button class="todo-item-edit-btn" onclick="openTodoModal(${t.id})">Edit</button>
-    </div>
-  </div>`;
-}
-
-/* ── Quick Add ── */
-function todoQuickAdd() {
-  const inp = document.getElementById("todo-quickadd-input");
-  const title = inp?.value.trim();
-  if (!title) {
-    inp?.focus();
-    return;
-  }
-  TODOS.push({
-    id: todoNextId++,
-    title,
-    priority:
-      document.getElementById("todo-quickadd-priority")?.value || "Medium",
-    category: document.getElementById("todo-quickadd-cat")?.value || "Work",
-    dueDate: "",
-    dueTime: "",
-    notes: "",
-    completed: false,
-    createdAt: new Date().toISOString(),
-  });
-  todoSave();
-  if (inp) inp.value = "";
-  renderTodos();
-  showToast("✅ Task added!");
-}
-
-/* ── Toggle Done ── */
-function toggleTodoDone(id) {
-  const t = TODOS.find((x) => x.id === id);
-  if (!t) return;
-  t.completed = !t.completed;
-  todoSave();
-  renderTodos();
-  if (t.completed) showToast("🎉 Task complete!");
-}
-
-/* ── Modal open/close ── */
-function openTodoModal(id) {
-  _todoEditId = id;
-  const t = id != null ? TODOS.find((x) => x.id === id) : null;
-  document.getElementById("todo-modal-heading").textContent = t
-    ? "Edit Task"
-    : "New Applicant";
-  document.getElementById("td-title").value = t?.title || "";
-  document.getElementById("td-priority").value = t?.priority || "Medium";
-  document.getElementById("td-category").value = t?.category || "Work";
-  document.getElementById("td-due").value = t?.dueDate || "";
-  document.getElementById("td-time").value = t?.dueTime || "";
-  document.getElementById("td-notes").value = t?.notes || "";
-  // If task already has a GCal event, pre-check the sync toggle so re-saving will UPDATE (not duplicate)
-  document.getElementById("td-gcal-sync").checked = !!t?.gcalEventId;
-  // Reset and populate the status indicator
-  const _gcalStatusEl = document.getElementById("td-gcal-status");
-  if (_gcalStatusEl) {
-    if (t?.gcalEventId) {
-      _gcalStatusEl.className = "gs-info";
-      _gcalStatusEl.innerHTML =
-        "☁️ This applicant is synced — saving will update the existing GCal event.";
-    } else {
-      _gcalStatusEl.className = "";
-      _gcalStatusEl.style.display = "none";
-      _gcalStatusEl.innerHTML = "";
-    }
-  }
-  document.getElementById("btn-todo-delete").style.display = t
-    ? "inline-flex"
-    : "none";
-  _gsapModalOpen("todo-modal-overlay", "todo-modal");
-  setTimeout(() => document.getElementById("td-title")?.focus(), 80);
-}
-function closeTodoModal() {
-  _gsapModalClose("todo-modal-overlay", "todo-modal");
-}
-document
-  .getElementById("todo-modal-overlay")
-  .addEventListener("click", function (e) {
-    if (e.target === this) closeTodoModal();
-  });
-
-/* ── Save ── */
-async function saveTodo() {
-  const title = document.getElementById("td-title").value.trim();
-  if (!title) {
-    showToast("❌ Task title is required.");
-    return;
-  }
-
-  const sync = document.getElementById("td-gcal-sync")?.checked;
-  const dueDate = document.getElementById("td-due").value;
-  const statusEl = document.getElementById("td-gcal-status");
-
-  // ── Guard: sync requested but no due date ──
-  if (sync && !dueDate) {
-    if (statusEl) {
-      statusEl.className = "gs-warn";
-      statusEl.innerHTML =
-        "⚠️ A due date is required to sync to Google Calendar.";
-    }
-    document.getElementById("td-due").focus();
-    return; // Don't save yet — let user fill in the date
-  }
-
-  const existing =
-    _todoEditId != null ? TODOS.find((x) => x.id === _todoEditId) : null;
-  const t = {
-    id: _todoEditId != null ? _todoEditId : todoNextId++,
-    title,
-    priority: document.getElementById("td-priority").value,
-    category: document.getElementById("td-category").value,
-    dueDate,
-    dueTime: document.getElementById("td-time").value,
-    notes: document.getElementById("td-notes").value,
-    completed: existing?.completed || false,
-    createdAt: existing?.createdAt || new Date().toISOString(),
-    gcalEventId: existing?.gcalEventId || null, // ← preserve existing GCal link
-  };
-
-  if (_todoEditId != null) {
-    const i = TODOS.findIndex((x) => x.id === _todoEditId);
-    if (i > -1) TODOS[i] = t;
-    showToast("✅ Task updated!");
-  } else {
-    TODOS.push(t);
-    showToast("✅ Task saved!");
-  }
-  todoSave();
-
-  // ── Optional Google Calendar sync ──
-  if (sync && dueDate) {
-    if (!gcalSignedIn) {
-      showToast("💡 Connect Google Calendar first to sync applicants.");
-      closeTodoModal();
-      renderTodos();
-      return;
-    }
-    // Show spinner while syncing (modal stays open during the API call)
-    if (statusEl) {
-      statusEl.className = "gs-loading";
-      statusEl.innerHTML =
-        '<div class="gcal-spinner"></div> Syncing to Google Calendar…';
-    }
-    try {
-      await _todoSyncToGcal(t);
-      if (statusEl) {
-        statusEl.className = "gs-ok";
-        statusEl.innerHTML = "✅ Synced to Google Calendar successfully!";
-      }
-      // Brief pause so user sees the success state, then close
-      await new Promise((r) => setTimeout(r, 700));
-    } catch (err) {
-      console.error("[GCal Todo Sync]", err);
-      if (statusEl) {
-        statusEl.className = "gs-err";
-        statusEl.innerHTML =
-          "⚠️ Google Calendar sync failed — applicant saved locally.";
-      }
-      showToast("⚠️ GCal sync failed. Task saved locally.");
-      // Pause so the error is visible, then close
-      await new Promise((r) => setTimeout(r, 1600));
-    }
-  }
-
-  closeTodoModal();
-  renderTodos();
-}
-
-/* ── Delete ── */
-document
-  .getElementById("btn-todo-delete")
-  .addEventListener("click", async function () {
-    if (_todoEditId == null) return;
-    const t = TODOS.find((x) => x.id === _todoEditId);
-    if (
-      !(await uiConfirm("This todo will be permanently deleted.", {
-        icon: "🗑️",
-        title: `Delete "${t?.title}"?`,
-        okText: "Delete",
-        okDanger: true,
-      }))
-    )
-      return;
-
-    // ── Also delete the Google Calendar event if one was linked ──
-    if (t?.gcalEventId && gcalSignedIn && gapi?.client?.calendar) {
-      try {
-        const calId = UPSTAFF_CALENDARS[0]?.calendarId || "primary";
-        await gapi.client.calendar.events.delete({
-          calendarId: calId,
-          eventId: t.gcalEventId,
-        });
-        // Remove the matching local shadow event from the calendar view
-        calEvents.filter((e) => e.google_event_id === t.gcalEventId)
-          .forEach((e) => window._supabaseDeleteCalEvent && _supabaseDeleteCalEvent(e.id));
-        calEvents = calEvents.filter(
-          (e) => e.google_event_id !== t.gcalEventId,
-        );
-        persistSave();
-        showToast("🗑️ Task and Google Calendar event deleted.");
-      } catch (e) {
-        // 410 Gone means it was already deleted from Google's side — safe to ignore
-        const code = e?.status || e?.result?.error?.code;
-        if (code !== 410 && code !== 404) {
-          console.warn("[GCal] Could not delete event:", e);
-          showToast(
-            "🗑️ Task deleted. GCal event could not be removed — delete it manually.",
-          );
-        } else {
-          showToast("🗑️ Task deleted.");
-        }
-      }
-    } else {
-      showToast("🗑️ Task deleted.");
-    }
-
-    TODOS = TODOS.filter((x) => x.id !== _todoEditId);
-    todoSave();
-    closeTodoModal();
-    renderTodos();
-  });
-
-/* ── Google Calendar sync for todos ──
-   • INSERT  when t.gcalEventId is absent  → creates a new event
-   • PATCH   when t.gcalEventId is present → updates the existing event (no duplicate)
-   • Stores the returned event id back onto TODOS[i].gcalEventId + calls todoSave()
-────────────────────────────────────────────── */
-async function _todoSyncToGcal(t) {
-  if (!gcalSignedIn || !gapi?.client?.calendar)
-    throw new Error("GCal not initialised");
-
-  const calId = UPSTAFF_CALENDARS[0]?.calendarId || "primary";
-
-  const resource = {
-    summary: `✅ ${t.title}`,
-    description: [
-      t.notes ? `Notes: ${t.notes}` : "",
-      t.priority ? `Priority: ${t.priority}` : "",
-      t.category ? `Category: ${t.category}` : "",
-    ]
-      .filter(Boolean)
-      .join("\n"),
-    start: t.dueTime
-      ? { dateTime: `${t.dueDate}T${t.dueTime}:00`, timeZone: "Asia/Manila" }
-      : { date: t.dueDate },
-    end: t.dueTime
-      ? { dateTime: `${t.dueDate}T${t.dueTime}:00`, timeZone: "Asia/Manila" }
-      : { date: t.dueDate },
-    colorId: "2", // green
-  };
-
-  let gcalId;
-
-  if (t.gcalEventId) {
-    // ── UPDATE existing event — avoids creating duplicates on re-save ──
-    try {
-      const resp = await gapi.client.calendar.events.patch({
-        calendarId: calId,
-        eventId: t.gcalEventId,
-        resource,
-      });
-      gcalId = resp.result.id;
-    } catch (patchErr) {
-      // If the remote event was deleted, fall through and create a new one
-      if (patchErr?.status === 404 || patchErr?.result?.error?.code === 404) {
-        console.warn("[GCal] Event not found on server — creating a new one.");
-        const resp = await gapi.client.calendar.events.insert({
-          calendarId: calId,
-          resource,
-        });
-        gcalId = resp.result.id;
-        _injectLocalCalEvent(gcalId, calId, t);
-      } else {
-        throw patchErr;
-      }
-    }
-    // Update the matching local cal event's metadata if it exists
-    const lev = calEvents.find((e) => e.google_event_id === t.gcalEventId);
-    if (lev) {
-      lev.title = resource.summary;
-      lev.name = t.title;
-      lev.date = t.dueDate;
-      lev.time = t.dueTime || "09:00";
-      lev.notes = t.notes || "";
-      persistSave();
-    }
-  } else {
-    // ── CREATE new event ──
-    const resp = await gapi.client.calendar.events.insert({
-      calendarId: calId,
-      resource,
-    });
-    gcalId = resp.result.id;
-    _injectLocalCalEvent(gcalId, calId, t);
-  }
-
-  // ── Write gcalEventId back onto the TODOS array so it persists ──
-  const idx = TODOS.findIndex((x) => x.id === t.id);
-  if (idx > -1) {
-    TODOS[idx].gcalEventId = gcalId;
-    t.gcalEventId = gcalId; // also mutate the in-scope reference
-  }
-  todoSave();
-
-  // Refresh calendar view if currently visible
-  const calTab = document.querySelector('.view-tab[data-view="calendar"]');
-  if (calTab?.classList.contains("active")) renderCalendar();
-}
-
-/* Helper: push a local calendar event so the Calendar view shows the task immediately */
-function _injectLocalCalEvent(gcalId, calId, t) {
-  calEvents.push({
-    id: calNextId++,
-    google_event_id: gcalId,
-    calendarId: calId,
-    isGoogleEvent: false,
-    isTodoEvent: true,
-    title: `✅ ${t.title}`,
-    name: t.title,
-    applicant_name: t.title,
-    position: t.category || "To-Do",
-    date: t.dueDate,
-    time: t.dueTime || "09:00",
-    start_time: t.dueTime || "09:00",
-    end_time: t.dueTime || "09:30",
-    type: "To-Do",
-    round: "Task",
-    interview_stage: "Task",
-    status: "Scheduled",
-    interviewer: "",
-    notes: t.notes || "",
-    meetingLink: "",
-    meeting_link: "",
-  });
-  persistSave();
-}
-
 /* ══════════════════════════════════════════════
    LIST VIEW — Quick Add
 ══════════════════════════════════════════════ */
@@ -4948,9 +4406,7 @@ const EMP_STATUS_META = {
 
 function showOnboarding() {
   PROJECT_VIEWS.forEach((id) => {
-    const el = document.getElementById(
-      id === "mytasks" ? "view-todos" : "view-" + id,
-    );
+    const el = document.getElementById("view-" + id);
     if (el) el.style.display = "none";
   });
   ["view-settings", "view-analytics", "view-candidates"].forEach((id) => {
@@ -7743,11 +7199,9 @@ function exportDataJSON() {
     calEvents: calEvents.filter((e) => !e.isGoogleEvent),
     employees: EMPLOYEES,
     candidates: CANDIDATES,
-    todos: TODOS,
     taskNextId,
     calNextId,
     empNextId,
-    todoNextId,
   };
   const blob = new Blob([JSON.stringify(data, null, 2)], {
     type: "application/json",
@@ -7798,14 +7252,9 @@ async function importDataJSON(input) {
       if (data.candidates) {
         CANDIDATES = data.candidates;
       }
-      if (data.todos) {
-        TODOS = data.todos;
-        todoNextId = data.todoNextId || 1;
-      }
       persistSave();
       empPersistSave();
       saveCandidates();
-      todoSave();
       refreshCurrentView();
       showToast("✅ Data imported successfully!");
     } catch (err) {
@@ -9031,9 +8480,7 @@ function exportAnalyticsCSV() {
 function showAnalytics() {
   // Hide all project view panels and settings
   PROJECT_VIEWS.forEach((id) => {
-    const el = document.getElementById(
-      id === "mytasks" ? "view-todos" : "view-" + id,
-    );
+    const el = document.getElementById("view-" + id);
     if (el) el.style.display = "none";
   });
   document.getElementById("view-settings").style.display = "none";
@@ -9964,6 +9411,7 @@ function applyTheme(key) {
     `:root:not([data-theme="dark"]) .nav-item.active{background:${lightAccent}1a!important;border-left-color:${lightAccent}!important;}`,
     `:root:not([data-theme="dark"]) .nav-item.active .nav-label{color:${lightAccent}!important;font-weight:700;}`,
     `:root:not([data-theme="dark"]) .sidebar-footer{border-top:1px solid rgba(0,0,0,0.07)!important;}`,
+    `:root:not([data-theme="dark"]) .sidebar-logo{border-bottom:1px solid rgba(0,0,0,0.07)!important;}`,
     `:root:not([data-theme="dark"]) #toggle-btn{color:rgba(0,0,0,0.5)!important;}`,
     `:root:not([data-theme="dark"]) #toggle-btn:hover{background:rgba(0,0,0,0.05)!important;}`,
     `:root:not([data-theme="dark"]) .sidebar-logo img{filter:none!important;}`,
@@ -9972,17 +9420,18 @@ function applyTheme(key) {
     `[data-theme="dark"] .logo-for-dark{display:block!important;}`,
     `:root:not([data-theme="dark"]) .logo-for-dark{display:none!important;}`,
     `:root:not([data-theme="dark"]) .logo-for-light{display:block!important;}`,
-    // Light-mode: main surfaces stay near-white; accent tint only in interactive/hover states
+    // Light-mode: white cards on tinted background for clear depth separation
     `:root{`,
     `--navy:${t.navy};--slate:${t.slate};`,
-    `--bg:${tint(0.02)};--surface-2:${tint(0.03)};`,
-    `--card:${tint(0.02)};--surface-1:${tint(0.02)};`,
-    `--surface-3:${tint(0.03)};--surface-4:${tint(0.04)};`,
-    `--topbar-bg:${tint(0.02)};--input-bg:${tint(0.02)};`,
-    `--row-hover:${tint(0.06)};--row-alt:${tint(0.03)};`,
-    `--board-col-bg:${tint(0.04)};`,
-    `--cal-other-month:${tint(0.02)};--agenda-item-bg:${tint(0.03)};`,
-    `--cal-today-bg:${tint(0.07)};--cal-hour-hover:${tint(0.04)};`,
+    `--bg:${tint(0.07)};--surface-2:${tint(0.08)};`,
+    `--card:#ffffff;--surface-1:#ffffff;`,
+    `--surface-3:${tint(0.05)};--surface-4:${tint(0.07)};`,
+    `--border:rgba(0,0,0,0.11);`,
+    `--topbar-bg:#ffffff;--input-bg:#ffffff;`,
+    `--row-hover:${tint(0.09)};--row-alt:${tint(0.04)};`,
+    `--board-col-bg:${tint(0.07)};`,
+    `--cal-other-month:${tint(0.04)};--agenda-item-bg:#ffffff;`,
+    `--cal-today-bg:${tint(0.13)};--cal-hour-hover:${tint(0.07)};`,
     `}`,
     // Dark-mode: use the theme's deep navy/slate palette
     `[data-theme="dark"]{`,
