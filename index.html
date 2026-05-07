@@ -2612,56 +2612,115 @@ function _applyRoleRestrictions(role) {
 // ── Custom Background Image (Gmail-style glassmorphism) ──────────────────
 // 3-layer stack: bg-image → scrim ::before → glass surfaces (backdrop-filter)
 // Slider value 0-15 maps to scrim darkness 0.30-0.75 (dark) / 0.40-0.85 (light)
+// Glass borders use var(--cyan) to preserve active theme accent (Rose/Ocean/etc.)
 function _buildBgStyle(blur) {
   var b = Math.max(0, Math.min(15, Number(blur) || 0));
-  var dimDark  = (0.30 + (b / 15) * 0.45).toFixed(2); // 0.30 → 0.75
-  var dimLight = (0.40 + (b / 15) * 0.45).toFixed(2); // 0.40 → 0.85
-  // Optional gentle blur on the bg image itself via ::before clone trick
-  // (uses the same image as body bg, filter:blur applied)
-  var imgBlurPx = (b * 0.6).toFixed(1) + 'px'; // 0 → 9px max
+  var dimDark  = (0.35 + (b / 15) * 0.40).toFixed(2); // 0.35 → 0.75
+  var dimLight = (0.45 + (b / 15) * 0.40).toFixed(2); // 0.45 → 0.85
+  var imgBlurPx = (b * 0.5).toFixed(1) + 'px';         // 0 → 7.5px bg soft blur
 
-  // Glass tokens
-  var glassDark   = 'background:rgba(18,24,35,0.70)!important;backdrop-filter:blur(20px) saturate(1.4);-webkit-backdrop-filter:blur(20px) saturate(1.4);border:1px solid rgba(255,255,255,0.08)!important;';
-  var glassLight  = 'background:rgba(255,255,255,0.78)!important;backdrop-filter:blur(20px) saturate(1.3);-webkit-backdrop-filter:blur(20px) saturate(1.3);border:1px solid rgba(0,0,0,0.06)!important;';
-  var glassHeavy  = 'background:rgba(15,20,30,0.80)!important;backdrop-filter:blur(24px) saturate(1.4);-webkit-backdrop-filter:blur(24px) saturate(1.4);';
-  var glassHeavyL = 'background:rgba(255,255,255,0.84)!important;backdrop-filter:blur(24px) saturate(1.3);-webkit-backdrop-filter:blur(24px) saturate(1.3);';
+  // ── Glass recipes ──────────────────────────────────────────────────────
+  // Accent glow uses var(--cyan) — picks up Rose pink, Ocean blue, etc. automatically
+  var accentGlow  = '0 0 18px -4px var(--cyan)';
+  var shadowBase  = '0 4px 24px rgba(0,0,0,0.35),0 1px 4px rgba(0,0,0,0.20)';
+  var shadowBaseL = '0 4px 20px rgba(0,0,0,0.12),0 1px 3px rgba(0,0,0,0.08)';
+
+  // cards — semi-transparent dark/light + blur + accent glow + inner top highlight
+  var glassDark  = 'background:rgba(16,22,34,0.72)!important;'
+    + 'backdrop-filter:blur(20px) saturate(1.5);-webkit-backdrop-filter:blur(20px) saturate(1.5);'
+    + 'border:1px solid rgba(255,255,255,0.07)!important;'
+    + 'box-shadow:' + shadowBase + ',' + accentGlow + ',inset 0 1px 0 rgba(255,255,255,0.05)!important;';
+  var glassLight = 'background:rgba(255,255,255,0.76)!important;'
+    + 'backdrop-filter:blur(20px) saturate(1.4);-webkit-backdrop-filter:blur(20px) saturate(1.4);'
+    + 'border:1px solid rgba(0,0,0,0.06)!important;'
+    + 'box-shadow:' + shadowBaseL + ',' + accentGlow + '!important;';
+
+  // chrome (topbar/sidebar) — heavier, more opaque
+  var chromeDark  = 'background:rgba(13,18,28,0.82)!important;'
+    + 'backdrop-filter:blur(24px) saturate(1.5);-webkit-backdrop-filter:blur(24px) saturate(1.5);';
+  var chromeLight = 'background:rgba(255,255,255,0.86)!important;'
+    + 'backdrop-filter:blur(24px) saturate(1.4);-webkit-backdrop-filter:blur(24px) saturate(1.4);';
+
+  // D = dark-only prefix helper
+  function D(sel, css) { return 'body.has-bg-image ' + sel + '{' + css + '}'; }
+  function L(sel, css) { return ':root:not([data-theme="dark"]) body.has-bg-image ' + sel + '{' + css + '}'; }
+  function DL(sel, cssDark, cssLight) { return D(sel, cssDark) + L(sel, cssLight); }
+
+  // card selectors (correct confirmed class names)
+  var cardSels = [
+    '.analytics-stat-card',   // analytics KPI cards (was wrong: .stat-card)
+    '.analytics-card',        // analytics chart panels
+    '.hr-stat-card',          // HR onboarding stat cards
+    '.settings-card',         // settings content cards
+    '.list-stat-chip',        // list view stat chips
+    '.card-sidebar',          // calendar sidebar
+    '.notif-panel',           // notifications panel
+    '.super-filter-panel',    // super filter dropdown
+    '.kanban-column',         // board view columns
+    '.table-wrap',            // table view wrapper
+    '.applicant-card',        // applicant list cards
+  ].join(',body.has-bg-image ');
+
+  var cardSelsL = cardSels.replace(/body\.has-bg-image /g, ':root:not([data-theme="dark"]) body.has-bg-image ');
+
+  // chip/button selectors
+  var chipSels  = '.filter-btn,.filter-chip,.list-section-tab,.pill-btn,.seg-btn';
+  var chipSelsL = chipSels;
 
   return [
-    // ── Layer 0: body holds bg image (unchanged) ──
+    // ── Layer 0: body holds bg-image (unchanged) ──────────────────────────
     'body.has-bg-image{position:relative;}',
 
-    // ── Layer 1: scrim — dims bg image so content stays readable ──
-    'body.has-bg-image::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;background:rgba(0,0,0,' + dimDark + ');backdrop-filter:blur(' + imgBlurPx + ');-webkit-backdrop-filter:blur(' + imgBlurPx + ');}',
-    ':root:not([data-theme="dark"]) body.has-bg-image::before{background:rgba(255,255,255,' + dimLight + ');}',
+    // ── Layer 1: scrim — dims & softly blurs bg image ─────────────────────
+    // z-index:0 sits above body bg, below #app (z-index:1)
+    'body.has-bg-image::before{'
+      + 'content:"";position:fixed;inset:0;z-index:0;pointer-events:none;'
+      + 'background:rgba(0,0,0,' + dimDark + ');'
+      + 'backdrop-filter:blur(' + imgBlurPx + ');-webkit-backdrop-filter:blur(' + imgBlurPx + ');'
+    + '}',
+    ':root:not([data-theme="dark"]) body.has-bg-image::before{'
+      + 'background:rgba(255,255,255,' + dimLight + ');'
+    + '}',
 
-    // ── Layer 2: app container sits above scrim ──
+    // ── Layer 2: app sits above scrim ─────────────────────────────────────
     'body.has-bg-image #app{background:transparent!important;position:relative;z-index:1;}',
     'body.has-bg-image #main{background:transparent!important;}',
     'body.has-bg-image #content{background:transparent!important;}',
 
-    // ── Glass: topbar ──
-    'body.has-bg-image #topbar{' + glassHeavy + 'border-bottom:1px solid rgba(255,255,255,0.09)!important;}',
-    ':root:not([data-theme="dark"]) body.has-bg-image #topbar{' + glassHeavyL + 'border-bottom:1px solid rgba(0,0,0,0.08)!important;}',
+    // ── Glass: topbar ─────────────────────────────────────────────────────
+    D('#topbar', chromeDark + 'border-bottom:1px solid rgba(255,255,255,0.08)!important;box-shadow:0 1px 12px rgba(0,0,0,0.30)!important;'),
+    L('#topbar', chromeLight + 'border-bottom:1px solid rgba(0,0,0,0.07)!important;box-shadow:0 1px 8px rgba(0,0,0,0.10)!important;'),
 
-    // ── Glass: sidebar (FIX B8 — was transparent in dark mode) ──
-    'body.has-bg-image #sidebar{' + glassHeavy + 'border-right:1px solid rgba(255,255,255,0.06)!important;}',
-    ':root:not([data-theme="dark"]) body.has-bg-image #sidebar{' + glassHeavyL + 'box-shadow:1px 0 0 rgba(0,0,0,0.10),4px 0 12px rgba(0,0,0,0.05)!important;}',
+    // ── Glass: sidebar ────────────────────────────────────────────────────
+    // Sidebar active item color (var(--cyan)) preserved — glass bg is transparent enough
+    D('#sidebar', chromeDark + 'border-right:1px solid rgba(255,255,255,0.06)!important;'),
+    L('#sidebar', chromeLight + 'box-shadow:1px 0 0 rgba(0,0,0,0.08),4px 0 14px rgba(0,0,0,0.06)!important;'),
 
-    // ── Glass: cards & panels (FIX B9) ──
-    'body.has-bg-image .list-stat-chip,body.has-bg-image .stat-card,body.has-bg-image .settings-card,body.has-bg-image .card-sidebar,body.has-bg-image .notif-panel,body.has-bg-image .super-filter-panel,body.has-bg-image .kanban-column,body.has-bg-image .table-wrap,body.has-bg-image .applicant-card{' + glassDark + '}',
-    ':root:not([data-theme="dark"]) body.has-bg-image .list-stat-chip,:root:not([data-theme="dark"]) body.has-bg-image .stat-card,:root:not([data-theme="dark"]) body.has-bg-image .settings-card,:root:not([data-theme="dark"]) body.has-bg-image .card-sidebar,:root:not([data-theme="dark"]) body.has-bg-image .notif-panel,:root:not([data-theme="dark"]) body.has-bg-image .super-filter-panel,:root:not([data-theme="dark"]) body.has-bg-image .kanban-column,:root:not([data-theme="dark"]) body.has-bg-image .table-wrap,:root:not([data-theme="dark"]) body.has-bg-image .applicant-card{' + glassLight + '}',
+    // ── Glass: settings panel sidebar (sub-nav) ───────────────────────────
+    D('.settings-panel-nav', 'background:rgba(16,22,34,0.60)!important;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-right:1px solid rgba(255,255,255,0.06)!important;'),
+    L('.settings-panel-nav', 'background:rgba(255,255,255,0.65)!important;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);'),
 
-    // ── Glass: filter chips & buttons (Waiting List / Talent Pool / etc.) ──
-    'body.has-bg-image .filter-chip,body.has-bg-image .list-section-tab,body.has-bg-image .pill-btn,body.has-bg-image .seg-btn{' + glassDark + '}',
-    ':root:not([data-theme="dark"]) body.has-bg-image .filter-chip,:root:not([data-theme="dark"]) body.has-bg-image .list-section-tab,:root:not([data-theme="dark"]) body.has-bg-image .pill-btn,:root:not([data-theme="dark"]) body.has-bg-image .seg-btn{' + glassLight + '}',
+    // ── Glass: all cards & panels (FIXED class names) ─────────────────────
+    'body.has-bg-image ' + cardSels + '{' + glassDark + '}',
+    cardSelsL + '{' + glassLight + '}',
 
-    // ── Glass: empty state container (FIX B11 — "No candidates yet" ) ──
-    'body.has-bg-image .empty-state,body.has-bg-image .list-empty,body.has-bg-image [class*="empty"]{' + glassDark + 'border-radius:14px;padding:32px!important;}',
-    ':root:not([data-theme="dark"]) body.has-bg-image .empty-state,:root:not([data-theme="dark"]) body.has-bg-image .list-empty,:root:not([data-theme="dark"]) body.has-bg-image [class*="empty"]{' + glassLight + '}',
+    // ── Glass: settings-panel wrapper ─────────────────────────────────────
+    D('.settings-panel.active,.settings-panel[style*="block"]',
+      'background:rgba(16,22,34,0.65)!important;backdrop-filter:blur(18px) saturate(1.4);-webkit-backdrop-filter:blur(18px) saturate(1.4);border-radius:12px;border:1px solid rgba(255,255,255,0.06)!important;'),
+    L('.settings-panel.active,.settings-panel[style*="block"]',
+      'background:rgba(255,255,255,0.72)!important;backdrop-filter:blur(18px) saturate(1.3);-webkit-backdrop-filter:blur(18px) saturate(1.3);border-radius:12px;'),
 
-    // ── Glass: analytics chart panels & "Live Database Counts" header ──
-    'body.has-bg-image .analytics-card,body.has-bg-image .chart-panel,body.has-bg-image .live-counts,body.has-bg-image .pipeline-chart{' + glassDark + 'border-radius:14px;}',
-    ':root:not([data-theme="dark"]) body.has-bg-image .analytics-card,:root:not([data-theme="dark"]) body.has-bg-image .chart-panel,:root:not([data-theme="dark"]) body.has-bg-image .live-counts,:root:not([data-theme="dark"]) body.has-bg-image .pipeline-chart{' + glassLight + '}',
+    // ── Glass: filter buttons/chips ───────────────────────────────────────
+    D(chipSels, 'background:rgba(16,22,34,0.65)!important;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.08)!important;'),
+    L(chipSels, 'background:rgba(255,255,255,0.72)!important;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(0,0,0,0.07)!important;'),
+
+    // ── Glass: empty state ────────────────────────────────────────────────
+    D('.empty-state,.list-empty', glassDark + 'border-radius:14px;'),
+    L('.empty-state,.list-empty', glassLight + 'border-radius:14px;'),
+
+    // ── Accent: active sidebar nav item keeps theme color visible ─────────
+    // Ensures Rose/Ocean active pill isn't washed out by chrome glass
+    D('.nav-item.active,.settings-nav-item.active', 'background:rgba(var(--cyan-r,68),var(--cyan-g,215),var(--cyan-b,233),0.18)!important;'),
   ].join('');
 }
 
