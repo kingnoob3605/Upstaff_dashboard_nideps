@@ -9388,38 +9388,46 @@ function applyTheme(key) {
   const g = parseInt(t.accent.slice(3,5),16);
   const b = parseInt(t.accent.slice(5,7),16);
   const tint = (a) => `rgb(${Math.round(r*a+255*(1-a))},${Math.round(g*a+255*(1-a))},${Math.round(b*a+255*(1-a))})`;
-  // Luminance gate: darken accent for light-mode text/icon if accent is too light (e.g. Steel #94a3b8)
+  // Luminance gate: compute light-mode accent as rgba-ready integers
   const lum = (r*299 + g*587 + b*114) / 1000;
-  const lightAccent = lum > 160
-    ? `rgb(${Math.round(r*0.55)},${Math.round(g*0.55)},${Math.round(b*0.55)})`
-    : t.accent;
+  const la_r = lum > 160 ? Math.round(r*0.55) : r;
+  const la_g = lum > 160 ? Math.round(g*0.55) : g;
+  const la_b = lum > 160 ? Math.round(b*0.55) : b;
+  const lightAccent = `rgb(${la_r},${la_g},${la_b})`;
+  // Alpha helper — always produces valid rgba() regardless of accent format
+  const la = (a) => `rgba(${la_r},${la_g},${la_b},${a})`;
   // Apply sidebar + light & dark surface overrides
   let el = document.getElementById("theme-sidebar-override");
   if (!el) { el = document.createElement("style"); el.id = "theme-sidebar-override"; document.head.appendChild(el); }
   el.textContent = [
     // Dark mode: sidebar keeps its navy/slate gradient
     `[data-theme="dark"] #sidebar{background:linear-gradient(160deg,${t.navy} 0%,${t.slate} 100%)!important;box-shadow:4px 0 28px rgba(0,0,0,0.22)!important;border-right:none!important;}`,
-    // Light mode: sidebar becomes clean white with subtle edge shadow
-    `:root:not([data-theme="dark"]) #sidebar{background:#ffffff!important;box-shadow:1px 0 0 rgba(0,0,0,0.09),4px 0 12px rgba(0,0,0,0.04)!important;}`,
-    // Light mode sidebar text + icon overrides (base CSS hardcodes white-based rgba)
-    `:root:not([data-theme="dark"]) .sidebar-section-label{color:rgba(0,0,0,0.32)!important;}`,
-    `:root:not([data-theme="dark"]) .nav-label{color:rgba(15,15,35,0.65)!important;}`,
-    `:root:not([data-theme="dark"]) .nav-item:not(.active) svg{color:rgba(0,0,0,0.38)!important;}`,
-    // Use lightAccent (darkened if needed) so Steel/Arctic stay readable on white bg
+    // Light mode: sidebar uses cool off-white so it reads as distinct from white content
+    `:root:not([data-theme="dark"]) #sidebar{background:#f4f5f8!important;box-shadow:1px 0 0 rgba(0,0,0,0.1),6px 0 16px rgba(0,0,0,0.05)!important;border-right:1px solid rgba(0,0,0,0.08)!important;}`,
+    // Section labels — clear hierarchy marker, not invisible
+    `:root:not([data-theme="dark"]) .sidebar-section-label{color:rgba(0,0,0,0.48)!important;font-weight:700!important;letter-spacing:0.05em!important;}`,
+    // Nav label — dark enough to read comfortably
+    `:root:not([data-theme="dark"]) .nav-label{color:rgba(10,10,28,0.75)!important;}`,
+    // Inactive icons — visible but subordinate
+    `:root:not([data-theme="dark"]) .nav-item:not(.active) svg{color:rgba(0,0,0,0.52)!important;}`,
+    // Active — use la() helper for always-valid rgba
     `:root:not([data-theme="dark"]) .nav-item.active svg{color:${lightAccent}!important;}`,
-    `:root:not([data-theme="dark"]) .nav-item:hover{background:rgba(0,0,0,0.04)!important;}`,
-    `:root:not([data-theme="dark"]) .nav-item.active{background:${lightAccent}1a!important;border-left-color:${lightAccent}!important;}`,
-    `:root:not([data-theme="dark"]) .nav-item.active .nav-label{color:${lightAccent}!important;font-weight:700;}`,
-    `:root:not([data-theme="dark"]) .sidebar-footer{border-top:1px solid rgba(0,0,0,0.07)!important;}`,
-    `:root:not([data-theme="dark"]) .sidebar-logo{border-bottom:1px solid rgba(0,0,0,0.07)!important;}`,
-    `:root:not([data-theme="dark"]) #toggle-btn{color:rgba(0,0,0,0.5)!important;}`,
-    `:root:not([data-theme="dark"]) #toggle-btn:hover{background:rgba(0,0,0,0.05)!important;}`,
+    `:root:not([data-theme="dark"]) .nav-item:hover:not(.active){background:rgba(0,0,0,0.06)!important;}`,
+    `:root:not([data-theme="dark"]) .nav-item.active{background:${la(0.14)}!important;border-left-color:${lightAccent}!important;}`,
+    `:root:not([data-theme="dark"]) .nav-item.active .nav-label{color:${lightAccent}!important;font-weight:700!important;}`,
+    // Borders
+    `:root:not([data-theme="dark"]) .sidebar-footer{border-top:1px solid rgba(0,0,0,0.09)!important;}`,
+    `:root:not([data-theme="dark"]) .sidebar-logo{border-bottom:1px solid rgba(0,0,0,0.09)!important;}`,
+    `:root:not([data-theme="dark"]) #toggle-btn{color:rgba(0,0,0,0.52)!important;}`,
+    `:root:not([data-theme="dark"]) #toggle-btn:hover{background:rgba(0,0,0,0.07)!important;}`,
     `:root:not([data-theme="dark"]) .sidebar-logo img{filter:none!important;}`,
     // Fix 4 — sidebar logo: CSS-swap dark/light logo images with data-theme
     `[data-theme="dark"] .logo-for-light{display:none!important;}`,
     `[data-theme="dark"] .logo-for-dark{display:block!important;}`,
     `:root:not([data-theme="dark"]) .logo-for-dark{display:none!important;}`,
     `:root:not([data-theme="dark"]) .logo-for-light{display:block!important;}`,
+    // Light mode content area — very subtle inset shadow to reinforce sidebar edge
+    `:root:not([data-theme="dark"]) #content{box-shadow:inset 2px 0 8px rgba(0,0,0,0.03)!important;}`,
     // Light-mode: white cards on tinted background for clear depth separation
     `:root{`,
     `--navy:${t.navy};--slate:${t.slate};`,
