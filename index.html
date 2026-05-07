@@ -2637,9 +2637,13 @@ function _buildBgStyle(blur) {
   var chromeLight = 'background:rgba(255,255,255,0.86)!important;'
     + 'backdrop-filter:blur(24px) saturate(1.4);-webkit-backdrop-filter:blur(24px) saturate(1.4);';
 
-  // D = dark-only prefix helper
-  function D(sel, css) { return 'body.has-bg-image ' + sel + '{' + css + '}'; }
-  function L(sel, css) { return ':root:not([data-theme="dark"]) body.has-bg-image ' + sel + '{' + css + '}'; }
+  // Prefix EVERY comma-separated selector — naive 'prefix + sel' only prefixes
+  // the first selector, leaving the rest applying globally (bug B24).
+  function _pfx(prefix, sel) {
+    return sel.split(',').map(function(s){ return prefix + ' ' + s.trim(); }).join(',');
+  }
+  function D(sel, css)  { return _pfx('body.has-bg-image', sel) + '{' + css + '}'; }
+  function L(sel, css)  { return _pfx(':root:not([data-theme="dark"]) body.has-bg-image', sel) + '{' + css + '}'; }
   function DL(sel, cssDark, cssLight) { return D(sel, cssDark) + L(sel, cssLight); }
 
   // card selectors (correct confirmed class names)

@@ -778,15 +778,20 @@ function clearListFilter(key) {
   if (key === "search") {
     const el = document.getElementById("list-search");
     if (el) el.value = "";
-  } else {
-    const el = document.getElementById(`list-filter-${key}`);
-    if (el) el.value = "";
+    renderList();
+    return;
   }
+  if (key === "status") {
+    // Status now lives on the .list-status-tab pill row, not a <select>.
+    setListStatusTab("all");
+    return; // setListStatusTab triggers renderList()
+  }
+  const el = document.getElementById(`list-filter-${key}`);
+  if (el) el.value = "";
   renderList();
 }
 function clearAllListFilters() {
   [
-    "list-filter-status",
     "list-filter-priority",
     "list-filter-position",
     "list-filter-assignee",
@@ -796,7 +801,12 @@ function clearAllListFilters() {
   });
   const s = document.getElementById("list-search");
   if (s) s.value = "";
-  renderList();
+  // Reset the status tab pill row (no <select> for it anymore)
+  if (typeof setListStatusTab === "function") {
+    setListStatusTab("all");
+  } else {
+    renderList();
+  }
 }
 function cycleSort(colKey) {
   const el = document.getElementById("list-sort");
