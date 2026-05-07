@@ -1,0 +1,300 @@
+/* ════════════════════════════════════════════════════════════════════════
+   pm-ui-glass.css — Custom-Background Glassmorphism (Gmail-style)
+   ────────────────────────────────────────────────────────────────────────
+   3-layer stack:
+     0. body bg-image                  (set inline by applyBgImage)
+     1. body::before scrim             (dims + softly blurs the image)
+     2. .glass surfaces                (backdrop-filter blur + tint)
+
+   Dynamic values come from CSS vars set on body by JS:
+     --bg-haze-dim-dark    : 0.35 → 0.75   (scrim alpha, dark mode)
+     --bg-haze-dim-light   : 0.45 → 0.85   (scrim alpha, light mode)
+     --bg-haze-blur        : 0px  → 7.5px  (image soft-blur)
+
+   Single source of truth — selector lists live here, not in JS.
+   Wrapped in @layer glass so theme-token rules in pm-ui-base.css
+   never accidentally override these, even without !important.
+   ════════════════════════════════════════════════════════════════════════ */
+
+@layer glass {
+
+  /* ── Layer 0: body holds bg-image (positioned for ::before) ───────────── */
+  body.has-bg-image {
+    position: relative;
+  }
+
+  /* ── Layer 1: scrim — fixed full-viewport overlay above bg, below #app ── */
+  body.has-bg-image::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background: rgba(0, 0, 0, var(--bg-haze-dim-dark, 0.55));
+    backdrop-filter: blur(var(--bg-haze-blur, 2.5px));
+    -webkit-backdrop-filter: blur(var(--bg-haze-blur, 2.5px));
+  }
+  :root:not([data-theme="dark"]) body.has-bg-image::before {
+    background: rgba(255, 255, 255, var(--bg-haze-dim-light, 0.65));
+  }
+
+  /* ── Layer 2: app sits above scrim ────────────────────────────────────── */
+  body.has-bg-image #app     { background: transparent !important; position: relative; z-index: 1; }
+  body.has-bg-image #main    { background: transparent !important; }
+  body.has-bg-image #content { background: transparent !important; }
+
+
+  /* ════════════════════════════════════════════════════════════════════════
+     CHROME — heavier glass for app frame (topbar / sidebar / sub-nav)
+     ════════════════════════════════════════════════════════════════════════ */
+
+  /* Topbar */
+  body.has-bg-image #topbar {
+    /* Dark: blend 8% theme accent into base for palette signature at top */
+    background: color-mix(in srgb, rgba(13, 18, 28, 0.82) 92%, var(--cyan) 8%) !important;
+    backdrop-filter: blur(24px) saturate(1.5);
+    -webkit-backdrop-filter: blur(24px) saturate(1.5);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 1px 12px rgba(0, 0, 0, 0.30) !important;
+  }
+  :root:not([data-theme="dark"]) body.has-bg-image #topbar {
+    background: rgba(255, 255, 255, 0.86) !important;
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.07) !important;
+    box-shadow: 0 1px 8px rgba(0, 0, 0, 0.10) !important;
+  }
+
+  /* View tabs row (sits below topbar — same visual treatment) */
+  body.has-bg-image #view-bar {
+    background: color-mix(in srgb, rgba(13, 18, 28, 0.78) 92%, var(--cyan) 8%) !important;
+    backdrop-filter: blur(20px) saturate(1.4);
+    -webkit-backdrop-filter: blur(20px) saturate(1.4);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+  }
+  :root:not([data-theme="dark"]) body.has-bg-image #view-bar {
+    background: rgba(255, 255, 255, 0.80) !important;
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
+  }
+
+  /* Sidebar — DO NOT override background (applyTheme sets the theme gradient).
+     Only add backdrop-filter so the gradient gets the glass blur effect. */
+  body.has-bg-image #sidebar {
+    backdrop-filter: blur(22px) saturate(1.4);
+    -webkit-backdrop-filter: blur(22px) saturate(1.4);
+    border-right: 1px solid rgba(255, 255, 255, 0.06) !important;
+  }
+  :root:not([data-theme="dark"]) body.has-bg-image #sidebar {
+    backdrop-filter: blur(22px) saturate(1.3);
+    -webkit-backdrop-filter: blur(22px) saturate(1.3);
+    border-right: none !important;
+  }
+
+  /* Settings sub-nav */
+  body.has-bg-image .settings-panel-nav {
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-right: 1px solid rgba(255, 255, 255, 0.06) !important;
+  }
+  :root:not([data-theme="dark"]) body.has-bg-image .settings-panel-nav {
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+
+
+  /* ════════════════════════════════════════════════════════════════════════
+     CARDS — neutral glass surfaces (no theme tint, no accent halos)
+     Body text must stay readable on any uploaded bg image.
+     ════════════════════════════════════════════════════════════════════════ */
+
+  body.has-bg-image .analytics-stat-card,
+  body.has-bg-image .analytics-card,
+  body.has-bg-image .hr-stat-card,
+  body.has-bg-image .settings-card,
+  body.has-bg-image .list-stat-chip,
+  body.has-bg-image .card-sidebar,
+  body.has-bg-image .notif-panel,
+  body.has-bg-image .super-filter-panel,
+  body.has-bg-image .kanban-column,
+  body.has-bg-image .table-wrap,
+  body.has-bg-image .applicant-card,
+  body.has-bg-image .list-section,
+  body.has-bg-image .list-filter-bar,
+  body.has-bg-image .list-stats-bar,
+  body.has-bg-image .list-status-tabs,
+  body.has-bg-image .list-active-filters {
+    background: rgba(16, 22, 34, 0.72) !important;
+    backdrop-filter: blur(20px) saturate(1.4);
+    -webkit-backdrop-filter: blur(20px) saturate(1.4);
+    border: 1px solid rgba(255, 255, 255, 0.07) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25) !important;
+  }
+  :root:not([data-theme="dark"]) body.has-bg-image .analytics-stat-card,
+  :root:not([data-theme="dark"]) body.has-bg-image .analytics-card,
+  :root:not([data-theme="dark"]) body.has-bg-image .hr-stat-card,
+  :root:not([data-theme="dark"]) body.has-bg-image .settings-card,
+  :root:not([data-theme="dark"]) body.has-bg-image .list-stat-chip,
+  :root:not([data-theme="dark"]) body.has-bg-image .card-sidebar,
+  :root:not([data-theme="dark"]) body.has-bg-image .notif-panel,
+  :root:not([data-theme="dark"]) body.has-bg-image .super-filter-panel,
+  :root:not([data-theme="dark"]) body.has-bg-image .kanban-column,
+  :root:not([data-theme="dark"]) body.has-bg-image .table-wrap,
+  :root:not([data-theme="dark"]) body.has-bg-image .applicant-card,
+  :root:not([data-theme="dark"]) body.has-bg-image .list-section,
+  :root:not([data-theme="dark"]) body.has-bg-image .list-filter-bar,
+  :root:not([data-theme="dark"]) body.has-bg-image .list-stats-bar,
+  :root:not([data-theme="dark"]) body.has-bg-image .list-status-tabs,
+  :root:not([data-theme="dark"]) body.has-bg-image .list-active-filters {
+    background: rgba(255, 255, 255, 0.78) !important;
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(0, 0, 0, 0.06) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+  }
+
+
+  /* ════════════════════════════════════════════════════════════════════════
+     CHIPS / PILLS / BUTTONS — :not(.active) so theme-accent active states
+     keep their var(--cyan) background (set by base CSS).
+     Higher opacity than cards (0.78/0.82) so they stay readable when the
+     bg image has bright regions (sky, light photos).
+     ════════════════════════════════════════════════════════════════════════ */
+
+  body.has-bg-image .filter-btn:not(.active),
+  body.has-bg-image .filter-chip:not(.active),
+  body.has-bg-image .list-section-tab:not(.active),
+  body.has-bg-image .list-status-tab:not(.active),
+  body.has-bg-image .pill-btn:not(.active),
+  body.has-bg-image .seg-btn:not(.active),
+  body.has-bg-image .list-filter-tag,
+  body.has-bg-image .clear-filters-btn {
+    background: rgba(16, 22, 34, 0.78) !important;
+    backdrop-filter: blur(16px) saturate(1.4);
+    -webkit-backdrop-filter: blur(16px) saturate(1.4);
+    border: 1px solid rgba(255, 255, 255, 0.10) !important;
+    color: rgba(255, 255, 255, 0.88) !important;
+  }
+  :root:not([data-theme="dark"]) body.has-bg-image .filter-btn:not(.active),
+  :root:not([data-theme="dark"]) body.has-bg-image .filter-chip:not(.active),
+  :root:not([data-theme="dark"]) body.has-bg-image .list-section-tab:not(.active),
+  :root:not([data-theme="dark"]) body.has-bg-image .list-status-tab:not(.active),
+  :root:not([data-theme="dark"]) body.has-bg-image .pill-btn:not(.active),
+  :root:not([data-theme="dark"]) body.has-bg-image .seg-btn:not(.active),
+  :root:not([data-theme="dark"]) body.has-bg-image .list-filter-tag,
+  :root:not([data-theme="dark"]) body.has-bg-image .clear-filters-btn {
+    background: rgba(255, 255, 255, 0.82) !important;
+    backdrop-filter: blur(16px) saturate(1.3);
+    -webkit-backdrop-filter: blur(16px) saturate(1.3);
+    border: 1px solid rgba(0, 0, 0, 0.09) !important;
+    color: rgba(15, 23, 42, 0.82) !important;
+  }
+
+  /* Count badges inside chips (e.g. .list-status-tab .tab-count) */
+  body.has-bg-image .filter-btn:not(.active) .tab-count,
+  body.has-bg-image .filter-chip:not(.active) .tab-count,
+  body.has-bg-image .list-section-tab:not(.active) .tab-count,
+  body.has-bg-image .list-status-tab:not(.active) .tab-count,
+  body.has-bg-image .pill-btn:not(.active) .tab-count,
+  body.has-bg-image .seg-btn:not(.active) .tab-count {
+    color: rgba(255, 255, 255, 0.95) !important;
+    background: rgba(255, 255, 255, 0.12) !important;
+  }
+  :root:not([data-theme="dark"]) body.has-bg-image .filter-btn:not(.active) .tab-count,
+  :root:not([data-theme="dark"]) body.has-bg-image .filter-chip:not(.active) .tab-count,
+  :root:not([data-theme="dark"]) body.has-bg-image .list-section-tab:not(.active) .tab-count,
+  :root:not([data-theme="dark"]) body.has-bg-image .list-status-tab:not(.active) .tab-count,
+  :root:not([data-theme="dark"]) body.has-bg-image .pill-btn:not(.active) .tab-count,
+  :root:not([data-theme="dark"]) body.has-bg-image .seg-btn:not(.active) .tab-count {
+    color: rgba(15, 23, 42, 0.92) !important;
+    background: rgba(0, 0, 0, 0.06) !important;
+  }
+
+
+  /* ════════════════════════════════════════════════════════════════════════
+     ACTIVE STATES — theme-accent shadow so active chips/tabs pop on bg image
+     ════════════════════════════════════════════════════════════════════════ */
+
+  body.has-bg-image .list-status-tab.active,
+  body.has-bg-image .filter-btn.active,
+  body.has-bg-image .list-section-tab.active {
+    box-shadow:
+      0 4px 14px color-mix(in srgb, var(--cyan) 35%, transparent),
+      0 2px 6px rgba(0, 0, 0, 0.30) !important;
+  }
+  :root:not([data-theme="dark"]) body.has-bg-image .list-status-tab.active,
+  :root:not([data-theme="dark"]) body.has-bg-image .filter-btn.active,
+  :root:not([data-theme="dark"]) body.has-bg-image .list-section-tab.active {
+    box-shadow:
+      0 3px 12px color-mix(in srgb, var(--cyan) 30%, transparent),
+      0 1px 4px rgba(0, 0, 0, 0.10) !important;
+  }
+
+
+  /* ════════════════════════════════════════════════════════════════════════
+     SETTINGS PANELS — visible-only state gets glass treatment
+     ════════════════════════════════════════════════════════════════════════ */
+
+  body.has-bg-image .settings-panel.active,
+  body.has-bg-image .settings-panel[style*="block"] {
+    background: rgba(16, 22, 34, 0.65) !important;
+    backdrop-filter: blur(18px) saturate(1.4);
+    -webkit-backdrop-filter: blur(18px) saturate(1.4);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  }
+  :root:not([data-theme="dark"]) body.has-bg-image .settings-panel.active,
+  :root:not([data-theme="dark"]) body.has-bg-image .settings-panel[style*="block"] {
+    background: rgba(255, 255, 255, 0.72) !important;
+    backdrop-filter: blur(18px) saturate(1.3);
+    -webkit-backdrop-filter: blur(18px) saturate(1.3);
+    border-radius: 12px;
+  }
+
+
+  /* ════════════════════════════════════════════════════════════════════════
+     EMPTY STATES — same glass recipe as cards
+     ════════════════════════════════════════════════════════════════════════ */
+
+  body.has-bg-image .empty-state,
+  body.has-bg-image .list-empty {
+    background: rgba(16, 22, 34, 0.72) !important;
+    backdrop-filter: blur(20px) saturate(1.4);
+    -webkit-backdrop-filter: blur(20px) saturate(1.4);
+    border: 1px solid rgba(255, 255, 255, 0.07) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25) !important;
+    border-radius: 14px;
+  }
+  :root:not([data-theme="dark"]) body.has-bg-image .empty-state,
+  :root:not([data-theme="dark"]) body.has-bg-image .list-empty {
+    background: rgba(255, 255, 255, 0.78) !important;
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(0, 0, 0, 0.06) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+    border-radius: 14px;
+  }
+
+
+  /* ════════════════════════════════════════════════════════════════════════
+     LIST-SECTION INTERNALS — transparent so the parent .list-section glass
+     card shows through cleanly (otherwise --surface-1 slabs over the blur).
+     ════════════════════════════════════════════════════════════════════════ */
+
+  body.has-bg-image .list-section-header {
+    background: transparent !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+  }
+  :root:not([data-theme="dark"]) body.has-bg-image .list-section-header {
+    background: transparent !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
+  }
+
+  body.has-bg-image .list-section table,
+  body.has-bg-image .list-section tbody,
+  body.has-bg-image .list-section tr {
+    background: transparent !important;
+  }
+
+}
