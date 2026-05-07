@@ -149,30 +149,19 @@
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
   }
 
-  /* Row wrappers — invisible containers. Provide unified bg blur underneath
-     chips/pills so the bg image doesn't bleed through gaps, but stay
-     borderless & shadowless so they don't read as separate cards. */
+  /* Row wrappers — fully transparent. Chips float directly over bg-image scrim;
+     no card frame, no padding override, no border. Matches old behavior. */
   body.has-bg-image .list-stats-bar,
   body.has-bg-image .list-status-tabs,
-  body.has-bg-image .list-active-filters {
-    background: rgba(16, 22, 34, 0.55) !important;
-    backdrop-filter: blur(18px) saturate(1.3);
-    -webkit-backdrop-filter: blur(18px) saturate(1.3);
-    border: none !important;
-    box-shadow: none !important;
-    border-radius: 12px;
-    padding: 8px 10px;
-  }
+  body.has-bg-image .list-active-filters,
   :root:not([data-theme="dark"]) body.has-bg-image .list-stats-bar,
   :root:not([data-theme="dark"]) body.has-bg-image .list-status-tabs,
   :root:not([data-theme="dark"]) body.has-bg-image .list-active-filters {
-    background: rgba(255, 255, 255, 0.55) !important;
-    backdrop-filter: blur(18px) saturate(1.2);
-    -webkit-backdrop-filter: blur(18px) saturate(1.2);
+    background: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
     border: none !important;
     box-shadow: none !important;
-    border-radius: 12px;
-    padding: 8px 10px;
   }
 
 
