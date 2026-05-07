@@ -12,6 +12,22 @@ window.UpstaffAPI = (function () {
   // ─────────────────────────────────────────────────────────────────────────────
 
   // ── Config ──────────────────────────────────────────────────────────────────
+  // SECURITY TODO: adminPassword stored client-side w/ btoa is NOT encryption.
+  // Migrate to Supabase Edge Function proxy: client sends user JWT only,
+  // edge fn holds Apps Script admin creds in env vars.
+  // Tracking: Week 4 auth hardening.
+  //
+  // Defensive helper — strip secrets from config before logging.
+  function _redactCfg(cfg) {
+    if (!cfg || typeof cfg !== "object") return cfg;
+    var safe = Object.assign({}, cfg);
+    if (safe.adminPassword) safe.adminPassword = "[REDACTED]";
+    if (safe.sessionToken)  safe.sessionToken  = "[REDACTED]";
+    return safe;
+  }
+  // Expose for debug-safe logging
+  window._upstaffRedactCfg = _redactCfg;
+
   function _config() {
     try {
       var c = JSON.parse(localStorage.getItem(CONFIG_KEY) || "{}");
@@ -369,8 +385,14 @@ window.UpstaffAPI = (function () {
   }
 
   // ── Date helper: converts any date string/object to YYYY-MM-DD ───────────────
+  // Timezone-safe: "2026-05-04" parses as LOCAL midnight, not UTC.
+  // Without this, users in UTC-5+ would see dates shift back a day.
   function _toDateStr(val) {
     if (!val) return "";
+    if (typeof val === "string") {
+      var iso = val.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (iso) return iso[1] + "-" + iso[2] + "-" + iso[3]; // already YYYY-MM-DD
+    }
     var d = new Date(val);
     if (isNaN(d)) return "";
     return d.getFullYear() + "-" +

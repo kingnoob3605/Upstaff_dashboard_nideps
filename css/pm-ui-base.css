@@ -36,10 +36,10 @@ body.role-assistant [data-role-hide="hr"] {
   --bg: #edf6fd;
   --card: #ffffff;
   --border: rgba(0, 0, 0, 0.09);
-  /* High-contrast text — WCAG AA compliant on white */
+  /* High-contrast text — WCAG AAA compliant on white (≥7:1) */
   --text: #0f172a;
-  --muted: #475569;
-  --light: #64748b;
+  --muted: #334155;
+  --light: #475569;
   --s-todo: #e5e7eb;
   --s-inprog: #44d7e9;
   --s-review: #fa8231;

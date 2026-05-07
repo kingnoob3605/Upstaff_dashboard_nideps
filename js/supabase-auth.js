@@ -221,13 +221,34 @@ window.SupabaseAuth = (function () {
   }
 
   // Send password reset email (works even when logged out)
+  // Client-side throttle: 60s cooldown per email to slow user-enumeration attacks.
+  // Real rate-limiting must happen server-side (Supabase auth has built-in limits).
+  var _resetCooldownMs = 60 * 1000;
+  var _resetCooldownKey = 'upstaff_pwreset_cooldown';
+  function _readCooldownMap() {
+    try { return JSON.parse(localStorage.getItem(_resetCooldownKey) || '{}'); }
+    catch (_) { return {}; }
+  }
   async function sendPasswordReset(email) {
     var client = _getClient();
     if (!client) throw new Error('Not connected to Supabase.');
-    var { error } = await client.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
+    var addr = email.trim().toLowerCase();
+    if (!addr) throw new Error('Email required.');
+
+    var map = _readCooldownMap();
+    var lastTs = map[addr] || 0;
+    var waitMs = _resetCooldownMs - (Date.now() - lastTs);
+    if (waitMs > 0) {
+      throw new Error('Please wait ' + Math.ceil(waitMs / 1000) + 's before requesting another reset.');
+    }
+
+    var { error } = await client.auth.resetPasswordForEmail(addr, {
       redirectTo: window.location.href,
     });
     if (error) throw new Error(error.message);
+
+    map[addr] = Date.now();
+    try { localStorage.setItem(_resetCooldownKey, JSON.stringify(map)); } catch (_) {}
   }
 
   function _jwtExpired(token) {
