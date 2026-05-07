@@ -2630,7 +2630,9 @@ function _buildBgStyle(blur) {
     + 'box-shadow:0 2px 8px rgba(0,0,0,0.08)!important;';
 
   // chrome (topbar/sidebar) — heavier, more opaque
-  var chromeDark  = 'background:rgba(13,18,28,0.82)!important;'
+  // Dark: blend 8% theme accent into the dark base so topbar carries palette signature
+  // Light: stay pure white-ish (light mode tint already handled via --topbar-bg in applyTheme)
+  var chromeDark  = 'background:color-mix(in srgb, rgba(13,18,28,0.82) 92%, var(--cyan) 8%)!important;'
     + 'backdrop-filter:blur(24px) saturate(1.5);-webkit-backdrop-filter:blur(24px) saturate(1.5);';
   var chromeLight = 'background:rgba(255,255,255,0.86)!important;'
     + 'backdrop-filter:blur(24px) saturate(1.4);-webkit-backdrop-filter:blur(24px) saturate(1.4);';
@@ -2715,9 +2717,9 @@ function _buildBgStyle(blur) {
     // ── Glass: filter buttons/chips (inactive only — active states keep theme accent) ──
     D(chipSels, 'background:rgba(16,22,34,0.65)!important;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.08)!important;'),
     L(chipSels, 'background:rgba(255,255,255,0.72)!important;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(0,0,0,0.07)!important;'),
-    // Active status tab: subtle blur halo around the accent color (so it pops on bg image)
-    D('.list-status-tab.active,.filter-btn.active,.list-section-tab.active', 'box-shadow:0 4px 14px rgba(0,0,0,0.35)!important;'),
-    L('.list-status-tab.active,.filter-btn.active,.list-section-tab.active', 'box-shadow:0 2px 10px rgba(0,0,0,0.18)!important;'),
+    // Active status tab: theme-tinted soft glow (intentional, not halo-spam)
+    D('.list-status-tab.active,.filter-btn.active,.list-section-tab.active', 'box-shadow:0 4px 14px color-mix(in srgb, var(--cyan) 35%, transparent), 0 2px 6px rgba(0,0,0,0.30)!important;'),
+    L('.list-status-tab.active,.filter-btn.active,.list-section-tab.active', 'box-shadow:0 3px 12px color-mix(in srgb, var(--cyan) 30%, transparent), 0 1px 4px rgba(0,0,0,0.10)!important;'),
 
     // ── Glass: empty state ────────────────────────────────────────────────
     D('.empty-state,.list-empty', glassDark + 'border-radius:14px;'),
