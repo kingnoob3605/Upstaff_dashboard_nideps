@@ -1,3 +1,13 @@
 .env
 .env.local
 .env.*.local
+
+# Claude Code tooling — local only, not app code
+.claude/settings.local.json
+.claude/launch.json
+.claude/skills/
+.agents/
+skills-lock.json
+
+# Apps Script source — contains private Spreadsheet ID + Drive folder URL
+2MAINappscript.txt
