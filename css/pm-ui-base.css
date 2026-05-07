@@ -199,7 +199,7 @@ body {
 }
 /* Both logo variants share identical constraints — natural width, capped at 200px */
 .sidebar-logo-img {
-  height: 30px;
+  height: 52px;
   width: auto;
   max-width: 200px;
   object-fit: contain;

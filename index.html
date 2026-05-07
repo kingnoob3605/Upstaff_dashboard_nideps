@@ -733,12 +733,13 @@
                 <span style="font-size:11px;color:var(--muted)">PNG, JPG, WebP · max 5 MB</span>
               </div>
 
-              <!-- Background blur slider (hidden until image is set) -->
+              <!-- Background haze slider (controls scrim darkness + soft blur) -->
               <div id="bg-blur-row" style="display:none;margin-top:16px">
-                <label class="settings-label" style="display:block;margin-bottom:8px">Background Blur</label>
+                <label class="settings-label" style="display:block;margin-bottom:4px">Background Haze</label>
+                <div style="font-size:11px;color:var(--muted);margin-bottom:8px;line-height:1.4">Higher values darken the background and soften the photo so cards stay readable. Cards keep their glass blur.</div>
                 <div style="display:flex;align-items:center;gap:10px">
-                  <input type="range" id="bg-blur-slider" min="0" max="20" value="5" style="flex:1;accent-color:var(--cyan);cursor:pointer" oninput="setBgBlur(this.value)"/>
-                  <span id="bg-blur-val" style="font-size:12px;color:var(--muted);min-width:34px;text-align:right">5px</span>
+                  <input type="range" id="bg-blur-slider" min="0" max="15" value="5" style="flex:1;accent-color:var(--cyan);cursor:pointer" oninput="setBgBlur(this.value)"/>
+                  <span id="bg-blur-val" style="font-size:12px;color:var(--muted);min-width:34px;text-align:right">5</span>
                 </div>
               </div>
             </div>
@@ -2608,19 +2609,59 @@ function _applyRoleRestrictions(role) {
   document.body.classList.toggle('role-assistant', role === 'assistant');
 }
 
-// ── Custom Background Image (Gmail-style) ────────────────────────────────
+// ── Custom Background Image (Gmail-style glassmorphism) ──────────────────
+// 3-layer stack: bg-image → scrim ::before → glass surfaces (backdrop-filter)
+// Slider value 0-15 maps to scrim darkness 0.30-0.75 (dark) / 0.40-0.85 (light)
 function _buildBgStyle(blur) {
-  var blurPx = (Number(blur) || 0) + 'px';
-  var blurRule = Number(blur) > 0
-    ? 'backdrop-filter:blur(' + blurPx + ');-webkit-backdrop-filter:blur(' + blurPx + ');'
-    : '';
+  var b = Math.max(0, Math.min(15, Number(blur) || 0));
+  var dimDark  = (0.30 + (b / 15) * 0.45).toFixed(2); // 0.30 → 0.75
+  var dimLight = (0.40 + (b / 15) * 0.45).toFixed(2); // 0.40 → 0.85
+  // Optional gentle blur on the bg image itself via ::before clone trick
+  // (uses the same image as body bg, filter:blur applied)
+  var imgBlurPx = (b * 0.6).toFixed(1) + 'px'; // 0 → 9px max
+
+  // Glass tokens
+  var glassDark   = 'background:rgba(18,24,35,0.70)!important;backdrop-filter:blur(20px) saturate(1.4);-webkit-backdrop-filter:blur(20px) saturate(1.4);border:1px solid rgba(255,255,255,0.08)!important;';
+  var glassLight  = 'background:rgba(255,255,255,0.78)!important;backdrop-filter:blur(20px) saturate(1.3);-webkit-backdrop-filter:blur(20px) saturate(1.3);border:1px solid rgba(0,0,0,0.06)!important;';
+  var glassHeavy  = 'background:rgba(15,20,30,0.80)!important;backdrop-filter:blur(24px) saturate(1.4);-webkit-backdrop-filter:blur(24px) saturate(1.4);';
+  var glassHeavyL = 'background:rgba(255,255,255,0.84)!important;backdrop-filter:blur(24px) saturate(1.3);-webkit-backdrop-filter:blur(24px) saturate(1.3);';
+
   return [
+    // ── Layer 0: body holds bg image (unchanged) ──
+    'body.has-bg-image{position:relative;}',
+
+    // ── Layer 1: scrim — dims bg image so content stays readable ──
+    'body.has-bg-image::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;background:rgba(0,0,0,' + dimDark + ');backdrop-filter:blur(' + imgBlurPx + ');-webkit-backdrop-filter:blur(' + imgBlurPx + ');}',
+    ':root:not([data-theme="dark"]) body.has-bg-image::before{background:rgba(255,255,255,' + dimLight + ');}',
+
+    // ── Layer 2: app container sits above scrim ──
     'body.has-bg-image #app{background:transparent!important;position:relative;z-index:1;}',
     'body.has-bg-image #main{background:transparent!important;}',
-    'body.has-bg-image #content{background:transparent!important;' + blurRule + '}',
-    'body.has-bg-image #topbar{background:rgba(15,23,42,0.80)!important;backdrop-filter:blur(18px) saturate(1.3);-webkit-backdrop-filter:blur(18px) saturate(1.3);border-bottom:1px solid rgba(255,255,255,0.09)!important;}',
-    ':root:not([data-theme="dark"]) body.has-bg-image #topbar{background:rgba(255,255,255,0.84)!important;border-bottom:1px solid rgba(0,0,0,0.08)!important;}',
-    ':root:not([data-theme="dark"]) body.has-bg-image #sidebar{box-shadow:1px 0 0 rgba(0,0,0,0.12),4px 0 12px rgba(0,0,0,0.06)!important;}',
+    'body.has-bg-image #content{background:transparent!important;}',
+
+    // ── Glass: topbar ──
+    'body.has-bg-image #topbar{' + glassHeavy + 'border-bottom:1px solid rgba(255,255,255,0.09)!important;}',
+    ':root:not([data-theme="dark"]) body.has-bg-image #topbar{' + glassHeavyL + 'border-bottom:1px solid rgba(0,0,0,0.08)!important;}',
+
+    // ── Glass: sidebar (FIX B8 — was transparent in dark mode) ──
+    'body.has-bg-image #sidebar{' + glassHeavy + 'border-right:1px solid rgba(255,255,255,0.06)!important;}',
+    ':root:not([data-theme="dark"]) body.has-bg-image #sidebar{' + glassHeavyL + 'box-shadow:1px 0 0 rgba(0,0,0,0.10),4px 0 12px rgba(0,0,0,0.05)!important;}',
+
+    // ── Glass: cards & panels (FIX B9) ──
+    'body.has-bg-image .list-stat-chip,body.has-bg-image .stat-card,body.has-bg-image .settings-card,body.has-bg-image .card-sidebar,body.has-bg-image .notif-panel,body.has-bg-image .super-filter-panel,body.has-bg-image .kanban-column,body.has-bg-image .table-wrap,body.has-bg-image .applicant-card{' + glassDark + '}',
+    ':root:not([data-theme="dark"]) body.has-bg-image .list-stat-chip,:root:not([data-theme="dark"]) body.has-bg-image .stat-card,:root:not([data-theme="dark"]) body.has-bg-image .settings-card,:root:not([data-theme="dark"]) body.has-bg-image .card-sidebar,:root:not([data-theme="dark"]) body.has-bg-image .notif-panel,:root:not([data-theme="dark"]) body.has-bg-image .super-filter-panel,:root:not([data-theme="dark"]) body.has-bg-image .kanban-column,:root:not([data-theme="dark"]) body.has-bg-image .table-wrap,:root:not([data-theme="dark"]) body.has-bg-image .applicant-card{' + glassLight + '}',
+
+    // ── Glass: filter chips & buttons (Waiting List / Talent Pool / etc.) ──
+    'body.has-bg-image .filter-chip,body.has-bg-image .list-section-tab,body.has-bg-image .pill-btn,body.has-bg-image .seg-btn{' + glassDark + '}',
+    ':root:not([data-theme="dark"]) body.has-bg-image .filter-chip,:root:not([data-theme="dark"]) body.has-bg-image .list-section-tab,:root:not([data-theme="dark"]) body.has-bg-image .pill-btn,:root:not([data-theme="dark"]) body.has-bg-image .seg-btn{' + glassLight + '}',
+
+    // ── Glass: empty state container (FIX B11 — "No candidates yet" ) ──
+    'body.has-bg-image .empty-state,body.has-bg-image .list-empty,body.has-bg-image [class*="empty"]{' + glassDark + 'border-radius:14px;padding:32px!important;}',
+    ':root:not([data-theme="dark"]) body.has-bg-image .empty-state,:root:not([data-theme="dark"]) body.has-bg-image .list-empty,:root:not([data-theme="dark"]) body.has-bg-image [class*="empty"]{' + glassLight + '}',
+
+    // ── Glass: analytics chart panels & "Live Database Counts" header ──
+    'body.has-bg-image .analytics-card,body.has-bg-image .chart-panel,body.has-bg-image .live-counts,body.has-bg-image .pipeline-chart{' + glassDark + 'border-radius:14px;}',
+    ':root:not([data-theme="dark"]) body.has-bg-image .analytics-card,:root:not([data-theme="dark"]) body.has-bg-image .chart-panel,:root:not([data-theme="dark"]) body.has-bg-image .live-counts,:root:not([data-theme="dark"]) body.has-bg-image .pipeline-chart{' + glassLight + '}',
   ].join('');
 }
 
@@ -2653,7 +2694,7 @@ function applyBgImage(dataUrl, blur) {
   if (previewImg)  previewImg.src            = dataUrl;
   if (blurRow)     blurRow.style.display     = 'block';
   if (blurSlider)  blurSlider.value          = String(blur);
-  if (blurVal)     blurVal.textContent       = blur + 'px';
+  if (blurVal)     blurVal.textContent       = String(blur);
 }
 
 function removeBgImage() {
@@ -2672,9 +2713,9 @@ function removeBgImage() {
 }
 
 function setBgBlur(value) {
-  value = Number(value);
+  value = Math.max(0, Math.min(15, Number(value) || 0));
   var valEl = document.getElementById('bg-blur-val');
-  if (valEl) valEl.textContent = value + 'px';
+  if (valEl) valEl.textContent = String(value);
   localStorage.setItem('upstaff_bg_blur', String(value));
   var styleEl = document.getElementById('bg-image-style');
   if (styleEl) styleEl.textContent = _buildBgStyle(value);
