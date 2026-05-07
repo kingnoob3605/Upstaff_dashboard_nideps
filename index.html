@@ -2692,15 +2692,20 @@ function _buildBgStyle(blur) {
     L('#topbar', chromeLight + 'border-bottom:1px solid rgba(0,0,0,0.07)!important;box-shadow:0 1px 8px rgba(0,0,0,0.10)!important;'),
 
     // ── Glass: sidebar ────────────────────────────────────────────────────
-    // Sidebar active item color (var(--cyan)) preserved — glass bg is transparent enough
-    D('#sidebar', chromeDark + 'border-right:1px solid rgba(255,255,255,0.06)!important;'),
-    L('#sidebar', chromeLight + 'box-shadow:1px 0 0 rgba(0,0,0,0.08),4px 0 14px rgba(0,0,0,0.06)!important;'),
+    // B-FIX: do NOT override background here — applyTheme() sets the theme-correct
+    // navy/slate gradient via theme-sidebar-override. Adding backdrop-filter only
+    // gives the glass blur effect on top of the existing themed bg.
+    // ∀ themes → Rose keeps pink navy, Forest keeps green navy, etc. ✓
+    D('#sidebar', 'backdrop-filter:blur(22px) saturate(1.4);-webkit-backdrop-filter:blur(22px) saturate(1.4);border-right:1px solid rgba(255,255,255,0.06)!important;'),
+    L('#sidebar', 'backdrop-filter:blur(22px) saturate(1.3);-webkit-backdrop-filter:blur(22px) saturate(1.3);'),
 
     // ── Glass: settings panel sidebar (sub-nav) ───────────────────────────
-    D('.settings-panel-nav', 'background:rgba(16,22,34,0.60)!important;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-right:1px solid rgba(255,255,255,0.06)!important;'),
-    L('.settings-panel-nav', 'background:rgba(255,255,255,0.65)!important;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);'),
+    D('.settings-panel-nav', 'backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-right:1px solid rgba(255,255,255,0.06)!important;'),
+    L('.settings-panel-nav', 'backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);'),
 
-    // ── Glass: all cards & panels (FIXED class names) ─────────────────────
+    // ── Glass: all cards & panels (correct class names) ───────────────────
+    // cards keep neutral dark/light glass bg — they are NOT theme-navy colored by design
+    // var(--cyan) accent glow inherits the active theme color automatically ✓
     'body.has-bg-image ' + cardSels + '{' + glassDark + '}',
     cardSelsL + '{' + glassLight + '}',
 
@@ -2718,9 +2723,10 @@ function _buildBgStyle(blur) {
     D('.empty-state,.list-empty', glassDark + 'border-radius:14px;'),
     L('.empty-state,.list-empty', glassLight + 'border-radius:14px;'),
 
-    // ── Accent: active sidebar nav item keeps theme color visible ─────────
-    // Ensures Rose/Ocean active pill isn't washed out by chrome glass
-    D('.nav-item.active,.settings-nav-item.active', 'background:rgba(var(--cyan-r,68),var(--cyan-g,215),var(--cyan-b,233),0.18)!important;'),
+    // ── Active nav items: intentionally NOT overridden here ───────────────
+    // applyTheme() sets .nav-item.active background using real RGB values per theme
+    // (via la() helper). Overriding here with a fixed fallback breaks non-Ocean themes.
+    // var(--cyan) accentGlow on cards already carries the theme accent. ✓
   ].join('');
 }
 
