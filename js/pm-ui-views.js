@@ -9450,9 +9450,9 @@ function applyTheme(key) {
     // Calendar: other-month slightly lighter; today strongly tinted; agenda white
     `--cal-other-month:${tint(0.06)};--agenda-item-bg:#ffffff;`,
     `--cal-today-bg:${tint(0.20)};--cal-hour-hover:${tint(0.08)};`,
-    // Card shadow: clean drop — no outline (cards already have --border on them)
-    `--shadow-sm:0 2px 8px rgba(0,0,0,0.08),0 1px 2px rgba(0,0,0,0.05);`,
-    `--shadow-md:0 4px 16px rgba(0,0,0,0.10),0 2px 4px rgba(0,0,0,0.06);`,
+    // Card shadow: stronger drop so white cards lift clearly off tinted bg
+    `--shadow-sm:0 2px 12px rgba(0,0,0,0.10),0 1px 3px rgba(0,0,0,0.06);`,
+    `--shadow-md:0 6px 20px rgba(0,0,0,0.12),0 2px 6px rgba(0,0,0,0.07);`,
     `}`,
     // Dark-mode: use the theme's deep navy/slate palette
     `[data-theme="dark"]{`,
