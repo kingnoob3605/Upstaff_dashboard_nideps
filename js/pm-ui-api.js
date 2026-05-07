@@ -14,14 +14,22 @@ window.UpstaffAPI = (function () {
   // ── Config ──────────────────────────────────────────────────────────────────
   function _config() {
     try {
-      return JSON.parse(localStorage.getItem(CONFIG_KEY) || "{}");
+      var c = JSON.parse(localStorage.getItem(CONFIG_KEY) || "{}");
+      // Decode obfuscated password (btoa-encoded). Handles legacy plaintext gracefully.
+      if (c.adminPassword) {
+        try { c.adminPassword = atob(c.adminPassword); } catch (e) { /* legacy plaintext — use as-is */ }
+      }
+      return c;
     } catch (e) {
       return {};
     }
   }
 
   function saveConfig(cfg) {
-    localStorage.setItem(CONFIG_KEY, JSON.stringify(cfg));
+    var toStore = Object.assign({}, cfg);
+    // Obfuscate password at rest — not cryptographic but prevents casual inspection
+    if (toStore.adminPassword) toStore.adminPassword = btoa(toStore.adminPassword);
+    localStorage.setItem(CONFIG_KEY, JSON.stringify(toStore));
   }
 
   function isConfigured() {
@@ -355,8 +363,9 @@ window.UpstaffAPI = (function () {
   };
   function _normalizeEmpType(val) {
     if (!val) return "";
-    var key = val.toLowerCase().replace(/[-\s]+/g, function(m) { return m; });
-    return _EMPTYPE_NORM[val.toLowerCase()] || _EMPTYPE_NORM[val.toLowerCase().replace(/\s+/g, "-")] || val;
+    // Normalize separators then look up: "Full-Time" → "full-time", "Full Time" → "full-time"
+    var key = val.toLowerCase().replace(/[-\s]+/g, "-");
+    return _EMPTYPE_NORM[key] || _EMPTYPE_NORM[val.toLowerCase()] || val;
   }
 
   // ── Date helper: converts any date string/object to YYYY-MM-DD ───────────────

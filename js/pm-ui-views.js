@@ -6515,6 +6515,8 @@ function openEdit(id) {
 function autoEndTime(startTime) {
   if (!startTime) return "10:00";
   const [h, m] = startTime.split(":").map(Number);
+  // Guard: malformed input (no colon, non-numeric) → safe default
+  if (isNaN(h) || isNaN(m)) return "10:00";
   // Cap at 23:59 — Math.min(h+1,23) would produce zero-duration for 23:xx starts
   if (h >= 23) return "23:59";
   return `${String(h + 1).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
@@ -8759,11 +8761,11 @@ function exportAnalyticsCSV() {
   const date = new Date().toISOString().slice(0, 10);
   const now = new Date().toLocaleString("en-PH", { timeZone: "Asia/Manila" });
 
-  // Helper: split bullet/comma lists from sheet values
+  // Helper: split bullet/comma/newline lists from sheet values
   function _sp(raw) {
     if (!raw) return [];
     return String(raw)
-      .split(/[\n,]+/)
+      .split(/[\n,•]+/)
       .map((s) => s.replace(/^[•\-]\s*/, "").trim())
       .filter(Boolean);
   }
