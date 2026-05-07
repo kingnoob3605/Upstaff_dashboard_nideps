@@ -9441,8 +9441,9 @@ function applyTheme(key) {
     `--surface-3:${tint(0.08)};--surface-4:${tint(0.12)};`,
     // Border: slight darkening works on any tinted surface
     `--border:rgba(0,0,0,0.09);`,
-    // Topbar + inputs: white (same elevation as cards)
-    `--topbar-bg:#ffffff;--input-bg:#ffffff;--input-border:rgba(0,0,0,0.12);`,
+    // Topbar: subtle accent tint so theme color is VISIBLE at top of viewport
+    // (Gmail approach: chrome carries the palette signature, cards stay neutral white)
+    `--topbar-bg:${tint(0.05)};--input-bg:#ffffff;--input-border:rgba(0,0,0,0.12);`,
     // Row hover: stronger tint for clear interactive feedback
     `--row-hover:${tint(0.15)};--row-alt:${tint(0.05)};`,
     // Kanban columns: moderate tint

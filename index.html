@@ -2653,12 +2653,14 @@ function _buildBgStyle(blur) {
     '.kanban-column',         // board view columns
     '.table-wrap',            // table view wrapper
     '.applicant-card',        // applicant list cards
+    '.list-section',          // list view section wrapper (was opaque navy → blocked blur)
+    '.list-filter-bar',       // list search bar wrapper
   ].join(',body.has-bg-image ');
 
   var cardSelsL = cardSels.replace(/body\.has-bg-image /g, ':root:not([data-theme="dark"]) body.has-bg-image ');
 
   // chip/button selectors
-  var chipSels  = '.filter-btn,.filter-chip,.list-section-tab,.pill-btn,.seg-btn';
+  var chipSels  = '.filter-btn,.filter-chip,.list-section-tab,.list-status-tab,.pill-btn,.seg-btn';
   var chipSelsL = chipSels;
 
   return [
@@ -2716,6 +2718,14 @@ function _buildBgStyle(blur) {
     // ── Glass: empty state ────────────────────────────────────────────────
     D('.empty-state,.list-empty', glassDark + 'border-radius:14px;'),
     L('.empty-state,.list-empty', glassLight + 'border-radius:14px;'),
+
+    // ── List section internals: transparent so parent .list-section glass shows through ─
+    // .list-section-header has background:var(--surface-1) which would slab opaque on the glass card
+    D('.list-section-header', 'background:transparent!important;border-bottom:1px solid rgba(255,255,255,0.06)!important;'),
+    L('.list-section-header', 'background:transparent!important;border-bottom:1px solid rgba(0,0,0,0.06)!important;'),
+    // Table rows inside glass should be transparent too (only hover state visible)
+    D('.list-section table,.list-section tbody,.list-section tr', 'background:transparent!important;'),
+    L('.list-section table,.list-section tbody,.list-section tr', 'background:transparent!important;'),
 
     // ── Active nav items: intentionally NOT overridden here ───────────────
     // applyTheme() sets .nav-item.active background using real RGB values per theme
