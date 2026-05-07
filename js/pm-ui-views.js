@@ -9428,18 +9428,31 @@ function applyTheme(key) {
     `:root:not([data-theme="dark"]) .logo-for-light{display:block!important;}`,
     // Light mode content area — very subtle inset shadow to reinforce sidebar edge
     `:root:not([data-theme="dark"]) #content{box-shadow:inset 2px 0 8px rgba(0,0,0,0.03)!important;}`,
-    // Light-mode: white cards on tinted background for clear depth separation
+    // Light-mode neutral token system — accent ONLY on interactive states
+    // Page/sidebar/structure backgrounds stay neutral regardless of theme colour.
+    // This matches Linear / Stripe / Vercel / GitHub design language.
     `:root{`,
     `--navy:${t.navy};--slate:${t.slate};`,
-    `--bg:${tint(0.07)};--surface-2:${tint(0.08)};`,
+    // Neutral page background — never accent-tinted
+    `--bg:#f5f6f8;--surface-2:#edf0f4;`,
+    // Cards pure white for maximum elevation contrast against neutral bg
     `--card:#ffffff;--surface-1:#ffffff;`,
-    `--surface-3:${tint(0.05)};--surface-4:${tint(0.07)};`,
-    `--border:rgba(0,0,0,0.11);`,
-    `--topbar-bg:#ffffff;--input-bg:#ffffff;`,
-    `--row-hover:${tint(0.09)};--row-alt:${tint(0.04)};`,
-    `--board-col-bg:${tint(0.07)};`,
-    `--cal-other-month:${tint(0.04)};--agenda-item-bg:#ffffff;`,
-    `--cal-today-bg:${tint(0.13)};--cal-hour-hover:${tint(0.07)};`,
+    // Structural surfaces — neutral greys only
+    `--surface-3:#e8eaee;--surface-4:#dfe2e7;`,
+    // Border: subtle dark transparency, readable on both white and grey
+    `--border:rgba(0,0,0,0.10);`,
+    // Topbar + inputs always white
+    `--topbar-bg:#ffffff;--input-bg:#ffffff;--input-border:rgba(0,0,0,0.13);`,
+    // Row hover: one place accent IS appropriate — interactive feedback
+    `--row-hover:${tint(0.07)};--row-alt:#f9fafb;`,
+    // Kanban columns: neutral structural surface
+    `--board-col-bg:#edf0f4;`,
+    // Calendar: other-month + agenda neutral; today gets accent (important visual cue)
+    `--cal-other-month:#f5f6f8;--agenda-item-bg:#f5f6f8;`,
+    `--cal-today-bg:${tint(0.14)};--cal-hour-hover:${tint(0.06)};`,
+    // Light-mode card shadow — Stripe-style: clean drop + subtle outline
+    `--shadow-sm:0 1px 3px rgba(0,0,0,0.07),0 1px 2px rgba(0,0,0,0.05);`,
+    `--shadow-md:0 4px 12px rgba(0,0,0,0.09),0 1px 4px rgba(0,0,0,0.06);`,
     `}`,
     // Dark-mode: use the theme's deep navy/slate palette
     `[data-theme="dark"]{`,

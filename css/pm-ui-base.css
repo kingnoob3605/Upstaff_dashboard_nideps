@@ -20,6 +20,9 @@ body.role-assistant [data-role-hide="hr"] {
 }
 
 /* ── LIGHT MODE (default) ── */
+/* Neutral token system: accent never bleeds into structural backgrounds. */
+/* applyTheme() overrides these at runtime; values here are the fallback  */
+/* used briefly during page load and when no theme key is stored.         */
 :root {
   --cyan: #44d7e9;
   --cyan-lt: #e0fafb;
@@ -29,9 +32,11 @@ body.role-assistant [data-role-hide="hr"] {
   --pink: #ff6584;
   --navy: #0f172a;
   --slate: #1e293b;
-  --bg: #e4e8f3;
-  --card: #f0f4fb;
-  --border: #c9cfd9;
+  /* Neutral page background — matches applyTheme() neutral system */
+  --bg: #f5f6f8;
+  --card: #ffffff;
+  --border: rgba(0, 0, 0, 0.10);
+  /* High-contrast text — WCAG AA compliant on white */
   --text: #0f172a;
   --muted: #475569;
   --light: #64748b;
@@ -40,27 +45,28 @@ body.role-assistant [data-role-hide="hr"] {
   --s-review: #fa8231;
   --s-done: #43e97b;
   --s-cancelled: #9ca3af;
-  /* surface layers */
-  --surface-1: #f0f4fb; /* cards, modals */
-  --surface-2: #e4e8f3; /* content bg */
-  --surface-3: #e8ecf5; /* table headers, subtle bg */
-  --surface-4: #dde2ed; /* tags, count pills */
-  --row-hover: #e8ecf6;
-  --row-alt: #ecf0f8;
-  --topbar-bg: #edf1f9;
-  --input-bg: #edf1f8;
-  --input-border: #c5ccd8;
-  --shadow-sm: 0 1px 8px rgba(0, 0, 0, 0.09);
-  --shadow-md: 0 2px 12px rgba(0, 0, 0, 0.12);
-  --shadow-lg: 0 24px 60px rgba(0, 0, 0, 0.18);
+  /* Surface layers — neutral depth scale */
+  --surface-1: #ffffff;   /* cards, modals */
+  --surface-2: #edf0f4;   /* content bg layer */
+  --surface-3: #e8eaee;   /* table headers, subtle bg */
+  --surface-4: #dfe2e7;   /* tags, count pills */
+  --row-hover: #eff1f5;
+  --row-alt: #f9fafb;
+  --topbar-bg: #ffffff;
+  --input-bg: #ffffff;
+  --input-border: rgba(0, 0, 0, 0.13);
+  /* Stripe-style card shadow: defined drop + subtle outline */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.07), 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.09), 0 1px 4px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 24px 60px rgba(0, 0, 0, 0.16);
   --search-overlay: rgba(15, 23, 42, 0.6);
-  /* calendar cell colours */
-  --cal-cell-border: #d5dae8;
-  --cal-other-month: #eef1f8;
-  --cal-today-bg: #e6fbfd;
-  --cal-hour-hover: #f0fbfc;
-  --agenda-item-bg: #edf1f8;
-  --board-col-bg: #d5dae8;
+  /* Calendar */
+  --cal-cell-border: #e0e3e8;
+  --cal-other-month: #f5f6f8;
+  --cal-today-bg: #e0f2fe;  /* neutral blue-tinted today — theme overrides this */
+  --cal-hour-hover: #f0f9ff;
+  --agenda-item-bg: #f5f6f8;
+  --board-col-bg: #edf0f4;
 }
 
 /* ── DARK MODE ── */
