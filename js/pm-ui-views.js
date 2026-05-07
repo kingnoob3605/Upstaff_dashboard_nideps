@@ -9402,8 +9402,8 @@ function applyTheme(key) {
   el.textContent = [
     // Dark mode: sidebar keeps its navy/slate gradient
     `[data-theme="dark"] #sidebar{background:linear-gradient(160deg,${t.navy} 0%,${t.slate} 100%)!important;box-shadow:4px 0 28px rgba(0,0,0,0.22)!important;border-right:none!important;}`,
-    // Light mode: sidebar uses cool off-white so it reads as distinct from white content
-    `:root:not([data-theme="dark"]) #sidebar{background:#f4f5f8!important;box-shadow:1px 0 0 rgba(0,0,0,0.1),6px 0 16px rgba(0,0,0,0.05)!important;border-right:1px solid rgba(0,0,0,0.08)!important;}`,
+    // Light mode: sidebar uses very slight theme tint (Gmail approach) so it feels unified
+    `:root:not([data-theme="dark"]) #sidebar{background:${tint(0.04)}!important;box-shadow:1px 0 0 rgba(0,0,0,0.09),4px 0 12px rgba(0,0,0,0.04)!important;border-right:1px solid rgba(0,0,0,0.07)!important;}`,
     // Section labels — clear hierarchy marker, not invisible
     `:root:not([data-theme="dark"]) .sidebar-section-label{color:rgba(0,0,0,0.48)!important;font-weight:700!important;letter-spacing:0.05em!important;}`,
     // Nav label — dark enough to read comfortably
@@ -9428,30 +9428,31 @@ function applyTheme(key) {
     `:root:not([data-theme="dark"]) .logo-for-light{display:block!important;}`,
     // Light mode content area — very subtle inset shadow to reinforce sidebar edge
     `:root:not([data-theme="dark"]) #content{box-shadow:inset 2px 0 8px rgba(0,0,0,0.03)!important;}`,
-    // Light-mode neutral token system — accent ONLY on interactive states.
-    // Backgrounds are neutral grey; accent only touches hover/active/today.
+    // Light-mode token system — Gmail-style: visible theme tint on bg, white cards on top.
+    // tint(0.10) = ~10% accent mixed with white. Warm themes (Rose,Copper) → soft pink/amber.
+    // Cool themes (Electric,Steel) → faint blue/grey — still readable, just subtle.
     `:root{`,
     `--navy:${t.navy};--slate:${t.slate};`,
-    // Page bg: #e8ecf1 gives a clear ~18pt contrast delta vs #ffffff cards
-    `--bg:#e8ecf1;--surface-2:#dde2ea;`,
-    // Cards: pure white — distinct elevation above grey background
+    // Page bg: tinted — this IS the visible theme color the user expects
+    `--bg:${tint(0.10)};--surface-2:${tint(0.13)};`,
+    // Cards: pure white — float clearly above tinted bg (key contrast layer)
     `--card:#ffffff;--surface-1:#ffffff;`,
-    // Structural surfaces: neutral depth scale
-    `--surface-3:#e4e7ec;--surface-4:#d8dce3;`,
-    // Border: visible but not heavy
-    `--border:rgba(0,0,0,0.10);`,
-    // Topbar + inputs: white (same plane as cards)
-    `--topbar-bg:#ffffff;--input-bg:#ffffff;--input-border:rgba(0,0,0,0.13);`,
-    // Row hover & alt: one accent-tinted element (interactive feedback only)
-    `--row-hover:${tint(0.07)};--row-alt:#f8f9fb;`,
-    // Kanban columns: neutral
-    `--board-col-bg:#e4e7ec;`,
-    // Calendar
-    `--cal-other-month:#e8ecf1;--agenda-item-bg:#f4f5f8;`,
-    `--cal-today-bg:${tint(0.15)};--cal-hour-hover:${tint(0.06)};`,
-    // Card shadow: crisp Stripe-style drop + 1px outline for card edges
-    `--shadow-sm:0 1px 4px rgba(0,0,0,0.08),0 0 0 1px rgba(0,0,0,0.06);`,
-    `--shadow-md:0 4px 16px rgba(0,0,0,0.10),0 0 0 1px rgba(0,0,0,0.06);`,
+    // Structural surfaces: moderate tint — visible depth without competing with cards
+    `--surface-3:${tint(0.08)};--surface-4:${tint(0.12)};`,
+    // Border: slight darkening works on any tinted surface
+    `--border:rgba(0,0,0,0.09);`,
+    // Topbar + inputs: white (same elevation as cards)
+    `--topbar-bg:#ffffff;--input-bg:#ffffff;--input-border:rgba(0,0,0,0.12);`,
+    // Row hover: stronger tint for clear interactive feedback
+    `--row-hover:${tint(0.15)};--row-alt:${tint(0.05)};`,
+    // Kanban columns: moderate tint
+    `--board-col-bg:${tint(0.10)};`,
+    // Calendar: other-month slightly lighter; today strongly tinted; agenda white
+    `--cal-other-month:${tint(0.06)};--agenda-item-bg:#ffffff;`,
+    `--cal-today-bg:${tint(0.20)};--cal-hour-hover:${tint(0.08)};`,
+    // Card shadow: clean drop — no outline (cards already have --border on them)
+    `--shadow-sm:0 2px 8px rgba(0,0,0,0.08),0 1px 2px rgba(0,0,0,0.05);`,
+    `--shadow-md:0 4px 16px rgba(0,0,0,0.10),0 2px 4px rgba(0,0,0,0.06);`,
     `}`,
     // Dark-mode: use the theme's deep navy/slate palette
     `[data-theme="dark"]{`,

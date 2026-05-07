@@ -32,10 +32,10 @@ body.role-assistant [data-role-hide="hr"] {
   --pink: #ff6584;
   --navy: #0f172a;
   --slate: #1e293b;
-  /* Neutral page background — enough delta vs #ffffff cards */
-  --bg: #e8ecf1;
+  /* Default tint uses Ocean accent #0ea5e9 at 10% — applyTheme() overrides at runtime */
+  --bg: #edf6fd;
   --card: #ffffff;
-  --border: rgba(0, 0, 0, 0.10);
+  --border: rgba(0, 0, 0, 0.09);
   /* High-contrast text — WCAG AA compliant on white */
   --text: #0f172a;
   --muted: #475569;
@@ -47,17 +47,17 @@ body.role-assistant [data-role-hide="hr"] {
   --s-cancelled: #9ca3af;
   /* Surface layers — neutral depth scale */
   --surface-1: #ffffff;   /* cards, modals */
-  --surface-2: #dde2ea;   /* content bg layer */
-  --surface-3: #e4e7ec;   /* table headers, subtle bg */
-  --surface-4: #d8dce3;   /* tags, count pills */
-  --row-hover: #eff1f5;
-  --row-alt: #f8f9fb;
+  --surface-2: #e3f3fc;   /* content bg layer (Ocean tint 13%) */
+  --surface-3: #e8f4fb;   /* table headers, subtle bg */
+  --surface-4: #d6eef9;   /* tags, count pills */
+  --row-hover: #d4ecf9;
+  --row-alt: #f0f9fe;
   --topbar-bg: #ffffff;
   --input-bg: #ffffff;
   --input-border: rgba(0, 0, 0, 0.13);
-  /* Stripe-style card shadow: drop + 1px outline for crisp card edges */
-  --shadow-sm: 0 1px 4px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.06);
-  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.10), 0 0 0 1px rgba(0, 0, 0, 0.06);
+  /* Clean drop shadow — readable on tinted backgrounds */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.10), 0 2px 4px rgba(0, 0, 0, 0.06);
   --shadow-lg: 0 24px 60px rgba(0, 0, 0, 0.16);
   --search-overlay: rgba(15, 23, 42, 0.6);
   /* Calendar */
