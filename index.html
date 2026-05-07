@@ -2661,6 +2661,9 @@ function _buildBgStyle(blur) {
     '.applicant-card',        // applicant list cards
     '.list-section',          // list view section wrapper (was opaque navy → blocked blur)
     '.list-filter-bar',       // list search bar wrapper
+    '.list-stats-bar',        // KPI-chip row wrapper (gaps showed raw bg image)
+    '.list-status-tabs',      // status-pill row wrapper (gaps showed raw bg image)
+    '.list-active-filters',   // active filter tags row wrapper
   ].join(',body.has-bg-image ');
 
   var cardSelsL = cardSels.replace(/body\.has-bg-image /g, ':root:not([data-theme="dark"]) body.has-bg-image ');
