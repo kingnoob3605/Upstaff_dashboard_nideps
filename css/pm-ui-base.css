@@ -32,8 +32,8 @@ body.role-assistant [data-role-hide="hr"] {
   --pink: #ff6584;
   --navy: #0f172a;
   --slate: #1e293b;
-  /* Neutral page background — matches applyTheme() neutral system */
-  --bg: #f5f6f8;
+  /* Neutral page background — enough delta vs #ffffff cards */
+  --bg: #e8ecf1;
   --card: #ffffff;
   --border: rgba(0, 0, 0, 0.10);
   /* High-contrast text — WCAG AA compliant on white */
@@ -47,17 +47,17 @@ body.role-assistant [data-role-hide="hr"] {
   --s-cancelled: #9ca3af;
   /* Surface layers — neutral depth scale */
   --surface-1: #ffffff;   /* cards, modals */
-  --surface-2: #edf0f4;   /* content bg layer */
-  --surface-3: #e8eaee;   /* table headers, subtle bg */
-  --surface-4: #dfe2e7;   /* tags, count pills */
+  --surface-2: #dde2ea;   /* content bg layer */
+  --surface-3: #e4e7ec;   /* table headers, subtle bg */
+  --surface-4: #d8dce3;   /* tags, count pills */
   --row-hover: #eff1f5;
-  --row-alt: #f9fafb;
+  --row-alt: #f8f9fb;
   --topbar-bg: #ffffff;
   --input-bg: #ffffff;
   --input-border: rgba(0, 0, 0, 0.13);
-  /* Stripe-style card shadow: defined drop + subtle outline */
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.07), 0 1px 2px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.09), 0 1px 4px rgba(0, 0, 0, 0.06);
+  /* Stripe-style card shadow: drop + 1px outline for crisp card edges */
+  --shadow-sm: 0 1px 4px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.10), 0 0 0 1px rgba(0, 0, 0, 0.06);
   --shadow-lg: 0 24px 60px rgba(0, 0, 0, 0.16);
   --search-overlay: rgba(15, 23, 42, 0.6);
   /* Calendar */
@@ -197,13 +197,15 @@ body {
   border-bottom: 1px solid rgba(255, 255, 255, 0.09);
   flex-shrink: 0;
 }
-/* Both logo variants share identical box so neither appears smaller */
+/* Both logo variants share identical constraints — natural width, capped at 200px */
 .sidebar-logo-img {
-  height: 32px;
-  width: 160px;
+  height: 30px;
+  width: auto;
+  max-width: 200px;
   object-fit: contain;
   object-position: left center;
   flex-shrink: 0;
+  display: block;
 }
 .logo-icon {
   width: 34px;

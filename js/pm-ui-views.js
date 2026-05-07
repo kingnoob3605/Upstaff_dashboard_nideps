@@ -9428,31 +9428,30 @@ function applyTheme(key) {
     `:root:not([data-theme="dark"]) .logo-for-light{display:block!important;}`,
     // Light mode content area — very subtle inset shadow to reinforce sidebar edge
     `:root:not([data-theme="dark"]) #content{box-shadow:inset 2px 0 8px rgba(0,0,0,0.03)!important;}`,
-    // Light-mode neutral token system — accent ONLY on interactive states
-    // Page/sidebar/structure backgrounds stay neutral regardless of theme colour.
-    // This matches Linear / Stripe / Vercel / GitHub design language.
+    // Light-mode neutral token system — accent ONLY on interactive states.
+    // Backgrounds are neutral grey; accent only touches hover/active/today.
     `:root{`,
     `--navy:${t.navy};--slate:${t.slate};`,
-    // Neutral page background — never accent-tinted
-    `--bg:#f5f6f8;--surface-2:#edf0f4;`,
-    // Cards pure white for maximum elevation contrast against neutral bg
+    // Page bg: #e8ecf1 gives a clear ~18pt contrast delta vs #ffffff cards
+    `--bg:#e8ecf1;--surface-2:#dde2ea;`,
+    // Cards: pure white — distinct elevation above grey background
     `--card:#ffffff;--surface-1:#ffffff;`,
-    // Structural surfaces — neutral greys only
-    `--surface-3:#e8eaee;--surface-4:#dfe2e7;`,
-    // Border: subtle dark transparency, readable on both white and grey
+    // Structural surfaces: neutral depth scale
+    `--surface-3:#e4e7ec;--surface-4:#d8dce3;`,
+    // Border: visible but not heavy
     `--border:rgba(0,0,0,0.10);`,
-    // Topbar + inputs always white
+    // Topbar + inputs: white (same plane as cards)
     `--topbar-bg:#ffffff;--input-bg:#ffffff;--input-border:rgba(0,0,0,0.13);`,
-    // Row hover: one place accent IS appropriate — interactive feedback
-    `--row-hover:${tint(0.07)};--row-alt:#f9fafb;`,
-    // Kanban columns: neutral structural surface
-    `--board-col-bg:#edf0f4;`,
-    // Calendar: other-month + agenda neutral; today gets accent (important visual cue)
-    `--cal-other-month:#f5f6f8;--agenda-item-bg:#f5f6f8;`,
-    `--cal-today-bg:${tint(0.14)};--cal-hour-hover:${tint(0.06)};`,
-    // Light-mode card shadow — Stripe-style: clean drop + subtle outline
-    `--shadow-sm:0 1px 3px rgba(0,0,0,0.07),0 1px 2px rgba(0,0,0,0.05);`,
-    `--shadow-md:0 4px 12px rgba(0,0,0,0.09),0 1px 4px rgba(0,0,0,0.06);`,
+    // Row hover & alt: one accent-tinted element (interactive feedback only)
+    `--row-hover:${tint(0.07)};--row-alt:#f8f9fb;`,
+    // Kanban columns: neutral
+    `--board-col-bg:#e4e7ec;`,
+    // Calendar
+    `--cal-other-month:#e8ecf1;--agenda-item-bg:#f4f5f8;`,
+    `--cal-today-bg:${tint(0.15)};--cal-hour-hover:${tint(0.06)};`,
+    // Card shadow: crisp Stripe-style drop + 1px outline for card edges
+    `--shadow-sm:0 1px 4px rgba(0,0,0,0.08),0 0 0 1px rgba(0,0,0,0.06);`,
+    `--shadow-md:0 4px 16px rgba(0,0,0,0.10),0 0 0 1px rgba(0,0,0,0.06);`,
     `}`,
     // Dark-mode: use the theme's deep navy/slate palette
     `[data-theme="dark"]{`,
