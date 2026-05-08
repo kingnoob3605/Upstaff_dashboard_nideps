@@ -3102,7 +3102,24 @@ function empPersistSave() {
   } catch (e) {
     dbg("[empPersistSave] localStorage write failed:", e);
   }
+  // Mirror to Supabase so other accounts/devices see the same list
+  if (typeof window._syncDebounced === "function") window._syncDebounced();
 }
+
+// Bridges so pm-ui-core's loadDataFromSupabase can swap in server rows
+window.EMPLOYEES_getAll = function () { return EMPLOYEES; };
+window.EMPLOYEES_setFromServer = function (rows, maxId) {
+  if (!Array.isArray(rows)) return;
+  EMPLOYEES = rows;
+  if ((maxId || 0) >= empNextId) empNextId = (maxId || 0) + 1;
+  try {
+    localStorage.setItem(
+      LS_EMP_KEY,
+      JSON.stringify({ employees: EMPLOYEES, nextId: empNextId }),
+    );
+  } catch (_) {}
+  if (typeof renderOnboarding === "function") renderOnboarding();
+};
 
 function seedDemoEmployees() {
   // No mock data — onboarding is populated only by hiring applicants through the pipeline

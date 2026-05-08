@@ -943,10 +943,24 @@ async function _supabaseSyncNow() {
       body:    JSON.stringify(evtRows),
     }).catch(function() {});
   }
+
+  // Upsert onboarding employees (so different accounts/devices share them)
+  var emps = (typeof window.EMPLOYEES_getAll === "function") ? window.EMPLOYEES_getAll() : [];
+  if (Array.isArray(emps) && emps.length > 0) {
+    var empRows = emps.map(function(e) {
+      return { id: e.id, data: e, updated_at: new Date().toISOString() };
+    });
+    fetch(base + "employees", {
+      method:  "POST",
+      headers: headers,
+      body:    JSON.stringify(empRows),
+    }).catch(function() {});
+  }
 }
 
 // Debounced version — batches rapid saves into one network call
 var _syncDebounced = debounce(_supabaseSyncNow, 2000);
+window._syncDebounced = _syncDebounced;
 
 async function loadDataFromSupabase() {
   var c = _getSupabaseCfg();
@@ -987,6 +1001,22 @@ async function loadDataFromSupabase() {
         if (maxId >= taskNextId) taskNextId = maxId + 1;
         dbg("[Supabase] ✅ Loaded " + TASKS.length + " task(s) from server");
       }
+    }
+
+    // Pull onboarding employees
+    var empResp = await fetch(base + "employees?select=id,data&order=id.asc", { headers: headers });
+    if (empResp.ok) {
+      var empRowsIn = await empResp.json();
+      if (Array.isArray(empRowsIn)) {
+        var serverEmps = empRowsIn.map(function(r) { return r.data; });
+        var maxEmpId = serverEmps.reduce(function(m, e) { return Math.max(m, e.id || 0); }, 0);
+        if (typeof window.EMPLOYEES_setFromServer === "function") {
+          window.EMPLOYEES_setFromServer(serverEmps, maxEmpId);
+        }
+        dbg("[Supabase] ✅ Loaded " + serverEmps.length + " employee(s) from server");
+      }
+    } else if (empResp.status === 404) {
+      console.warn("[Supabase] employees table missing — run the SQL in setup notes");
     }
 
     // Pull local calendar events
