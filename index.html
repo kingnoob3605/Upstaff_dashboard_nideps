@@ -1316,6 +1316,68 @@
      TASK MODAL
 ════════════════════════════════════════ -->
 <!-- ════════════════════════════════════════
+     PASSWORD RECOVERY — SET NEW PASSWORD
+════════════════════════════════════════ -->
+<style>
+  #pw-recovery-overlay{
+    display:none;position:fixed;inset:0;z-index:10000;
+    background:rgba(0,0,0,.6);backdrop-filter:blur(6px);
+    align-items:center;justify-content:center;
+    font-family:'Montserrat',sans-serif;
+  }
+  .pwr-modal{
+    width:min(440px,92vw);
+    background:var(--surface-1);
+    border:1px solid var(--border);
+    border-radius:16px;
+    box-shadow:0 30px 80px rgba(0,0,0,.4);
+    overflow:hidden;
+  }
+  .pwr-header{padding:18px 22px;border-bottom:1px solid var(--border);}
+  .pwr-title{font-size:15px;font-weight:700;color:var(--text);}
+  .pwr-sub{font-size:11.5px;color:var(--muted);margin-top:4px;line-height:1.45;}
+  .pwr-body{padding:18px 22px;display:flex;flex-direction:column;gap:12px;}
+  .pwr-label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;display:block;}
+  .pwr-input{
+    width:100%;padding:10px 12px;
+    border:1px solid var(--border);border-radius:9px;
+    background:var(--surface-2);color:var(--text);
+    font-size:13px;font-family:inherit;outline:none;
+    transition:border-color .12s ease;
+  }
+  .pwr-input:focus{border-color:var(--cyan);}
+  .pwr-btn{
+    width:100%;padding:11px 14px;margin-top:4px;
+    border:0;border-radius:10px;
+    background:var(--cyan);color:#0f172a;
+    font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;
+    transition:filter .12s ease;
+  }
+  .pwr-btn:hover{filter:brightness(1.08);}
+  .pwr-status{font-size:11.5px;min-height:16px;color:var(--muted);}
+</style>
+<div id="pw-recovery-overlay" role="dialog" aria-modal="true" aria-label="Set a new password">
+  <div class="pwr-modal">
+    <div class="pwr-header">
+      <div class="pwr-title">🔑 Set a New Password</div>
+      <div class="pwr-sub">You arrived here from a password reset email. Enter a new password to finish.</div>
+    </div>
+    <div class="pwr-body">
+      <div>
+        <label class="pwr-label" for="pw-recovery-new">New Password</label>
+        <input type="password" id="pw-recovery-new" class="pwr-input" placeholder="Min. 8 characters" autocomplete="new-password"/>
+      </div>
+      <div>
+        <label class="pwr-label" for="pw-recovery-confirm">Confirm New Password</label>
+        <input type="password" id="pw-recovery-confirm" class="pwr-input" placeholder="Repeat new password" autocomplete="new-password"/>
+      </div>
+      <button type="button" class="pwr-btn" onclick="handleRecoverySetPassword()">Save & Sign In</button>
+      <div id="pw-recovery-status" class="pwr-status"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
      NEW APPLICANT — MODE CHOOSER
 ════════════════════════════════════════ -->
 <style>
@@ -2653,9 +2715,55 @@ window.handleMagicLink = async function() {
   }
 };
 
+// On page load, if Supabase sent us back with a password-recovery token,
+// open the "Set new password" modal instead of treating it like a normal login.
+window._handleRecoveryReturn = async function() {
+  var hash = window.location.hash || '';
+  if (hash.indexOf('type=recovery') === -1) return false;
+
+  // Show the overlay; Supabase JS already attached the recovery session.
+  var overlay = document.getElementById('pw-recovery-overlay');
+  if (!overlay) return false;
+  overlay.style.display = 'flex';
+  if (typeof _releaseAuthPending === 'function') _releaseAuthPending();
+  setTimeout(function() { document.getElementById('pw-recovery-new')?.focus(); }, 150);
+  return true;
+};
+
+window.handleRecoverySetPassword = async function() {
+  var newPw  = (document.getElementById('pw-recovery-new')?.value     || '').trim();
+  var confPw = (document.getElementById('pw-recovery-confirm')?.value || '').trim();
+  var statusEl = document.getElementById('pw-recovery-status');
+  if (!newPw || newPw.length < 8) {
+    if (statusEl) { statusEl.textContent = '❌ Password must be at least 8 characters.'; statusEl.style.color = '#ef4444'; }
+    return;
+  }
+  if (newPw !== confPw) {
+    if (statusEl) { statusEl.textContent = '❌ Passwords do not match.'; statusEl.style.color = '#ef4444'; }
+    return;
+  }
+  if (statusEl) { statusEl.textContent = '⏳ Saving new password…'; statusEl.style.color = 'var(--muted)'; }
+  try {
+    await SupabaseAuth.changePassword(newPw);
+    if (statusEl) { statusEl.textContent = '✅ Password updated. Signing you out…'; statusEl.style.color = 'var(--green,#10b981)'; }
+    setTimeout(async function() {
+      try { await SupabaseAuth.logout(); } catch (_) {}
+      // Clear hash so the recovery overlay doesn't reopen on reload
+      if (window.history && window.history.replaceState) {
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+      window.location.reload();
+    }, 900);
+  } catch (err) {
+    if (statusEl) { statusEl.textContent = '❌ ' + (err.message || 'Could not set password.'); statusEl.style.color = '#ef4444'; }
+  }
+};
+
 // On page load, finish a magic-link sign-in if one is pending in the URL hash
 window._handleMagicLinkReturn = async function() {
   if (!window.SupabaseAuth || !SupabaseAuth.handleMagicLinkCallback) return;
+  // If this is a recovery flow, the recovery handler took it — bail out.
+  if (window.location.hash && window.location.hash.indexOf('type=recovery') !== -1) return;
   // Supabase puts tokens in the hash on callback (#access_token=...)
   if (!window.location.hash || window.location.hash.indexOf('access_token') === -1) return;
   try {
@@ -2672,7 +2780,12 @@ window._handleMagicLinkReturn = async function() {
     if (statusEl) { statusEl.textContent = '❌ ' + (err.message || 'Magic link sign-in failed.'); statusEl.style.color = '#ef4444'; }
   }
 };
-document.addEventListener('DOMContentLoaded', function() { setTimeout(_handleMagicLinkReturn, 50); });
+document.addEventListener('DOMContentLoaded', function() {
+  setTimeout(async function() {
+    var isRecovery = await _handleRecoveryReturn();
+    if (!isRecovery) _handleMagicLinkReturn();
+  }, 50);
+});
 
 // Keyboard shortcuts inside the login form
 document.addEventListener('DOMContentLoaded', function() {

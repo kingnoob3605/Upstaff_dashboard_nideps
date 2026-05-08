@@ -329,8 +329,13 @@ window.SupabaseAuth = (function () {
       throw new Error('Please wait ' + Math.ceil(waitMs / 1000) + 's before requesting another reset.');
     }
 
+    // Pin to origin + path so the email never bakes in a stale URL hash
+    // (e.g. an old #error=... fragment from a previous attempt) or a path
+    // that points to a paused old host. The Supabase dashboard's
+    // Site URL / Redirect URLs allowlist is still the ultimate gate.
+    var redirectTo = window.location.origin + window.location.pathname;
     var { error } = await client.auth.resetPasswordForEmail(addr, {
-      redirectTo: window.location.href,
+      redirectTo: redirectTo,
     });
     if (error) throw new Error(error.message);
 
