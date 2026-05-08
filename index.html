@@ -2415,7 +2415,7 @@
     <div id="gate-status" class="login-gate-status" style="margin-top:10px;"></div>
 
     <div class="login-gate-footer">
-      <span style="color:var(--muted,rgba(255,255,255,.45));font-size:11px;">Forgot password? Contact your HR administrator.</span>
+      <button type="button" onclick="handleForgotPassword()" class="login-gate-link">Forgot password?</button>
       <span style="color:var(--border,rgba(255,255,255,.15));margin:0 6px;">·</span>
       <button onclick="document.getElementById('gate-setup-section').style.display='block'" class="login-gate-link">⚙ Change Supabase settings</button>
     </div>
@@ -2532,6 +2532,23 @@ window.handleEmailLogin = async function() {
     }
   } finally {
     _isLoggingIn = false;
+  }
+};
+
+// Forgot password — send reset email
+window.handleForgotPassword = async function() {
+  var email = (document.getElementById('gate-email')?.value || '').trim();
+  var statusEl = document.getElementById('gate-status');
+  if (!email || !email.includes('@')) {
+    if (statusEl) { statusEl.textContent = '❌ Enter your email above first, then click Forgot password?'; statusEl.style.color = '#ef4444'; }
+    return;
+  }
+  if (statusEl) { statusEl.textContent = '📧 Sending password reset link…'; statusEl.style.color = 'var(--muted,#64748b)'; }
+  try {
+    await SupabaseAuth.sendPasswordReset(email);
+    if (statusEl) { statusEl.textContent = '✅ Reset link sent to ' + email + '. Check your inbox (and spam).'; statusEl.style.color = 'var(--green,#10b981)'; }
+  } catch (err) {
+    if (statusEl) { statusEl.textContent = '❌ ' + (err.message || 'Could not send reset link.'); statusEl.style.color = '#ef4444'; }
   }
 };
 
