@@ -12,8 +12,72 @@
    All defined in pm-ui-core.js or pm-ui-views.js (load order:
      pm-ui-core.js → pm-ui-views.js → pm-ui-board.js)
    ══════════════════════════════════════════════ */
+function _renderBoardCard(t) {
+  const pc = PRIORITY_COLORS[t.priority] || "#ccc";
+  const dc = dueCls(t.due);
+  const _boardAssignees = t.assignees || (t.assignee ? [t.assignee] : ["HR"]);
+  const nextStg = getNextStage(t.status);
+  const isActive = ACTIVE_STAGES.includes(t.status);
+  const hasScores = t.typing_score || t.knowledge_score || t.verbal_link;
+  const scoreTag = hasScores
+    ? `<div class="board-card-scores">
+      ${t.typing_score ? `<span class="score-chip">⌨️ ${t.typing_score}%</span>` : ""}
+      ${t.knowledge_score ? `<span class="score-chip" style="${parseInt(t.knowledge_score) >= 75 ? "background:rgba(67,233,123,.12);color:var(--green);" : "background:rgba(239,68,68,.1);color:#ef4444;"}">📝 ${t.knowledge_score} ${parseInt(t.knowledge_score) >= 75 ? "✓" : "✗"}</span>` : ""}
+      ${t.verbal_link ? `<span class="score-chip">🎙️ Verbal</span>` : ""}
+    </div>` : "";
+  return `<div class="board-card" data-task-id="${t.id}" onclick="openTaskEdit(${t.id})">
+    <label class="bulk-cb-wrap" onclick="event.stopPropagation();"><input type="checkbox" class="bulk-cb" ${typeof selectedTaskIds !== "undefined" && selectedTaskIds.has(t.id) ? "checked" : ""} onchange="toggleBulkSelect(${t.id},this)"></label>
+    <div class="board-card-name">${sanitize(t.applicant_name || t.name)} ${ageBadgeHTML(t)}</div>
+    ${t.partner_status ? `<div style="margin-bottom:4px;"><span style="font-size:9px;padding:1px 7px;border-radius:99px;background:rgba(62,207,223,.13);color:#3ecfdf;font-weight:600;font-family:'Montserrat',sans-serif;white-space:nowrap;">${sanitize(t.partner_status)}</span></div>` : ""}
+    <div class="board-card-meta">
+      <span class="board-card-pos">${sanitize(t.position)}</span>
+      <span class="priority-pill" style="background:${pc}22;color:${pc};font-size:10px;">${t.priority}</span>
+      <div style="display:flex;margin-left:auto;">${_boardAssignees.slice(0, 2).map((a, i) => `<div class="assignee-avatar" style="background:${avatarColor(a)};margin-left:${i > 0 ? "-4px" : "0"};z-index:${2 - i};" title="${sanitize(a)}">${initials(a)}</div>`).join("")}${_boardAssignees.length > 2 ? `<span style="font-size:9px;color:var(--muted);margin-left:2px;">+${_boardAssignees.length - 2}</span>` : ""}</div>
+    </div>
+    ${t.due ? `<div style="margin-top:4px;"><span class="due-date ${dc}" style="font-size:10px;">📅 ${fmtDue(t.due)}</span></div>` : ""}
+    ${t.interview_date ? `<div style="margin-top:4px;"><span style="font-size:10px;font-family:'Montserrat',sans-serif;font-weight:600;color:var(--cyan);padding:2px 6px;background:rgba(62,207,223,.12);border-radius:99px;white-space:nowrap;">🗓 Interview: ${fmtDue(t.interview_date)}</span></div>` : ""}
+    ${scoreTag}
+    <div class="board-mini-pipeline" title="${t.status}">
+      ${STAGE_ORDER.map((_, i) => {
+        const stIdx = STAGE_ORDER.indexOf(t.status);
+        const bg = t.status === "Rejected" || t.status === "Cancelled" ? "#ef444466" : i < stIdx ? "#43e97b" : i === stIdx ? "#44d7e9" : "rgba(0,0,0,0.1)";
+        return `<div style="flex:1;height:3px;border-radius:99px;background:${bg};"></div>`;
+      }).join("")}
+    </div>
+    ${isActive && nextStg ? `<div class="board-card-actions" onclick="event.stopPropagation();">
+      <button class="bca-btn bca-next" onclick="advanceToNextStage(${t.id})" title="Move to ${nextStg}">→ ${nextStg}</button>
+      ${(() => {
+        const _bi = STAGE_ORDER.indexOf(t.status);
+        const _bfwd = _bi >= 0 ? STAGE_ORDER.slice(_bi + 1).filter((s) => !TERMINAL_STAGES.includes(s)) : [];
+        if (_bfwd.length < 2) return "";
+        return `<select class="bca-btn bca-skip" title="Skip to stage" onchange="if(this.value){moveApplicantToStage(${t.id},this.value);this.value=''}" onclick="event.stopPropagation()"><option value="">⤸ Skip</option>${_bfwd.map((s) => `<option value="${s}">${s}</option>`).join("")}</select>`;
+      })()}
+      ${t.status === "For Client Endorsement" ? `<button class="bca-btn bca-hire" onclick="hireApplicant(${t.id})">✓ Hire</button>` : ""}
+      <button class="bca-btn bca-reject" onclick="rejectApplicant(${t.id})">✗</button>
+    </div>` : ""}
+    <div class="board-card-drag-hint">
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="9" cy="5" r="1" fill="currentColor"/><circle cx="9" cy="12" r="1" fill="currentColor"/><circle cx="9" cy="19" r="1" fill="currentColor"/><circle cx="15" cy="5" r="1" fill="currentColor"/><circle cx="15" cy="12" r="1" fill="currentColor"/><circle cx="15" cy="19" r="1" fill="currentColor"/></svg>
+    </div>
+  </div>`;
+}
+
+const BOARD_COL_INITIAL = 25;
+let _boardColExpanded = {};
+window.expandBoardCol = function (st) {
+  _boardColExpanded[st] = true;
+  renderBoard();
+};
+let boardGroupBy = localStorage.getItem("upstaff_board_group") || "none";
+window.setBoardGroupBy = function (mode) {
+  boardGroupBy = mode || "none";
+  try { localStorage.setItem("upstaff_board_group", boardGroupBy); } catch (_) {}
+  renderBoard();
+};
+
 function renderBoard() {
   autoProgressStatuses();
+  const sel = document.getElementById("board-group-by");
+  if (sel && sel.value !== boardGroupBy) sel.value = boardGroupBy;
   const activeOrder = [...ACTIVE_STAGES, "Hired", "Others", "Closed"];
   let html = "";
   activeOrder.forEach((st) => {
@@ -42,86 +106,28 @@ function renderBoard() {
       </div>
       <div class="board-col-body" id="board-col-${st.replace(/\s+/g, "-")}" style="${isCollapsed ? "display:none;" : ""}">
         ${tasks.length === 0 ? `<div style="text-align:center;padding:24px 12px;color:var(--muted);font-size:12px;opacity:0.6;">No applicants</div>` : ""}
-        ${tasks
-          .map((t) => {
-            const pc = PRIORITY_COLORS[t.priority] || "#ccc";
-            const dc = dueCls(t.due);
-            const _boardAssignees =
-              t.assignees || (t.assignee ? [t.assignee] : ["HR"]);
-            const ac = avatarColor(_boardAssignees[0] || "HR");
-            const nextStg = getNextStage(t.status);
-            const isActive = ACTIVE_STAGES.includes(t.status);
-            const hasScores =
-              t.typing_score || t.knowledge_score || t.verbal_link;
-            const scoreTag = hasScores
-              ? `<div class="board-card-scores">
-            ${t.typing_score ? `<span class="score-chip">⌨️ ${t.typing_score}%</span>` : ""}
-            ${t.knowledge_score ? `<span class="score-chip" style="${parseInt(t.knowledge_score) >= 75 ? "background:rgba(67,233,123,.12);color:var(--green);" : "background:rgba(239,68,68,.1);color:#ef4444;"}">📝 ${t.knowledge_score} ${parseInt(t.knowledge_score) >= 75 ? "✓" : "✗"}</span>` : ""}
-            ${t.verbal_link ? `<span class="score-chip">🎙️ Verbal</span>` : ""}
-          </div>`
-              : "";
-            return `<div class="board-card"
-            data-task-id="${t.id}"
-            onclick="openTaskEdit(${t.id})">
-            <label class="bulk-cb-wrap" onclick="event.stopPropagation();"><input type="checkbox" class="bulk-cb" ${typeof selectedTaskIds !== "undefined" && selectedTaskIds.has(t.id) ? "checked" : ""} onchange="toggleBulkSelect(${t.id},this)"></label>
-            <div class="board-card-name">${sanitize(t.applicant_name || t.name)} ${ageBadgeHTML(t)}</div>
-            ${t.partner_status ? `<div style="margin-bottom:4px;"><span style="font-size:9px;padding:1px 7px;border-radius:99px;background:rgba(62,207,223,.13);color:#3ecfdf;font-weight:600;font-family:'Montserrat',sans-serif;white-space:nowrap;">${sanitize(t.partner_status)}</span></div>` : ""}
-            <div class="board-card-meta">
-              <span class="board-card-pos">${sanitize(t.position)}</span>
-              <span class="priority-pill" style="background:${pc}22;color:${pc};font-size:10px;">${t.priority}</span>
-              <div style="display:flex;margin-left:auto;">${_boardAssignees
-                .slice(0, 2)
-                .map(
-                  (a, i) =>
-                    `<div class="assignee-avatar" style="background:${avatarColor(a)};margin-left:${i > 0 ? "-4px" : "0"};z-index:${2 - i};" title="${sanitize(a)}">${initials(a)}</div>`,
-                )
-                .join(
-                  "",
-                )}${_boardAssignees.length > 2 ? `<span style="font-size:9px;color:var(--muted);margin-left:2px;">+${_boardAssignees.length - 2}</span>` : ""}</div>
-            </div>
-            ${t.due ? `<div style="margin-top:4px;"><span class="due-date ${dc}" style="font-size:10px;">📅 ${fmtDue(t.due)}</span></div>` : ""}
-            ${t.interview_date ? `<div style="margin-top:4px;"><span style="font-size:10px;font-family:'Montserrat',sans-serif;font-weight:600;color:var(--cyan);padding:2px 6px;background:rgba(62,207,223,.12);border-radius:99px;white-space:nowrap;">🗓 Interview: ${fmtDue(t.interview_date)}</span></div>` : ""}
-            ${scoreTag}
-            <div class="board-mini-pipeline" title="${t.status}">
-              ${STAGE_ORDER.map((_, i) => {
-                const stIdx = STAGE_ORDER.indexOf(t.status);
-                const bg =
-                  t.status === "Rejected" || t.status === "Cancelled"
-                    ? "#ef444466"
-                    : i < stIdx
-                      ? "#43e97b"
-                      : i === stIdx
-                        ? "#44d7e9"
-                        : "rgba(0,0,0,0.1)";
-                return `<div style="flex:1;height:3px;border-radius:99px;background:${bg};"></div>`;
-              }).join("")}
-            </div>
-            ${
-              isActive && nextStg
-                ? `<div class="board-card-actions" onclick="event.stopPropagation();">
-              <button class="bca-btn bca-next" onclick="advanceToNextStage(${t.id})" title="Move to ${nextStg}">→ ${nextStg}</button>
-              ${(() => {
-                const _bi = STAGE_ORDER.indexOf(t.status);
-                const _bfwd =
-                  _bi >= 0
-                    ? STAGE_ORDER.slice(_bi + 1).filter(
-                        (s) => !TERMINAL_STAGES.includes(s),
-                      )
-                    : [];
-                if (_bfwd.length < 2) return "";
-                return `<select class="bca-btn bca-skip" title="Skip to stage" onchange="if(this.value){moveApplicantToStage(${t.id},this.value);this.value=''}" onclick="event.stopPropagation()"><option value="">⤸ Skip</option>${_bfwd.map((s) => `<option value="${s}">${s}</option>`).join("")}</select>`;
-              })()}
-              ${t.status === "For Client Endorsement" ? `<button class="bca-btn bca-hire" onclick="hireApplicant(${t.id})">✓ Hire</button>` : ""}
-              <button class="bca-btn bca-reject" onclick="rejectApplicant(${t.id})">✗</button>
-            </div>`
-                : ""
-            }
-            <div class="board-card-drag-hint">
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="9" cy="5" r="1" fill="currentColor"/><circle cx="9" cy="12" r="1" fill="currentColor"/><circle cx="9" cy="19" r="1" fill="currentColor"/><circle cx="15" cy="5" r="1" fill="currentColor"/><circle cx="15" cy="12" r="1" fill="currentColor"/><circle cx="15" cy="19" r="1" fill="currentColor"/></svg>
-            </div>
-          </div>`;
-          })
-          .join("")}
+        ${(() => {
+          const expanded = _boardColExpanded[st];
+          const sliced = expanded ? tasks : tasks.slice(0, BOARD_COL_INITIAL);
+          let groupHeaders = {};
+          if (boardGroupBy === "position") {
+            const groups = {};
+            sliced.forEach(t => { const k = t.position || "—"; (groups[k] = groups[k] || []).push(t); });
+            groupHeaders = Object.keys(groups).sort().reduce((acc, k) => {
+              acc[groups[k][0].id] = `<div class="board-swimlane-header">${sanitize(k)} <span style="opacity:.6;">${groups[k].length}</span></div>`;
+              return acc;
+            }, {});
+            return Object.keys(groups).sort().flatMap(k => [
+              `<div class="board-swimlane-header">${sanitize(k)} <span style="opacity:.6;">${groups[k].length}</span></div>`,
+              ...groups[k].map(t => _renderBoardCard(t))
+            ]).join("") + (tasks.length > sliced.length
+              ? `<button class="board-loadmore" onclick="expandBoardCol('${st}')">Show ${tasks.length - sliced.length} more</button>`
+              : "");
+          }
+          return sliced.map(t => _renderBoardCard(t)).join("") + (tasks.length > sliced.length
+            ? `<button class="board-loadmore" onclick="expandBoardCol('${st}')">Show ${tasks.length - sliced.length} more</button>`
+            : "");
+        })()}
       </div>
       ${
         !isTerminal

@@ -301,6 +301,14 @@
     <span>Switch to <strong>List</strong> view for the best experience on smaller screens.</span>
     <button data-action="switchView" data-arg="list" style="margin-top:8px;padding:9px 20px;border-radius:10px;background:var(--violet);color:#fff;border:none;font-size:12px;font-weight:700;cursor:pointer">Go to List View →</button>
   </div>
+      <div class="board-toolbar">
+        <label class="board-toolbar-lbl">Group by:</label>
+        <select id="board-group-by" class="board-toolbar-sel" onchange="setBoardGroupBy(this.value)">
+          <option value="none">None</option>
+          <option value="position">Position</option>
+        </select>
+        <span class="board-toolbar-hint">Click column header to collapse · Click count badge to set WIP limit</span>
+      </div>
       <div class="board-wrap" id="board-wrap"></div>
     </div>
 
