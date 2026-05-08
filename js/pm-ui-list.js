@@ -838,3 +838,17 @@ function populateListPositionFilter() {
     JOB_POSITIONS.map((p) => `<option value="${p}">${p}</option>`).join("");
   if (JOB_POSITIONS.includes(cur)) el.value = cur;
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   BOOTSTRAP — initial render after all modules have loaded.
+
+   Was at the bottom of pm-ui-views.js but ran at parse time of that file,
+   when renderList (defined here) was still undefined. The resulting
+   ReferenceError halted views.js mid-parse and put every let/const below
+   that line into TDZ. Calling here is safe: by the time this file runs,
+   pm-ui-core.js and pm-ui-views.js have fully loaded, so
+   populateCalendarSelectors and renderPositionSelects are defined globals.
+   ══════════════════════════════════════════════════════════════════════ */
+if (typeof renderList === "function") renderList();
+if (typeof populateCalendarSelectors === "function") populateCalendarSelectors();
+if (typeof renderPositionSelects === "function") renderPositionSelects();

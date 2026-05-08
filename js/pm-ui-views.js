@@ -7283,9 +7283,10 @@ async function _renderApiCountsBanner() {
   });
 })();
 
-renderList(); // Default view on load
-populateCalendarSelectors(); // Populate calendar dropdowns from UPSTAFF_CALENDARS
-renderPositionSelects(); // Populate position dropdowns from JOB_POSITIONS
+// Initial bootstrap moved to end of pm-ui-list.js — that file defines
+// renderList and loads after this one. Calling renderList here at parse
+// time threw ReferenceError, halting initialization of every let/const
+// below this point (TDZ on _pubCalPage, MAX_MEMBERS, etc).
 
 /* ══════════════════════════════════════════════
    CANDIDATES FOLDER — LOGIC
