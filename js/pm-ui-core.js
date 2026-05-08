@@ -1282,7 +1282,7 @@ async function rejectApplicant(taskId) {
     return;
   const t = TASKS.find((x) => x.id === taskId);
   if (t) t.rejection_reason = reason;
-  moveApplicantToStage(taskId, "Closed");
+  moveApplicantToStage(taskId, "Rejected");
 }
 
 /* Auto-creates an onboarding employee when a candidate is Hired */
