@@ -818,12 +818,11 @@ function listRejectApplicant(taskId) {
   closeAllListMenus();
   const t = TASKS.find((x) => x.id === taskId);
   if (!t) return;
-  if (t.status === "Closed") {
-    showToast("Already closed/rejected.");
+  if (t.status === "Rejected") {
+    showToast("Already rejected.");
     return;
   }
-  moveApplicantToStage(taskId, "Closed");
-  showToast(`🚫 ${t.applicant_name || t.name} rejected`);
+  rejectApplicant(taskId);
 }
 
 function listCancelApplicant(taskId) {
