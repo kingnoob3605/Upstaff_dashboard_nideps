@@ -465,6 +465,7 @@ function renderList() {
                     ${t.notes ? `<span class="task-notes-preview">${sanitize(t.notes)}</span>` : ""}
                     ${t.gcalEventId ? `<span class="task-gcal-badge">☁️ GCal</span>` : ""}
                     <span class="priority-pill" style="background:${pc}22;color:${pc};font-size:10px;">${t.priority}</span>
+                    ${ageBadgeHTML(t)}
                   </div>
                 </div>
               </div></td>

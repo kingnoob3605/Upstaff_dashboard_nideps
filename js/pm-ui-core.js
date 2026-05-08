@@ -1479,6 +1479,80 @@ function _updateNotifBadge() {
 }
 
 /* ══════════════════════════════════════════════
+   SCALABILITY HELPERS — age, stale, WIP, density
+══════════════════════════════════════════════ */
+function _stageAgeDays(t) {
+  const ts = t.stage_changed_at || t.created || t.createdAt;
+  if (!ts) return 0;
+  const d = new Date(ts).getTime();
+  if (!d) return 0;
+  return Math.floor((Date.now() - d) / 86400000);
+}
+function ageBadgeHTML(t) {
+  if (TERMINAL_STAGES.includes(t.status) || t.archived) return "";
+  const d = _stageAgeDays(t);
+  if (d < 4) return "";
+  const cls = d >= 8 ? "age-stale" : "age-aging";
+  const label = d >= 8 ? `🔥 ${d}d` : `⏳ ${d}d`;
+  const title = d >= 8 ? `Stale: ${d} days in this stage` : `Aging: ${d} days in this stage`;
+  return `<span class="age-badge ${cls}" title="${title}">${label}</span>`;
+}
+
+const LS_WIP_KEY = "upstaff_wip_limits";
+let WIP_LIMITS = (() => {
+  try { return JSON.parse(localStorage.getItem(LS_WIP_KEY) || "{}") || {}; }
+  catch (_) { return {}; }
+})();
+function saveWIPLimits() {
+  try { localStorage.setItem(LS_WIP_KEY, JSON.stringify(WIP_LIMITS)); } catch (_) {}
+}
+function setWIPLimit(status, limit) {
+  const n = parseInt(limit, 10);
+  if (!n || n <= 0) delete WIP_LIMITS[status];
+  else WIP_LIMITS[status] = n;
+  saveWIPLimits();
+  if (typeof renderBoard === "function") renderBoard();
+}
+window.setWIPLimit = setWIPLimit;
+function promptWIPLimit(status) {
+  const cur = WIP_LIMITS[status] || "";
+  const v = window.prompt(`WIP limit for "${status}" (blank to clear):`, cur);
+  if (v === null) return;
+  setWIPLimit(status, v);
+}
+window.promptWIPLimit = promptWIPLimit;
+
+const LS_COLLAPSED_KEY = "upstaff_collapsed_cols";
+let COLLAPSED_COLS = (() => {
+  try { return new Set(JSON.parse(localStorage.getItem(LS_COLLAPSED_KEY) || "[]")); }
+  catch (_) { return new Set(); }
+})();
+function toggleColumnCollapse(status) {
+  if (COLLAPSED_COLS.has(status)) COLLAPSED_COLS.delete(status);
+  else COLLAPSED_COLS.add(status);
+  try { localStorage.setItem(LS_COLLAPSED_KEY, JSON.stringify(Array.from(COLLAPSED_COLS))); } catch (_) {}
+  if (typeof renderBoard === "function") renderBoard();
+}
+window.toggleColumnCollapse = toggleColumnCollapse;
+
+const LS_DENSITY_KEY = "upstaff_list_density";
+function getListDensity() {
+  return localStorage.getItem(LS_DENSITY_KEY) || "comfy";
+}
+function setListDensity(mode) {
+  localStorage.setItem(LS_DENSITY_KEY, mode);
+  document.body.classList.toggle("list-density-compact", mode === "compact");
+  if (typeof renderList === "function") renderList();
+}
+window.setListDensity = setListDensity;
+window.toggleListDensity = function () {
+  setListDensity(getListDensity() === "compact" ? "comfy" : "compact");
+};
+document.addEventListener("DOMContentLoaded", () => {
+  document.body.classList.toggle("list-density-compact", getListDensity() === "compact");
+});
+
+/* ══════════════════════════════════════════════
    UTILITIES
 ══════════════════════════════════════════════ */
 function showToast(msg, duration) {

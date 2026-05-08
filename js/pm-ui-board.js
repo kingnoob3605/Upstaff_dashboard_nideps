@@ -25,14 +25,22 @@ function renderBoard() {
     const sm = STATUS_META[st] || STATUS_META["New"];
     const color = sm.color;
     const isTerminal = TERMINAL_STAGES.includes(st);
-    html += `<div class="board-col"
+    const wip = (typeof WIP_LIMITS !== "undefined" && WIP_LIMITS[st]) || 0;
+    const overWip = wip && tasks.length > wip;
+    const isCollapsed = typeof COLLAPSED_COLS !== "undefined" && COLLAPSED_COLS.has(st);
+    const wipBadge = wip
+      ? `<span class="board-col-wip ${overWip ? "wip-over" : ""}" title="WIP limit ${wip}${overWip ? " — exceeded" : ""}" onclick="event.stopPropagation();promptWIPLimit('${st}')">${tasks.length}/${wip}</span>`
+      : `<span class="board-col-wip wip-empty" title="Set WIP limit" onclick="event.stopPropagation();promptWIPLimit('${st}')">＋</span>`;
+    html += `<div class="board-col ${overWip ? "board-col-over" : ""} ${isCollapsed ? "board-col-collapsed" : ""}"
       data-status="${st}">
-      <div class="board-col-header" style="border-top:3px solid ${color};">
+      <div class="board-col-header" style="border-top:3px solid ${color};cursor:pointer;" onclick="toggleColumnCollapse('${st}')" title="${isCollapsed ? "Expand" : "Collapse"} column">
         <div class="board-col-dot" style="background:${color};"></div>
         <span class="board-col-title">${st}</span>
         <span class="board-col-count">${tasks.length}</span>
+        ${wipBadge}
+        <svg class="board-col-chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="margin-left:auto;transform:rotate(${isCollapsed ? "-90deg" : "0deg"});transition:transform .2s;"><polyline points="6 9 12 15 18 9"/></svg>
       </div>
-      <div class="board-col-body" id="board-col-${st.replace(/\s+/g, "-")}">
+      <div class="board-col-body" id="board-col-${st.replace(/\s+/g, "-")}" style="${isCollapsed ? "display:none;" : ""}">
         ${tasks.length === 0 ? `<div style="text-align:center;padding:24px 12px;color:var(--muted);font-size:12px;opacity:0.6;">No applicants</div>` : ""}
         ${tasks
           .map((t) => {
@@ -56,7 +64,7 @@ function renderBoard() {
             data-task-id="${t.id}"
             onclick="openTaskEdit(${t.id})">
             <label class="bulk-cb-wrap" onclick="event.stopPropagation();"><input type="checkbox" class="bulk-cb" ${typeof selectedTaskIds !== "undefined" && selectedTaskIds.has(t.id) ? "checked" : ""} onchange="toggleBulkSelect(${t.id},this)"></label>
-            <div class="board-card-name">${sanitize(t.applicant_name || t.name)}</div>
+            <div class="board-card-name">${sanitize(t.applicant_name || t.name)} ${ageBadgeHTML(t)}</div>
             ${t.partner_status ? `<div style="margin-bottom:4px;"><span style="font-size:9px;padding:1px 7px;border-radius:99px;background:rgba(62,207,223,.13);color:#3ecfdf;font-weight:600;font-family:'Montserrat',sans-serif;white-space:nowrap;">${sanitize(t.partner_status)}</span></div>` : ""}
             <div class="board-card-meta">
               <span class="board-card-pos">${sanitize(t.position)}</span>
