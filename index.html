@@ -1,10 +1,27 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="auth-pending">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <link rel="icon" type="image/png" href="css/Logo-NavBar.png"/>
 <!-- Supabase auth does not need Cross-Origin-Opener-Policy -->
+
+<!-- Hide app UI until auth check finishes — prevents flash-of-content
+     and stops a "disable JS" attacker from seeing skeleton. -->
+<style id="auth-gate-style">
+  html.auth-pending body > *:not(#login-gate-overlay):not(script):not(style) {
+    visibility: hidden !important;
+  }
+  html.auth-pending #login-gate-overlay { visibility: visible !important; }
+</style>
+<script>
+  // Fail-safe: if JS errors before auth resolves, still keep app hidden.
+  // Removed by _hideLoginGate() on successful login, or by _showLoginGate()
+  // (which keeps the gate visible).
+  window._releaseAuthPending = function () {
+    document.documentElement.classList.remove('auth-pending');
+  };
+</script>
 
 <title>upstaff — Project Board</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
@@ -2428,6 +2445,8 @@ function _showLoginGate() {
 function _hideLoginGate() {
   var overlay = document.getElementById('login-gate-overlay');
   if (overlay) overlay.style.display = 'none';
+  // Reveal the app — only happens after a successful auth check.
+  if (typeof _releaseAuthPending === 'function') _releaseAuthPending();
 }
 
 window.saveGateCredentials = function() {
