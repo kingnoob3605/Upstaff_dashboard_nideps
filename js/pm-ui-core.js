@@ -1463,10 +1463,10 @@ function pushNotif(type, msg, taskId = null) {
   _updateNotifBadge();
   // Browser Notification API
   if (Notification.permission === "granted") {
-    new Notification("Upstaff", { body: msg, icon: "css/Logo-Footer.png" });
+    new Notification("Upstaff", { body: msg, icon: "css/logo-footer.dark.png" });
   } else if (Notification.permission === "default") {
     Notification.requestPermission().then((p) => {
-      if (p === "granted") new Notification("Upstaff", { body: msg, icon: "css/Logo-Footer.png" });
+      if (p === "granted") new Notification("Upstaff", { body: msg, icon: "css/logo-footer.dark.png" });
     });
   }
 }
