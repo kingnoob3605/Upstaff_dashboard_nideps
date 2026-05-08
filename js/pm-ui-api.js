@@ -562,6 +562,11 @@ window.UpstaffAPI = (function () {
   // Sync dashboard stage change → partner API (converts stage → partner status)
   async function syncStatusToApi(task, newDashboardStage) {
     if (task._source !== "api" || !task.supabase_id) return false;
+    // Apps Script token is HR-scoped; skip for assistants or unconfigured sessions
+    var cfg = _config();
+    if (!cfg.token) return false;
+    var role = (window.SupabaseAuth && SupabaseAuth.getRole && SupabaseAuth.getRole()) || "";
+    if (role && role !== "hr") return false;
     // Convert dashboard stage (e.g. "Review") → partner status (e.g. "Interviewed")
     var partnerStatus = mapToPartnerStatus(
       newDashboardStage,
