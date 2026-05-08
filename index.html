@@ -2721,12 +2721,25 @@ window._handleRecoveryReturn = async function() {
   var hash = window.location.hash || '';
   if (hash.indexOf('type=recovery') === -1) return false;
 
-  // Show the overlay; Supabase JS already attached the recovery session.
   var overlay = document.getElementById('pw-recovery-overlay');
   if (!overlay) return false;
   overlay.style.display = 'flex';
   if (typeof _releaseAuthPending === 'function') _releaseAuthPending();
-  setTimeout(function() { document.getElementById('pw-recovery-new')?.focus(); }, 150);
+
+  var statusEl = document.getElementById('pw-recovery-status');
+  if (statusEl) { statusEl.textContent = '🔓 Verifying reset link…'; statusEl.style.color = 'var(--muted)'; }
+
+  // Ensure Supabase has the recovery session attached before the user
+  // can submit. If not, parse the hash manually and set it.
+  try {
+    if (window.SupabaseAuth && SupabaseAuth.ensureRecoverySession) {
+      await SupabaseAuth.ensureRecoverySession();
+    }
+    if (statusEl) statusEl.textContent = '';
+    setTimeout(function() { document.getElementById('pw-recovery-new')?.focus(); }, 150);
+  } catch (err) {
+    if (statusEl) { statusEl.textContent = '❌ ' + (err.message || 'Could not verify reset link.'); statusEl.style.color = '#ef4444'; }
+  }
   return true;
 };
 

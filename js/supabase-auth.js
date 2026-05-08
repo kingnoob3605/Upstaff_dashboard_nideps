@@ -43,8 +43,47 @@ window.SupabaseAuth = (function () {
       console.error('[SupabaseAuth] @supabase/supabase-js not loaded.');
       return null;
     }
-    _client = window.supabase.createClient(c.supabaseUrl, c.supabaseAnonKey);
+    _client = window.supabase.createClient(c.supabaseUrl, c.supabaseAnonKey, {
+      auth: {
+        detectSessionInUrl: true,
+        persistSession: true,
+        autoRefreshToken: true,
+        flowType: 'implicit',
+      },
+    });
     return _client;
+  }
+
+  // Force client init + wait briefly for the URL-hash session to be
+  // picked up. Used by the password-recovery flow because the modal
+  // opens before any other code touches Supabase, so we need to make
+  // sure detectSessionInUrl has a chance to run.
+  async function ensureRecoverySession() {
+    var client = _getClient();
+    if (!client) throw new Error('Supabase not configured.');
+
+    // Already attached?
+    var first = await client.auth.getSession();
+    if (first.data && first.data.session) return first.data.session;
+
+    // Manually parse the hash and set the session — works even if the
+    // client missed the auto-detect window (some browsers / SPA hosts).
+    var hash = (window.location.hash || '').replace(/^#/, '');
+    if (!hash) throw new Error('Auth session missing!');
+    var params = {};
+    hash.split('&').forEach(function(p) {
+      var i = p.indexOf('=');
+      if (i > -1) params[decodeURIComponent(p.slice(0, i))] = decodeURIComponent(p.slice(i + 1));
+    });
+    if (!params.access_token || !params.refresh_token) {
+      throw new Error('Recovery link is missing tokens. Request a new reset email.');
+    }
+    var { data, error } = await client.auth.setSession({
+      access_token:  params.access_token,
+      refresh_token: params.refresh_token,
+    });
+    if (error) throw new Error(error.message);
+    return data.session;
   }
 
   // ── Public API ────────────────────────────────────────────────
@@ -423,5 +462,5 @@ window.SupabaseAuth = (function () {
   return { login, logout, isConfigured, isLoggedIn, getRole, getName, getEmail, saveSettings,
            changePassword, sendPasswordReset, getMembers, inviteMember, removeMember,
            getCurrentUserId, getFreshToken: _getFreshToken,
-           sendMagicLink, handleMagicLinkCallback };
+           sendMagicLink, handleMagicLinkCallback, ensureRecoverySession };
 })();
