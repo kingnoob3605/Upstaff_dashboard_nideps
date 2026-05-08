@@ -79,10 +79,22 @@ window.UpstaffAPI = (function () {
         },
         body: JSON.stringify(proxyBody),
       });
-      if (!proxyResp.ok && proxyResp.status !== 401)
-        throw new Error("HTTP " + proxyResp.status);
-      var proxyJson = await proxyResp.json();
-      if (proxyJson.result === "error") throw new Error(proxyJson.message || "API error");
+      // Try to parse JSON regardless of status — edge fn always returns JSON.
+      var proxyJson;
+      try { proxyJson = await proxyResp.json(); } catch (_) { proxyJson = null; }
+
+      // 401 → token expired, try Supabase refresh + one retry.
+      if (proxyResp.status === 401 && !_isRetry) {
+        var refreshed = await _refreshSupabaseToken();
+        if (refreshed) return _post(payload, true);
+      }
+      if (!proxyResp.ok) {
+        var errMsg = (proxyJson && proxyJson.message) || ("HTTP " + proxyResp.status);
+        throw new Error(errMsg);
+      }
+      if (proxyJson && proxyJson.result === "error") {
+        throw new Error(proxyJson.message || "API error");
+      }
       return proxyJson;
     }
 
@@ -196,11 +208,31 @@ window.UpstaffAPI = (function () {
     return Date.now() - c.login_at > 30 * 24 * 60 * 60 * 1000; // 30 days
   }
 
+  // Refresh Supabase JWT using the stored refresh token.
+  // Used by edge-proxy mode when a 401 comes back from the proxy.
+  async function _refreshSupabaseToken() {
+    var c = _config();
+    if (!c.supabaseRefreshToken) return false;
+    if (!window.supabase || !c.supabaseUrl || !c.supabaseAnonKey) return false;
+    try {
+      var client = window.supabase.createClient(c.supabaseUrl, c.supabaseAnonKey);
+      var res = await client.auth.refreshSession({ refresh_token: c.supabaseRefreshToken });
+      if (res.error || !res.data || !res.data.session) return false;
+      c.supabaseToken        = res.data.session.access_token;
+      c.supabaseRefreshToken = res.data.session.refresh_token;
+      saveConfig(c);
+      return true;
+    } catch (_) { return false; }
+  }
+
   // Silent re-login using stored credentials — no Google OAuth needed
   async function silentReLogin() {
     var c = _config();
-    // Edge proxy mode: no token concept — Supabase JWT is the session.
-    if (c.useEdgeProxy && c.edgeProxyUrl) return !!c.supabaseToken;
+    // Edge proxy mode: refresh Supabase JWT instead of legacy Apps Script login.
+    if (c.useEdgeProxy && c.edgeProxyUrl) {
+      if (c.supabaseToken) return true;
+      return await _refreshSupabaseToken();
+    }
     if (!c.webAppUrl || !c.adminEmail || !c.adminPassword) return false;
     try {
       var resp = await fetch(c.webAppUrl, {

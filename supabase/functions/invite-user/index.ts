@@ -129,8 +129,10 @@ Deno.serve(async (req: Request) => {
   } catch (_) { /* table may not exist yet — silent */ }
 
   return jr({
-    result:    'success',
+    result:     'success',
     actionLink: (linkData.properties as any)?.action_link || '',
-    expiresAt: (linkData.properties as any)?.email_otp || '',
+    // Supabase magic links default to a 1-hour TTL; the response carries no
+    // explicit expiry timestamp. Surface a hint for the UI instead.
+    expiresIn:  '1 hour (default)',
   });
 });
