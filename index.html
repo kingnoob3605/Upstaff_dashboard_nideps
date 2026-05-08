@@ -107,15 +107,10 @@
     </div>
     <span id="last-saved-indicator" title="Last save time"></span>
     <div class="topbar-spacer"></div>
-    <button class="topbar-btn" id="topbar-filter-btn" aria-label="Filter" onclick="toggleSuperFilter()">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="20" y2="12"/><line x1="12" y1="18" x2="20" y2="18"/></svg>
-      Filter
-      <span id="filter-active-badge" style="display:none;background:var(--violet);color:#fff;border-radius:99px;font-size:9px;font-weight:800;padding:1px 5px;margin-left:2px;"></span>
-    </button>
     <button class="topbar-btn" id="btn-global-search" aria-label="Open search" onclick="openGlobalSearch()">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       Search
-      <kbd style="font-size:9px;padding:1px 4px;border-radius:4px;border:1px solid var(--border);color:var(--muted);margin-left:2px;">⌘K</kbd>
+      <kbd style="font-size:9px;padding:1px 4px;border-radius:4px;border:1px solid var(--border);color:var(--muted);margin-left:2px;">Ctrl+K</kbd>
     </button>
     <button class="topbar-btn primary" id="btn-add-task" aria-label="Add applicant">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -260,6 +255,11 @@
           <svg class="list-search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           <input type="text" placeholder="Search applicants…" id="list-search"/>
         </div>
+        <button class="filter-btn" id="list-filter-btn" aria-label="Filter" onclick="toggleSuperFilter()" style="display:inline-flex;align-items:center;gap:6px;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="20" y2="12"/><line x1="12" y1="18" x2="20" y2="18"/></svg>
+          Filter
+          <span id="filter-active-badge" style="display:none;background:var(--violet);color:#fff;border-radius:99px;font-size:9px;font-weight:800;padding:1px 5px;margin-left:2px;"></span>
+        </button>
       </div>
 
       <!-- Active filter tags -->
@@ -281,11 +281,6 @@
     <span>Switch to <strong>List</strong> view for the best experience on smaller screens.</span>
     <button data-action="switchView" data-arg="list" style="margin-top:8px;padding:9px 20px;border-radius:10px;background:var(--violet);color:#fff;border:none;font-size:12px;font-weight:700;cursor:pointer">Go to List View →</button>
   </div>
-      <div class="filter-row">
-        <button class="filter-btn">Group by: Status</button>
-        <button class="filter-btn">Sort: Priority</button>
-        <div class="filter-spacer"></div>
-      </div>
       <div class="board-wrap" id="board-wrap"></div>
     </div>
 

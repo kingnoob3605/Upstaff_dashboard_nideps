@@ -100,18 +100,18 @@ function toggleSuperFilter() {
   // In calendar view, redirect to the inline cal filter bar
   if (_getActiveView() === "calendar") { toggleCalFilterBar(); return; }
   const panel = document.getElementById("super-filter-panel");
-  const btn   = document.getElementById("topbar-filter-btn");
+  const btn   = document.getElementById("list-filter-btn") || document.getElementById("topbar-filter-btn");
   if (!panel) return;
   const isOpen = panel.style.display !== "none";
   if (isOpen) {
     panel.style.display = "none";
-    btn.classList.remove("active");
+    if (btn) btn.classList.remove("active");
     return;
   }
   document.getElementById("sf-list-section").style.display = "";
   document.getElementById("sf-cal-section").style.display  = "none";
   panel.style.display = "";
-  btn.classList.add("active");
+  if (btn) btn.classList.add("active");
 }
 
 function toggleCalFilterBar() {
