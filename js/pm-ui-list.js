@@ -615,15 +615,17 @@ function buildListActionMenuHTML(taskId) {
   const curIdx = STAGE_ORDER.indexOf(t.status);
   const fwd = curIdx >= 0 ? STAGE_ORDER.slice(curIdx + 1).filter(s => !TERMINAL_STAGES.includes(s)) : [];
   const othersOpts = OTHERS_STATUSES.filter(s => s !== t.status);
-  const moveToSub = (fwd.length || othersOpts.length) ? `<div class="lam-item lam-has-sub" onmouseenter="this.querySelector('.lam-sub').style.display='block'" onmouseleave="this.querySelector('.lam-sub').style.display='none'" style="position:relative;display:flex;align-items:center;gap:8px;cursor:pointer;">
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>
-    Move to Stage
-    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="margin-left:auto;"><polyline points="9 18 15 12 9 6"/></svg>
-    <div class="lam-sub" style="display:none;position:fixed;background:var(--surface-1);border:1.5px solid var(--border);border-radius:10px;padding:4px;box-shadow:0 8px 24px rgba(0,0,0,.25);z-index:9200;min-width:180px;">
-      ${fwd.map(st => `<button class="lam-item" onclick="moveApplicantToStage(${taskId},'${st}');closeAllListMenus()">${st}</button>`).join("")}
-      ${othersOpts.length ? (fwd.length ? `<div style="margin:4px 4px;border-top:1px solid var(--border);"></div>` : "") + `<div style="padding:4px 8px 2px;font-size:10px;font-weight:700;color:var(--muted);font-family:'Montserrat',sans-serif;text-transform:uppercase;letter-spacing:.5px;">Others</div>` + othersOpts.map(st => `<button class="lam-item" onclick="moveApplicantToStage(${taskId},'${st}');closeAllListMenus()">${st}</button>`).join("") : ""}
-    </div>
-  </div>` : "";
+  const moveId = `lam-move-${taskId}`;
+  const moveToSub = (fwd.length || othersOpts.length) ? `
+    <button type="button" class="lam-item lam-collapsible" data-target="${moveId}" onclick="(function(b){var x=document.getElementById(b.dataset.target);var open=x.style.display==='block';document.querySelectorAll('#list-action-menu .lam-collapse').forEach(function(el){el.style.display='none';});document.querySelectorAll('#list-action-menu .lam-collapsible svg.lam-chev').forEach(function(c){c.style.transform='';});x.style.display=open?'none':'block';b.querySelector('svg.lam-chev').style.transform=open?'':'rotate(90deg)';})(this)">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>
+      Move to Stage
+      <svg class="lam-chev" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="margin-left:auto;transition:transform .15s ease;"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+    <div id="${moveId}" class="lam-collapse" style="display:none;padding:2px 0 4px 18px;border-left:2px solid var(--border);margin:2px 0 4px 14px;">
+      ${fwd.map(st => `<button class="lam-item lam-sub-item" onclick="moveApplicantToStage(${taskId},'${st}');closeAllListMenus()">${st}</button>`).join("")}
+      ${othersOpts.length ? (fwd.length ? `<div class="lam-sub-header">Others</div>` : "") + othersOpts.map(st => `<button class="lam-item lam-sub-item" onclick="moveApplicantToStage(${taskId},'${st}');closeAllListMenus()">${st}</button>`).join("") : ""}
+    </div>` : "";
   const prevStage = getPrevStage(t.status);
   const moveBack = prevStage ? `<button class="lam-item" onclick="listRevertStage(${taskId});closeAllListMenus()">
     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
