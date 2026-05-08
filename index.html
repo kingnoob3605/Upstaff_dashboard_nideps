@@ -1333,7 +1333,14 @@
     box-shadow:0 30px 80px rgba(0,0,0,.4);
     overflow:hidden;
   }
-  .pwr-header{padding:18px 22px;border-bottom:1px solid var(--border);}
+  .pwr-header{padding:18px 22px;border-bottom:1px solid var(--border);position:relative;}
+  .pwr-close{
+    position:absolute;top:12px;right:14px;
+    background:transparent;border:0;color:var(--muted);
+    font-size:20px;line-height:1;cursor:pointer;
+    padding:4px 10px;border-radius:8px;
+  }
+  .pwr-close:hover{background:var(--surface-2);color:var(--text);}
   .pwr-title{font-size:15px;font-weight:700;color:var(--text);}
   .pwr-sub{font-size:11.5px;color:var(--muted);margin-top:4px;line-height:1.45;}
   .pwr-body{padding:18px 22px;display:flex;flex-direction:column;gap:12px;}
@@ -1354,11 +1361,20 @@
     transition:filter .12s ease;
   }
   .pwr-btn:hover{filter:brightness(1.08);}
+  .pwr-btn-secondary{
+    width:100%;padding:10px 14px;
+    border:1px solid var(--border);border-radius:10px;
+    background:transparent;color:var(--muted);
+    font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;
+    transition:border-color .12s ease,color .12s ease;
+  }
+  .pwr-btn-secondary:hover{border-color:var(--cyan);color:var(--text);}
   .pwr-status{font-size:11.5px;min-height:16px;color:var(--muted);}
 </style>
 <div id="pw-recovery-overlay" role="dialog" aria-modal="true" aria-label="Set a new password">
   <div class="pwr-modal">
     <div class="pwr-header">
+      <button type="button" class="pwr-close" aria-label="Cancel" onclick="cancelRecovery()">×</button>
       <div class="pwr-title">🔑 Set a New Password</div>
       <div class="pwr-sub">You arrived here from a password reset email. Enter a new password to finish.</div>
     </div>
@@ -1372,6 +1388,7 @@
         <input type="password" id="pw-recovery-confirm" class="pwr-input" placeholder="Repeat new password" autocomplete="new-password"/>
       </div>
       <button type="button" class="pwr-btn" onclick="handleRecoverySetPassword()">Save & Sign In</button>
+      <button type="button" class="pwr-btn-secondary" onclick="cancelRecovery()">Cancel — back to login</button>
       <div id="pw-recovery-status" class="pwr-status"></div>
     </div>
   </div>
@@ -2741,6 +2758,17 @@ window._handleRecoveryReturn = async function() {
     if (statusEl) { statusEl.textContent = '❌ ' + (err.message || 'Could not verify reset link.'); statusEl.style.color = '#ef4444'; }
   }
   return true;
+};
+
+window.cancelRecovery = async function() {
+  // Drop the recovery session, clear the URL hash, and reload to login.
+  try { if (window.SupabaseAuth && SupabaseAuth.logout) await SupabaseAuth.logout(); } catch (_) {}
+  if (window.history && window.history.replaceState) {
+    window.history.replaceState({}, document.title, window.location.pathname);
+  }
+  var overlay = document.getElementById('pw-recovery-overlay');
+  if (overlay) overlay.style.display = 'none';
+  window.location.reload();
 };
 
 window.handleRecoverySetPassword = async function() {
