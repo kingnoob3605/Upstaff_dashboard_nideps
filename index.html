@@ -1316,6 +1316,42 @@
      TASK MODAL
 ════════════════════════════════════════ -->
 <!-- ════════════════════════════════════════
+     NEW APPLICANT — MODE CHOOSER
+════════════════════════════════════════ -->
+<div id="new-applicant-chooser-overlay" role="dialog" aria-modal="true" aria-label="New Applicant — choose mode"
+     style="display:none;position:fixed;inset:0;z-index:9990;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);align-items:center;justify-content:center;font-family:'Montserrat',sans-serif;"
+     onclick="if(event.target===this)closeNewApplicantChooser()">
+  <div style="width:min(560px,92vw);background:var(--surface,#0f172a);border:1px solid var(--border,rgba(255,255,255,.1));border-radius:16px;box-shadow:0 30px 80px rgba(0,0,0,.55);overflow:hidden;">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border,rgba(255,255,255,.08));">
+      <div>
+        <div style="font-size:14px;font-weight:700;color:var(--text,#fff);letter-spacing:.2px;">Add New Applicant</div>
+        <div style="font-size:11px;color:var(--muted,rgba(255,255,255,.55));margin-top:2px;">Choose how you want to add this applicant.</div>
+      </div>
+      <button type="button" aria-label="Close" onclick="closeNewApplicantChooser()"
+              style="background:transparent;border:0;color:var(--muted,rgba(255,255,255,.6));cursor:pointer;font-size:18px;line-height:1;padding:4px 8px;border-radius:6px;">×</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:18px;">
+      <button type="button" onclick="chooseNewApplicantMode('sheet')"
+              style="text-align:left;padding:18px;border:1px solid var(--border,rgba(255,255,255,.1));border-radius:12px;background:var(--surface-2,rgba(255,255,255,.03));color:var(--text,#fff);cursor:pointer;transition:transform .12s ease,border-color .12s ease,background .12s ease;font-family:inherit;"
+              onmouseover="this.style.borderColor='var(--cyan,#44d7e9)';this.style.transform='translateY(-2px)';"
+              onmouseout="this.style.borderColor='var(--border,rgba(255,255,255,.1))';this.style.transform='';">
+        <div style="font-size:24px;margin-bottom:8px;">📋</div>
+        <div style="font-size:13px;font-weight:700;margin-bottom:4px;">Import from Sheet</div>
+        <div style="font-size:11px;color:var(--muted,rgba(255,255,255,.55));line-height:1.45;">Search Google Sheet by name and auto-fill the form.</div>
+      </button>
+      <button type="button" onclick="chooseNewApplicantMode('manual')"
+              style="text-align:left;padding:18px;border:1px solid var(--border,rgba(255,255,255,.1));border-radius:12px;background:var(--surface-2,rgba(255,255,255,.03));color:var(--text,#fff);cursor:pointer;transition:transform .12s ease,border-color .12s ease,background .12s ease;font-family:inherit;"
+              onmouseover="this.style.borderColor='var(--cyan,#44d7e9)';this.style.transform='translateY(-2px)';"
+              onmouseout="this.style.borderColor='var(--border,rgba(255,255,255,.1))';this.style.transform='';">
+        <div style="font-size:24px;margin-bottom:8px;">✍️</div>
+        <div style="font-size:13px;font-weight:700;margin-bottom:4px;">Manual Entry</div>
+        <div style="font-size:11px;color:var(--muted,rgba(255,255,255,.55));line-height:1.45;">Type the applicant's details into a blank form.</div>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
      APPLICANT PROFILE MODAL
 ════════════════════════════════════════ -->
 <div id="task-modal-overlay" role="dialog" aria-modal="true" aria-label="Applicant task">

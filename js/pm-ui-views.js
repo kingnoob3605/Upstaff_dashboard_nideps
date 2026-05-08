@@ -1765,6 +1765,29 @@ function _setModalAvatar(name, status) {
 }
 
 function openTaskNew(status = "New") {
+  // Show chooser first: Import from Sheet vs Manual Entry
+  const chooser = document.getElementById("new-applicant-chooser-overlay");
+  if (chooser) {
+    window._pendingNewStatus = status || "New";
+    chooser.style.display = "flex";
+    return;
+  }
+  // Fallback if chooser DOM missing — go straight to manual
+  _openTaskNewWithMode(status, "manual");
+}
+window.chooseNewApplicantMode = function (mode) {
+  const chooser = document.getElementById("new-applicant-chooser-overlay");
+  if (chooser) chooser.style.display = "none";
+  const st = window._pendingNewStatus || "New";
+  window._pendingNewStatus = null;
+  _openTaskNewWithMode(st, mode);
+};
+window.closeNewApplicantChooser = function () {
+  const chooser = document.getElementById("new-applicant-chooser-overlay");
+  if (chooser) chooser.style.display = "none";
+  window._pendingNewStatus = null;
+};
+function _openTaskNewWithMode(status, mode) {
   taskEditId = null;
   document.getElementById("task-modal-heading").textContent = "New Applicant";
   _setModalAvatar("New Applicant", status);
@@ -1837,13 +1860,20 @@ function openTaskNew(status = "New") {
     statusEl.textContent = "";
   }
   document.getElementById("btn-task-delete").style.display = "none";
-  // Show sheet import strip for new applicants
+  // Sheet import strip — show only in 'sheet' mode, hide in 'manual'
   const _importStrip = document.getElementById("sheet-import-strip");
   if (_importStrip) {
-    _importStrip.style.display = "";
-    document.getElementById("sheet-import-input").value = "";
-    const res = document.getElementById("sheet-import-results");
-    if (res) { res.style.display = "none"; res.innerHTML = ""; }
+    if (mode === "sheet") {
+      _importStrip.style.display = "";
+      const inp = document.getElementById("sheet-import-input");
+      if (inp) inp.value = "";
+      const res = document.getElementById("sheet-import-results");
+      if (res) { res.style.display = "none"; res.innerHTML = ""; }
+      setTimeout(() => { document.getElementById("sheet-import-input")?.focus(); }, 220);
+    } else {
+      _importStrip.style.display = "none";
+      setTimeout(() => { document.getElementById("f-name")?.focus(); }, 220);
+    }
   }
   // Switch to Profile tab
   _switchModalTab("profile");
