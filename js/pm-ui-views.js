@@ -8131,26 +8131,27 @@ function applyTheme(key) {
     `:root:not([data-theme="dark"]) .logo-for-light{display:block!important;}`,
     // Light mode content area — very subtle inset shadow to reinforce sidebar edge
     `:root:not([data-theme="dark"]) #content{box-shadow:inset 2px 0 8px rgba(0,0,0,0.03)!important;}`,
-    // Light-mode token system — Linear/Vercel/shadcn approach.
-    // Surfaces stay NEUTRAL gray; accent shows only on chrome (topbar tint),
-    // active states, focus rings, and primary buttons. Theme color never
-    // floods large structural surfaces.
+    // Light-mode token system — TINTED WASH approach.
+    // Page bg + supporting surfaces inherit a soft theme tint so the chosen
+    // palette feels cohesive. Cards stay white for content contrast, and
+    // accents (active tab, buttons) use full chroma.
     `:root{`,
     `--navy:${t.navy};--slate:${t.slate};`,
-    // Page bg & surfaces: neutral gray scale — no theme bleed
-    `--bg:#fafafa;--surface-2:#f5f5f5;`,
+    // Page bg + supporting surfaces: soft theme wash (Notion/Linear-pastel)
+    `--bg:${tint(0.08)};--surface-2:${tint(0.06)};`,
+    // Cards: pure white so content reads cleanly against the tinted page
     `--card:#ffffff;--surface-1:#ffffff;`,
-    `--surface-3:#f5f5f5;--surface-4:#eeeeee;`,
-    `--border:rgba(0,0,0,0.09);`,
-    // Topbar: keep a hint of accent (≤5%) — palette signature only
-    `--topbar-bg:${tint(0.04)};--input-bg:#ffffff;--input-border:rgba(0,0,0,0.12);`,
-    // Row hover/alt: neutral, not theme-tinted
-    `--row-hover:#f0f0f0;--row-alt:#fafafa;`,
-    // Kanban columns: neutral
-    `--board-col-bg:#f5f5f5;`,
-    // Calendar: only "today" gets a small accent wash (tiny surface, OK to tint)
-    `--cal-other-month:#fafafa;--agenda-item-bg:#ffffff;`,
-    `--cal-today-bg:${la(0.10)};--cal-hour-hover:#f5f5f5;`,
+    `--surface-3:${tint(0.05)};--surface-4:${tint(0.10)};`,
+    `--border:${la(0.18)};`,
+    // Topbar: stronger tint — palette signature on chrome
+    `--topbar-bg:${tint(0.10)};--input-bg:#ffffff;--input-border:${la(0.20)};`,
+    // Row hover/alt: tinted variants, not neutral gray
+    `--row-hover:${tint(0.10)};--row-alt:${tint(0.04)};`,
+    // Kanban columns: theme-tinted column wells
+    `--board-col-bg:${tint(0.06)};`,
+    // Calendar: today uses accent wash, supporting cells use light tint
+    `--cal-other-month:${tint(0.04)};--agenda-item-bg:#ffffff;`,
+    `--cal-today-bg:${la(0.14)};--cal-hour-hover:${tint(0.06)};`,
     // Subtle shadows — Linear-style hairline lift
     `--shadow-sm:0 1px 2px rgba(0,0,0,0.04),0 1px 3px rgba(0,0,0,0.06);`,
     `--shadow-md:0 4px 6px rgba(0,0,0,0.05),0 2px 4px rgba(0,0,0,0.06);`,
