@@ -37,6 +37,24 @@ const APPS_SCRIPT_ADMIN_PASSWORD = Deno.env.get('APPS_SCRIPT_ADMIN_PASSWORD') ||
 const SUPABASE_URL               = Deno.env.get('SUPABASE_URL')               || '';
 const SUPABASE_ANON_KEY          = Deno.env.get('SUPABASE_ANON_KEY')          || '';
 
+// ── Rate limit (deno-kv) ─────────────────────────────────────────────
+// 60 requests per user per rolling 60s window.
+const RATE_LIMIT_MAX    = 60;
+const RATE_LIMIT_WINDOW = 60_000;
+const _kv = await Deno.openKv();
+
+async function _checkRateLimit(userId: string): Promise<{ ok: boolean; remaining: number }> {
+  const now    = Date.now();
+  const bucket = Math.floor(now / RATE_LIMIT_WINDOW);
+  const key    = ['rl', userId, bucket];
+  const cur    = (await _kv.get<number>(key)).value || 0;
+  if (cur >= RATE_LIMIT_MAX) return { ok: false, remaining: 0 };
+  await _kv.atomic()
+    .set(key, cur + 1, { expireIn: RATE_LIMIT_WINDOW * 2 })
+    .commit();
+  return { ok: true, remaining: RATE_LIMIT_MAX - cur - 1 };
+}
+
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin':  '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -89,6 +107,15 @@ Deno.serve(async (req: Request) => {
     .single();
   if (!profile || !['hr', 'assistant'].includes(profile.role)) {
     return jsonResponse({ result: 'error', message: 'No assigned role.' }, 403);
+  }
+
+  // ── 1b. Rate limit per user ───────────────────────────────────────────
+  const rl = await _checkRateLimit(userData.user.id);
+  if (!rl.ok) {
+    return jsonResponse(
+      { result: 'error', message: 'Rate limit: 60 requests/minute exceeded.' },
+      429,
+    );
   }
 
   // ── 2. Parse client body ──────────────────────────────────────────────

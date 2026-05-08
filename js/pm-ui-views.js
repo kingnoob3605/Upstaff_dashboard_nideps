@@ -921,6 +921,21 @@ function populateApiSettings() {
   if (emailEl)  emailEl.value  = cfg.adminEmail     || "";
   if (asPassEl) asPassEl.value = cfg.adminPassword  || "";
 
+  // Edge proxy fields (Week 4)
+  const edgeToggleEl = document.getElementById("api-edge-toggle");
+  const edgeUrlEl    = document.getElementById("api-edge-url");
+  if (edgeToggleEl) edgeToggleEl.checked = !!cfg.useEdgeProxy;
+  if (edgeUrlEl)    edgeUrlEl.value     = cfg.edgeProxyUrl || "";
+
+  // Invite User card — HR only
+  const inviteCard   = document.getElementById("invite-user-card");
+  const inviteUrlEl  = document.getElementById("invite-edge-url");
+  if (inviteCard) {
+    const role = window.SupabaseAuth ? SupabaseAuth.getRole() : cfg.role;
+    inviteCard.style.display = role === "hr" ? "" : "none";
+  }
+  if (inviteUrlEl)  inviteUrlEl.value = cfg.inviteEdgeUrl || "";
+
   // Session status
   const loggedInEl = document.getElementById("api-logged-in-as");
   if (loggedInEl) {
@@ -1019,6 +1034,99 @@ window.saveAppScriptCredentials = function () {
       statusEl.textContent = "⚠️ Saved but could not reach Apps Script — check the URL.";
       statusEl.style.color = "#f59e0b";
     });
+};
+
+// Save Edge Function proxy settings (Week 4 auth hardening)
+window.saveEdgeProxyConfig = function () {
+  const enabled = !!document.getElementById("api-edge-toggle")?.checked;
+  const url     = (document.getElementById("api-edge-url")?.value || "").trim();
+  const statusEl = document.getElementById("api-edge-status");
+
+  if (enabled) {
+    if (!url || !url.startsWith("https://") || !url.includes("/functions/v1/")) {
+      if (statusEl) {
+        statusEl.textContent = "❌ Enter a valid Edge Function URL (must include /functions/v1/).";
+        statusEl.style.color = "#ef4444";
+      }
+      return;
+    }
+  }
+
+  const cfg = UpstaffAPI.getConfig();
+  cfg.useEdgeProxy = enabled;
+  cfg.edgeProxyUrl = url;
+  UpstaffAPI.saveConfig(cfg);
+
+  if (statusEl) {
+    statusEl.textContent = enabled
+      ? "✅ Proxy enabled. Future API calls go through the Edge Function."
+      : "ℹ️ Proxy disabled. Falling back to direct Apps Script mode.";
+    statusEl.style.color = enabled ? "var(--green,#10b981)" : "var(--muted)";
+  }
+  showToast(enabled ? "🛡️ Edge proxy enabled" : "Proxy disabled");
+};
+
+// Send a magic-link invite via the invite-user edge function (HR only)
+window.sendUserInvite = async function () {
+  const url   = (document.getElementById("invite-edge-url")?.value || "").trim();
+  const email = (document.getElementById("invite-email")?.value     || "").trim();
+  const name  = (document.getElementById("invite-name")?.value      || "").trim();
+  const role  = document.getElementById("invite-role")?.value || "assistant";
+  const statusEl = document.getElementById("invite-status");
+
+  if (!statusEl) return;
+
+  if (!url || !url.includes("/functions/v1/invite-user")) {
+    statusEl.textContent = "❌ Enter the invite-user Edge Function URL.";
+    statusEl.style.color = "#ef4444";
+    return;
+  }
+  if (!email || !email.includes("@")) {
+    statusEl.textContent = "❌ Enter a valid email.";
+    statusEl.style.color = "#ef4444";
+    return;
+  }
+
+  // Persist URL for next time
+  const cfg = UpstaffAPI.getConfig();
+  cfg.inviteEdgeUrl = url;
+  UpstaffAPI.saveConfig(cfg);
+
+  const token = cfg.supabaseToken;
+  if (!token) {
+    statusEl.textContent = "❌ No Supabase session — sign in again.";
+    statusEl.style.color = "#ef4444";
+    return;
+  }
+
+  statusEl.textContent = "⏳ Generating invite…";
+  statusEl.style.color = "var(--muted)";
+
+  try {
+    const resp = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type":  "application/json",
+        "Authorization": "Bearer " + token,
+      },
+      body: JSON.stringify({ email, name, role }),
+    });
+    const json = await resp.json();
+    if (json.result === "success" && json.actionLink) {
+      statusEl.innerHTML = `✅ Invite link generated. Send to <strong>${sanitize(email)}</strong>:<br><a href="${json.actionLink}" target="_blank" rel="noopener" style="color:var(--cyan,#3ecfdf);">${json.actionLink}</a>`;
+      statusEl.style.color = "var(--green,#10b981)";
+      try { await navigator.clipboard.writeText(json.actionLink); showToast("📋 Invite link copied"); } catch (_) {}
+      // Clear inputs
+      document.getElementById("invite-email").value = "";
+      document.getElementById("invite-name").value  = "";
+    } else {
+      statusEl.textContent = "❌ " + (json.message || "Invite failed.");
+      statusEl.style.color = "#ef4444";
+    }
+  } catch (e) {
+    statusEl.textContent = "❌ Network error: " + e.message;
+    statusEl.style.color = "#ef4444";
+  }
 };
 
 window.toggleApiPasswordVisibility = function () {

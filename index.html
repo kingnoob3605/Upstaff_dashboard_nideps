@@ -1100,6 +1100,66 @@
               </form>
             </div>
 
+            <!-- Edge Proxy Card (Week 4) -->
+            <div class="settings-card">
+              <div class="settings-card-title">🛡️ Edge Function Proxy <span style="font-size:10px;font-weight:600;color:var(--green,#10b981);background:rgba(16,185,129,.12);padding:2px 8px;border-radius:99px;margin-left:6px;">RECOMMENDED</span></div>
+              <div class="settings-row-sub" style="margin-bottom:10px;line-height:1.5;">
+                Routes API calls through a Supabase Edge Function so the Apps Script admin password
+                never leaves the server. Requires deploying <code>apps-script-proxy</code> first
+                (see <code>WEEK4_AUTH_MIGRATION.md</code>).
+              </div>
+              <div style="margin-bottom:12px;">
+                <label class="settings-label" style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                  <input id="api-edge-toggle" type="checkbox" style="width:16px;height:16px;cursor:pointer;"/>
+                  Use Edge Function proxy (recommended)
+                </label>
+              </div>
+              <div style="margin-bottom:12px;">
+                <label class="settings-label">Edge Function URL</label>
+                <div class="settings-row-sub" style="margin-bottom:6px;">e.g. <code>https://&lt;project&gt;.supabase.co/functions/v1/apps-script-proxy</code></div>
+                <input id="api-edge-url" type="url"
+                  placeholder="https://....supabase.co/functions/v1/apps-script-proxy"
+                  style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid var(--border,rgba(255,255,255,.08));background:var(--surface-2,#0f1629);color:var(--text,#e2e8f0);font-size:12px;outline:none;font-family:monospace;"/>
+              </div>
+              <button class="settings-save-btn" onclick="saveEdgeProxyConfig()" style="width:100%;">Save Proxy Settings</button>
+              <div id="api-edge-status" style="margin-top:8px;font-size:11px;color:var(--muted);min-height:16px;"></div>
+            </div>
+
+            <!-- Invite User Card (HR only) -->
+            <div class="settings-card" id="invite-user-card" style="display:none;">
+              <div class="settings-card-title">✉️ Invite User <span style="font-size:10px;font-weight:600;color:var(--muted);background:rgba(100,116,139,.12);padding:2px 8px;border-radius:99px;margin-left:6px;">HR ONLY</span></div>
+              <div class="settings-row-sub" style="margin-bottom:10px;line-height:1.5;">
+                Send a magic-link invite. The recipient clicks it to sign in. Requires the
+                <code>invite-user</code> Edge Function deployed.
+              </div>
+              <div style="margin-bottom:10px;">
+                <label class="settings-label">Edge Function URL</label>
+                <input id="invite-edge-url" type="url"
+                  placeholder="https://....supabase.co/functions/v1/invite-user"
+                  style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid var(--border,rgba(255,255,255,.08));background:var(--surface-2,#0f1629);color:var(--text,#e2e8f0);font-size:12px;outline:none;font-family:monospace;"/>
+              </div>
+              <div style="margin-bottom:10px;">
+                <label class="settings-label">Email</label>
+                <input id="invite-email" type="email" placeholder="newuser@example.com"
+                  style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid var(--border,rgba(255,255,255,.08));background:var(--surface-2,#0f1629);color:var(--text,#e2e8f0);font-size:13px;outline:none;"/>
+              </div>
+              <div style="margin-bottom:10px;">
+                <label class="settings-label">Display Name</label>
+                <input id="invite-name" type="text" placeholder="Jane Doe"
+                  style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid var(--border,rgba(255,255,255,.08));background:var(--surface-2,#0f1629);color:var(--text,#e2e8f0);font-size:13px;outline:none;"/>
+              </div>
+              <div style="margin-bottom:12px;">
+                <label class="settings-label">Role</label>
+                <select id="invite-role"
+                  style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid var(--border,rgba(255,255,255,.08));background:var(--surface-2,#0f1629);color:var(--text,#e2e8f0);font-size:13px;outline:none;">
+                  <option value="assistant">Assistant</option>
+                  <option value="hr">HR</option>
+                </select>
+              </div>
+              <button class="settings-save-btn" onclick="sendUserInvite()" style="width:100%;">Generate Invite Link</button>
+              <div id="invite-status" style="margin-top:10px;font-size:11px;color:var(--muted);min-height:16px;line-height:1.6;word-break:break-all;"></div>
+            </div>
+
             <!-- Connection Status Card -->
             <div class="settings-card">
               <div class="settings-card-title">🔗 Session</div>

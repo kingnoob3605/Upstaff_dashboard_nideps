@@ -69,9 +69,40 @@ A future Settings UI toggle should expose this without devtools.
 
 Set `c.useEdgeProxy = false` — `_post()` falls back to direct Apps Script.
 
-## Phase 2 (not in this drop)
+## Phase 2 — shipped
 
-- Settings UI toggle for proxy mode
-- Magic-link invite flow (admin-only) using Supabase admin API in edge fn
-- Edge fn rate-limiting per user (deno-kv counter, 60 req/min)
-- Audit log table (`audit_log`: user_id, action, ts, ip)
+- ✅ Settings UI toggle for proxy mode (Settings → 🛡️ Edge Function Proxy card)
+- ✅ Magic-link invite flow (`supabase/functions/invite-user/`, HR-only UI card)
+- ✅ Rate-limiting on apps-script-proxy (60 req/min/user via deno-kv)
+- ✅ `audit_log` table migration (`supabase/migrations/20260508_audit_log.sql`)
+
+### Phase 2 deploy steps
+
+```bash
+# Apply audit_log migration
+supabase db push
+
+# Set service role secret (separate key from anon key — find in dashboard → Settings → API)
+supabase secrets set SUPABASE_SERVICE_ROLE_KEY="<service_role_key>"
+
+# Deploy invite-user
+supabase functions deploy invite-user --no-verify-jwt
+
+# Re-deploy apps-script-proxy (now with rate-limit + audit hook)
+supabase functions deploy apps-script-proxy --no-verify-jwt
+```
+
+### Using the invite UI
+
+1. Sign in as an HR user.
+2. Open Settings → ✉️ Invite User card (only visible for HR).
+3. Paste the invite-user URL (e.g. `https://....supabase.co/functions/v1/invite-user`).
+4. Fill email + name + role → click Generate Invite Link.
+5. The link auto-copies to clipboard. Share via your preferred channel.
+
+### Phase 3 backlog
+
+- Audit-log writes from all sensitive actions (currently only `invite_user`)
+- Per-IP rate-limit (additive to per-user)
+- Token rotation on suspicious activity
+- Admin dashboard view of `audit_log`
