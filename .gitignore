@@ -11,3 +11,4 @@ skills-lock.json
 
 # Apps Script source — contains private Spreadsheet ID + Drive folder URL
 2MAINappscript.txt
+.claude/worktrees/
