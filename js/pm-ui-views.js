@@ -3123,7 +3123,7 @@ function showOnboarding() {
   document.getElementById("crumb-parent").textContent = "HR";
   document.getElementById("crumb-current").textContent = "Onboarding";
   document.getElementById("btn-add-task").style.display = "none";
-  document.getElementById("topbar-filter-btn").style.display = "none";
+  { const _f = document.getElementById("topbar-filter-btn"); if (_f) _f.style.display = "none"; }
   renderOnboarding();
 }
 
@@ -7498,7 +7498,7 @@ function showCandidates() {
   document.getElementById("crumb-parent").textContent = "Recruitment";
   document.getElementById("crumb-current").textContent = "Candidates";
   document.getElementById("btn-add-task").style.display = "flex";
-  document.getElementById("topbar-filter-btn").style.display = "none";
+  { const _f = document.getElementById("topbar-filter-btn"); if (_f) _f.style.display = "none"; }
   document
     .querySelectorAll(".view-tab")
     .forEach((t) => t.classList.remove("active"));
