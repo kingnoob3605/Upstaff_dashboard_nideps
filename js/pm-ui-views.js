@@ -5695,6 +5695,32 @@ document.addEventListener("change", function (e) {
   window._settingsLoad = function () {
     // ── Profile ──
     const profile = JSON.parse(localStorage.getItem(LS_PROFILE) || "{}");
+
+    // Auto-seed from Supabase auth if profile is empty (first login).
+    // SupabaseAuth.getName() returns the profiles.name set at signup or
+    // by HR's invite; getEmail() returns the auth email. We split the
+    // first whitespace as a best-effort first/last split.
+    let needsPersist = false;
+    try {
+      if (window.SupabaseAuth) {
+        const sbEmail = SupabaseAuth.getEmail() || "";
+        const sbName  = SupabaseAuth.getName()  || "";
+        if (!profile.email && sbEmail) {
+          profile.email = sbEmail;
+          needsPersist = true;
+        }
+        if (!profile.firstName && sbName) {
+          const parts = sbName.trim().split(/\s+/);
+          profile.firstName = parts.shift() || "";
+          if (!profile.lastName && parts.length) profile.lastName = parts.join(" ");
+          needsPersist = true;
+        }
+      }
+    } catch (_) {}
+    if (needsPersist) {
+      try { localStorage.setItem(LS_PROFILE, JSON.stringify(profile)); } catch (_) {}
+    }
+
     const pInputs = document.querySelectorAll(
       "#setting-profile .settings-input",
     );
