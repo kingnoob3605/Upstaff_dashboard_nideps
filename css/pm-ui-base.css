@@ -62,9 +62,9 @@ body.role-assistant [data-role-hide="hr"] {
   --pink: #ff6584;
   --navy: #0f172a;
   --slate: #1e293b;
-  /* Default tint uses Ocean accent #0ea5e9 at 10% — applyTheme() overrides at runtime */
-  --bg: #edf6fd;
-  --card: #ffffff;
+  /* Warm blush-pink light theme — soft on eyes, Gmail-inspired */
+  --bg: #fce8f0;
+  --card: #fef5f8;
   --border: rgba(0, 0, 0, 0.09);
   /* High-contrast text — WCAG AAA compliant on white (≥7:1) */
   --text: #0f172a;
@@ -75,15 +75,15 @@ body.role-assistant [data-role-hide="hr"] {
   --s-review: #fa8231;
   --s-done: #43e97b;
   --s-cancelled: #9ca3af;
-  /* Surface layers — neutral depth scale */
-  --surface-1: #ffffff;   /* cards, modals */
-  --surface-2: #e3f3fc;   /* content bg layer (Ocean tint 13%) */
-  --surface-3: #e8f4fb;   /* table headers, subtle bg */
-  --surface-4: #d6eef9;   /* tags, count pills */
-  --row-hover: #d4ecf9;
-  --row-alt: #f0f9fe;
-  --topbar-bg: #ffffff;
-  --input-bg: #ffffff;
+  /* Surface layers — warm blush depth scale */
+  --surface-1: #fef5f8;   /* cards, modals */
+  --surface-2: #fce4ec;   /* content bg layer */
+  --surface-3: #fad9e8;   /* table headers, subtle bg */
+  --surface-4: #f8cfe0;   /* tags, count pills */
+  --row-hover: #f7c8d8;
+  --row-alt: #fdf0f5;
+  --topbar-bg: #fef5f8;
+  --input-bg: #fef5f8;
   --input-border: rgba(0, 0, 0, 0.13);
   /* Stronger drop shadow — cards lift clearly off tinted backgrounds */
   --shadow-sm: 0 2px 12px rgba(0, 0, 0, 0.10), 0 1px 3px rgba(0, 0, 0, 0.06);
@@ -91,12 +91,12 @@ body.role-assistant [data-role-hide="hr"] {
   --shadow-lg: 0 24px 60px rgba(0, 0, 0, 0.16);
   --search-overlay: rgba(15, 23, 42, 0.6);
   /* Calendar */
-  --cal-cell-border: #e0e3e8;
-  --cal-other-month: #f5f6f8;
-  --cal-today-bg: #e0f2fe;  /* neutral blue-tinted today — theme overrides this */
-  --cal-hour-hover: #f0f9ff;
-  --agenda-item-bg: #f5f6f8;
-  --board-col-bg: #edf0f4;
+  --cal-cell-border: #f0d0dc;
+  --cal-other-month: #fdf0f5;
+  --cal-today-bg: #fce4ec;  /* warm blush today highlight */
+  --cal-hour-hover: #fef0f5;
+  --agenda-item-bg: #fdf0f5;
+  --board-col-bg: #fce8f0;
 }
 
 /* ── DARK MODE ── */
