@@ -567,12 +567,14 @@ function clearListFilter(key) {
     return;
   }
   if (key === "status") {
-    // Status now lives on the .list-status-tab pill row, not a <select>.
-    setListStatusTab("all");
+    // The "All" tab uses value "" (see renderListStatusTabs). Passing "all"
+    // leaves listActiveStatus="all" which matches no task → empty list.
+    setListStatusTab("");
     return; // setListStatusTab triggers renderList()
   }
   const el = document.getElementById(`list-filter-${key}`);
   if (el) el.value = "";
+  updateFilterBadge();
   renderList();
 }
 function clearAllListFilters() {
@@ -580,15 +582,18 @@ function clearAllListFilters() {
     "list-filter-priority",
     "list-filter-position",
     "list-filter-assignee",
+    "list-filter-date-from",
+    "list-filter-date-to",
   ].forEach((id) => {
     const el = document.getElementById(id);
     if (el) el.value = "";
   });
   const s = document.getElementById("list-search");
   if (s) s.value = "";
-  // Reset the status tab pill row (no <select> for it anymore)
+  updateFilterBadge();
+  // Reset to "All" tab — empty string is the canonical "no status filter".
   if (typeof setListStatusTab === "function") {
-    setListStatusTab("all");
+    setListStatusTab("");
   } else {
     renderList();
   }

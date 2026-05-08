@@ -294,9 +294,11 @@ function toggleDone(id) {
   persistSave();
   renderList();
 }
+// renderList lives in pm-ui-list.js (loads after this file).
+// Wrap in an arrow so the lookup is deferred to event-fire time.
 document
   .getElementById("list-search")
-  ?.addEventListener("input", debounce(renderList, 200));
+  ?.addEventListener("input", debounce(() => renderList(), 200));
 document
   .getElementById("list-quickadd-input")
   ?.addEventListener("keydown", (e) => {
