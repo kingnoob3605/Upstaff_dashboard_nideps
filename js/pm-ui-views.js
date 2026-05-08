@@ -5257,18 +5257,59 @@ function renderMembersList() {
 }
 
 /* ── Rebuild assignee options in modal ── */
-function _rebuildAssigneeOptions() {
+function _renderAssigneeOptionsList() {
   const list = document.getElementById("assignee-checkbox-list");
   if (!list) return;
+  if (!MEMBERS.length) {
+    list.innerHTML = `<div style="padding:10px;text-align:center;color:var(--muted);font-size:12px;">No workspace members yet</div>`;
+    return;
+  }
   list.innerHTML = MEMBERS.map(
     (m) => `
     <label class="assignee-check-item">
       <input type="checkbox" name="f-assignees" value="${sanitize(m.name)}"/>
-      <div class="assignee-avatar" style="background:${m.color};width:22px;height:22px;font-size:9px;flex-shrink:0;">${initials(m.name)}</div>
+      <div class="assignee-avatar" style="background:${m.color || "#9ca3af"};width:22px;height:22px;font-size:9px;flex-shrink:0;">${initials(m.name)}</div>
       <span style="font-size:12px;">${sanitize(m.name)}</span>
-      <span style="font-size:10px;color:var(--muted);margin-left:auto;">${sanitize(m.role)}</span>
+      <span style="font-size:10px;color:var(--muted);margin-left:auto;">${sanitize(m.role || "")}</span>
     </label>`,
   ).join("");
+}
+
+const _MEMBER_PALETTE = ["#44d7e9", "#6c63ff", "#f59e0b", "#10b981", "#ef4444", "#8b5cf6", "#ec4899", "#14b8a6"];
+function _colorForMember(name) {
+  let h = 0;
+  for (let i = 0; i < (name || "").length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+  return _MEMBER_PALETTE[h % _MEMBER_PALETTE.length];
+}
+
+async function _rebuildAssigneeOptions() {
+  _renderAssigneeOptionsList();
+  if (!(window.SupabaseAuth && SupabaseAuth.isLoggedIn && SupabaseAuth.isLoggedIn())) return;
+  try {
+    const rows = await SupabaseAuth.getMembers();
+    if (!Array.isArray(rows) || !rows.length) return;
+    const byKey = new Map();
+    MEMBERS.forEach((m) => byKey.set((m.email || m.name || "").toLowerCase(), m));
+    rows.forEach((r) => {
+      const name = (r.name || (r.email || "").split("@")[0] || "Member").trim();
+      const key = (r.email || name).toLowerCase();
+      const existing = byKey.get(key) || {};
+      byKey.set(key, {
+        name,
+        role: r.role || existing.role || "Member",
+        email: r.email || existing.email || "",
+        color: existing.color || _colorForMember(name),
+        id: r.id || existing.id,
+      });
+    });
+    MEMBERS = Array.from(byKey.values());
+    try { localStorage.setItem("upstaff_members", JSON.stringify(MEMBERS)); } catch (_) {}
+    const prevSelected = Array.from(
+      document.querySelectorAll("#assignee-checkbox-list input[name='f-assignees']:checked"),
+    ).map((cb) => cb.value);
+    _renderAssigneeOptionsList();
+    if (prevSelected.length) _setAssignees(prevSelected);
+  } catch (_) {}
 }
 
 /* ── Render notification panel ── */
