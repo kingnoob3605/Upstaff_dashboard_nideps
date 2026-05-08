@@ -67,6 +67,78 @@ window.SupabaseAuth = (function () {
   function getName()  { return _config().name  || ''; }
   function getEmail() { return _config().email || ''; }
 
+  // Send a one-time magic-link to the given email. Supabase emails it
+  // automatically. Recipient clicks → returns to app with session in URL hash.
+  async function sendMagicLink(email) {
+    var client = _getClient();
+    if (!client) throw new Error('Supabase not configured.');
+    var clean = (email || '').trim().toLowerCase();
+    if (!clean || !clean.includes('@')) throw new Error('Enter a valid email.');
+    var { error } = await client.auth.signInWithOtp({
+      email: clean,
+      options: {
+        emailRedirectTo: window.location.origin + window.location.pathname,
+        shouldCreateUser: true,
+      },
+    });
+    if (error) throw new Error(error.message);
+    return true;
+  }
+
+  // Called on page load. If Supabase auto-detected a session in the URL hash
+  // (magic-link callback), finish wiring it up like a normal login.
+  async function handleMagicLinkCallback() {
+    var client = _getClient();
+    if (!client) return null;
+    var { data: { session } } = await client.auth.getSession();
+    if (!session) return null;
+    var c = _config();
+    if (c.supabaseToken === session.access_token && c.login_at) return null;
+
+    var fallbackName = (session.user.email || '').split('@')[0];
+    var { data: profile, error: profileErr } = await client
+      .from('profiles')
+      .select('role, name')
+      .eq('id', session.user.id)
+      .single();
+
+    if (profileErr || !profile) {
+      var { data: created, error: insertErr } = await client
+        .from('profiles')
+        .upsert({ id: session.user.id, role: 'assistant', name: fallbackName },
+                { onConflict: 'id' })
+        .select('role, name')
+        .single();
+      if (insertErr || !created) {
+        await client.auth.signOut();
+        throw new Error('Profile setup failed. Contact your administrator.');
+      }
+      profile = created;
+    }
+
+    c.supabaseToken        = session.access_token;
+    c.supabaseRefreshToken = session.refresh_token;
+    c.email                = session.user.email;
+    c.userId               = session.user.id;
+    c.role                 = profile.role;
+    c.name                 = profile.name || fallbackName;
+    c.login_at             = Date.now();
+    delete c.loggedOut;
+    _saveConfig(c);
+
+    await _fetchAndApplyConfig(session.access_token);
+    var freshCfg = _config();
+    if (freshCfg.webAppUrl && freshCfg.adminEmail && freshCfg.adminPassword) {
+      await _fetchAppScriptToken(freshCfg);
+    }
+
+    if (window.history && window.history.replaceState) {
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
+    return { role: profile.role, name: profile.name };
+  }
+
   async function login(email, password) {
     var client = _getClient();
     if (!client) throw new Error('Supabase not configured. Click ⚙ Change settings below.');
@@ -330,5 +402,6 @@ window.SupabaseAuth = (function () {
 
   return { login, logout, isConfigured, isLoggedIn, getRole, getName, getEmail, saveSettings,
            changePassword, sendPasswordReset, getMembers, inviteMember, removeMember,
-           getCurrentUserId, getFreshToken: _getFreshToken };
+           getCurrentUserId, getFreshToken: _getFreshToken,
+           sendMagicLink, handleMagicLinkCallback };
 })();

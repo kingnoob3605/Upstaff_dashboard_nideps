@@ -2429,6 +2429,10 @@
       <button type="submit" onclick="handleEmailLogin()" class="login-gate-btn" style="margin-top:8px;">
         Sign In
       </button>
+      <button type="button" onclick="handleMagicLink()" class="login-gate-btn" id="gate-magic-btn"
+        style="margin-top:8px;background:transparent;border:1px solid var(--border,rgba(255,255,255,.15));color:var(--text,#fff);">
+        ✉ Send Magic Link instead
+      </button>
     </form>
 
     <div id="gate-status" class="login-gate-status" style="margin-top:10px;"></div>
@@ -2551,6 +2555,53 @@ window.handleEmailLogin = async function() {
     _isLoggingIn = false;
   }
 };
+
+// Magic-link send — passwordless login
+window.handleMagicLink = async function() {
+  var email = (document.getElementById('gate-email')?.value || '').trim();
+  var statusEl = document.getElementById('gate-status');
+  if (!email || !email.includes('@')) {
+    if (statusEl) { statusEl.textContent = '❌ Enter your email first.'; statusEl.style.color = '#ef4444'; }
+    return;
+  }
+  var btn = document.getElementById('gate-magic-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
+  if (statusEl) { statusEl.textContent = 'Sending magic link…'; statusEl.style.color = 'var(--muted,#64748b)'; }
+  try {
+    await SupabaseAuth.sendMagicLink(email);
+    if (statusEl) {
+      statusEl.innerHTML = '✅ Magic link sent to <b>' + email + '</b>. Check your inbox (and spam folder).';
+      statusEl.style.color = 'var(--green,#10b981)';
+    }
+    if (btn) btn.textContent = '✉ Resend Magic Link';
+  } catch (err) {
+    if (statusEl) { statusEl.textContent = '❌ ' + (err.message || 'Failed to send link.'); statusEl.style.color = '#ef4444'; }
+    if (btn) btn.textContent = '✉ Send Magic Link instead';
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+};
+
+// On page load, finish a magic-link sign-in if one is pending in the URL hash
+window._handleMagicLinkReturn = async function() {
+  if (!window.SupabaseAuth || !SupabaseAuth.handleMagicLinkCallback) return;
+  // Supabase puts tokens in the hash on callback (#access_token=...)
+  if (!window.location.hash || window.location.hash.indexOf('access_token') === -1) return;
+  try {
+    var result = await SupabaseAuth.handleMagicLinkCallback();
+    if (!result) return;
+    if (typeof _applyRoleRestrictions === 'function') _applyRoleRestrictions(result.role);
+    if (typeof _updateTopbarAvatar === 'function') _updateTopbarAvatar();
+    if (typeof _fetchAndMergeEmailJSConfig === 'function') _fetchAndMergeEmailJSConfig();
+    try { if (typeof window.loadDataFromSupabase === 'function') await window.loadDataFromSupabase(); } catch (_) {}
+    if (typeof _hideLoginGate === 'function') _hideLoginGate();
+    if (typeof renderAll === 'function') renderAll();
+  } catch (err) {
+    var statusEl = document.getElementById('gate-status');
+    if (statusEl) { statusEl.textContent = '❌ ' + (err.message || 'Magic link sign-in failed.'); statusEl.style.color = '#ef4444'; }
+  }
+};
+document.addEventListener('DOMContentLoaded', function() { setTimeout(_handleMagicLinkReturn, 50); });
 
 // Keyboard shortcuts inside the login form
 document.addEventListener('DOMContentLoaded', function() {
