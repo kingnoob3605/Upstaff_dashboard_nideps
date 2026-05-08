@@ -3200,6 +3200,13 @@ function buildEmployeeCard(e) {
         <div class="employee-start">Started: ${e.start ? new Date(e.start + "T00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—"}</div>
       </div>
       <div class="employee-status-badge" style="background:${sm.bg};color:${sm.color};">${sm.label}</div>
+      <button class="emp-card-delete-btn" title="Delete employee" aria-label="Delete employee"
+        onclick="event.stopPropagation();deleteEmployee(${e.id})"
+        style="background:transparent;border:1px solid var(--border);color:var(--muted);width:28px;height:28px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;margin-left:6px;transition:all .15s;"
+        onmouseover="this.style.background='rgba(239,68,68,.1)';this.style.color='#ef4444';this.style.borderColor='#ef4444';"
+        onmouseout="this.style.background='transparent';this.style.color='var(--muted)';this.style.borderColor='var(--border)';">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>
+      </button>
     </div>
     <div class="checklist-progress-label"><span>Onboarding Progress</span><span>${doneCnt}/${checklist.length}</span></div>
     <div class="checklist-progress-bar"><div class="checklist-progress-fill" style="width:${pct}%;"></div></div>
@@ -3283,7 +3290,36 @@ function renderHROps_REMOVED() {
 // switchHRTab() removed — HR Ops tab section no longer in UI
 
 function filterOnboarding() {
-  // Filter button on onboarding view — no-op (filtering handled by #onboarding-filter-status dropdown)
+  // Wire Filter button → open the status dropdown (and toggle active visual)
+  const sel = document.getElementById("onboarding-filter-status");
+  if (!sel) return;
+  try {
+    if (typeof sel.showPicker === "function") sel.showPicker();
+    else { sel.focus(); sel.click(); }
+  } catch (_) { sel.focus(); }
+}
+
+/* ── Delete employee from onboarding ── */
+function deleteEmployee(empId) {
+  const e = EMPLOYEES.find((x) => x.id === empId);
+  if (!e) return;
+  const fullName = `${e.fname || ""} ${e.lname || ""}`.trim() || "this employee";
+  const ok = confirm(
+    `Delete "${fullName}" from Onboarding?\n\n` +
+    `This removes their checklist, docs, and onboarding record.\n` +
+    `Note: if their recruitment task is still marked Hired, moving it out and back will recreate this record.`
+  );
+  if (!ok) return;
+  const idx = EMPLOYEES.findIndex((x) => x.id === empId);
+  if (idx === -1) return;
+  EMPLOYEES.splice(idx, 1);
+  empPersistSave();
+  if (typeof showToast === "function") showToast(`🗑️ Removed ${fullName} from onboarding`);
+  // Close detail modal if it was open on this emp
+  if (typeof _empDetailId !== "undefined" && _empDetailId === empId) {
+    if (typeof closeEmpDetailDirect === "function") closeEmpDetailDirect();
+  }
+  renderOnboarding();
 }
 
 /* ── New Hire Modal ── */
