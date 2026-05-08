@@ -109,17 +109,14 @@ function renderBoard() {
         ${(() => {
           const expanded = _boardColExpanded[st];
           const sliced = expanded ? tasks : tasks.slice(0, BOARD_COL_INITIAL);
-          let groupHeaders = {};
           if (boardGroupBy === "position") {
-            const groups = {};
-            sliced.forEach(t => { const k = t.position || "—"; (groups[k] = groups[k] || []).push(t); });
-            groupHeaders = Object.keys(groups).sort().reduce((acc, k) => {
-              acc[groups[k][0].id] = `<div class="board-swimlane-header">${sanitize(k)} <span style="opacity:.6;">${groups[k].length}</span></div>`;
-              return acc;
-            }, {});
-            return Object.keys(groups).sort().flatMap(k => [
-              `<div class="board-swimlane-header">${sanitize(k)} <span style="opacity:.6;">${groups[k].length}</span></div>`,
-              ...groups[k].map(t => _renderBoardCard(t))
+            const totals = {};
+            tasks.forEach(t => { const k = t.position || "—"; totals[k] = (totals[k] || 0) + 1; });
+            const visible = {};
+            sliced.forEach(t => { const k = t.position || "—"; (visible[k] = visible[k] || []).push(t); });
+            return Object.keys(visible).sort().flatMap(k => [
+              `<div class="board-swimlane-header">${sanitize(k)} <span style="opacity:.6;">${totals[k]}</span></div>`,
+              ...visible[k].map(t => _renderBoardCard(t))
             ]).join("") + (tasks.length > sliced.length
               ? `<button class="board-loadmore" onclick="expandBoardCol('${st}')">Show ${tasks.length - sliced.length} more</button>`
               : "");
