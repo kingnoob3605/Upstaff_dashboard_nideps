@@ -89,8 +89,61 @@ function getListFilters() {
     dateFrom: document.getElementById("list-filter-date-from")?.value || "",
     dateTo: document.getElementById("list-filter-date-to")?.value || "",
     sort: document.getElementById("list-sort")?.value || "due-asc",
+    savedView: typeof listSavedView !== "undefined" ? listSavedView : "all",
   };
 }
+
+let listSavedView = localStorage.getItem("upstaff_list_view") || "all";
+const SAVED_VIEWS = [
+  { id: "all",        label: "All",         icon: "👥" },
+  { id: "mine",       label: "My applicants", icon: "🙋" },
+  { id: "thisWeek",   label: "This week",   icon: "📆" },
+  { id: "stale",      label: "Stale ≥7d",   icon: "🔥" },
+  { id: "unassigned", label: "Unassigned",  icon: "🕳️" },
+];
+function applySavedView(id) {
+  listSavedView = id;
+  try { localStorage.setItem("upstaff_list_view", id); } catch (_) {}
+  renderSavedViewBar();
+  renderList();
+}
+window.applySavedView = applySavedView;
+function renderSavedViewBar() {
+  const el = document.getElementById("list-saved-views");
+  if (!el) return;
+  el.innerHTML = SAVED_VIEWS.map(v =>
+    `<button class="saved-view-chip ${listSavedView === v.id ? "active" : ""}" onclick="applySavedView('${v.id}')">
+       <span style="font-size:13px;">${v.icon}</span>${v.label}
+     </button>`
+  ).join("");
+}
+function _matchesSavedView(t) {
+  if (listSavedView === "all" || !listSavedView) return true;
+  if (listSavedView === "mine") {
+    const me = (window.SupabaseAuth && SupabaseAuth.getName && SupabaseAuth.getName()) || "";
+    if (!me) return true;
+    const a = t.assignees || (t.assignee ? [t.assignee] : []);
+    return a.some(x => (x || "").toLowerCase() === me.toLowerCase());
+  }
+  if (listSavedView === "thisWeek") {
+    const ts = t.interview_date || t.due;
+    if (!ts) return false;
+    const d = new Date(ts + (ts.length === 10 ? "T00:00" : ""));
+    const now = new Date(); now.setHours(0,0,0,0);
+    const wk = new Date(now); wk.setDate(wk.getDate() + 7);
+    return d >= now && d <= wk;
+  }
+  if (listSavedView === "stale") {
+    if (TERMINAL_STAGES.includes(t.status) || t.archived) return false;
+    return _stageAgeDays(t) >= 7;
+  }
+  if (listSavedView === "unassigned") {
+    const a = t.assignees || (t.assignee ? [t.assignee] : []);
+    return a.length === 0 || (a.length === 1 && (!a[0] || a[0] === "HR"));
+  }
+  return true;
+}
+document.addEventListener("DOMContentLoaded", renderSavedViewBar);
 
 function _getActiveView() {
   return document.querySelector(".view-tab.active")?.dataset.view || "list";
@@ -209,6 +262,7 @@ function renderList() {
     if (f.assignee && t.assignee !== f.assignee) return false;
     if (f.dateFrom && t.due && t.due < f.dateFrom) return false;
     if (f.dateTo && t.due && t.due > f.dateTo) return false;
+    if (!_matchesSavedView(t)) return false;
     return true;
   });
 
