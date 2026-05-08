@@ -50,13 +50,44 @@ window.UpstaffAPI = (function () {
 
   function isConfigured() {
     var c = _config();
-    // Configured if we have a token OR stored credentials that allow silent re-login
+    // Edge proxy mode: only needs the proxy URL — server holds Apps Script creds.
+    if (c.useEdgeProxy && c.edgeProxyUrl) return true;
+    // Legacy mode: needs full Apps Script trio.
     return !!(c.webAppUrl && c.adminEmail && c.adminPassword);
   }
 
   // ── Core POST ───────────────────────────────────────────────────────────────
   async function _post(payload, _isRetry) {
-    var url = _config().webAppUrl;
+    var c = _config();
+
+    // Edge proxy mode (preferred) — server-side credential injection.
+    // Triggered when `useEdgeProxy: true` AND `edgeProxyUrl` set.
+    // Strips client-side adminEmail/adminPassword; relies on Supabase JWT.
+    if (c.useEdgeProxy && c.edgeProxyUrl) {
+      if (!c.supabaseToken) {
+        throw new Error("Sign in required (no Supabase session).");
+      }
+      var proxyBody = Object.assign({}, payload);
+      delete proxyBody.password;
+      delete proxyBody.adminPassword;
+      delete proxyBody.email; // server injects admin email
+      var proxyResp = await fetch(c.edgeProxyUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type":  "application/json",
+          "Authorization": "Bearer " + c.supabaseToken,
+        },
+        body: JSON.stringify(proxyBody),
+      });
+      if (!proxyResp.ok && proxyResp.status !== 401)
+        throw new Error("HTTP " + proxyResp.status);
+      var proxyJson = await proxyResp.json();
+      if (proxyJson.result === "error") throw new Error(proxyJson.message || "API error");
+      return proxyJson;
+    }
+
+    // Legacy mode — direct to Apps Script with client-side creds.
+    var url = c.webAppUrl;
     if (!url)
       throw new Error(
         "Web App URL not set. Go to Settings → Partner API and enter your Apps Script URL.",
@@ -168,6 +199,8 @@ window.UpstaffAPI = (function () {
   // Silent re-login using stored credentials — no Google OAuth needed
   async function silentReLogin() {
     var c = _config();
+    // Edge proxy mode: no token concept — Supabase JWT is the session.
+    if (c.useEdgeProxy && c.edgeProxyUrl) return !!c.supabaseToken;
     if (!c.webAppUrl || !c.adminEmail || !c.adminPassword) return false;
     try {
       var resp = await fetch(c.webAppUrl, {
