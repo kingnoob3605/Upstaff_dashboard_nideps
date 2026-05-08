@@ -103,9 +103,24 @@ window.SupabaseAuth = (function () {
       .single();
 
     if (profileErr || !profile) {
+      // Check for a pending invite stashed by HR (sendMemberInvite). If
+      // present, use the role/name HR chose; otherwise default to assistant.
+      var inviteRole = 'assistant';
+      var inviteName = fallbackName;
+      try {
+        var pending = JSON.parse(localStorage.getItem('upstaff_pending_invites') || '{}');
+        var entry = pending[session.user.email];
+        if (entry) {
+          if (entry.role) inviteRole = entry.role;
+          if (entry.name) inviteName = entry.name;
+          delete pending[session.user.email];
+          localStorage.setItem('upstaff_pending_invites', JSON.stringify(pending));
+        }
+      } catch (_) {}
+
       var { data: created, error: insertErr } = await client
         .from('profiles')
-        .upsert({ id: session.user.id, role: 'assistant', name: fallbackName },
+        .upsert({ id: session.user.id, role: inviteRole, name: inviteName },
                 { onConflict: 'id' })
         .select('role, name')
         .single();

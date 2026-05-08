@@ -748,10 +748,6 @@
                     <label class="settings-label">Email Address</label>
                     <input type="email" class="settings-input" id="invite-email" placeholder="member@upstaff.app"/>
                   </div>
-                  <div style="flex:1;min-width:160px;">
-                    <label class="settings-label">Initial Password</label>
-                    <input type="password" class="settings-input" id="invite-password" placeholder="Min. 6 characters" autocomplete="new-password"/>
-                  </div>
                   <div style="min-width:130px;">
                     <label class="settings-label">Role</label>
                     <select class="form-select" id="invite-role" style="height:36px;font-size:13px;">
@@ -761,8 +757,11 @@
                   </div>
                 </div>
                 <div style="display:flex;gap:8px;margin-top:10px;">
-                  <button class="settings-save-btn" onclick="sendMemberInvite()">Create Account</button>
+                  <button class="settings-save-btn" onclick="sendMemberInvite()">✉ Send Invite Link</button>
                   <button class="settings-save-btn" style="background:var(--surface-2);color:var(--muted);border:1px solid var(--border);" onclick="toggleInviteForm()">Cancel</button>
+                </div>
+                <div style="font-size:11px;color:var(--muted);margin-top:8px;line-height:1.5;">
+                  Invitee gets a one-time magic link by email. Link expires after 1 hour. They set their own password after signing in.
                 </div>
                 <div id="invite-status" style="margin-top:8px;font-size:12px;"></div>
               </div>
@@ -1101,42 +1100,7 @@
               <div id="api-edge-status" style="margin-top:8px;font-size:11px;color:var(--muted);min-height:16px;"></div>
             </div>
 
-            <!-- Invite User Card (HR only) -->
-            <div class="settings-card" id="invite-user-card" style="display:none;">
-              <div class="settings-card-title">✉️ Invite User <span style="font-size:10px;font-weight:600;color:var(--muted);background:rgba(100,116,139,.12);padding:2px 8px;border-radius:99px;margin-left:6px;">HR ONLY</span></div>
-              <div class="settings-row-sub" style="margin-bottom:10px;line-height:1.5;">
-                Send a magic-link invite. The recipient clicks it to sign in. Requires the
-                <code>invite-user</code> Edge Function deployed.
-              </div>
-              <div style="margin-bottom:10px;">
-                <label class="settings-label">Edge Function URL</label>
-                <input id="invite-edge-url" type="url"
-                  placeholder="https://....supabase.co/functions/v1/invite-user"
-                  style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid var(--border,rgba(255,255,255,.08));background:var(--surface-2,#0f1629);color:var(--text,#e2e8f0);font-size:12px;outline:none;font-family:monospace;"/>
-              </div>
-              <div style="margin-bottom:10px;">
-                <label class="settings-label">Email</label>
-                <input id="invite-email" type="email" placeholder="newuser@example.com"
-                  style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid var(--border,rgba(255,255,255,.08));background:var(--surface-2,#0f1629);color:var(--text,#e2e8f0);font-size:13px;outline:none;"/>
-              </div>
-              <div style="margin-bottom:10px;">
-                <label class="settings-label">Display Name</label>
-                <input id="invite-name" type="text" placeholder="Jane Doe"
-                  style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid var(--border,rgba(255,255,255,.08));background:var(--surface-2,#0f1629);color:var(--text,#e2e8f0);font-size:13px;outline:none;"/>
-              </div>
-              <div style="margin-bottom:12px;">
-                <label class="settings-label">Role</label>
-                <select id="invite-role"
-                  style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid var(--border,rgba(255,255,255,.08));background:var(--surface-2,#0f1629);color:var(--text,#e2e8f0);font-size:13px;outline:none;">
-                  <option value="assistant">Assistant</option>
-                  <option value="hr">HR</option>
-                </select>
-              </div>
-              <button class="settings-save-btn" onclick="sendUserInvite()" style="width:100%;">Generate Invite Link</button>
-              <div id="invite-status" style="margin-top:10px;font-size:11px;color:var(--muted);min-height:16px;line-height:1.6;word-break:break-all;"></div>
-            </div>
-
-            <!-- Connection Status Card -->
+<!-- Connection Status Card -->
             <div class="settings-card">
               <div class="settings-card-title">🔗 Session</div>
               <div class="settings-row">
@@ -2428,10 +2392,6 @@
 
       <button type="submit" onclick="handleEmailLogin()" class="login-gate-btn" style="margin-top:8px;">
         Sign In
-      </button>
-      <button type="button" onclick="handleMagicLink()" class="login-gate-btn" id="gate-magic-btn"
-        style="margin-top:8px;background:transparent;border:1px solid var(--border,rgba(255,255,255,.15));color:var(--text,#fff);">
-        ✉ Send Magic Link instead
       </button>
     </form>
 

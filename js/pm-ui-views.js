@@ -929,14 +929,7 @@ function populateApiSettings() {
   if (edgeToggleEl) edgeToggleEl.checked = !!cfg.useEdgeProxy;
   if (edgeUrlEl)    edgeUrlEl.value     = cfg.edgeProxyUrl || "";
 
-  // Invite User card — HR only
-  const inviteCard   = document.getElementById("invite-user-card");
-  const inviteUrlEl  = document.getElementById("invite-edge-url");
-  if (inviteCard) {
-    const role = window.SupabaseAuth ? SupabaseAuth.getRole() : cfg.role;
-    inviteCard.style.display = role === "hr" ? "" : "none";
-  }
-  if (inviteUrlEl)  inviteUrlEl.value = cfg.inviteEdgeUrl || "";
+  // Invite User card removed — workspace settings handles invites now
 
   // Session status
   const loggedInEl = document.getElementById("api-logged-in-as");
@@ -8346,7 +8339,6 @@ function toggleInviteForm() {
 async function sendMemberInvite() {
   const name     = (document.getElementById("invite-name")?.value || "").trim();
   const email    = (document.getElementById("invite-email")?.value || "").trim().toLowerCase();
-  const password = (document.getElementById("invite-password")?.value || "").trim();
   const role     = document.getElementById("invite-role")?.value || "assistant";
   const statusEl = document.getElementById("invite-status");
 
@@ -8358,26 +8350,31 @@ async function sendMemberInvite() {
     if (statusEl) { statusEl.textContent = "❌ Enter a valid email address."; statusEl.style.color = "#ef4444"; }
     return;
   }
-  if (!password || password.length < 6) {
-    if (statusEl) { statusEl.textContent = "❌ Password must be at least 6 characters."; statusEl.style.color = "#ef4444"; }
-    return;
-  }
-  if (statusEl) { statusEl.textContent = "⏳ Creating account…"; statusEl.style.color = "var(--muted)"; }
+  if (statusEl) { statusEl.textContent = "⏳ Sending invite link…"; statusEl.style.color = "var(--muted)"; }
 
   try {
-    await SupabaseAuth.inviteMember(email, role, name, password);
+    // Stash the desired role/name so handleMagicLinkCallback can apply it on
+    // the invitee's first login. Server-side we'd use admin API, but client
+    // just sends the magic link via signInWithOtp (free-plan friendly).
+    try {
+      const pending = JSON.parse(localStorage.getItem("upstaff_pending_invites") || "{}");
+      pending[email] = { role, name, invited_by: SupabaseAuth.getEmail?.() || "", at: Date.now() };
+      localStorage.setItem("upstaff_pending_invites", JSON.stringify(pending));
+    } catch (_) {}
+
+    await SupabaseAuth.sendMagicLink(email);
+
     if (statusEl) {
-      statusEl.textContent = `✅ Account created for ${name}. Share their email and password with them directly.`;
+      statusEl.innerHTML = `✅ Invite link sent to <b>${email}</b>. Link expires in 1 hour. They'll be added as <b>${role}</b> on first sign-in.`;
       statusEl.style.color = "var(--green)";
     }
     document.getElementById("invite-name").value = "";
     document.getElementById("invite-email").value = "";
-    document.getElementById("invite-password").value = "";
-    showToast(`✅ Account created for ${name}`);
+    showToast(`✉ Invite sent to ${name}`);
     setTimeout(toggleInviteForm, 2500);
     renderMembersList();
   } catch (err) {
-    if (statusEl) { statusEl.textContent = "❌ " + (err.message || "Failed to create account."); statusEl.style.color = "#ef4444"; }
+    if (statusEl) { statusEl.textContent = "❌ " + (err.message || "Failed to send invite."); statusEl.style.color = "#ef4444"; }
   }
 }
 
