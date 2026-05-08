@@ -2205,10 +2205,11 @@ body.list-density-compact .stage-mini-track { display: none; }
 
 /* ── Saved view chip bar ─────────────────────────────────────────────── */
 .saved-views-bar {
-  display: flex;
+  display: inline-flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin: 4px 0 12px 0;
+  margin: 0 0 0 6px;
+  align-items: center;
 }
 .saved-view-chip {
   display: inline-flex;

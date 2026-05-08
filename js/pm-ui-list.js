@@ -95,11 +95,11 @@ function getListFilters() {
 
 let listSavedView = localStorage.getItem("upstaff_list_view") || "all";
 const SAVED_VIEWS = [
-  { id: "all",        label: "All",         icon: "👥" },
-  { id: "mine",       label: "My applicants", icon: "🙋" },
-  { id: "thisWeek",   label: "This week",   icon: "📆" },
-  { id: "stale",      label: "Stale ≥7d",   icon: "🔥" },
-  { id: "unassigned", label: "Unassigned",  icon: "🕳️" },
+  { id: "all",        label: "All" },
+  { id: "mine",       label: "My applicants" },
+  { id: "thisWeek",   label: "This week" },
+  { id: "stale",      label: "Stale ≥7d" },
+  { id: "unassigned", label: "Unassigned" },
 ];
 function applySavedView(id) {
   listSavedView = id;
@@ -112,9 +112,7 @@ function renderSavedViewBar() {
   const el = document.getElementById("list-saved-views");
   if (!el) return;
   el.innerHTML = SAVED_VIEWS.map(v =>
-    `<button class="saved-view-chip ${listSavedView === v.id ? "active" : ""}" onclick="applySavedView('${v.id}')">
-       <span style="font-size:13px;">${v.icon}</span>${v.label}
-     </button>`
+    `<button class="saved-view-chip ${listSavedView === v.id ? "active" : ""}" onclick="applySavedView('${v.id}')">${v.label}</button>`
   ).join("");
 }
 function _matchesSavedView(t) {
