@@ -231,10 +231,6 @@
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>
       Table
     </button>
-    <button class="view-tab" data-view="jobs">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
-      Jobs
-    </button>
   </div>
 
   <!-- Content Area -->
@@ -396,22 +392,7 @@
     </div>
 
 
-    <!-- ── JOBS VIEW ── -->
-    <div id="view-jobs" class="view-panel" style="display:none">
-      <div style="padding:24px 28px 16px;display:flex;align-items:center;justify-content:space-between;">
-        <div>
-          <div style="font-size:18px;font-weight:800;color:var(--text);font-family:'Syne',sans-serif;">Job Openings</div>
-          <div style="font-size:12px;color:var(--muted);margin-top:3px;">Manage active job postings synced from your partner API.</div>
-        </div>
-        <button onclick="openAddJobModal()" data-role-hide="hr"
-          style="padding:8px 16px;border-radius:10px;background:var(--violet);color:#fff;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:'Montserrat',sans-serif;">
-          + Add Job
-        </button>
-      </div>
-      <div id="jobs-list" style="padding:0 28px 28px;display:flex;flex-direction:column;gap:10px;"></div>
-    </div>
-
-    <!-- ── ONBOARDING VIEW ── -->
+<!-- ── ONBOARDING VIEW ── -->
     <div id="view-onboarding" class="view-panel" style="display:none">
       <div class="hr-view-header">
         <div>
