@@ -44,7 +44,10 @@ function switchView(v) {
     if (tb) tb.style.display = "none";
   }
   // Show view bar, hide settings, analytics, candidates
-  const _s = (id, val) => { const e = document.getElementById(id); if (e) e.style.display = val; };
+  const _s = (id, val) => {
+    const e = document.getElementById(id);
+    if (e) e.style.display = val;
+  };
   _s("view-bar", "");
   _s("view-settings", "none");
   _s("view-analytics", "none");
@@ -77,11 +80,11 @@ function switchView(v) {
     table: "Data Table",
   };
   const crumbCurrent = document.getElementById("crumb-current");
-  const crumbParent  = document.getElementById("crumb-parent");
-  const btnAddTask   = document.getElementById("btn-add-task");
+  const crumbParent = document.getElementById("crumb-parent");
+  const btnAddTask = document.getElementById("btn-add-task");
   if (crumbCurrent) crumbCurrent.textContent = labels[v] || v;
-  if (crumbParent)  crumbParent.textContent  = "Recruitment";
-  if (btnAddTask)   btnAddTask.style.display  = v === "calendar" ? "none" : "";
+  if (crumbParent) crumbParent.textContent = "Recruitment";
+  if (btnAddTask) btnAddTask.style.display = v === "calendar" ? "none" : "";
 
   // Render content
   if (v === "list") renderList();
@@ -248,7 +251,6 @@ document.querySelectorAll(".nav-item").forEach((b) => {
 
 /* [SECTION: LIST-VIEW] → moved to js/pm-ui-list.js */
 
-
 /* ══════════════════════════════════════════════
    POPULATE POSITION SELECTS — call after init & when positions change
 ══════════════════════════════════════════════ */
@@ -271,7 +273,8 @@ function renderPositionSelects() {
   if (calPos) {
     const cur = calPos.value;
     calPos.innerHTML = '<option value="">All Positions</option>' + opts;
-    if (cur && [...calPos.options].some((o) => o.value === cur)) calPos.value = cur;
+    if (cur && [...calPos.options].some((o) => o.value === cur))
+      calPos.value = cur;
   }
   populateListPositionFilter();
 }
@@ -296,9 +299,10 @@ function toggleDone(id) {
 }
 // renderList lives in pm-ui-list.js (loads after this file).
 // Wrap in an arrow so the lookup is deferred to event-fire time.
-document
-  .getElementById("list-search")
-  ?.addEventListener("input", debounce(() => renderList(), 200));
+document.getElementById("list-search")?.addEventListener(
+  "input",
+  debounce(() => renderList(), 200),
+);
 document
   .getElementById("list-quickadd-input")
   ?.addEventListener("keydown", (e) => {
@@ -413,9 +417,10 @@ function _notesPreviewUpdate(text) {
 // Wire up live typing preview once DOM is ready
 document.addEventListener("DOMContentLoaded", function () {
   const notesEl = document.getElementById("f-notes");
-  if (notesEl) notesEl.addEventListener("input", function () {
-    _notesPreviewUpdate(this.value);
-  });
+  if (notesEl)
+    notesEl.addEventListener("input", function () {
+      _notesPreviewUpdate(this.value);
+    });
 });
 
 /** Safe field setter — silently skips if element doesn't exist */
@@ -601,31 +606,38 @@ function _refreshScoreSummary() {
   const card = document.getElementById("score-summary");
   if (!card) return;
 
-  const typing    = document.getElementById("f-typing-score")?.value?.trim();
-  const wordTyping= document.getElementById("f-word-typing")?.value?.trim();
+  const typing = document.getElementById("f-typing-score")?.value?.trim();
+  const wordTyping = document.getElementById("f-word-typing")?.value?.trim();
   const knowledge = document.getElementById("f-knowledge-score")?.value?.trim();
-  const verbal    = document.getElementById("f-verbal-link")?.value?.trim();
-  const conflict  = document.getElementById("f-conflict-score")?.value?.trim();
-  const grammar   = document.getElementById("f-grammar-score")?.value?.trim();
-  const dataEntry = document.getElementById("f-data-entry-score")?.value?.trim();
-  const formatting= document.getElementById("f-formatting-score")?.value?.trim();
-  const sorting   = document.getElementById("f-sorting-score")?.value?.trim();
-  const notes     = document.getElementById("f-interview-notes")?.value?.trim();
+  const verbal = document.getElementById("f-verbal-link")?.value?.trim();
+  const conflict = document.getElementById("f-conflict-score")?.value?.trim();
+  const grammar = document.getElementById("f-grammar-score")?.value?.trim();
+  const dataEntry = document
+    .getElementById("f-data-entry-score")
+    ?.value?.trim();
+  const formatting = document
+    .getElementById("f-formatting-score")
+    ?.value?.trim();
+  const sorting = document.getElementById("f-sorting-score")?.value?.trim();
+  const notes = document.getElementById("f-interview-notes")?.value?.trim();
 
-  const hasTyping  = typing || wordTyping || knowledge;
-  const hasVerbal  = verbal || conflict || grammar;
-  const hasExcel   = dataEntry || formatting || sorting;
-  const hasAny     = hasTyping || hasVerbal || hasExcel || notes;
+  const hasTyping = typing || wordTyping || knowledge;
+  const hasVerbal = verbal || conflict || grammar;
+  const hasExcel = dataEntry || formatting || sorting;
+  const hasAny = hasTyping || hasVerbal || hasExcel || notes;
 
-  if (!hasAny) { card.style.display = "none"; return; }
+  if (!hasAny) {
+    card.style.display = "none";
+    return;
+  }
   card.style.display = "block";
 
   function _scoreRow(label, val, outOf, threshold) {
     if (!val) return "";
     const num = parseFloat(val);
     const hasPass = threshold !== undefined && !isNaN(num);
-    const passed  = hasPass && num >= threshold;
-    const pill    = hasPass
+    const passed = hasPass && num >= threshold;
+    const pill = hasPass
       ? `<span style="font-size:10px;font-weight:800;font-family:'Montserrat',sans-serif;padding:2px 8px;border-radius:99px;background:${passed ? "rgba(67,233,123,.12)" : "rgba(239,68,68,.1)"};color:${passed ? "var(--green)" : "#ef4444"};">${passed ? "✓ PASS" : "✗ FAIL"}</span>`
       : "";
     const display = outOf ? `${val}/${outOf}` : val;
@@ -650,18 +662,31 @@ function _refreshScoreSummary() {
       _scoreRow("Knowledge Test", knowledge, 100, 75),
     ])}
     ${_categoryBlock("🎙️", "Verbal Test", [
-      verbal ? `<div class="score-item"><span class="score-label">Verbal Comm</span><a href="${verbal}" target="_blank" class="score-val" style="color:var(--cyan);">View Recording</a></div>` : "",
+      verbal
+        ? `<div class="score-item"><span class="score-label">Verbal Comm</span><a href="${verbal}" target="_blank" class="score-val" style="color:var(--cyan);">View Recording</a></div>`
+        : "",
       _scoreRow("Conflict Reso", conflict, 20, 15),
       _scoreRow("Grammar Test", grammar, 20, 15),
     ])}
     ${_categoryBlock("📊", "Excel Test", [
-      dataEntry ? `<div class="score-item"><span class="score-label">Skill Test</span><span class="score-val">${dataEntry.startsWith("http") ? `<a href="${dataEntry}" target="_blank" style="color:var(--cyan);">View File</a>` : dataEntry}</span></div>` : "",
+      dataEntry
+        ? `<div class="score-item"><span class="score-label">Skill Test</span><span class="score-val">${dataEntry.startsWith("http") ? `<a href="${dataEntry}" target="_blank" style="color:var(--cyan);">View File</a>` : dataEntry}</span></div>`
+        : "",
       _scoreRow("Time Used", formatting),
     ])}
     ${notes ? `<div class="score-category"><div class="score-category-title">💬 Interview Notes</div><div class="score-summary-grid"><div class="score-item score-item-full"><span class="score-val" style="font-weight:400;color:var(--muted);font-size:12px;">${notes.slice(0, 120)}${notes.length > 120 ? "…" : ""}</span></div></div></div>` : ""}
   `;
 
-  ["f-typing-score","f-word-typing","f-knowledge-score","f-conflict-score","f-grammar-score","f-data-entry-score","f-formatting-score","f-sorting-score"].forEach((id) => {
+  [
+    "f-typing-score",
+    "f-word-typing",
+    "f-knowledge-score",
+    "f-conflict-score",
+    "f-grammar-score",
+    "f-data-entry-score",
+    "f-formatting-score",
+    "f-sorting-score",
+  ].forEach((id) => {
     const el = document.getElementById(id);
     if (el) el.classList.toggle("score-filled", !!el.value.trim());
   });
@@ -677,19 +702,22 @@ function _refreshScoreSummary() {
 function loadGCalApiConfig() {
   try {
     return JSON.parse(localStorage.getItem("upstaff_gcal_api_config") || "{}");
-  } catch (_) { return {}; }
+  } catch (_) {
+    return {};
+  }
 }
 
 window.saveGCalApiConfig = function saveGCalApiConfig() {
   const config = {
-    apiKey:   document.getElementById("s-gcal-api-key")?.value.trim()   || "",
+    apiKey: document.getElementById("s-gcal-api-key")?.value.trim() || "",
     clientId: document.getElementById("s-gcal-client-id")?.value.trim() || "",
   };
   localStorage.setItem("upstaff_gcal_api_config", JSON.stringify(config));
   if (typeof GCAL_CONFIG !== "undefined") {
-    GCAL_CONFIG.API_KEY   = config.apiKey;
+    GCAL_CONFIG.API_KEY = config.apiKey;
     GCAL_CONFIG.CLIENT_ID = config.clientId;
-    if (config.apiKey && config.clientId && typeof gcalInit === "function") gcalInit();
+    if (config.apiKey && config.clientId && typeof gcalInit === "function")
+      gcalInit();
   }
   showToast("✅ Google Calendar credentials saved.");
 };
@@ -698,7 +726,7 @@ function populateGCalApiSettings() {
   const c = loadGCalApiConfig();
   const apiEl = document.getElementById("s-gcal-api-key");
   const cidEl = document.getElementById("s-gcal-client-id");
-  if (apiEl) apiEl.value = c.apiKey   || "";
+  if (apiEl) apiEl.value = c.apiKey || "";
   if (cidEl) cidEl.value = c.clientId || "";
 }
 
@@ -756,15 +784,18 @@ function populateEmailJSSettings() {
 async function autoSendAssessmentEmail(task) {
   const ejsConfig = loadEmailJSConfig();
   if (!ejsConfig.autoSend) return;
-  if (!ejsConfig.serviceId || !ejsConfig.templateId || !ejsConfig.publicKey) return;
+  if (!ejsConfig.serviceId || !ejsConfig.templateId || !ejsConfig.publicKey)
+    return;
   if (!task || !task.applicant_email) return;
   if (task.assess_completed || task.assess_token) return; // already sent or done
 
   try {
     const token = generateAssessToken();
-    const link  = buildAssessmentLink(task, token);
-    const firstName = (task.applicant_name || task.name || "Applicant").split(" ")[0];
-    const position  = task.position || "the role";
+    const link = buildAssessmentLink(task, token);
+    const firstName = (task.applicant_name || task.name || "Applicant").split(
+      " ",
+    )[0];
+    const position = task.position || "the role";
     let hrName = "HR Team";
     try {
       const p = JSON.parse(localStorage.getItem("upstaff_profile") || "{}");
@@ -775,27 +806,29 @@ async function autoSendAssessmentEmail(task) {
       ejsConfig.serviceId,
       ejsConfig.templateId,
       {
-        to_email:      task.applicant_email,
-        first_name:    firstName,
-        from_name:     hrName,
-        subject:       `Your Assessment Invitation – ${position} at Upstaff`,
-        website_link:  link,
-        position:      position,
-        company_name:  "Upstaff",
+        to_email: task.applicant_email,
+        first_name: firstName,
+        from_name: hrName,
+        subject: `Your Assessment Invitation – ${position} at Upstaff`,
+        website_link: link,
+        position: position,
+        company_name: "Upstaff",
         company_email: "hr@upstaff.com",
       },
       ejsConfig.publicKey,
     );
 
-    task.assess_token      = token;
-    task.assess_sent_at    = new Date().toISOString();
-    task.assess_completed  = false;
+    task.assess_token = token;
+    task.assess_sent_at = new Date().toISOString();
+    task.assess_completed = false;
     task.assess_completed_at = null;
     persistSave();
     showToast(`📧 Assessment invite auto-sent to ${task.applicant_email}`);
   } catch (err) {
     console.error("[AutoSend] EmailJS error:", err);
-    showToast(`⚠️ Auto-send failed for ${task.applicant_name || task.name}: ${err?.text || err?.message || "Unknown error"}`);
+    showToast(
+      `⚠️ Auto-send failed for ${task.applicant_name || task.name}: ${err?.text || err?.message || "Unknown error"}`,
+    );
   }
 }
 
@@ -856,18 +889,23 @@ function _closeAvatarMenu(e) {
 
 // ── Password change (logged-in user) ─────────────────────────────────────────
 window.handleChangePassword = async function () {
-  const newPw  = (document.getElementById("s-new-password")?.value  || "").trim();
-  const confPw = (document.getElementById("s-confirm-password")?.value || "").trim();
+  const newPw = (document.getElementById("s-new-password")?.value || "").trim();
+  const confPw = (
+    document.getElementById("s-confirm-password")?.value || ""
+  ).trim();
   const statusEl = document.getElementById("change-pw-status");
   if (!newPw || newPw.length < 8) {
     statusEl.textContent = "❌ Password must be at least 8 characters.";
-    statusEl.style.color = "#ef4444"; return;
+    statusEl.style.color = "#ef4444";
+    return;
   }
   if (newPw !== confPw) {
     statusEl.textContent = "❌ Passwords do not match.";
-    statusEl.style.color = "#ef4444"; return;
+    statusEl.style.color = "#ef4444";
+    return;
   }
-  statusEl.textContent = "Updating…"; statusEl.style.color = "var(--muted)";
+  statusEl.textContent = "Updating…";
+  statusEl.style.color = "var(--muted)";
   try {
     await SupabaseAuth.changePassword(newPw);
     document.getElementById("s-new-password").value = "";
@@ -876,11 +914,11 @@ window.handleChangePassword = async function () {
     statusEl.style.color = "var(--green)";
     showToast("✅ Password changed.");
   } catch (err) {
-    statusEl.textContent = "❌ " + (err.message || "Failed to update password.");
+    statusEl.textContent =
+      "❌ " + (err.message || "Failed to update password.");
     statusEl.style.color = "#ef4444";
   }
 };
-
 
 async function handleLogout() {
   const menu = document.getElementById("avatar-menu");
@@ -910,33 +948,35 @@ function populateApiSettings() {
   const cfg = window.UpstaffAPI ? UpstaffAPI.getConfig() : {};
 
   // Supabase auth fields
-  const urlEl  = document.getElementById("api-cred-url");
-  const keyEl  = document.getElementById("api-cred-password");
-  if (urlEl) urlEl.value = cfg.supabaseUrl     || "";
+  const urlEl = document.getElementById("api-cred-url");
+  const keyEl = document.getElementById("api-cred-password");
+  if (urlEl) urlEl.value = cfg.supabaseUrl || "";
   if (keyEl) keyEl.value = cfg.supabaseAnonKey || "";
 
   // Apps Script data fields
-  const asUrlEl  = document.getElementById("api-cred-appscript-url");
-  const emailEl  = document.getElementById("api-cred-email");
+  const asUrlEl = document.getElementById("api-cred-appscript-url");
+  const emailEl = document.getElementById("api-cred-email");
   const asPassEl = document.getElementById("api-cred-appscript-password");
-  if (asUrlEl)  asUrlEl.value  = cfg.webAppUrl      || "";
-  if (emailEl)  emailEl.value  = cfg.adminEmail     || "";
-  if (asPassEl) asPassEl.value = cfg.adminPassword  || "";
+  if (asUrlEl) asUrlEl.value = cfg.webAppUrl || "";
+  if (emailEl) emailEl.value = cfg.adminEmail || "";
+  if (asPassEl) asPassEl.value = cfg.adminPassword || "";
 
   // Edge proxy fields (Week 4)
   const edgeToggleEl = document.getElementById("api-edge-toggle");
-  const edgeUrlEl    = document.getElementById("api-edge-url");
+  const edgeUrlEl = document.getElementById("api-edge-url");
   if (edgeToggleEl) edgeToggleEl.checked = !!cfg.useEdgeProxy;
-  if (edgeUrlEl)    edgeUrlEl.value     = cfg.edgeProxyUrl || "";
+  if (edgeUrlEl) edgeUrlEl.value = cfg.edgeProxyUrl || "";
 
   // Invite User card removed — workspace settings handles invites now
 
   // Session status
   const loggedInEl = document.getElementById("api-logged-in-as");
   if (loggedInEl) {
-    const name  = window.SupabaseAuth ? SupabaseAuth.getName()  : cfg.name  || "";
-    const email = window.SupabaseAuth ? SupabaseAuth.getEmail() : cfg.email || "";
-    const role  = window.SupabaseAuth ? SupabaseAuth.getRole()  : cfg.role  || "";
+    const name = window.SupabaseAuth ? SupabaseAuth.getName() : cfg.name || "";
+    const email = window.SupabaseAuth
+      ? SupabaseAuth.getEmail()
+      : cfg.email || "";
+    const role = window.SupabaseAuth ? SupabaseAuth.getRole() : cfg.role || "";
     loggedInEl.textContent = name
       ? `${name} (${email}) — ${role === "hr" ? "HR" : "Assistant"}`
       : "Not signed in";
@@ -953,7 +993,9 @@ function populateApiSettings() {
 // Save Supabase URL + Anon Key
 window.saveApiCredentials = function () {
   const url = (document.getElementById("api-cred-url")?.value || "").trim();
-  const key = (document.getElementById("api-cred-password")?.value || "").trim();
+  const key = (
+    document.getElementById("api-cred-password")?.value || ""
+  ).trim();
   const statusEl = document.getElementById("api-cred-status");
 
   if (!url || !url.startsWith("https://") || !url.includes("supabase.co")) {
@@ -974,13 +1016,22 @@ window.saveApiCredentials = function () {
 
 // Save Apps Script data source credentials
 window.saveAppScriptCredentials = function () {
-  const url      = (document.getElementById("api-cred-appscript-url")?.value      || "").trim();
-  const email    = (document.getElementById("api-cred-email")?.value              || "").trim();
-  const password = (document.getElementById("api-cred-appscript-password")?.value || "").trim();
+  const url = (
+    document.getElementById("api-cred-appscript-url")?.value || ""
+  ).trim();
+  const email = (document.getElementById("api-cred-email")?.value || "").trim();
+  const password = (
+    document.getElementById("api-cred-appscript-password")?.value || ""
+  ).trim();
   const statusEl = document.getElementById("api-appscript-status");
 
-  if (!url || !url.startsWith("https://script.google.com/macros/s/") || !url.endsWith("/exec")) {
-    statusEl.textContent = "❌ Invalid URL — must be a valid Apps Script /exec URL.";
+  if (
+    !url ||
+    !url.startsWith("https://script.google.com/macros/s/") ||
+    !url.endsWith("/exec")
+  ) {
+    statusEl.textContent =
+      "❌ Invalid URL — must be a valid Apps Script /exec URL.";
     statusEl.style.color = "#ef4444";
     return;
   }
@@ -991,8 +1042,8 @@ window.saveAppScriptCredentials = function () {
   }
 
   const cfg = UpstaffAPI.getConfig();
-  cfg.webAppUrl     = url;
-  cfg.adminEmail    = email;
+  cfg.webAppUrl = url;
+  cfg.adminEmail = email;
   cfg.adminPassword = password;
   UpstaffAPI.saveConfig(cfg);
 
@@ -1004,9 +1055,9 @@ window.saveAppScriptCredentials = function () {
     method: "POST",
     headers: { "Content-Type": "text/plain" },
     body: JSON.stringify({
-      action:      "login",
-      email:       email,
-      password:    password,
+      action: "login",
+      email: email,
+      password: password,
       googleEmail: (window.SupabaseAuth ? SupabaseAuth.getEmail() : "") || "",
     }),
   })
@@ -1021,12 +1072,14 @@ window.saveAppScriptCredentials = function () {
         // syncApplicantsFromApi(); — disabled: manual-entry mode
         populateApiSettings();
       } else {
-        statusEl.textContent = "⚠️ Saved but login failed — check ADMIN_EMAIL and ADMIN_PASSWORD.";
+        statusEl.textContent =
+          "⚠️ Saved but login failed — check ADMIN_EMAIL and ADMIN_PASSWORD.";
         statusEl.style.color = "#f59e0b";
       }
     })
     .catch(() => {
-      statusEl.textContent = "⚠️ Saved but could not reach Apps Script — check the URL.";
+      statusEl.textContent =
+        "⚠️ Saved but could not reach Apps Script — check the URL.";
       statusEl.style.color = "#f59e0b";
     });
 };
@@ -1034,13 +1087,18 @@ window.saveAppScriptCredentials = function () {
 // Save Edge Function proxy settings (Week 4 auth hardening)
 window.saveEdgeProxyConfig = function () {
   const enabled = !!document.getElementById("api-edge-toggle")?.checked;
-  const url     = (document.getElementById("api-edge-url")?.value || "").trim();
+  const url = (document.getElementById("api-edge-url")?.value || "").trim();
   const statusEl = document.getElementById("api-edge-status");
 
   if (enabled) {
-    if (!url || !url.startsWith("https://") || !url.includes("/functions/v1/")) {
+    if (
+      !url ||
+      !url.startsWith("https://") ||
+      !url.includes("/functions/v1/")
+    ) {
       if (statusEl) {
-        statusEl.textContent = "❌ Enter a valid Edge Function URL (must include /functions/v1/).";
+        statusEl.textContent =
+          "❌ Enter a valid Edge Function URL (must include /functions/v1/).";
         statusEl.style.color = "#ef4444";
       }
       return;
@@ -1063,10 +1121,10 @@ window.saveEdgeProxyConfig = function () {
 
 // Send a magic-link invite via the invite-user edge function (HR only)
 window.sendUserInvite = async function () {
-  const url   = (document.getElementById("invite-edge-url")?.value || "").trim();
-  const email = (document.getElementById("invite-email")?.value     || "").trim();
-  const name  = (document.getElementById("invite-name")?.value      || "").trim();
-  const role  = document.getElementById("invite-role")?.value || "assistant";
+  const url = (document.getElementById("invite-edge-url")?.value || "").trim();
+  const email = (document.getElementById("invite-email")?.value || "").trim();
+  const name = (document.getElementById("invite-name")?.value || "").trim();
+  const role = document.getElementById("invite-role")?.value || "assistant";
   const statusEl = document.getElementById("invite-status");
 
   if (!statusEl) return;
@@ -1101,8 +1159,8 @@ window.sendUserInvite = async function () {
     const resp = await fetch(url, {
       method: "POST",
       headers: {
-        "Content-Type":  "application/json",
-        "Authorization": "Bearer " + token,
+        "Content-Type": "application/json",
+        Authorization: "Bearer " + token,
       },
       body: JSON.stringify({ email, name, role }),
     });
@@ -1110,10 +1168,13 @@ window.sendUserInvite = async function () {
     if (json.result === "success" && json.actionLink) {
       statusEl.innerHTML = `✅ Invite link generated. Send to <strong>${sanitize(email)}</strong>:<br><a href="${json.actionLink}" target="_blank" rel="noopener" style="color:var(--cyan,#3ecfdf);">${json.actionLink}</a>`;
       statusEl.style.color = "var(--green,#10b981)";
-      try { await navigator.clipboard.writeText(json.actionLink); showToast("📋 Invite link copied"); } catch (_) {}
+      try {
+        await navigator.clipboard.writeText(json.actionLink);
+        showToast("📋 Invite link copied");
+      } catch (_) {}
       // Clear inputs
       document.getElementById("invite-email").value = "";
-      document.getElementById("invite-name").value  = "";
+      document.getElementById("invite-name").value = "";
     } else {
       statusEl.textContent = "❌ " + (json.message || "Invite failed.");
       statusEl.style.color = "#ef4444";
@@ -1167,9 +1228,11 @@ async function syncApplicantsFromApi(opts) {
       // externally. This prevents the sync from overwriting finer-grained local
       // stages (e.g. "Screening") that map to the same coarse partner status
       // (e.g. "For Interview").
-      const existing = existingApiTasks.find((t) =>
-        (t.supabase_id && t.supabase_id === mapped.supabase_id) ||
-        (t.applicant_email && t.applicant_email === (mapped.applicant_email || "").toLowerCase())
+      const existing = existingApiTasks.find(
+        (t) =>
+          (t.supabase_id && t.supabase_id === mapped.supabase_id) ||
+          (t.applicant_email &&
+            t.applicant_email === (mapped.applicant_email || "").toLowerCase()),
       );
       if (existing) {
         if (existing.partner_status === mapped.partner_status) {
@@ -1178,13 +1241,27 @@ async function syncApplicantsFromApi(opts) {
         }
         // Always preserve assessment state — these fields live only in localStorage
         const assessFields = [
-          "assess_token", "assess_sent_at", "assess_completed",
-          "assess_completed_at", "assess_score", "assess_result",
-          "typing_score", "word_typing_score", "knowledge_score",
-          "verbal_link", "conflict_score", "grammar_score",
-          "data_entry_score", "formatting_score", "sorting_score",
-          "gcalEventId", "google_event_id",
-          "activity", "attachments", "stage_history", "comments",
+          "assess_token",
+          "assess_sent_at",
+          "assess_completed",
+          "assess_completed_at",
+          "assess_score",
+          "assess_result",
+          "typing_score",
+          "word_typing_score",
+          "knowledge_score",
+          "verbal_link",
+          "conflict_score",
+          "grammar_score",
+          "data_entry_score",
+          "formatting_score",
+          "sorting_score",
+          "gcalEventId",
+          "google_event_id",
+          "activity",
+          "attachments",
+          "stage_history",
+          "comments",
         ];
         assessFields.forEach((f) => {
           if (existing[f] !== undefined) mapped[f] = existing[f];
@@ -1236,14 +1313,19 @@ async function syncApplicantsFromApi(opts) {
     if (silent) {
       // Only notify if there are new applicants since last sync
       if (newCount > 0)
-        showToast(`🔄 ${newCount} new applicant${newCount > 1 ? "s" : ""} synced.`);
+        showToast(
+          `🔄 ${newCount} new applicant${newCount > 1 ? "s" : ""} synced.`,
+        );
     } else {
       showToast(`✅ Synced ${apiTasks.length} applicants from database.`);
     }
 
     // Update GCal events for tasks that already have a linked event
-    if (typeof gcalSignedIn !== "undefined" && gcalSignedIn &&
-        typeof _taskSyncToGcal === "function") {
+    if (
+      typeof gcalSignedIn !== "undefined" &&
+      gcalSignedIn &&
+      typeof _taskSyncToGcal === "function"
+    ) {
       TASKS.filter((t) => t.gcalEventId).forEach((t) => {
         _taskSyncToGcal(t).catch(() => {});
       });
@@ -1388,29 +1470,31 @@ function buildAssessmentLink(task, token) {
 
 /* ── Update the invite status UI inside the Assessment tab ── */
 function _refreshAssessInviteUI(task) {
-  const badge     = document.getElementById("assess-status-badge");
-  const meta      = document.getElementById("assess-status-meta");
-  const sendBtn   = document.getElementById("assess-send-btn");
+  const badge = document.getElementById("assess-status-badge");
+  const meta = document.getElementById("assess-status-meta");
+  const sendBtn = document.getElementById("assess-send-btn");
   const resendBtn = document.getElementById("assess-resend-btn");
-  const resetBtn  = document.getElementById("assess-reset-btn");
-  const noteEl    = document.getElementById("assess-invite-note");
-  const copyBtn   = document.getElementById("assess-copy-btn");
-  const warnEl    = document.getElementById("assess-no-email-warn");
+  const resetBtn = document.getElementById("assess-reset-btn");
+  const noteEl = document.getElementById("assess-invite-note");
+  const copyBtn = document.getElementById("assess-copy-btn");
+  const warnEl = document.getElementById("assess-no-email-warn");
   if (!badge) return;
 
   const hasEmail = !!(task.applicant_email || "").trim();
 
   function _setSendControls(showSend, showResend) {
     if (hasEmail) {
-      if (sendBtn)   sendBtn.style.display   = showSend   ? "inline-flex" : "none";
-      if (resendBtn) resendBtn.style.display = showResend ? "inline-flex" : "none";
-      if (copyBtn)   copyBtn.style.display   = "none";
-      if (warnEl)    warnEl.style.display    = "none";
+      if (sendBtn) sendBtn.style.display = showSend ? "inline-flex" : "none";
+      if (resendBtn)
+        resendBtn.style.display = showResend ? "inline-flex" : "none";
+      if (copyBtn) copyBtn.style.display = "none";
+      if (warnEl) warnEl.style.display = "none";
     } else {
-      if (sendBtn)   sendBtn.style.display   = "none";
+      if (sendBtn) sendBtn.style.display = "none";
       if (resendBtn) resendBtn.style.display = "none";
-      if (copyBtn)   copyBtn.style.display   = (showSend || showResend) ? "inline-flex" : "none";
-      if (warnEl)    warnEl.style.display    = "block";
+      if (copyBtn)
+        copyBtn.style.display = showSend || showResend ? "inline-flex" : "none";
+      if (warnEl) warnEl.style.display = "block";
     }
   }
 
@@ -1420,18 +1504,20 @@ function _refreshAssessInviteUI(task) {
   if (task.assess_completed) {
     badge.className = "assess-status-badge completed";
     badge.textContent = "✔ Completed";
-    if (meta) meta.textContent = task.assess_completed_at
-      ? "Completed on " +
-        new Date(task.assess_completed_at).toLocaleDateString("en-PH", {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        })
-      : "";
+    if (meta)
+      meta.textContent = task.assess_completed_at
+        ? "Completed on " +
+          new Date(task.assess_completed_at).toLocaleDateString("en-PH", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          })
+        : "";
     _setSendControls(false, false);
     if (resetBtn) resetBtn.style.display = "inline-flex";
-    if (noteEl) noteEl.textContent =
-      "Applicant has completed the assessment. Reset to allow a retry.";
+    if (noteEl)
+      noteEl.textContent =
+        "Applicant has completed the assessment. Reset to allow a retry.";
     return;
   }
 
@@ -1444,18 +1530,20 @@ function _refreshAssessInviteUI(task) {
       ? "assess-status-badge expired"
       : "assess-status-badge sent";
     badge.textContent = expired ? "✗ Link Expired" : "● Sent";
-    if (meta) meta.textContent =
-      "Sent " +
-      sentDate.toLocaleDateString("en-PH", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      });
+    if (meta)
+      meta.textContent =
+        "Sent " +
+        sentDate.toLocaleDateString("en-PH", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        });
     _setSendControls(false, true);
     if (resetBtn) resetBtn.style.display = "inline-flex";
-    if (noteEl) noteEl.textContent = expired
-      ? `Link expired after ${expHrs}h. Click ${hasEmail ? "Resend" : "Copy Link"} to generate a new one.`
-      : `Link expires ${expiresAt.toLocaleDateString("en-PH", { month: "short", day: "numeric" })} at ${expiresAt.toLocaleTimeString("en-PH", { hour: "2-digit", minute: "2-digit" })}.`;
+    if (noteEl)
+      noteEl.textContent = expired
+        ? `Link expired after ${expHrs}h. Click ${hasEmail ? "Resend" : "Copy Link"} to generate a new one.`
+        : `Link expires ${expiresAt.toLocaleDateString("en-PH", { month: "short", day: "numeric" })} at ${expiresAt.toLocaleTimeString("en-PH", { hour: "2-digit", minute: "2-digit" })}.`;
     return;
   }
 
@@ -1465,9 +1553,10 @@ function _refreshAssessInviteUI(task) {
   if (meta) meta.textContent = "";
   _setSendControls(true, false);
   if (resetBtn) resetBtn.style.display = "none";
-  if (noteEl) noteEl.textContent = hasEmail
-    ? "Send an assessment invitation email to the applicant."
-    : "Generate a link and share it with the applicant directly.";
+  if (noteEl)
+    noteEl.textContent = hasEmail
+      ? "Send an assessment invitation email to the applicant."
+      : "Generate a link and share it with the applicant directly.";
 }
 
 /* ── Core send function (used by both Send and Resend) ── */
@@ -1550,22 +1639,24 @@ async function _doSendAssessmentEmail(isResend = false) {
 
     const ejsConfig = loadEmailJSConfig();
     if (!ejsConfig.serviceId || !ejsConfig.templateId || !ejsConfig.publicKey) {
-      throw new Error("EmailJS not configured. Go to Settings → EmailJS and fill in Service ID, Template ID, and Public Key.");
+      throw new Error(
+        "EmailJS not configured. Go to Settings → EmailJS and fill in Service ID, Template ID, and Public Key.",
+      );
     }
     await emailjs.send(
       ejsConfig.serviceId,
       ejsConfig.templateId,
       {
-        to_email:      task.applicant_email,
-        first_name:    firstName,
-        from_name:     hrName,
-        subject:       subject,
-        website_link:  link,
-        position:      position,
-        company_name:  "Upstaff",
+        to_email: task.applicant_email,
+        first_name: firstName,
+        from_name: hrName,
+        subject: subject,
+        website_link: link,
+        position: position,
+        company_name: "Upstaff",
         company_email: "hr@upstaff.com",
       },
-      ejsConfig.publicKey
+      ejsConfig.publicKey,
     );
 
     task.assess_token = token;
@@ -1585,7 +1676,8 @@ async function _doSendAssessmentEmail(isResend = false) {
   } catch (err) {
     // EmailJS errors: err.status (HTTP code) + err.text (reason string)
     const ejsStatus = err?.status;
-    const ejsText   = err?.text || err?.message || JSON.stringify(err) || "Unknown error";
+    const ejsText =
+      err?.text || err?.message || JSON.stringify(err) || "Unknown error";
     console.error("[Assessment Email] EmailJS error:", ejsStatus, ejsText, err);
     let userMsg;
     if (ejsStatus === 400) {
@@ -1637,7 +1729,8 @@ async function copyAssessmentLink() {
     }
 
     const noteEl = document.getElementById("assess-invite-note");
-    if (noteEl) noteEl.textContent = "✅ Link copied! Share it with the applicant.";
+    if (noteEl)
+      noteEl.textContent = "✅ Link copied! Share it with the applicant.";
   } finally {
     const btn = document.getElementById("assess-copy-btn");
     if (btn) btn.disabled = false;
@@ -1758,7 +1851,7 @@ function _setModalAvatar(name, status) {
   }
   if (sh && status) {
     const sm = STATUS_META[status] || {};
-    sh.innerHTML = `<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;background:${sm.bg||'var(--surface-3)'};color:${sm.color||'var(--muted)'};">${status}</span>`;
+    sh.innerHTML = `<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;background:${sm.bg || "var(--surface-3)"};color:${sm.color || "var(--muted)"};">${status}</span>`;
   } else if (sh) {
     sh.innerHTML = "";
   }
@@ -1868,11 +1961,18 @@ function _openTaskNewWithMode(status, mode) {
       const inp = document.getElementById("sheet-import-input");
       if (inp) inp.value = "";
       const res = document.getElementById("sheet-import-results");
-      if (res) { res.style.display = "none"; res.innerHTML = ""; }
-      setTimeout(() => { document.getElementById("sheet-import-input")?.focus(); }, 220);
+      if (res) {
+        res.style.display = "none";
+        res.innerHTML = "";
+      }
+      setTimeout(() => {
+        document.getElementById("sheet-import-input")?.focus();
+      }, 220);
     } else {
       _importStrip.style.display = "none";
-      setTimeout(() => { document.getElementById("f-name")?.focus(); }, 220);
+      setTimeout(() => {
+        document.getElementById("f-name")?.focus();
+      }, 220);
     }
   }
   // Switch to Profile tab
@@ -1895,7 +1995,8 @@ function openTaskEdit(id, goToAssessment = false) {
   _setField("f-position", t.position);
   _rebuildAssigneeOptions();
   _setAssignees(t.assignees || (t.assignee ? [t.assignee] : ["Assistant"]));
-  document.getElementById("f-start").value = t.start || t.application_date || "";
+  document.getElementById("f-start").value =
+    t.start || t.application_date || "";
   document.getElementById("f-due").value = t.due || "";
   document.getElementById("f-notes").value = t.notes || "";
   _notesPreviewUpdate(t.notes || "");
@@ -1930,18 +2031,18 @@ function openTaskEdit(id, goToAssessment = false) {
   // Reset assessment tabs to first tab (Typing)
   _resetAssessTabs();
   // Assessment fields — Typing Test
-  _setField("f-typing-score",    t.typing_score     || "");
-  _setField("f-word-typing",     t.word_typing      || "");
-  _setField("f-knowledge-score", t.knowledge_score  || "");
+  _setField("f-typing-score", t.typing_score || "");
+  _setField("f-word-typing", t.word_typing || "");
+  _setField("f-knowledge-score", t.knowledge_score || "");
   // Assessment fields — Verbal Test
-  _setField("f-verbal-link",     t.verbal_link      || "");
-  _setField("f-conflict-score",  t.conflict_score   || "");
-  _setField("f-grammar-score",   t.grammar_score    || "");
+  _setField("f-verbal-link", t.verbal_link || "");
+  _setField("f-conflict-score", t.conflict_score || "");
+  _setField("f-grammar-score", t.grammar_score || "");
   // Assessment fields — Excel Test
-  _setField("f-data-entry-score",  t.data_entry_score  || "");
-  _setField("f-formatting-score",  t.formatting_score  || "");
-  _setField("f-sorting-score",     t.sorting_score     || "");
-  _setField("f-interview-notes", t.interview_notes  || "");
+  _setField("f-data-entry-score", t.data_entry_score || "");
+  _setField("f-formatting-score", t.formatting_score || "");
+  _setField("f-sorting-score", t.sorting_score || "");
+  _setField("f-interview-notes", t.interview_notes || "");
   // Stage progress bar
   document.getElementById("task-stage-progress").innerHTML = buildStageProgress(
     t.status,
@@ -1953,7 +2054,8 @@ function openTaskEdit(id, goToAssessment = false) {
   _updateReviewTab(t.status);
   if (t.status === "Endorsed" || t.status === "Review") _populateReviewTab(t);
   _updateInterviewScheduleTab(t.status);
-  if (t.status === "In Progress" || t.status === "Interview") _populateInterviewScheduleTab(t);
+  if (t.status === "In Progress" || t.status === "Interview")
+    _populateInterviewScheduleTab(t);
   // Pipeline action buttons
   _updatePipelineActions(id, t.status);
   // GCal sync toggle — pre-check if already synced so re-save updates rather than duplicates
@@ -2246,7 +2348,9 @@ function saveInterviewSchedule() {
   const meetingLink = document.getElementById("iv-meeting-link").value.trim();
   const interviewer = document.getElementById("iv-interviewer").value.trim();
   const notes = document.getElementById("iv-notes").value.trim();
-  const isVirtual = (document.getElementById("iv-format")?.value || "Face-to-Face") === "Virtual";
+  const isVirtual =
+    (document.getElementById("iv-format")?.value || "Face-to-Face") ===
+    "Virtual";
 
   if (!date || !startTime) {
     showToast("⚠️ Please enter a date and start time.");
@@ -2287,14 +2391,21 @@ function saveInterviewSchedule() {
   persistSave();
 
   // Push interview event to Google Calendar if signed in
-  if (typeof gcalSignedIn !== "undefined" && gcalSignedIn &&
-      typeof gcalCreateEvent === "function") {
-    gcalCreateEvent(ev).then((googleEventId) => {
-      if (googleEventId) {
-        ev.google_event_id = googleEventId;
-        persistSave();
-      }
-    }).catch((e) => console.warn("[GCal] Interview event create failed:", e.message));
+  if (
+    typeof gcalSignedIn !== "undefined" &&
+    gcalSignedIn &&
+    typeof gcalCreateEvent === "function"
+  ) {
+    gcalCreateEvent(ev)
+      .then((googleEventId) => {
+        if (googleEventId) {
+          ev.google_event_id = googleEventId;
+          persistSave();
+        }
+      })
+      .catch((e) =>
+        console.warn("[GCal] Interview event create failed:", e.message),
+      );
   }
 
   // Reset link + notes but keep date/type/interviewer for consecutive scheduling
@@ -2624,24 +2735,52 @@ document
         document.getElementById("f-app-date")?.value ||
         existing?.application_date ||
         "",
-      interview_date:
-        document.getElementById("f-interview-date")?.value || "",
-      followup_date:
-        document.getElementById("f-followup-date")?.value || "",
+      interview_date: document.getElementById("f-interview-date")?.value || "",
+      followup_date: document.getElementById("f-followup-date")?.value || "",
       followup_notified: existing?.followup_notified || "",
       // Assessment scores — Typing Test
-      typing_score:     document.getElementById("f-typing-score")?.value     || existing?.typing_score     || "",
-      word_typing:      document.getElementById("f-word-typing")?.value      || existing?.word_typing      || "",
-      knowledge_score:  document.getElementById("f-knowledge-score")?.value  || existing?.knowledge_score  || "",
+      typing_score:
+        document.getElementById("f-typing-score")?.value ||
+        existing?.typing_score ||
+        "",
+      word_typing:
+        document.getElementById("f-word-typing")?.value ||
+        existing?.word_typing ||
+        "",
+      knowledge_score:
+        document.getElementById("f-knowledge-score")?.value ||
+        existing?.knowledge_score ||
+        "",
       // Assessment scores — Verbal Test
-      verbal_link:      document.getElementById("f-verbal-link")?.value?.trim() || existing?.verbal_link  || "",
-      conflict_score:   document.getElementById("f-conflict-score")?.value   || existing?.conflict_score   || "",
-      grammar_score:    document.getElementById("f-grammar-score")?.value    || existing?.grammar_score    || "",
+      verbal_link:
+        document.getElementById("f-verbal-link")?.value?.trim() ||
+        existing?.verbal_link ||
+        "",
+      conflict_score:
+        document.getElementById("f-conflict-score")?.value ||
+        existing?.conflict_score ||
+        "",
+      grammar_score:
+        document.getElementById("f-grammar-score")?.value ||
+        existing?.grammar_score ||
+        "",
       // Assessment scores — Excel Test
-      data_entry_score: document.getElementById("f-data-entry-score")?.value || existing?.data_entry_score || "",
-      formatting_score: document.getElementById("f-formatting-score")?.value || existing?.formatting_score || "",
-      sorting_score:    document.getElementById("f-sorting-score")?.value    || existing?.sorting_score    || "",
-      interview_notes:  document.getElementById("f-interview-notes")?.value  || existing?.interview_notes  || "",
+      data_entry_score:
+        document.getElementById("f-data-entry-score")?.value ||
+        existing?.data_entry_score ||
+        "",
+      formatting_score:
+        document.getElementById("f-formatting-score")?.value ||
+        existing?.formatting_score ||
+        "",
+      sorting_score:
+        document.getElementById("f-sorting-score")?.value ||
+        existing?.sorting_score ||
+        "",
+      interview_notes:
+        document.getElementById("f-interview-notes")?.value ||
+        existing?.interview_notes ||
+        "",
       // Preserve pipeline timestamps
       hired_at:
         existing?.hired_at ||
@@ -2650,7 +2789,8 @@ document
         existing?.rejected_at ||
         (newStatus === "Rejected" ? new Date().toISOString() : ""),
       archived:
-        existing?.archived || ["Closed", "Rejected", "Cancelled"].includes(newStatus),
+        existing?.archived ||
+        ["Closed", "Rejected", "Cancelled"].includes(newStatus),
       stage_changed_at:
         newStatus !== existing?.status
           ? new Date().toISOString()
@@ -2745,7 +2885,7 @@ document
           // Assessment scores — Excel Test
           data_entry_score: t.data_entry_score || "",
           formatting_score: t.formatting_score || "",
-          sorting_score:    t.sorting_score    || "",
+          sorting_score: t.sorting_score || "",
         }).catch((e) =>
           console.warn("[API] Full field sync failed:", e.message),
         );
@@ -2792,11 +2932,16 @@ document
     persistSave();
 
     // ── Auto-update GCal if this task already has a linked event (no checkbox needed) ──
-    if (taskEditId && t.gcalEventId && !sync &&
-        typeof gcalSignedIn !== "undefined" && gcalSignedIn &&
-        typeof _taskSyncToGcal === "function") {
+    if (
+      taskEditId &&
+      t.gcalEventId &&
+      !sync &&
+      typeof gcalSignedIn !== "undefined" &&
+      gcalSignedIn &&
+      typeof _taskSyncToGcal === "function"
+    ) {
       _taskSyncToGcal(t).catch((e) =>
-        console.warn("[GCal] Auto-update on edit failed:", e.message)
+        console.warn("[GCal] Auto-update on edit failed:", e.message),
       );
     }
 
@@ -2904,7 +3049,9 @@ async function _taskSyncToGcal(t) {
     colorId:
       t.status === "Hired"
         ? "2"
-        : t.status === "Closed" || t.status === "Rejected" || t.status === "Cancelled"
+        : t.status === "Closed" ||
+            t.status === "Rejected" ||
+            t.status === "Cancelled"
           ? "8"
           : t.status === "Endorsed" || t.status === "In Progress"
             ? "6"
@@ -3107,7 +3254,9 @@ function empPersistSave() {
 }
 
 // Bridges so pm-ui-core's loadDataFromSupabase can swap in server rows
-window.EMPLOYEES_getAll = function () { return EMPLOYEES; };
+window.EMPLOYEES_getAll = function () {
+  return EMPLOYEES;
+};
 window.EMPLOYEES_setFromServer = function (rows, maxId) {
   if (!Array.isArray(rows)) return;
   EMPLOYEES = rows;
@@ -3163,7 +3312,10 @@ function showOnboarding() {
   document.getElementById("crumb-parent").textContent = "HR";
   document.getElementById("crumb-current").textContent = "Onboarding";
   document.getElementById("btn-add-task").style.display = "none";
-  { const _f = document.getElementById("topbar-filter-btn"); if (_f) _f.style.display = "none"; }
+  {
+    const _f = document.getElementById("topbar-filter-btn");
+    if (_f) _f.style.display = "none";
+  }
   renderOnboarding();
 }
 
@@ -3335,26 +3487,33 @@ function filterOnboarding() {
   if (!sel) return;
   try {
     if (typeof sel.showPicker === "function") sel.showPicker();
-    else { sel.focus(); sel.click(); }
-  } catch (_) { sel.focus(); }
+    else {
+      sel.focus();
+      sel.click();
+    }
+  } catch (_) {
+    sel.focus();
+  }
 }
 
 /* ── Delete employee from onboarding ── */
 function deleteEmployee(empId) {
   const e = EMPLOYEES.find((x) => x.id === empId);
   if (!e) return;
-  const fullName = `${e.fname || ""} ${e.lname || ""}`.trim() || "this employee";
+  const fullName =
+    `${e.fname || ""} ${e.lname || ""}`.trim() || "this employee";
   const ok = confirm(
     `Delete "${fullName}" from Onboarding?\n\n` +
-    `This removes their checklist, docs, and onboarding record.\n` +
-    `Note: if their recruitment task is still marked Hired, moving it out and back will recreate this record.`
+      `This removes their checklist, docs, and onboarding record.\n` +
+      `Note: if their recruitment task is still marked Hired, moving it out and back will recreate this record.`,
   );
   if (!ok) return;
   const idx = EMPLOYEES.findIndex((x) => x.id === empId);
   if (idx === -1) return;
   EMPLOYEES.splice(idx, 1);
   empPersistSave();
-  if (typeof showToast === "function") showToast(`🗑️ Removed ${fullName} from onboarding`);
+  if (typeof showToast === "function")
+    showToast(`🗑️ Removed ${fullName} from onboarding`);
   // Close detail modal if it was open on this emp
   if (typeof _empDetailId !== "undefined" && _empDetailId === empId) {
     if (typeof closeEmpDetailDirect === "function") closeEmpDetailDirect();
@@ -3773,19 +3932,37 @@ function buildCSVDownload(rows, filename) {
 
 document.getElementById("export-csv-btn")?.addEventListener("click", () => {
   const headers = [
-    "ID", "Applicant Name", "Email", "Phone",
-    "Stage", "Priority", "Position", "Assigned To",
-    "Application Date", "Start Date", "Due Date",
+    "ID",
+    "Applicant Name",
+    "Email",
+    "Phone",
+    "Stage",
+    "Priority",
+    "Position",
+    "Assigned To",
+    "Application Date",
+    "Start Date",
+    "Due Date",
     // Typing Test
-    "Typing Assessment (WPM)", "Word Typing (WPM)", "Knowledge Test (/100)",
+    "Typing Assessment (WPM)",
+    "Word Typing (WPM)",
+    "Knowledge Test (/100)",
     // Verbal Test
-    "Verbal Comm Link", "Conflict Reso (/20)", "Grammar Test (/20)",
+    "Verbal Comm Link",
+    "Conflict Reso (/20)",
+    "Grammar Test (/20)",
     // Excel Test
-    "Data Entry", "Formatting", "Sorting",
+    "Data Entry",
+    "Formatting",
+    "Sorting",
     // Overall
     "Assessment Result",
     // Links & Notes
-    "Resume Link", "Portfolio Link", "Interview Notes", "General Notes", "Candidate Folder",
+    "Resume Link",
+    "Portfolio Link",
+    "Interview Notes",
+    "General Notes",
+    "Candidate Folder",
   ];
   const rows = [headers];
   TASKS.forEach((t) => {
@@ -3835,16 +4012,16 @@ document.getElementById("export-csv-btn")?.addEventListener("click", () => {
 ══════════════════════════════════════════════ */
 function getFiltered() {
   const calFilter = document.getElementById("cal-filter-calendar")?.value || "";
-  const pos       = document.getElementById("cal-filter-position")?.value  || "";
-  const status    = document.getElementById("cal-filter-status")?.value    || "";
-  const type      = document.getElementById("cal-filter-type")?.value      || "";
-  const dateFrom  = document.getElementById("cal-filter-date-from")?.value || "";
-  const dateTo    = document.getElementById("cal-filter-date-to")?.value   || "";
+  const pos = document.getElementById("cal-filter-position")?.value || "";
+  const status = document.getElementById("cal-filter-status")?.value || "";
+  const type = document.getElementById("cal-filter-type")?.value || "";
+  const dateFrom = document.getElementById("cal-filter-date-from")?.value || "";
+  const dateTo = document.getElementById("cal-filter-date-to")?.value || "";
 
   // Virtual events from tasks that have interview_date set (manual scheduling)
   const virtualEvents = (typeof TASKS !== "undefined" ? TASKS : [])
-    .filter(t => t.interview_date && !t.gcalEventId)
-    .map(t => ({
+    .filter((t) => t.interview_date && !t.gcalEventId)
+    .map((t) => ({
       id: "iv-" + t.id,
       _isVirtual: true,
       date: t.interview_date,
@@ -3869,27 +4046,31 @@ function getFiltered() {
     if (status && e.status !== status) return false;
     if (type && e.type && e.type !== type) return false;
     if (dateFrom && e.date && e.date < dateFrom) return false;
-    if (dateTo   && e.date && e.date > dateTo)   return false;
+    if (dateTo && e.date && e.date > dateTo) return false;
     return true;
   });
 }
 
 function _layoutOverlap(timeGroups) {
-  const slots = Object.keys(timeGroups).map(time => {
-    const [h, m] = (time || "09:00").split(":").map(Number);
-    const startMin = h * 60 + m;
-    return { time, grp: timeGroups[time], startMin, endMin: startMin + 60 };
-  }).sort((a, b) => a.startMin - b.startMin);
+  const slots = Object.keys(timeGroups)
+    .map((time) => {
+      const [h, m] = (time || "09:00").split(":").map(Number);
+      const startMin = h * 60 + m;
+      return { time, grp: timeGroups[time], startMin, endMin: startMin + 60 };
+    })
+    .sort((a, b) => a.startMin - b.startMin);
   const colEnds = [];
-  slots.forEach(s => {
-    let col = colEnds.findIndex(end => end <= s.startMin);
-    if (col === -1) { col = colEnds.length; colEnds.push(s.endMin); }
-    else colEnds[col] = s.endMin;
+  slots.forEach((s) => {
+    let col = colEnds.findIndex((end) => end <= s.startMin);
+    if (col === -1) {
+      col = colEnds.length;
+      colEnds.push(s.endMin);
+    } else colEnds[col] = s.endMin;
     s.col = col;
   });
-  slots.forEach(s => {
+  slots.forEach((s) => {
     s.totalCols = slots
-      .filter(o => o.startMin < s.endMin && o.endMin > s.startMin)
+      .filter((o) => o.startMin < s.endMin && o.endMin > s.startMin)
       .reduce((mx, o) => Math.max(mx, o.col + 1), 1);
   });
   return slots;
@@ -4105,7 +4286,9 @@ function renderDay() {
         const e = grp[0];
         return `<div class="cal-day-event" style="${base}" onclick="event.stopPropagation();openEventPreview('${e.id}')"><strong>${fmtTime(time)}</strong> — ${sanitize(e.name || "")} (${sanitize(e.position || "")})<br><span style="font-size:10px;opacity:.85;">${sanitize(e.round || "")} · ${sanitize(e.type || "")}</span></div>`;
       } else {
-        const nameList = grp.map((e) => sanitize(e.name || "Unknown")).join(", ");
+        const nameList = grp
+          .map((e) => sanitize(e.name || "Unknown"))
+          .join(", ");
         return `<div class="cal-day-event cal-event-grouped" style="${base}" onclick="event.stopPropagation();openGroupSlot('${ds}','${time}')"><strong>${fmtTime(time)}</strong> — ${grp.length} ${grp.every((e) => !e.isGoogleEvent) ? `Applicant${grp.length > 1 ? "s" : ""}` : "Events"}<br><span style="font-size:10px;opacity:.85;">${nameList}</span></div>`;
       }
     })
@@ -4203,22 +4386,33 @@ function renderCalendarSidebar() {
   if (weekEl) {
     const today = new Date();
     const dow = today.getDay(); // 0=Sun
-    const weekStart = new Date(today); weekStart.setDate(today.getDate() - dow);
-    const weekEnd   = new Date(today); weekEnd.setDate(today.getDate() + (6 - dow));
-    const fmt = d => d.toISOString().slice(0, 10);
-    const wStart = fmt(weekStart), wEnd = fmt(weekEnd);
+    const weekStart = new Date(today);
+    weekStart.setDate(today.getDate() - dow);
+    const weekEnd = new Date(today);
+    weekEnd.setDate(today.getDate() + (6 - dow));
+    const fmt = (d) => d.toISOString().slice(0, 10);
+    const wStart = fmt(weekStart),
+      wEnd = fmt(weekEnd);
     const allEvts = getFiltered();
-    const weekEvts = allEvts.filter(e => e.date >= wStart && e.date <= wEnd);
-    const todayEvts = allEvts.filter(e => e.date === fmt(today));
-    const intCount = weekEvts.filter(e => (e.type || "").toLowerCase().includes("interview") || e._isVirtual).length;
+    const weekEvts = allEvts.filter((e) => e.date >= wStart && e.date <= wEnd);
+    const todayEvts = allEvts.filter((e) => e.date === fmt(today));
+    const intCount = weekEvts.filter(
+      (e) => (e.type || "").toLowerCase().includes("interview") || e._isVirtual,
+    ).length;
     weekEl.innerHTML = [
       { label: "Total", val: weekEvts.length, color: "var(--cyan)" },
       { label: "Today", val: todayEvts.length, color: "var(--violet)" },
       { label: "Interviews", val: intCount, color: "#43e97b" },
-    ].map(s => `<div style="display:flex;flex-direction:column;align-items:center;padding:8px 12px;border-radius:10px;background:var(--surface-3);min-width:56px;">
+    ]
+      .map(
+        (
+          s,
+        ) => `<div style="display:flex;flex-direction:column;align-items:center;padding:8px 12px;border-radius:10px;background:var(--surface-3);min-width:56px;">
       <div style="font-size:20px;font-weight:800;color:${s.color};font-family:'Syne',sans-serif;line-height:1;">${s.val}</div>
       <div style="font-size:10px;color:var(--muted);font-family:'Montserrat',sans-serif;margin-top:2px;">${s.label}</div>
-    </div>`).join("");
+    </div>`,
+      )
+      .join("");
   }
 }
 
@@ -4406,11 +4600,16 @@ function openNewAt(ds, ts, taskContext) {
     (window._editingTaskId
       ? TASKS.find((x) => x.id === window._editingTaskId)
       : null);
-  const _newApplicantName = t ? (t.applicant_name || t.name || "") : "";
+  const _newApplicantName = t ? t.applicant_name || t.name || "" : "";
   document.getElementById("cal-f-name").value = _newApplicantName;
   const _calSubheadNew = document.getElementById("cal-modal-subhead");
-  if (_calSubheadNew) _calSubheadNew.textContent = _newApplicantName || "Fill in the interview details below";
-  _setField("cal-f-position", t ? (t.position || "Intake Caller") : "Intake Caller");
+  if (_calSubheadNew)
+    _calSubheadNew.textContent =
+      _newApplicantName || "Fill in the interview details below";
+  _setField(
+    "cal-f-position",
+    t ? t.position || "Intake Caller" : "Intake Caller",
+  );
   const _calProfile = JSON.parse(
     localStorage.getItem("upstaff_profile") || "{}",
   );
@@ -4528,10 +4727,14 @@ function openEventPreview(id) {
   let e = null;
   if (typeof id === "string" && id.startsWith("iv-")) {
     const taskId = parseInt(id.replace("iv-", ""), 10);
-    const t = (typeof TASKS !== "undefined" ? TASKS : []).find(t => t.id === taskId);
+    const t = (typeof TASKS !== "undefined" ? TASKS : []).find(
+      (t) => t.id === taskId,
+    );
     if (t) {
       e = {
-        id, _isVirtual: true, taskId,
+        id,
+        _isVirtual: true,
+        taskId,
         name: t.applicant_name || t.name || "",
         position: t.position || "",
         status: t.status || "",
@@ -4543,13 +4746,17 @@ function openEventPreview(id) {
     const _id = typeof id === "string" ? parseInt(id, 10) : id;
     e = calEvents.find((x) => x.id === _id || x.id === id) || null;
   }
-  if (!e) { console.warn("[Calendar] openEventPreview: not found", id); return; }
+  if (!e) {
+    console.warn("[Calendar] openEventPreview: not found", id);
+    return;
+  }
 
   const overlay = document.getElementById("cal-event-preview-overlay");
   if (!overlay) return;
 
   // Name
-  document.getElementById("cep-name").textContent = e.name || e.applicant_name || "Untitled Event";
+  document.getElementById("cep-name").textContent =
+    e.name || e.applicant_name || "Untitled Event";
 
   // Status badge
   const sBadge = document.getElementById("cep-status-badge");
@@ -4559,16 +4766,25 @@ function openEventPreview(id) {
   // Type badge
   const tBadge = document.getElementById("cep-type-badge");
   if (e.type) {
-    tBadge.textContent = e.type === "Virtual" ? "📹 Virtual" : e.type === "Face-to-Face" ? "🤝 Face-to-Face" : e.type;
+    tBadge.textContent =
+      e.type === "Virtual"
+        ? "📹 Virtual"
+        : e.type === "Face-to-Face"
+          ? "🤝 Face-to-Face"
+          : e.type;
     tBadge.style.display = "";
-  } else { tBadge.style.display = "none"; }
+  } else {
+    tBadge.style.display = "none";
+  }
 
   // GCal badge
   const gBadge = document.getElementById("cep-gcal-badge");
   if (e.isGoogleEvent) {
     gBadge.textContent = getCalName(e.calendarId || e.sourceCalendar);
     gBadge.style.display = "";
-  } else { gBadge.style.display = "none"; }
+  } else {
+    gBadge.style.display = "none";
+  }
 
   // Position
   const posRow = document.getElementById("cep-position-row");
@@ -4576,9 +4792,17 @@ function openEventPreview(id) {
   posRow.style.display = e.position ? "flex" : "none";
 
   // Date & Time
-  const dt = e.date ? new Date(e.date + "T12:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" }) : "";
-  const tm = (e.time || e.start_time) ? fmtTime(e.time || e.start_time) : "";
-  document.getElementById("cep-datetime").textContent = [dt, tm].filter(Boolean).join(" at ") || "No date set";
+  const dt = e.date
+    ? new Date(e.date + "T12:00").toLocaleDateString("en-US", {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
+    : "";
+  const tm = e.time || e.start_time ? fmtTime(e.time || e.start_time) : "";
+  document.getElementById("cep-datetime").textContent =
+    [dt, tm].filter(Boolean).join(" at ") || "No date set";
 
   // Round
   const roundRow = document.getElementById("cep-round-row");
@@ -4593,7 +4817,9 @@ function openEventPreview(id) {
     ml.href = meetUrl;
     ml.textContent = meetUrl.length > 45 ? meetUrl.slice(0, 45) + "…" : meetUrl;
     meetRow.style.display = "flex";
-  } else { meetRow.style.display = "none"; }
+  } else {
+    meetRow.style.display = "none";
+  }
 
   // Notes
   const notesRow = document.getElementById("cep-notes-row");
@@ -4609,13 +4835,20 @@ function openEventPreview(id) {
 
   // View Applicant button — link to task if one matches
   const relTask = e.taskId
-    ? (typeof TASKS !== "undefined" ? TASKS : []).find(t => t.id === e.taskId)
-    : (typeof TASKS !== "undefined" ? TASKS : []).find(t => t.gcalEventId && t.gcalEventId === (e.google_event_id || ""));
+    ? (typeof TASKS !== "undefined" ? TASKS : []).find((t) => t.id === e.taskId)
+    : (typeof TASKS !== "undefined" ? TASKS : []).find(
+        (t) => t.gcalEventId && t.gcalEventId === (e.google_event_id || ""),
+      );
   const viewBtn = document.getElementById("cep-view-applicant-btn");
   if (relTask) {
     viewBtn.style.display = "";
-    viewBtn.onclick = () => { overlay.style.display = "none"; openTaskEdit(relTask.id); };
-  } else { viewBtn.style.display = "none"; }
+    viewBtn.onclick = () => {
+      overlay.style.display = "none";
+      openTaskEdit(relTask.id);
+    };
+  } else {
+    viewBtn.style.display = "none";
+  }
 
   overlay.style.display = "flex";
 }
@@ -4631,20 +4864,26 @@ function openEdit(id) {
     const rendered = document.querySelector(`[onclick*="openEdit(${id})"]`);
     if (rendered) {
       const renderedText = rendered.textContent.toLowerCase();
-      e = calEvents.find((x) =>
-        x._fromSlot &&
-        (x.name || "").split(" ")[0].length > 1 &&
-        renderedText.includes((x.name || "").split(" ")[0].toLowerCase())
-      ) || null;
+      e =
+        calEvents.find(
+          (x) =>
+            x._fromSlot &&
+            (x.name || "").split(" ")[0].length > 1 &&
+            renderedText.includes((x.name || "").split(" ")[0].toLowerCase()),
+        ) || null;
     }
   }
 
   if (!e) {
-    console.warn("[Calendar] openEdit: event not found", { id, _id, total: calEvents.length });
+    console.warn("[Calendar] openEdit: event not found", {
+      id,
+      _id,
+      total: calEvents.length,
+    });
     showCalToast("⚠️ Could not load event details. Try refreshing.");
     return;
   }
-  calEditId = _id;   // use normalized integer — raw string fails strict === against numeric event IDs
+  calEditId = _id; // use normalized integer — raw string fails strict === against numeric event IDs
   document.getElementById("cal-modal-heading").textContent = "Edit Interview";
   // ── Append Google Calendar badge for synced events ──
   setTimeout(() => {
@@ -4692,10 +4931,13 @@ function openEdit(id) {
     : e.name;
   document.getElementById("cal-f-name").value = _editApplicantName;
   const _calSubheadEdit = document.getElementById("cal-modal-subhead");
-  if (_calSubheadEdit) _calSubheadEdit.textContent = _editApplicantName || "Fill in the interview details below";
-  _setField("cal-f-position", _matchedTask
-    ? _matchedTask.position || e.position || ""
-    : e.position || "");
+  if (_calSubheadEdit)
+    _calSubheadEdit.textContent =
+      _editApplicantName || "Fill in the interview details below";
+  _setField(
+    "cal-f-position",
+    _matchedTask ? _matchedTask.position || e.position || "" : e.position || "",
+  );
   document.getElementById("cal-f-date").value = e.date;
   document.getElementById("cal-f-time").value =
     e.time || e.start_time || "09:00";
@@ -4707,7 +4949,10 @@ function openEdit(id) {
     _typeRaw === "Interview" ? "Virtual" : _typeRaw;
   // Slot events use "Interview Slot" as round — map to Initial Interview
   const _roundRaw = e.round || e.interview_stage || "Initial Interview";
-  _setField("cal-f-round", _roundRaw === "Interview Slot" ? "Initial Interview" : _roundRaw);
+  _setField(
+    "cal-f-round",
+    _roundRaw === "Interview Slot" ? "Initial Interview" : _roundRaw,
+  );
   document.getElementById("cal-f-status").value = e.status;
   document.getElementById("cal-f-interviewer").value = e.interviewer || "";
   const ml = e.meetingLink || e.meeting_link || "";
@@ -5007,10 +5252,10 @@ function syncCalEventToTask(ev) {
   // Map calendar status → recruitment stage
   const CAL_TO_TASK_STATUS = {
     Completed: "Endorsed", // Interview done → move to Endorsed for client review
-    Cancelled: "Closed",   // Cancelled interview → close the application
+    Cancelled: "Closed", // Cancelled interview → close the application
     Rescheduled: "In Progress",
     Scheduled: "In Progress",
-    "No Show": "Closed",   // No-show → close
+    "No Show": "Closed", // No-show → close
   };
   const newStatus = CAL_TO_TASK_STATUS[ev.status];
   const evName = (ev.applicant_name || ev.name || "").trim().toLowerCase();
@@ -5165,14 +5410,17 @@ document.querySelectorAll(".cal-view-tab").forEach((btn) => {
 document
   .getElementById("cal-add-btn")
   .addEventListener("click", () => openNewAt(fmtDate(calDate), "09:00"));
-["cal-filter-calendar", "cal-filter-position", "cal-filter-status", "cal-filter-type"].forEach(
-  (id) => {
-    document.getElementById(id)?.addEventListener("change", () => {
-      renderCalendar();
-      updateCalFilterBadge();
-    });
-  },
-);
+[
+  "cal-filter-calendar",
+  "cal-filter-position",
+  "cal-filter-status",
+  "cal-filter-type",
+].forEach((id) => {
+  document.getElementById(id)?.addEventListener("change", () => {
+    renderCalendar();
+    updateCalFilterBadge();
+  });
+});
 
 /* ══════════════════════════════════════════════
    SETTINGS — sub-section tabs
@@ -5275,21 +5523,40 @@ function _renderAssigneeOptionsList() {
   ).join("");
 }
 
-const _MEMBER_PALETTE = ["#44d7e9", "#6c63ff", "#f59e0b", "#10b981", "#ef4444", "#8b5cf6", "#ec4899", "#14b8a6"];
+const _MEMBER_PALETTE = [
+  "#44d7e9",
+  "#6c63ff",
+  "#f59e0b",
+  "#10b981",
+  "#ef4444",
+  "#8b5cf6",
+  "#ec4899",
+  "#14b8a6",
+];
 function _colorForMember(name) {
   let h = 0;
-  for (let i = 0; i < (name || "").length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+  for (let i = 0; i < (name || "").length; i++)
+    h = (h * 31 + name.charCodeAt(i)) >>> 0;
   return _MEMBER_PALETTE[h % _MEMBER_PALETTE.length];
 }
 
 async function _rebuildAssigneeOptions() {
   _renderAssigneeOptionsList();
-  if (!(window.SupabaseAuth && SupabaseAuth.isLoggedIn && SupabaseAuth.isLoggedIn())) return;
+  if (
+    !(
+      window.SupabaseAuth &&
+      SupabaseAuth.isLoggedIn &&
+      SupabaseAuth.isLoggedIn()
+    )
+  )
+    return;
   try {
     const rows = await SupabaseAuth.getMembers();
     if (!Array.isArray(rows) || !rows.length) return;
     const byKey = new Map();
-    MEMBERS.forEach((m) => byKey.set((m.email || m.name || "").toLowerCase(), m));
+    MEMBERS.forEach((m) =>
+      byKey.set((m.email || m.name || "").toLowerCase(), m),
+    );
     rows.forEach((r) => {
       const name = (r.name || (r.email || "").split("@")[0] || "Member").trim();
       const key = (r.email || name).toLowerCase();
@@ -5303,9 +5570,13 @@ async function _rebuildAssigneeOptions() {
       });
     });
     MEMBERS = Array.from(byKey.values());
-    try { localStorage.setItem("upstaff_members", JSON.stringify(MEMBERS)); } catch (_) {}
+    try {
+      localStorage.setItem("upstaff_members", JSON.stringify(MEMBERS));
+    } catch (_) {}
     const prevSelected = Array.from(
-      document.querySelectorAll("#assignee-checkbox-list input[name='f-assignees']:checked"),
+      document.querySelectorAll(
+        "#assignee-checkbox-list input[name='f-assignees']:checked",
+      ),
     ).map((cb) => cb.value);
     _renderAssigneeOptionsList();
     if (prevSelected.length) _setAssignees(prevSelected);
@@ -5463,7 +5734,8 @@ function sheetImportSearch(query) {
       }
       return;
     }
-    if (resEl) resEl.innerHTML = `<div style="padding:10px 12px;font-size:11px;color:var(--muted);font-family:'Montserrat',sans-serif;">Searching…</div>`;
+    if (resEl)
+      resEl.innerHTML = `<div style="padding:10px 12px;font-size:11px;color:var(--muted);font-family:'Montserrat',sans-serif;">Searching…</div>`;
     if (resEl) resEl.style.display = "";
     try {
       const res = await UpstaffAPI.search(query.trim());
@@ -5472,17 +5744,24 @@ function sheetImportSearch(query) {
         resEl.innerHTML = `<div style="padding:10px 12px;font-size:11px;color:var(--muted);font-family:'Montserrat',sans-serif;">No applicants found in Sheet.</div>`;
         return;
       }
-      resEl.innerHTML = data.slice(0, 8).map((r, i) =>
-        `<div class="sheet-import-row" onclick="sheetImportFill(${i})" data-idx="${i}"
+      resEl.innerHTML = data
+        .slice(0, 8)
+        .map(
+          (r, i) =>
+            `<div class="sheet-import-row" onclick="sheetImportFill(${i})" data-idx="${i}"
           style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:2px;">
           <div style="font-size:12px;font-weight:700;color:var(--text);font-family:'Montserrat',sans-serif;">${sanitize(r.fullName || "—")}</div>
           <div style="font-size:10px;color:var(--muted);font-family:'Montserrat',sans-serif;">${sanitize(r.positions || r.email || "")}</div>
-        </div>`
-      ).join("");
+        </div>`,
+        )
+        .join("");
       window._sheetImportData = data.slice(0, 8);
-      resEl.querySelectorAll(".sheet-import-row").forEach(row => {
-        row.addEventListener("mouseenter", () => row.style.background = "var(--surface-2)");
-        row.addEventListener("mouseleave", () => row.style.background = "");
+      resEl.querySelectorAll(".sheet-import-row").forEach((row) => {
+        row.addEventListener(
+          "mouseenter",
+          () => (row.style.background = "var(--surface-2)"),
+        );
+        row.addEventListener("mouseleave", () => (row.style.background = ""));
       });
     } catch (e) {
       resEl.innerHTML = `<div style="padding:10px 12px;font-size:11px;color:var(--muted);font-family:'Montserrat',sans-serif;">Search failed: ${sanitize(e.message)}</div>`;
@@ -5497,7 +5776,10 @@ function sheetImportFill(idx) {
   const nameEl = document.getElementById("f-name");
   if (nameEl) nameEl.value = r.fullName || "";
   // Position: take first line
-  const pos = (r.positions || "").split("\n").find(l => l.trim().replace(/^•\s*/, "")) || "";
+  const pos =
+    (r.positions || "")
+      .split("\n")
+      .find((l) => l.trim().replace(/^•\s*/, "")) || "";
   _setField("f-position", pos.replace(/^•\s*/, "").trim());
   // Profile fields
   _setField("f-email", r.email || "");
@@ -5528,7 +5810,8 @@ function sheetImportFill(idx) {
   _updateLinkCard("f-drive-folder", "lc-drive-folder");
   // Update avatar
   _setModalAvatar(r.fullName || "");
-  document.getElementById("task-modal-heading").textContent = r.fullName || "New Applicant";
+  document.getElementById("task-modal-heading").textContent =
+    r.fullName || "New Applicant";
   // Hide results
   const resEl = document.getElementById("sheet-import-results");
   if (resEl) resEl.style.display = "none";
@@ -5632,8 +5915,9 @@ function _rebuildPositionFilter() {
   const sel = document.getElementById("list-filter-position");
   if (!sel) return;
   const cur = sel.value;
-  sel.innerHTML = `<option value="">All Positions</option>` +
-    POSITIONS.map(p => `<option value="${p}">${p}</option>`).join("");
+  sel.innerHTML =
+    `<option value="">All Positions</option>` +
+    POSITIONS.map((p) => `<option value="${p}">${p}</option>`).join("");
   if (POSITIONS.includes(cur)) sel.value = cur;
 }
 
@@ -5655,11 +5939,13 @@ function confirmAddPosition() {
 document
   .getElementById("position-add-confirm")
   ?.addEventListener("click", confirmAddPosition);
-document.getElementById("position-add-cancel")?.addEventListener("click", () => {
-  document.getElementById("position-add-row")?.classList.remove("visible");
-  const inp = document.getElementById("position-add-input");
-  if (inp) inp.value = "";
-});
+document
+  .getElementById("position-add-cancel")
+  ?.addEventListener("click", () => {
+    document.getElementById("position-add-row")?.classList.remove("visible");
+    const inp = document.getElementById("position-add-input");
+    if (inp) inp.value = "";
+  });
 document
   .getElementById("position-add-input")
   ?.addEventListener("keydown", (e) => {
@@ -5675,7 +5961,6 @@ document
 document.getElementById("position-search")?.addEventListener("input", (e) => {
   renderPositionsList(e.target.value);
 });
-
 
 /* ── Assignee dropdown toggle ── */
 document.addEventListener("click", function (e) {
@@ -5735,7 +6020,12 @@ document.addEventListener("change", function (e) {
     const fullName = `${profile.firstName} ${profile.lastName}`.trim();
     if (avatarEl && fullName) {
       const picUrl = localStorage.getItem("upstaff_profile_picture");
-      const initials = fullName.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
+      const initials = fullName
+        .split(" ")
+        .map((w) => w[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2);
       if (picUrl) {
         avatarEl.innerHTML = `<img src="${picUrl}" style="width:64px;height:64px;border-radius:50%;object-fit:cover;" onerror="this.parentElement.textContent='${initials}'"/>`;
       } else {
@@ -5762,7 +6052,7 @@ document.addEventListener("change", function (e) {
     try {
       if (window.SupabaseAuth) {
         const sbEmail = SupabaseAuth.getEmail() || "";
-        const sbName  = SupabaseAuth.getName()  || "";
+        const sbName = SupabaseAuth.getName() || "";
         if (!profile.email && sbEmail) {
           profile.email = sbEmail;
           needsPersist = true;
@@ -5770,13 +6060,16 @@ document.addEventListener("change", function (e) {
         if (!profile.firstName && sbName) {
           const parts = sbName.trim().split(/\s+/);
           profile.firstName = parts.shift() || "";
-          if (!profile.lastName && parts.length) profile.lastName = parts.join(" ");
+          if (!profile.lastName && parts.length)
+            profile.lastName = parts.join(" ");
           needsPersist = true;
         }
       }
     } catch (_) {}
     if (needsPersist) {
-      try { localStorage.setItem(LS_PROFILE, JSON.stringify(profile)); } catch (_) {}
+      try {
+        localStorage.setItem(LS_PROFILE, JSON.stringify(profile));
+      } catch (_) {}
     }
 
     const pInputs = document.querySelectorAll(
@@ -5800,15 +6093,22 @@ document.addEventListener("change", function (e) {
 
     // ── Profile: Show uploaded profile picture if available ──
     try {
-      const picUrl  = localStorage.getItem("upstaff_profile_picture");
+      const picUrl = localStorage.getItem("upstaff_profile_picture");
       const avatarEl = document.getElementById("profile-avatar-circle");
       if (avatarEl && picUrl) {
         avatarEl.innerHTML = `<img src="${picUrl}" style="width:64px;height:64px;border-radius:50%;object-fit:cover;" onerror="this.parentElement.textContent=this.parentElement.dataset.initials||'HR'"/>`;
       }
       // Auto-reflect role from Supabase auth
-      const cfg = JSON.parse(localStorage.getItem("upstaff_api_config") || "{}");
+      const cfg = JSON.parse(
+        localStorage.getItem("upstaff_api_config") || "{}",
+      );
       if (cfg.role) {
-        const roleLabel = cfg.role === "hr" ? "HR Manager" : cfg.role === "assistant" ? "Assistant" : cfg.role;
+        const roleLabel =
+          cfg.role === "hr"
+            ? "HR Manager"
+            : cfg.role === "assistant"
+              ? "Assistant"
+              : cfg.role;
         const roleDisplayEl = document.getElementById("profile-display-role");
         if (roleDisplayEl) roleDisplayEl.textContent = roleLabel + " · upstaff";
         const roleSelectEl = document.getElementById("s-profile-role");
@@ -6369,28 +6669,50 @@ function _getApexTheme() {
 /* ── GSAP modal helpers ── */
 function _gsapModalOpen(overlayId, modalId) {
   const overlay = document.getElementById(overlayId);
-  const modal   = document.getElementById(modalId);
+  const modal = document.getElementById(modalId);
   if (!overlay || !modal) return;
   overlay.classList.add("open");
   if (!window.gsap) return;
-  gsap.fromTo(overlay, { opacity: 0 }, { opacity: 1, duration: 0.2, ease: "power2.out" });
-  gsap.fromTo(modal,   { opacity: 0, y: 14, scale: 0.97 }, { opacity: 1, y: 0, scale: 1, duration: 0.25, ease: "power3.out" });
+  gsap.fromTo(
+    overlay,
+    { opacity: 0 },
+    { opacity: 1, duration: 0.2, ease: "power2.out" },
+  );
+  gsap.fromTo(
+    modal,
+    { opacity: 0, y: 14, scale: 0.97 },
+    { opacity: 1, y: 0, scale: 1, duration: 0.25, ease: "power3.out" },
+  );
 }
 function _gsapModalClose(overlayId, modalId, onComplete) {
   const overlay = document.getElementById(overlayId);
-  const modal   = document.getElementById(modalId);
-  if (!overlay || !modal) { onComplete && onComplete(); return; }
+  const modal = document.getElementById(modalId);
+  if (!overlay || !modal) {
+    onComplete && onComplete();
+    return;
+  }
   if (!window.gsap) {
     overlay.classList.remove("open");
     onComplete && onComplete();
     return;
   }
-  gsap.to(modal,   { opacity: 0, y: 8, scale: 0.97, duration: 0.18, ease: "power2.in" });
-  gsap.to(overlay, { opacity: 0, duration: 0.18, ease: "power2.in", onComplete: () => {
-    overlay.classList.remove("open");
-    gsap.set([overlay, modal], { clearProps: "all" });
-    onComplete && onComplete();
-  }});
+  gsap.to(modal, {
+    opacity: 0,
+    y: 8,
+    scale: 0.97,
+    duration: 0.18,
+    ease: "power2.in",
+  });
+  gsap.to(overlay, {
+    opacity: 0,
+    duration: 0.18,
+    ease: "power2.in",
+    onComplete: () => {
+      overlay.classList.remove("open");
+      gsap.set([overlay, modal], { clearProps: "all" });
+      onComplete && onComplete();
+    },
+  });
 }
 
 /* ── Colour palette for charts ── */
@@ -6581,12 +6903,21 @@ function buildSourceList(container, data) {
 /* ── Main render function for the Analytics view ── */
 function renderAnalytics() {
   // Destroy previous ApexCharts instances to prevent memory leaks
-  _apexCharts.forEach(c => { try { c.destroy(); } catch (_) {} });
+  _apexCharts.forEach((c) => {
+    try {
+      c.destroy();
+    } catch (_) {}
+  });
   _apexCharts = [];
 
   const A = TASKS;
   const total = A.length;
-  const { isDark, mode: _apexMode, foreColor: _apexFore, borderColor: _apexBorder } = _getApexTheme();
+  const {
+    isDark,
+    mode: _apexMode,
+    foreColor: _apexFore,
+    borderColor: _apexBorder,
+  } = _getApexTheme();
 
   /* ── 1. KPI cards ── */
   const hiredCount = A.filter(
@@ -6608,11 +6939,15 @@ function renderAnalytics() {
   const rejRate = total > 0 ? Math.round((rejectedCount / total) * 100) : 0;
 
   // Time-to-hire: days from application_date (or start) to hired_at
-  const _tthData = A.filter((t) => t.hired_at && (t.application_date || t.start))
+  const _tthData = A.filter(
+    (t) => t.hired_at && (t.application_date || t.start),
+  )
     .map((t) => {
       const a = new Date(t.application_date || t.start);
       const h = new Date(t.hired_at);
-      return isNaN(a) || isNaN(h) ? null : Math.max(0, Math.round((h - a) / 86400000));
+      return isNaN(a) || isNaN(h)
+        ? null
+        : Math.max(0, Math.round((h - a) / 86400000));
     })
     .filter((d) => d !== null);
   const avgTTH = _tthData.length
@@ -6686,27 +7021,63 @@ function renderAnalytics() {
   const _tthPosEl = document.getElementById("chart-time-to-hire");
   if (_tthPosEl) {
     const posMap = {};
-    A.filter((t) => t.hired_at && (t.application_date || t.start) && t.position).forEach((t) => {
-      const days = Math.max(0, Math.round((new Date(t.hired_at) - new Date(t.application_date || t.start)) / 86400000));
+    A.filter(
+      (t) => t.hired_at && (t.application_date || t.start) && t.position,
+    ).forEach((t) => {
+      const days = Math.max(
+        0,
+        Math.round(
+          (new Date(t.hired_at) - new Date(t.application_date || t.start)) /
+            86400000,
+        ),
+      );
       if (!posMap[t.position]) posMap[t.position] = [];
       posMap[t.position].push(days);
     });
     const posRows = Object.entries(posMap)
-      .map(([pos, days]) => ({ pos, avg: Math.round(days.reduce((s, d) => s + d, 0) / days.length), n: days.length }))
+      .map(([pos, days]) => ({
+        pos,
+        avg: Math.round(days.reduce((s, d) => s + d, 0) / days.length),
+        n: days.length,
+      }))
       .sort((a, b) => a.avg - b.avg);
     _tthPosEl.innerHTML = "";
     if (posRows.length) {
       const chart = new ApexCharts(_tthPosEl, {
-        chart: { type: "bar", height: Math.max(posRows.length * 38 + 60, 120), background: "transparent", toolbar: { show: false } },
-        series: [{ name: "Avg Days", data: posRows.map(r => r.avg) }],
-        xaxis: { categories: posRows.map(r => r.pos), labels: { style: { fontSize: "11px", fontFamily: "Montserrat,sans-serif", colors: _apexFore } } },
+        chart: {
+          type: "bar",
+          height: Math.max(posRows.length * 38 + 60, 120),
+          background: "transparent",
+          toolbar: { show: false },
+        },
+        series: [{ name: "Avg Days", data: posRows.map((r) => r.avg) }],
+        xaxis: {
+          categories: posRows.map((r) => r.pos),
+          labels: {
+            style: {
+              fontSize: "11px",
+              fontFamily: "Montserrat,sans-serif",
+              colors: _apexFore,
+            },
+          },
+        },
         yaxis: { labels: { style: { fontSize: "11px", colors: _apexFore } } },
         plotOptions: { bar: { horizontal: true, borderRadius: 4 } },
         colors: ["#f59e0b"],
         theme: { mode: _apexMode },
-        dataLabels: { enabled: true, formatter: v => v + "d", style: { fontSize: "11px", fontWeight: 600 } },
+        dataLabels: {
+          enabled: true,
+          formatter: (v) => v + "d",
+          style: { fontSize: "11px", fontWeight: 600 },
+        },
         grid: { borderColor: _apexBorder },
-        tooltip: { theme: _apexMode, y: { formatter: (v, { dataPointIndex }) => `${v}d avg · ${posRows[dataPointIndex].n} hire${posRows[dataPointIndex].n > 1 ? "s" : ""}` } },
+        tooltip: {
+          theme: _apexMode,
+          y: {
+            formatter: (v, { dataPointIndex }) =>
+              `${v}d avg · ${posRows[dataPointIndex].n} hire${posRows[dataPointIndex].n > 1 ? "s" : ""}`,
+          },
+        },
       });
       chart.render();
       _apexCharts.push(chart);
@@ -6750,22 +7121,50 @@ function renderAnalytics() {
   if (pipelineEl) {
     const stageCounts = PIPELINE_STAGES.map((s) => ({
       ...s,
-      count: A.filter((t) => t.partner_status === s.key || t.status === s.key).length,
-    })).filter((s) => s.count > 0).sort((a, b) => b.count - a.count);
+      count: A.filter((t) => t.partner_status === s.key || t.status === s.key)
+        .length,
+    }))
+      .filter((s) => s.count > 0)
+      .sort((a, b) => b.count - a.count);
     pipelineEl.innerHTML = "";
     if (stageCounts.length) {
       const chart = new ApexCharts(pipelineEl, {
-        chart: { type: "bar", height: Math.max(stageCounts.length * 38 + 60, 120), background: "transparent", toolbar: { show: false } },
-        series: [{ name: "Applicants", data: stageCounts.map(s => s.count) }],
-        xaxis: { categories: stageCounts.map(s => s.label), labels: { style: { fontSize: "11px", fontFamily: "Montserrat,sans-serif", colors: _apexFore } } },
+        chart: {
+          type: "bar",
+          height: Math.max(stageCounts.length * 38 + 60, 120),
+          background: "transparent",
+          toolbar: { show: false },
+        },
+        series: [{ name: "Applicants", data: stageCounts.map((s) => s.count) }],
+        xaxis: {
+          categories: stageCounts.map((s) => s.label),
+          labels: {
+            style: {
+              fontSize: "11px",
+              fontFamily: "Montserrat,sans-serif",
+              colors: _apexFore,
+            },
+          },
+        },
         yaxis: { labels: { style: { fontSize: "11px", colors: _apexFore } } },
-        plotOptions: { bar: { horizontal: true, borderRadius: 4, distributed: true } },
-        colors: stageCounts.map(s => s.color),
+        plotOptions: {
+          bar: { horizontal: true, borderRadius: 4, distributed: true },
+        },
+        colors: stageCounts.map((s) => s.color),
         legend: { show: false },
         theme: { mode: _apexMode },
-        dataLabels: { enabled: true, style: { fontSize: "11px", fontWeight: 600 } },
+        dataLabels: {
+          enabled: true,
+          style: { fontSize: "11px", fontWeight: 600 },
+        },
         grid: { borderColor: _apexBorder },
-        tooltip: { theme: _apexMode, y: { formatter: v => `${v} (${total ? Math.round((v / total) * 100) : 0}%)` } },
+        tooltip: {
+          theme: _apexMode,
+          y: {
+            formatter: (v) =>
+              `${v} (${total ? Math.round((v / total) * 100) : 0}%)`,
+          },
+        },
       });
       chart.render();
       _apexCharts.push(chart);
@@ -6802,15 +7201,34 @@ function renderAnalytics() {
     _posEl.innerHTML = "";
     if (posData.length) {
       const chart = new ApexCharts(_posEl, {
-        chart: { type: "bar", height: Math.max(posData.length * 38 + 60, 120), background: "transparent", toolbar: { show: false } },
-        series: [{ name: "Applicants", data: posData.map(d => d.value) }],
-        xaxis: { categories: posData.map(d => d.label), labels: { style: { fontSize: "11px", fontFamily: "Montserrat,sans-serif", colors: _apexFore } } },
+        chart: {
+          type: "bar",
+          height: Math.max(posData.length * 38 + 60, 120),
+          background: "transparent",
+          toolbar: { show: false },
+        },
+        series: [{ name: "Applicants", data: posData.map((d) => d.value) }],
+        xaxis: {
+          categories: posData.map((d) => d.label),
+          labels: {
+            style: {
+              fontSize: "11px",
+              fontFamily: "Montserrat,sans-serif",
+              colors: _apexFore,
+            },
+          },
+        },
         yaxis: { labels: { style: { fontSize: "11px", colors: _apexFore } } },
-        plotOptions: { bar: { horizontal: true, borderRadius: 4, distributed: true } },
+        plotOptions: {
+          bar: { horizontal: true, borderRadius: 4, distributed: true },
+        },
         colors: CHART_COLORS,
         legend: { show: false },
         theme: { mode: _apexMode },
-        dataLabels: { enabled: true, style: { fontSize: "11px", fontWeight: 600 } },
+        dataLabels: {
+          enabled: true,
+          style: { fontSize: "11px", fontWeight: 600 },
+        },
         grid: { borderColor: _apexBorder },
         tooltip: { theme: _apexMode },
       });
@@ -6875,20 +7293,49 @@ function renderAnalytics() {
       value: allEmpTypes.filter((v) => v === l).length,
     }))
     .filter((d) => d.value > 0);
-  (function() {
+  (function () {
     const el = document.getElementById("chart-employment");
     if (!el) return;
     el.innerHTML = "";
-    if (!empData.length) { el.innerHTML = '<div class="u-no-data">No data</div>'; return; }
+    if (!empData.length) {
+      el.innerHTML = '<div class="u-no-data">No data</div>';
+      return;
+    }
     const chart = new ApexCharts(el, {
-      chart: { type: "donut", height: 220, background: "transparent", toolbar: { show: false } },
-      series: empData.map(d => d.value),
-      labels: empData.map(d => d.label),
-      colors: ["#44d7e9","#6c63ff","#fa8231","#43e97b","#f472b6"],
+      chart: {
+        type: "donut",
+        height: 220,
+        background: "transparent",
+        toolbar: { show: false },
+      },
+      series: empData.map((d) => d.value),
+      labels: empData.map((d) => d.label),
+      colors: ["#44d7e9", "#6c63ff", "#fa8231", "#43e97b", "#f472b6"],
       theme: { mode: _apexMode },
       dataLabels: { enabled: false },
-      legend: { position: "bottom", fontSize: "11px", fontFamily: "Montserrat,sans-serif", labels: { colors: _apexFore } },
-      plotOptions: { pie: { donut: { size: "65%", labels: { show: true, total: { show: true, label: "Total", fontSize: "11px", fontWeight: 600, color: _apexFore } } } } },
+      legend: {
+        position: "bottom",
+        fontSize: "11px",
+        fontFamily: "Montserrat,sans-serif",
+        labels: { colors: _apexFore },
+      },
+      plotOptions: {
+        pie: {
+          donut: {
+            size: "65%",
+            labels: {
+              show: true,
+              total: {
+                show: true,
+                label: "Total",
+                fontSize: "11px",
+                fontWeight: 600,
+                color: _apexFore,
+              },
+            },
+          },
+        },
+      },
       stroke: { width: 0 },
       tooltip: { theme: _apexMode },
     });
@@ -6910,20 +7357,49 @@ function renderAnalytics() {
       value: allWorkSetups.filter((v) => v === l).length,
     }))
     .filter((d) => d.value > 0);
-  (function() {
+  (function () {
     const el = document.getElementById("chart-setup");
     if (!el) return;
     el.innerHTML = "";
-    if (!setupData.length) { el.innerHTML = '<div class="u-no-data">No data</div>'; return; }
+    if (!setupData.length) {
+      el.innerHTML = '<div class="u-no-data">No data</div>';
+      return;
+    }
     const chart = new ApexCharts(el, {
-      chart: { type: "donut", height: 220, background: "transparent", toolbar: { show: false } },
-      series: setupData.map(d => d.value),
-      labels: setupData.map(d => d.label),
-      colors: ["#fa8231","#44d7e9","#6c63ff"],
+      chart: {
+        type: "donut",
+        height: 220,
+        background: "transparent",
+        toolbar: { show: false },
+      },
+      series: setupData.map((d) => d.value),
+      labels: setupData.map((d) => d.label),
+      colors: ["#fa8231", "#44d7e9", "#6c63ff"],
       theme: { mode: _apexMode },
       dataLabels: { enabled: false },
-      legend: { position: "bottom", fontSize: "11px", fontFamily: "Montserrat,sans-serif", labels: { colors: _apexFore } },
-      plotOptions: { pie: { donut: { size: "65%", labels: { show: true, total: { show: true, label: "Total", fontSize: "11px", fontWeight: 600, color: _apexFore } } } } },
+      legend: {
+        position: "bottom",
+        fontSize: "11px",
+        fontFamily: "Montserrat,sans-serif",
+        labels: { colors: _apexFore },
+      },
+      plotOptions: {
+        pie: {
+          donut: {
+            size: "65%",
+            labels: {
+              show: true,
+              total: {
+                show: true,
+                label: "Total",
+                fontSize: "11px",
+                fontWeight: 600,
+                color: _apexFore,
+              },
+            },
+          },
+        },
+      },
       stroke: { width: 0 },
       tooltip: { theme: _apexMode },
     });
@@ -6948,20 +7424,40 @@ function renderAnalytics() {
       value: allWorkSchedules.filter((v) => v === l).length,
     }))
     .filter((d) => d.value > 0);
-  (function() {
+  (function () {
     const el = document.getElementById("chart-schedule");
     if (!el) return;
     el.innerHTML = "";
-    if (!schedData.length) { el.innerHTML = '<div class="u-no-data">No data</div>'; return; }
+    if (!schedData.length) {
+      el.innerHTML = '<div class="u-no-data">No data</div>';
+      return;
+    }
     const chart = new ApexCharts(el, {
-      chart: { type: "bar", height: Math.max(schedData.length * 38 + 60, 120), background: "transparent", toolbar: { show: false } },
-      series: [{ name: "Applicants", data: schedData.map(d => d.value) }],
-      xaxis: { categories: schedData.map(d => d.label), labels: { style: { fontSize: "11px", fontFamily: "Montserrat,sans-serif", colors: _apexFore } } },
+      chart: {
+        type: "bar",
+        height: Math.max(schedData.length * 38 + 60, 120),
+        background: "transparent",
+        toolbar: { show: false },
+      },
+      series: [{ name: "Applicants", data: schedData.map((d) => d.value) }],
+      xaxis: {
+        categories: schedData.map((d) => d.label),
+        labels: {
+          style: {
+            fontSize: "11px",
+            fontFamily: "Montserrat,sans-serif",
+            colors: _apexFore,
+          },
+        },
+      },
       yaxis: { labels: { style: { fontSize: "11px", colors: _apexFore } } },
       plotOptions: { bar: { horizontal: true, borderRadius: 4 } },
       colors: ["#6c63ff"],
       theme: { mode: _apexMode },
-      dataLabels: { enabled: true, style: { fontSize: "11px", fontWeight: 600 } },
+      dataLabels: {
+        enabled: true,
+        style: { fontSize: "11px", fontWeight: 600 },
+      },
       grid: { borderColor: _apexBorder },
       tooltip: { theme: _apexMode },
     });
@@ -7001,20 +7497,40 @@ function renderAnalytics() {
       value: allEduLevels.filter((v) => v === l).length,
     }))
     .filter((d) => d.value > 0);
-  (function() {
+  (function () {
     const el = document.getElementById("chart-education");
     if (!el) return;
     el.innerHTML = "";
-    if (!eduData.length) { el.innerHTML = '<div class="u-no-data">No data</div>'; return; }
+    if (!eduData.length) {
+      el.innerHTML = '<div class="u-no-data">No data</div>';
+      return;
+    }
     const chart = new ApexCharts(el, {
-      chart: { type: "bar", height: Math.max(eduData.length * 38 + 60, 120), background: "transparent", toolbar: { show: false } },
-      series: [{ name: "Applicants", data: eduData.map(d => d.value) }],
-      xaxis: { categories: eduData.map(d => d.label), labels: { style: { fontSize: "11px", fontFamily: "Montserrat,sans-serif", colors: _apexFore } } },
+      chart: {
+        type: "bar",
+        height: Math.max(eduData.length * 38 + 60, 120),
+        background: "transparent",
+        toolbar: { show: false },
+      },
+      series: [{ name: "Applicants", data: eduData.map((d) => d.value) }],
+      xaxis: {
+        categories: eduData.map((d) => d.label),
+        labels: {
+          style: {
+            fontSize: "11px",
+            fontFamily: "Montserrat,sans-serif",
+            colors: _apexFore,
+          },
+        },
+      },
       yaxis: { labels: { style: { fontSize: "11px", colors: _apexFore } } },
       plotOptions: { bar: { horizontal: true, borderRadius: 4 } },
       colors: ["#43e97b"],
       theme: { mode: _apexMode },
-      dataLabels: { enabled: true, style: { fontSize: "11px", fontWeight: 600 } },
+      dataLabels: {
+        enabled: true,
+        style: { fontSize: "11px", fontWeight: 600 },
+      },
       grid: { borderColor: _apexBorder },
       tooltip: { theme: _apexMode },
     });
@@ -7420,7 +7936,11 @@ async function _renderApiCountsBanner() {
     }
     // Re-render ApexCharts with new theme if analytics view is active
     const analyticsView = document.getElementById("view-analytics");
-    if (analyticsView && analyticsView.style.display !== "none" && typeof renderAnalytics === "function") {
+    if (
+      analyticsView &&
+      analyticsView.style.display !== "none" &&
+      typeof renderAnalytics === "function"
+    ) {
       renderAnalytics();
     }
   });
@@ -7641,7 +8161,10 @@ function showCandidates() {
   document.getElementById("crumb-parent").textContent = "Recruitment";
   document.getElementById("crumb-current").textContent = "Candidates";
   document.getElementById("btn-add-task").style.display = "flex";
-  { const _f = document.getElementById("topbar-filter-btn"); if (_f) _f.style.display = "none"; }
+  {
+    const _f = document.getElementById("topbar-filter-btn");
+    if (_f) _f.style.display = "none";
+  }
   document
     .querySelectorAll(".view-tab")
     .forEach((t) => t.classList.remove("active"));
@@ -8121,11 +8644,15 @@ function copyExtCalId(calendarId, btnEl) {
 ══════════════════════════════════════════════ */
 document.addEventListener("dragover", function (e) {
   const zone = e.target.closest("#file-dropzone, #files-drop-zone");
-  if (zone) { e.preventDefault(); zone.classList.add("dragover"); }
+  if (zone) {
+    e.preventDefault();
+    zone.classList.add("dragover");
+  }
 });
 document.addEventListener("dragleave", function (e) {
   const zone = e.target.closest("#file-dropzone, #files-drop-zone");
-  if (zone && !zone.contains(e.relatedTarget)) zone.classList.remove("dragover");
+  if (zone && !zone.contains(e.relatedTarget))
+    zone.classList.remove("dragover");
 });
 document.addEventListener("drop", function (e) {
   const zone = e.target.closest("#file-dropzone, #files-drop-zone");
@@ -8141,10 +8668,12 @@ document.addEventListener("drop", function (e) {
 });
 
 // Wire up the Files tab file input
-document.getElementById("file-attach-input")?.addEventListener("change", function () {
-  handleFileAttach(this);
-  this.value = ""; // reset so same file can be re-uploaded
-});
+document
+  .getElementById("file-attach-input")
+  ?.addEventListener("change", function () {
+    handleFileAttach(this);
+    this.value = ""; // reset so same file can be re-uploaded
+  });
 
 /* ══════════════════════════════════════════════
    CLOSE NOTIF PANEL ON OUTSIDE CLICK
@@ -8154,10 +8683,16 @@ document.addEventListener("click", function (e) {
   if (!panel || !panel.classList.contains("open")) return;
   if (!e.target.closest("#notif-wrapper")) {
     if (window.gsap) {
-      gsap.to(panel, { opacity: 0, y: -8, duration: 0.15, ease: "power2.in", onComplete: () => {
-        panel.classList.remove("open");
-        gsap.set(panel, { clearProps: "all" });
-      }});
+      gsap.to(panel, {
+        opacity: 0,
+        y: -8,
+        duration: 0.15,
+        ease: "power2.in",
+        onComplete: () => {
+          panel.classList.remove("open");
+          gsap.set(panel, { clearProps: "all" });
+        },
+      });
     } else {
       panel.classList.remove("open");
     }
@@ -8172,7 +8707,7 @@ function _initSidebarTippys() {
   if (!window.tippy) return;
   const sidebar = document.getElementById("sidebar");
   const isCollapsed = sidebar?.classList.contains("collapsed");
-  document.querySelectorAll(".nav-item").forEach(el => {
+  document.querySelectorAll(".nav-item").forEach((el) => {
     // Destroy any existing instance to prevent duplicates
     if (el._tippy) el._tippy.destroy();
     const label = el.querySelector(".nav-label")?.textContent?.trim();
@@ -8200,18 +8735,90 @@ if (document.readyState === "loading") {
 // ── Theme presets ─────────────────────────────────────────────────────────────
 // border = slightly lighter than slate; surface3 = mid-point between navy and slate
 const COLOR_THEMES = {
-  ocean:    { navy: "#0f172a", slate: "#1e293b", accent: "#44d7e9", border: "#2d3f55", surface3: "#162032" },
-  midnight: { navy: "#050810", slate: "#0d1117", accent: "#3b82f6", border: "#1a2233", surface3: "#090f1c" },
-  violet:   { navy: "#1a0533", slate: "#2d1b4e", accent: "#8b5cf6", border: "#4a2d7a", surface3: "#221040" },
-  forest:   { navy: "#0a1f0f", slate: "#142a1a", accent: "#10b981", border: "#1e4228", surface3: "#102615" },
-  sunset:   { navy: "#1a0a05", slate: "#2d1a08", accent: "#f59e0b", border: "#4a2d0e", surface3: "#221205" },
-  rose:     { navy: "#1a0512", slate: "#2d0d1e", accent: "#ec4899", border: "#4a1530", surface3: "#220818" },
-  aurora:   { navy: "#021b14", slate: "#063824", accent: "#34d399", border: "#0d5c3a", surface3: "#042d1c" },
-  crimson:  { navy: "#1a0505", slate: "#2e0a0a", accent: "#ef4444", border: "#5a1414", surface3: "#240808" },
-  steel:    { navy: "#111318", slate: "#1c2028", accent: "#94a3b8", border: "#2e3540", surface3: "#171b22" },
-  electric: { navy: "#020817", slate: "#0a1628", accent: "#38bdf8", border: "#15304e", surface3: "#060f20" },
-  copper:   { navy: "#180f04", slate: "#2c1a08", accent: "#fb923c", border: "#4a2d10", surface3: "#201406" },
-  arctic:   { navy: "#0a0e14", slate: "#141c26", accent: "#e2e8f0", border: "#1e2d3d", surface3: "#0e141e" },
+  ocean: {
+    navy: "#0f172a",
+    slate: "#1e293b",
+    accent: "#44d7e9",
+    border: "#2d3f55",
+    surface3: "#162032",
+  },
+  midnight: {
+    navy: "#050810",
+    slate: "#0d1117",
+    accent: "#3b82f6",
+    border: "#1a2233",
+    surface3: "#090f1c",
+  },
+  violet: {
+    navy: "#1a0533",
+    slate: "#2d1b4e",
+    accent: "#8b5cf6",
+    border: "#4a2d7a",
+    surface3: "#221040",
+  },
+  forest: {
+    navy: "#0a1f0f",
+    slate: "#142a1a",
+    accent: "#10b981",
+    border: "#1e4228",
+    surface3: "#102615",
+  },
+  sunset: {
+    navy: "#1a0a05",
+    slate: "#2d1a08",
+    accent: "#f59e0b",
+    border: "#4a2d0e",
+    surface3: "#221205",
+  },
+  rose: {
+    navy: "#1a0512",
+    slate: "#2d0d1e",
+    accent: "#ec4899",
+    border: "#4a1530",
+    surface3: "#220818",
+  },
+  aurora: {
+    navy: "#021b14",
+    slate: "#063824",
+    accent: "#34d399",
+    border: "#0d5c3a",
+    surface3: "#042d1c",
+  },
+  crimson: {
+    navy: "#1a0505",
+    slate: "#2e0a0a",
+    accent: "#ef4444",
+    border: "#5a1414",
+    surface3: "#240808",
+  },
+  steel: {
+    navy: "#111318",
+    slate: "#1c2028",
+    accent: "#94a3b8",
+    border: "#2e3540",
+    surface3: "#171b22",
+  },
+  electric: {
+    navy: "#020817",
+    slate: "#0a1628",
+    accent: "#38bdf8",
+    border: "#15304e",
+    surface3: "#060f20",
+  },
+  copper: {
+    navy: "#180f04",
+    slate: "#2c1a08",
+    accent: "#fb923c",
+    border: "#4a2d10",
+    surface3: "#201406",
+  },
+  arctic: {
+    navy: "#0a0e14",
+    slate: "#141c26",
+    accent: "#e2e8f0",
+    border: "#1e2d3d",
+    surface3: "#0e141e",
+  },
 };
 
 // Internal helper — called by applyTheme() only; no longer exposed as standalone override
@@ -8219,10 +8826,14 @@ function applyAccentColor(hex) {
   const r = parseInt(hex.slice(1, 3), 16);
   const g = parseInt(hex.slice(3, 5), 16);
   const b = parseInt(hex.slice(5, 7), 16);
-  const lt     = `rgb(${Math.round(r*.15+255*.85)},${Math.round(g*.15+255*.85)},${Math.round(b*.15+255*.85)})`;
+  const lt = `rgb(${Math.round(r * 0.15 + 255 * 0.85)},${Math.round(g * 0.15 + 255 * 0.85)},${Math.round(b * 0.15 + 255 * 0.85)})`;
   const ltDark = `rgba(${r},${g},${b},0.12)`;
   let el = document.getElementById("accent-override");
-  if (!el) { el = document.createElement("style"); el.id = "accent-override"; document.head.appendChild(el); }
+  if (!el) {
+    el = document.createElement("style");
+    el.id = "accent-override";
+    document.head.appendChild(el);
+  }
   el.textContent = `:root{--cyan:${hex};--cyan-lt:${lt};--s-inprog:${hex};}[data-theme="dark"]{--cyan:${hex};--cyan-lt:${ltDark};}`;
 }
 
@@ -8230,21 +8841,26 @@ function applyTheme(key) {
   const t = COLOR_THEMES[key];
   if (!t) return;
   // Derive light-mode tints from the accent colour (mix with white)
-  const r = parseInt(t.accent.slice(1,3),16);
-  const g = parseInt(t.accent.slice(3,5),16);
-  const b = parseInt(t.accent.slice(5,7),16);
-  const tint = (a) => `rgb(${Math.round(r*a+255*(1-a))},${Math.round(g*a+255*(1-a))},${Math.round(b*a+255*(1-a))})`;
+  const r = parseInt(t.accent.slice(1, 3), 16);
+  const g = parseInt(t.accent.slice(3, 5), 16);
+  const b = parseInt(t.accent.slice(5, 7), 16);
+  const tint = (a) =>
+    `rgb(${Math.round(r * a + 255 * (1 - a))},${Math.round(g * a + 255 * (1 - a))},${Math.round(b * a + 255 * (1 - a))})`;
   // Luminance gate: compute light-mode accent as rgba-ready integers
-  const lum = (r*299 + g*587 + b*114) / 1000;
-  const la_r = lum > 160 ? Math.round(r*0.55) : r;
-  const la_g = lum > 160 ? Math.round(g*0.55) : g;
-  const la_b = lum > 160 ? Math.round(b*0.55) : b;
+  const lum = (r * 299 + g * 587 + b * 114) / 1000;
+  const la_r = lum > 160 ? Math.round(r * 0.55) : r;
+  const la_g = lum > 160 ? Math.round(g * 0.55) : g;
+  const la_b = lum > 160 ? Math.round(b * 0.55) : b;
   const lightAccent = `rgb(${la_r},${la_g},${la_b})`;
   // Alpha helper — always produces valid rgba() regardless of accent format
   const la = (a) => `rgba(${la_r},${la_g},${la_b},${a})`;
   // Apply sidebar + light & dark surface overrides
   let el = document.getElementById("theme-sidebar-override");
-  if (!el) { el = document.createElement("style"); el.id = "theme-sidebar-override"; document.head.appendChild(el); }
+  if (!el) {
+    el = document.createElement("style");
+    el.id = "theme-sidebar-override";
+    document.head.appendChild(el);
+  }
   el.textContent = [
     // Dark mode: sidebar keeps its navy/slate gradient
     `[data-theme="dark"] #sidebar{background:linear-gradient(160deg,${t.navy} 0%,${t.slate} 100%)!important;box-shadow:4px 0 28px rgba(0,0,0,0.22)!important;border-right:none!important;}`,
@@ -8284,12 +8900,12 @@ function applyTheme(key) {
     `--bg:${tint(0.08)};--surface-2:${tint(0.06)};`,
     // Cards: pure white so content reads cleanly against the tinted page
     `--card:#ffffff;--surface-1:#ffffff;`,
-    `--surface-3:${tint(0.05)};--surface-4:${tint(0.10)};`,
+    `--surface-3:${tint(0.05)};--surface-4:${tint(0.1)};`,
     `--border:${la(0.18)};`,
     // Topbar: stronger tint — palette signature on chrome
-    `--topbar-bg:${tint(0.10)};--input-bg:#ffffff;--input-border:${la(0.20)};`,
+    `--topbar-bg:${tint(0.1)};--input-bg:#ffffff;--input-border:${la(0.2)};`,
     // Row hover/alt: tinted variants, not neutral gray
-    `--row-hover:${tint(0.10)};--row-alt:${tint(0.04)};`,
+    `--row-hover:${tint(0.1)};--row-alt:${tint(0.04)};`,
     // Kanban columns: theme-tinted column wells
     `--board-col-bg:${tint(0.06)};`,
     // Calendar: today uses accent wash, supporting cells use light tint
@@ -8315,9 +8931,9 @@ function applyTheme(key) {
   applyAccentColor(t.accent);
   localStorage.setItem("upstaff_color_theme", key);
   // Update theme card active state
-  document.querySelectorAll(".theme-card").forEach((c) =>
-    c.classList.toggle("active", c.dataset.theme === key)
-  );
+  document
+    .querySelectorAll(".theme-card")
+    .forEach((c) => c.classList.toggle("active", c.dataset.theme === key));
 }
 
 function resetTheme() {
@@ -8328,57 +8944,88 @@ function resetTheme() {
     if (el) el.remove();
   });
   applyTheme("ocean"); // re-inject default overrides so light sidebar stays correct
-  document.querySelectorAll(".theme-card").forEach((c) =>
-    c.classList.toggle("active", c.dataset.theme === "ocean")
-  );
+  document
+    .querySelectorAll(".theme-card")
+    .forEach((c) => c.classList.toggle("active", c.dataset.theme === "ocean"));
 }
 
 // ── Config Export / Import ────────────────────────────────────────────────────
 window.exportConfig = function () {
-  const KEYS = ["upstaff_api_config", "upstaff_emailjs_config", "upstaff_gcal_api_config"];
+  const KEYS = [
+    "upstaff_api_config",
+    "upstaff_emailjs_config",
+    "upstaff_gcal_api_config",
+  ];
   const bundle = {};
   KEYS.forEach(function (k) {
-    try { bundle[k] = JSON.parse(localStorage.getItem(k) || "{}"); } catch (_) { bundle[k] = {}; }
+    try {
+      bundle[k] = JSON.parse(localStorage.getItem(k) || "{}");
+    } catch (_) {
+      bundle[k] = {};
+    }
   });
   // Strip session-only fields — token expires, loggedOut is session state
   if (bundle.upstaff_api_config) {
     delete bundle.upstaff_api_config.token;
     delete bundle.upstaff_api_config.loggedOut;
   }
-  const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: "application/json" });
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement("a");
-  a.href     = url;
-  a.download = "upstaff-config-" + new Date().toISOString().slice(0, 10) + ".json";
+  const blob = new Blob([JSON.stringify(bundle, null, 2)], {
+    type: "application/json",
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download =
+    "upstaff-config-" + new Date().toISOString().slice(0, 10) + ".json";
   a.click();
   URL.revokeObjectURL(url);
   showToast("✅ Config exported — save this file to Google Drive or email.");
 };
 
 window.importConfig = function (event) {
-  const file     = event.target.files[0];
+  const file = event.target.files[0];
   const statusEl = document.getElementById("config-import-status");
   if (!file) return;
   const reader = new FileReader();
   reader.onload = function (e) {
     try {
       const bundle = JSON.parse(e.target.result);
-      const KEYS   = ["upstaff_api_config", "upstaff_emailjs_config", "upstaff_gcal_api_config"];
-      let count    = 0;
+      const KEYS = [
+        "upstaff_api_config",
+        "upstaff_emailjs_config",
+        "upstaff_gcal_api_config",
+      ];
+      let count = 0;
       KEYS.forEach(function (k) {
-        if (bundle[k] && typeof bundle[k] === "object" && Object.keys(bundle[k]).length > 0) {
+        if (
+          bundle[k] &&
+          typeof bundle[k] === "object" &&
+          Object.keys(bundle[k]).length > 0
+        ) {
           localStorage.setItem(k, JSON.stringify(bundle[k]));
           count++;
         }
       });
       // Repopulate settings forms so inputs reflect loaded values
-      if (typeof populateApiSettings     === "function") populateApiSettings();
-      if (typeof populateEmailJSSettings === "function") populateEmailJSSettings();
-      if (typeof populateGCalApiSettings === "function") populateGCalApiSettings();
-      if (statusEl) { statusEl.textContent = "✅ Imported " + count + " config section(s). All fields auto-filled."; statusEl.style.color = "var(--green)"; }
+      if (typeof populateApiSettings === "function") populateApiSettings();
+      if (typeof populateEmailJSSettings === "function")
+        populateEmailJSSettings();
+      if (typeof populateGCalApiSettings === "function")
+        populateGCalApiSettings();
+      if (statusEl) {
+        statusEl.textContent =
+          "✅ Imported " +
+          count +
+          " config section(s). All fields auto-filled.";
+        statusEl.style.color = "var(--green)";
+      }
       showToast("✅ Config imported — credentials loaded.");
     } catch (_) {
-      if (statusEl) { statusEl.textContent = "❌ Invalid file — must be a valid Upstaff config JSON."; statusEl.style.color = "#ef4444"; }
+      if (statusEl) {
+        statusEl.textContent =
+          "❌ Invalid file — must be a valid Upstaff config JSON.";
+        statusEl.style.color = "#ef4444";
+      }
     }
   };
   reader.readAsText(file);
@@ -8401,14 +9048,15 @@ window.importConfig = function (event) {
 const MAX_MEMBERS = 10;
 
 async function renderMembersList() {
-  const list    = document.getElementById("members-list");
+  const list = document.getElementById("members-list");
   const counter = document.getElementById("members-count");
   if (!list) return;
 
-  list.innerHTML = '<div style="font-size:12px;color:var(--muted);padding:12px 0;">Loading members…</div>';
+  list.innerHTML =
+    '<div style="font-size:12px;color:var(--muted);padding:12px 0;">Loading members…</div>';
 
-  const members   = window.SupabaseAuth ? await SupabaseAuth.getMembers() : [];
-  const myId      = window.SupabaseAuth ? SupabaseAuth.getCurrentUserId() : null;
+  const members = window.SupabaseAuth ? await SupabaseAuth.getMembers() : [];
+  const myId = window.SupabaseAuth ? SupabaseAuth.getCurrentUserId() : null;
 
   if (counter) counter.textContent = `${members.length} / ${MAX_MEMBERS}`;
   const inviteBtn = document.getElementById("invite-member-btn");
@@ -8419,13 +9067,15 @@ async function renderMembersList() {
     return;
   }
   const myPicUrl = localStorage.getItem("upstaff_profile_picture");
-  list.innerHTML = members.map((m) => {
-    const initial = (m.name || m.email || "?")[0].toUpperCase();
-    const isMe    = m.id === myId;
-    const avatarHtml = (isMe && myPicUrl)
-      ? `<div class="member-avatar" style="padding:0;overflow:hidden"><img src="${myPicUrl}" alt="${initial}" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.parentElement.style.padding='';this.parentElement.textContent='${initial}';this.remove()"/></div>`
-      : `<div class="member-avatar">${initial}</div>`;
-    return `
+  list.innerHTML = members
+    .map((m) => {
+      const initial = (m.name || m.email || "?")[0].toUpperCase();
+      const isMe = m.id === myId;
+      const avatarHtml =
+        isMe && myPicUrl
+          ? `<div class="member-avatar" style="padding:0;overflow:hidden"><img src="${myPicUrl}" alt="${initial}" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.parentElement.style.padding='';this.parentElement.textContent='${initial}';this.remove()"/></div>`
+          : `<div class="member-avatar">${initial}</div>`;
+      return `
     <div class="member-row">
       ${avatarHtml}
       <div class="member-info">
@@ -8433,13 +9083,16 @@ async function renderMembersList() {
         <div class="member-email">${sanitize(m.email || "")}</div>
       </div>
       <span class="member-role-badge ${m.role === "hr" ? "hr" : "assistant"}">${m.role === "hr" ? "HR" : "Assistant"}</span>
-      ${!isMe
-        ? `<button class="member-remove-btn" onclick="removeMember('${m.id}')" title="Remove member">
+      ${
+        !isMe
+          ? `<button class="member-remove-btn" onclick="removeMember('${m.id}')" title="Remove member">
              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
            </button>`
-        : `<span style="font-size:10px;color:var(--muted);padding:0 8px;">You</span>`}
+          : `<span style="font-size:10px;color:var(--muted);padding:0 8px;">You</span>`
+      }
     </div>`;
-  }).join("");
+    })
+    .join("");
 }
 
 function toggleInviteForm() {
@@ -8451,28 +9104,46 @@ function toggleInviteForm() {
 }
 
 async function sendMemberInvite() {
-  const name     = (document.getElementById("invite-name")?.value || "").trim();
-  const email    = (document.getElementById("invite-email")?.value || "").trim().toLowerCase();
-  const role     = document.getElementById("invite-role")?.value || "assistant";
+  const name = (document.getElementById("invite-name")?.value || "").trim();
+  const email = (document.getElementById("invite-email")?.value || "")
+    .trim()
+    .toLowerCase();
+  const role = document.getElementById("invite-role")?.value || "assistant";
   const statusEl = document.getElementById("invite-status");
 
   if (!name) {
-    if (statusEl) { statusEl.textContent = "❌ Full name is required."; statusEl.style.color = "#ef4444"; }
+    if (statusEl) {
+      statusEl.textContent = "❌ Full name is required.";
+      statusEl.style.color = "#ef4444";
+    }
     return;
   }
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    if (statusEl) { statusEl.textContent = "❌ Enter a valid email address."; statusEl.style.color = "#ef4444"; }
+    if (statusEl) {
+      statusEl.textContent = "❌ Enter a valid email address.";
+      statusEl.style.color = "#ef4444";
+    }
     return;
   }
-  if (statusEl) { statusEl.textContent = "⏳ Sending invite link…"; statusEl.style.color = "var(--muted)"; }
+  if (statusEl) {
+    statusEl.textContent = "⏳ Sending invite link…";
+    statusEl.style.color = "var(--muted)";
+  }
 
   try {
     // Stash the desired role/name so handleMagicLinkCallback can apply it on
     // the invitee's first login. Server-side we'd use admin API, but client
     // just sends the magic link via signInWithOtp (free-plan friendly).
     try {
-      const pending = JSON.parse(localStorage.getItem("upstaff_pending_invites") || "{}");
-      pending[email] = { role, name, invited_by: SupabaseAuth.getEmail?.() || "", at: Date.now() };
+      const pending = JSON.parse(
+        localStorage.getItem("upstaff_pending_invites") || "{}",
+      );
+      pending[email] = {
+        role,
+        name,
+        invited_by: SupabaseAuth.getEmail?.() || "",
+        at: Date.now(),
+      };
       localStorage.setItem("upstaff_pending_invites", JSON.stringify(pending));
     } catch (_) {}
 
@@ -8488,12 +9159,18 @@ async function sendMemberInvite() {
     setTimeout(toggleInviteForm, 2500);
     renderMembersList();
   } catch (err) {
-    if (statusEl) { statusEl.textContent = "❌ " + (err.message || "Failed to send invite."); statusEl.style.color = "#ef4444"; }
+    if (statusEl) {
+      statusEl.textContent = "❌ " + (err.message || "Failed to send invite.");
+      statusEl.style.color = "#ef4444";
+    }
   }
 }
 
 async function removeMember(memberId) {
-  const confirmed = await uiConfirm("Remove this member? They will lose access immediately.", { icon: "⚠️", title: "Remove Member", okText: "Remove" });
+  const confirmed = await uiConfirm(
+    "Remove this member? They will lose access immediately.",
+    { icon: "⚠️", title: "Remove Member", okText: "Remove" },
+  );
   if (!confirmed) return;
   try {
     await SupabaseAuth.removeMember(memberId);
@@ -8506,10 +9183,158 @@ async function removeMember(memberId) {
 
 // Render when navigating to workspace settings
 document.addEventListener("DOMContentLoaded", function () {
-  document.querySelectorAll(".settings-nav-item[data-setting='workspace']").forEach((btn) => {
-    btn.addEventListener("click", renderMembersList);
-  });
+  document
+    .querySelectorAll(".settings-nav-item[data-setting='workspace']")
+    .forEach((btn) => {
+      btn.addEventListener("click", renderMembersList);
+    });
 });
 
 // Populate position filter dropdown on load
 document.addEventListener("DOMContentLoaded", _rebuildPositionFilter);
+
+// ── Image Crop Modal (Cropper.js) ────────────────────────────────────────
+(function () {
+  var _cropper = null;
+  var _cropMode = "profile"; // 'profile' | 'background'
+  var _srcInput = null;
+
+  window._openCropModal = function (file, mode, srcInput) {
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      if (typeof showToast === "function")
+        showToast("⚠️ Image must be under 5 MB.");
+      return;
+    }
+    _cropMode = mode;
+    _srcInput = srcInput;
+
+    var reader = new FileReader();
+    reader.onload = function (ev) {
+      var modal = document.getElementById("img-crop-modal");
+      var imgEl = document.getElementById("img-crop-img");
+      var title = document.getElementById("img-crop-title");
+      var hint = document.getElementById("img-crop-hint");
+
+      // GIFs bypass the cropper — save directly to preserve animation
+      if (file.type === "image/gif") {
+        var reader = new FileReader();
+        reader.onload = function (ev) {
+          var dataUrl = ev.target.result;
+          if (mode === "profile") {
+            localStorage.setItem("upstaff_profile_picture", dataUrl);
+            var circle = document.getElementById("profile-avatar-circle");
+            if (circle)
+              circle.innerHTML =
+                '<img src="' +
+                dataUrl +
+                '" style="width:64px;height:64px;border-radius:50%;object-fit:cover;display:block;"/>';
+            if (typeof _updateTopbarAvatar === "function")
+              _updateTopbarAvatar();
+            if (typeof showToast === "function")
+              showToast("✅ Profile photo updated!");
+          } else {
+            var blur = Number(localStorage.getItem("upstaff_bg_blur") || 5);
+            localStorage.setItem("upstaff_bg_image", dataUrl);
+            if (typeof applyBgImage === "function")
+              applyBgImage(dataUrl, blur, null, null, null);
+            if (typeof showToast === "function")
+              showToast("✅ Background applied!");
+          }
+        };
+        reader.readAsDataURL(file);
+        if (srcInput) srcInput.value = "";
+        return; // skip cropper
+      }
+
+      if (mode === "profile") {
+        title.textContent = "✂️ Crop Profile Photo";
+        hint.textContent =
+          "Drag to reposition · Scroll to zoom · The result will be circular.";
+        modal.className = "open mode-profile";
+      } else {
+        title.textContent = "✂️ Crop Background Image";
+        hint.textContent =
+          "Drag to reposition · Scroll to zoom · Select the area you want shown.";
+        modal.className = "open mode-background";
+      }
+
+      if (_cropper) {
+        _cropper.destroy();
+        _cropper = null;
+      }
+
+      imgEl.onload = function () {
+        _cropper = new Cropper(imgEl, {
+          aspectRatio: mode === "profile" ? 1 : NaN,
+          viewMode: 1,
+          dragMode: "move",
+          autoCropArea: 0.8,
+          restore: false,
+          guides: true,
+          center: true,
+          highlight: false,
+          cropBoxMovable: true,
+          cropBoxResizable: true,
+          toggleDragModeOnDblclick: false,
+        });
+      };
+      imgEl.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+    if (srcInput) srcInput.value = "";
+  };
+
+  window._closeCropModal = function () {
+    var modal = document.getElementById("img-crop-modal");
+    if (modal) modal.className = "";
+    if (_cropper) {
+      _cropper.destroy();
+      _cropper = null;
+    }
+  };
+
+  window._applyCrop = function () {
+    if (!_cropper) return;
+    var isProfile = _cropMode === "profile";
+
+    var canvas = _cropper.getCroppedCanvas(
+      isProfile
+        ? { width: 300, height: 300, imageSmoothingQuality: "high" }
+        : { maxWidth: 1920, maxHeight: 1080, imageSmoothingQuality: "high" },
+    );
+    if (!canvas) return;
+
+    var dataUrl = canvas.toDataURL("image/jpeg", 0.92);
+
+    if (isProfile) {
+      localStorage.setItem("upstaff_profile_picture", dataUrl);
+      var circle = document.getElementById("profile-avatar-circle");
+      if (circle)
+        circle.innerHTML =
+          '<img src="' +
+          dataUrl +
+          '" style="width:64px;height:64px;border-radius:50%;object-fit:cover;display:block;"/>';
+      if (typeof _updateTopbarAvatar === "function") _updateTopbarAvatar();
+      if (typeof showToast === "function")
+        showToast("✅ Profile photo updated!");
+    } else {
+      var blur = Number(localStorage.getItem("upstaff_bg_blur") || 5);
+      localStorage.setItem("upstaff_bg_image", dataUrl);
+      if (typeof applyBgImage === "function")
+        applyBgImage(dataUrl, blur, null, null, null);
+      if (typeof showToast === "function") showToast("✅ Background applied!");
+    }
+
+    _closeCropModal();
+  };
+
+  document.addEventListener("click", function (e) {
+    var modal = document.getElementById("img-crop-modal");
+    if (modal && e.target === modal) _closeCropModal();
+  });
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") _closeCropModal();
+  });
+})();
