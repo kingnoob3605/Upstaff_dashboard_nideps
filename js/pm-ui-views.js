@@ -9350,9 +9350,13 @@ async function _saveAvatarToSupabase(dataUrl) {
     var anonKey = cfg.supabaseAnonKey;
     if (!userId || !token) return;
 
-    // Convert dataUrl to blob
-    var res = await fetch(dataUrl);
-    var blob = await res.blob();
+    // Convert dataUrl to blob (CSP-safe)
+    var byteStr = atob(dataUrl.split(",")[1]);
+    var mime = dataUrl.split(",")[0].split(":")[1].split(";")[0];
+    var ab = new ArrayBuffer(byteStr.length);
+    var ia = new Uint8Array(ab);
+    for (var i = 0; i < byteStr.length; i++) ia[i] = byteStr.charCodeAt(i);
+    var blob = new Blob([ab], { type: mime });
     var ext = blob.type === "image/gif" ? "gif" : "jpg";
     var path = userId + "/avatar." + ext;
 
