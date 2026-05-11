@@ -9071,10 +9071,10 @@ async function renderMembersList() {
     .map((m) => {
       const initial = (m.name || m.email || "?")[0].toUpperCase();
       const isMe = m.id === myId;
-      const avatarHtml =
-        isMe && myPicUrl
-          ? `<div class="member-avatar" style="padding:0;overflow:hidden"><img src="${myPicUrl}" alt="${initial}" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.parentElement.style.padding='';this.parentElement.textContent='${initial}';this.remove()"/></div>`
-          : `<div class="member-avatar">${initial}</div>`;
+      const picUrl = isMe ? myPicUrl : m.avatar_url || null;
+      const avatarHtml = picUrl
+        ? `<div class="member-avatar" style="padding:0;overflow:hidden"><img src="${picUrl}" alt="${initial}" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.parentElement.style.padding='';this.parentElement.textContent='${initial}';this.remove()"/></div>`
+        : `<div class="member-avatar">${initial}</div>`;
       return `
     <div class="member-row">
       ${avatarHtml}
@@ -9231,6 +9231,7 @@ document.addEventListener("DOMContentLoaded", _rebuildPositionFilter);
                 '" style="width:64px;height:64px;border-radius:50%;object-fit:cover;display:block;"/>';
             if (typeof _updateTopbarAvatar === "function")
               _updateTopbarAvatar();
+            _saveAvatarToSupabase(dataUrl);
             if (typeof showToast === "function")
               showToast("✅ Profile photo updated!");
           } else {
@@ -9316,6 +9317,7 @@ document.addEventListener("DOMContentLoaded", _rebuildPositionFilter);
           dataUrl +
           '" style="width:64px;height:64px;border-radius:50%;object-fit:cover;display:block;"/>';
       if (typeof _updateTopbarAvatar === "function") _updateTopbarAvatar();
+      _saveAvatarToSupabase(dataUrl);
       if (typeof showToast === "function")
         showToast("✅ Profile photo updated!");
     } else {
@@ -9338,3 +9340,49 @@ document.addEventListener("DOMContentLoaded", _rebuildPositionFilter);
     if (e.key === "Escape") _closeCropModal();
   });
 })();
+
+async function _saveAvatarToSupabase(dataUrl) {
+  try {
+    var cfg = JSON.parse(localStorage.getItem("upstaff_api_config") || "{}");
+    var userId = cfg.userId;
+    var token = cfg.supabaseToken;
+    var url = cfg.supabaseUrl || "https://pbabqydgzgrciqzidugd.supabase.co";
+    var anonKey = cfg.supabaseAnonKey;
+    if (!userId || !token) return;
+
+    // Convert dataUrl to blob
+    var res = await fetch(dataUrl);
+    var blob = await res.blob();
+    var ext = blob.type === "image/gif" ? "gif" : "jpg";
+    var path = userId + "/avatar." + ext;
+
+    // Upload to Supabase Storage
+    await fetch(url + "/storage/v1/object/avatars/" + path, {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer " + token,
+        apikey: anonKey,
+        "Content-Type": blob.type,
+        "x-upsert": "true",
+      },
+      body: blob,
+    });
+
+    // Get public URL
+    var publicUrl = url + "/storage/v1/object/public/avatars/" + path;
+
+    // Save to profiles table
+    await fetch(url + "/rest/v1/profiles?id=eq." + userId, {
+      method: "PATCH",
+      headers: {
+        Authorization: "Bearer " + token,
+        apikey: anonKey,
+        "Content-Type": "application/json",
+        Prefer: "return=minimal",
+      },
+      body: JSON.stringify({ avatar_url: publicUrl }),
+    });
+  } catch (e) {
+    console.warn("[Avatar] Failed to save to Supabase:", e);
+  }
+}
