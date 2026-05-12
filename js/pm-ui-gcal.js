@@ -139,10 +139,9 @@ function gcalInit() {
     }
     const _unconfigBtn = document.getElementById("gcal-sync-btn");
     if (_unconfigBtn) {
-      _unconfigBtn.title =
-        _isLoggedIn
-          ? "GCal not configured — log out and back in to refresh credentials"
-          : "Sign in to enable Google Calendar sync";
+      _unconfigBtn.title = _isLoggedIn
+        ? "GCal not configured — log out and back in to refresh credentials"
+        : "Sign in to enable Google Calendar sync";
       _unconfigBtn.setAttribute("data-unconfigured", "true");
       _unconfigBtn.style.opacity = "0.45";
       _unconfigBtn.style.cursor = "not-allowed";
@@ -152,7 +151,11 @@ function gcalInit() {
 
   // GIS library is loaded async — guard against calling before it's ready.
   // The window.load handler polls for GIS and will call gcalInit() once ready.
-  if (!window.google || !window.google.accounts || !window.google.accounts.oauth2) {
+  if (
+    !window.google ||
+    !window.google.accounts ||
+    !window.google.accounts.oauth2
+  ) {
     return;
   }
 
@@ -240,14 +243,19 @@ function gcalInit() {
         updateSyncBtnState("Sync Google Cal", false);
       }
     } catch (err) {
-      const status = err && (err.status || (err.result && err.result.error && err.result.error.code));
+      const status =
+        err &&
+        (err.status ||
+          (err.result && err.result.error && err.result.error.code));
       if (status === 400 || status === 403) {
         console.error(
-          "[GCal] ❌ gapi init error (HTTP " + status + "). " +
-          "Check your API key in Google Cloud Console → APIs & Services → Credentials. " +
-          "Make sure: (1) Google Calendar API is enabled, " +
-          "(2) HTTP referrer restrictions include this site's domain.",
-          err
+          "[GCal] ❌ gapi init error (HTTP " +
+            status +
+            "). " +
+            "Check your API key in Google Cloud Console → APIs & Services → Credentials. " +
+            "Make sure: (1) Google Calendar API is enabled, " +
+            "(2) HTTP referrer restrictions include this site's domain.",
+          err,
         );
       } else {
         console.error("[GCal] ❌ gapi init error:", err);
@@ -412,13 +420,18 @@ async function gcalPushUnsynced() {
   if (!gcalSignedIn || !gapi?.client?.calendar) return;
 
   const unsynced = (typeof calEvents !== "undefined" ? calEvents : []).filter(
-    (ev) => !ev.isGoogleEvent && !ev._fromSlot && !ev.google_event_id && ev.date
+    (ev) =>
+      !ev.isGoogleEvent && !ev._fromSlot && !ev.google_event_id && ev.date,
   );
 
   if (!unsynced.length) return;
 
-  dbg(`[GCal] Pushing ${unsynced.length} unsynced local event(s) to Google Calendar…`);
-  showCalToast(`⬆️ Uploading ${unsynced.length} interview(s) to Google Calendar…`);
+  dbg(
+    `[GCal] Pushing ${unsynced.length} unsynced local event(s) to Google Calendar…`,
+  );
+  showCalToast(
+    `⬆️ Uploading ${unsynced.length} interview(s) to Google Calendar…`,
+  );
 
   let pushed = 0;
   for (const ev of unsynced) {
@@ -1627,9 +1640,15 @@ window.addEventListener("load", () => {
   // Load API Key + Client ID from Settings UI (localStorage) into GCAL_CONFIG
   // Must run BEFORE gcalInit() so any saved keys are used at init time
   const _gcalSaved = (() => {
-    try { return JSON.parse(localStorage.getItem("upstaff_gcal_api_config") || "{}"); } catch (_) { return {}; }
+    try {
+      return JSON.parse(
+        localStorage.getItem("upstaff_gcal_api_config") || "{}",
+      );
+    } catch (_) {
+      return {};
+    }
   })();
-  if (_gcalSaved.apiKey)   GCAL_CONFIG.API_KEY   = _gcalSaved.apiKey;
+  if (_gcalSaved.apiKey) GCAL_CONFIG.API_KEY = _gcalSaved.apiKey;
   if (_gcalSaved.clientId) GCAL_CONFIG.CLIENT_ID = _gcalSaved.clientId;
 
   // google.accounts.oauth2 (used by gcalInit) is part of the GIS library.

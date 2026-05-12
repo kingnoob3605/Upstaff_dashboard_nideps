@@ -208,8 +208,12 @@ function initAssessTabs() {
   bar.querySelectorAll(".assess-tab").forEach((btn) => {
     btn.addEventListener("click", () => {
       // Deactivate all tabs and hide all panels
-      bar.querySelectorAll(".assess-tab").forEach((t) => t.classList.remove("active"));
-      document.querySelectorAll(".assess-panel").forEach((p) => (p.style.display = "none"));
+      bar
+        .querySelectorAll(".assess-tab")
+        .forEach((t) => t.classList.remove("active"));
+      document
+        .querySelectorAll(".assess-panel")
+        .forEach((p) => (p.style.display = "none"));
       // Activate clicked tab and show its panel
       btn.classList.add("active");
       const panel = document.getElementById(btn.dataset.target);
@@ -223,8 +227,12 @@ document.addEventListener("DOMContentLoaded", initAssessTabs);
 function _resetAssessTabs() {
   const bar = document.getElementById("assess-tab-bar");
   if (!bar) return;
-  bar.querySelectorAll(".assess-tab").forEach((t) => t.classList.remove("active"));
-  document.querySelectorAll(".assess-panel").forEach((p) => (p.style.display = "none"));
+  bar
+    .querySelectorAll(".assess-tab")
+    .forEach((t) => t.classList.remove("active"));
+  document
+    .querySelectorAll(".assess-panel")
+    .forEach((p) => (p.style.display = "none"));
   const first = bar.querySelector(".assess-tab");
   if (first) {
     first.classList.add("active");
@@ -264,17 +272,17 @@ function applyPendingAssessment() {
       }
     };
     // Typing Test
-    _fill("f-typing-score",    r.typing_score    || "");
-    _fill("f-word-typing",     r.word_typing      || "");
+    _fill("f-typing-score", r.typing_score || "");
+    _fill("f-word-typing", r.word_typing || "");
     _fill("f-knowledge-score", r.knowledge_score || "");
     // Verbal Test
-    _fill("f-verbal-link",     r.verbal_link     || "");
-    _fill("f-conflict-score",  r.conflict_score  || "");
-    _fill("f-grammar-score",   r.grammar_score   || "");
+    _fill("f-verbal-link", r.verbal_link || "");
+    _fill("f-conflict-score", r.conflict_score || "");
+    _fill("f-grammar-score", r.grammar_score || "");
     // Excel Test
-    _fill("f-data-entry-score",  r.data_entry_score  || "");
-    _fill("f-formatting-score",  r.formatting_score  || "");
-    _fill("f-sorting-score",     r.sorting_score     || "");
+    _fill("f-data-entry-score", r.data_entry_score || "");
+    _fill("f-formatting-score", r.formatting_score || "");
+    _fill("f-sorting-score", r.sorting_score || "");
     if (r.interview_notes) {
       const notesEl = document.getElementById("f-interview-notes");
       if (notesEl)
