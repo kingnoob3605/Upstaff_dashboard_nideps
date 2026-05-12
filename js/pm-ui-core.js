@@ -158,67 +158,67 @@ const PRIORITY_COLORS = {
 ───────────────────────────────────────────────────────────────────────── */
 const STATUS_META = {
   // ── Pipeline stages ──
-  "New":         { color: "#6c63ff", bg: "#ede9ff" },
+  New: { color: "#6c63ff", bg: "#ede9ff" },
   "In Progress": { color: "#f59e0b", bg: "#fef3c7" },
-  "Endorsed":    { color: "#3ecfdf", bg: "#e0fafb" },
-  "Hired":       { color: "#43e97b", bg: "#e8fdf1" },
-  "Others":      { color: "#60a5fa", bg: "#dbeafe" },
-  "Closed":      { color: "#9ca3af", bg: "#f3f4f6" },
+  Endorsed: { color: "#3ecfdf", bg: "#e0fafb" },
+  Hired: { color: "#43e97b", bg: "#e8fdf1" },
+  Others: { color: "#60a5fa", bg: "#dbeafe" },
+  Closed: { color: "#9ca3af", bg: "#f3f4f6" },
   // ── Legacy aliases (keeps old tasks rendering correctly) ──
-  "Applied":     { color: "#6c63ff", bg: "#ede9ff" },
-  "Screening":   { color: "#6c63ff", bg: "#ede9ff" },
-  "Assessment":  { color: "#f59e0b", bg: "#fef3c7" },
-  "Interview":   { color: "#f59e0b", bg: "#fef3c7" },
-  "Review":      { color: "#3ecfdf", bg: "#e0fafb" },
-  "Rejected":    { color: "#9ca3af", bg: "#f3f4f6" },
-  "Cancelled":   { color: "#9ca3af", bg: "#f3f4f6" },
-  "To Do":       { color: "#6c63ff", bg: "#ede9ff" },
-  "In Review":   { color: "#3ecfdf", bg: "#e0fafb" },
-  "Done":        { color: "#43e97b", bg: "#e8fdf1" },
+  Applied: { color: "#6c63ff", bg: "#ede9ff" },
+  Screening: { color: "#6c63ff", bg: "#ede9ff" },
+  Assessment: { color: "#f59e0b", bg: "#fef3c7" },
+  Interview: { color: "#f59e0b", bg: "#fef3c7" },
+  Review: { color: "#3ecfdf", bg: "#e0fafb" },
+  Rejected: { color: "#9ca3af", bg: "#f3f4f6" },
+  Cancelled: { color: "#9ca3af", bg: "#f3f4f6" },
+  "To Do": { color: "#6c63ff", bg: "#ede9ff" },
+  "In Review": { color: "#3ecfdf", bg: "#e0fafb" },
+  Done: { color: "#43e97b", bg: "#e8fdf1" },
   // ── Partner statuses (from Supabase / Google Sheets) ──
-  "For Interview":            { color: "#0369a1", bg: "#e0f2fe" },
-  "Interviewed":              { color: "#059669", bg: "#d1fae5" },
-  "For Client Endorsement":   { color: "#7c3aed", bg: "#ede9fe" },
-  "Hired - Resigned":         { color: "#ea580c", bg: "#ffedd5" },
-  "Open for other Roles":     { color: "#2563eb", bg: "#dbeafe" },
-  "Could be Revisited":       { color: "#0284c7", bg: "#e0f2fe" },
+  "For Interview": { color: "#0369a1", bg: "#e0f2fe" },
+  Interviewed: { color: "#059669", bg: "#d1fae5" },
+  "For Client Endorsement": { color: "#7c3aed", bg: "#ede9fe" },
+  "Hired - Resigned": { color: "#ea580c", bg: "#ffedd5" },
+  "Open for other Roles": { color: "#2563eb", bg: "#dbeafe" },
+  "Could be Revisited": { color: "#0284c7", bg: "#e0f2fe" },
   "For Future Consideration": { color: "#475569", bg: "#f1f5f9" },
-  "No Show":                  { color: "#a16207", bg: "#fef9c3" },
-  "Not Qualified":            { color: "#64748b", bg: "#f1f5f9" },
-  "Duplicate Lead":           { color: "#a21caf", bg: "#fae8ff" },
+  "No Show": { color: "#a16207", bg: "#fef9c3" },
+  "Not Qualified": { color: "#64748b", bg: "#f1f5f9" },
+  "Duplicate Lead": { color: "#a21caf", bg: "#fae8ff" },
 };
 
 /** Returns the CSS class for a status pill — theme-aware, always readable */
 function statusPillClass(status) {
   const map = {
     // Pipeline stages
-    "New":                      "sp-new",
-    "For Interview":            "sp-forinterview",
-    "Interviewed":              "sp-interviewed",
-    "For Client Endorsement":   "sp-forclientendorsement",
-    "Hired":                    "sp-hired",
-    "Closed":                   "sp-closed",
+    New: "sp-new",
+    "For Interview": "sp-forinterview",
+    Interviewed: "sp-interviewed",
+    "For Client Endorsement": "sp-forclientendorsement",
+    Hired: "sp-hired",
+    Closed: "sp-closed",
     // Partner / Google Sheet statuses
-    "Hired - Resigned":         "sp-hiredresigned",
-    "Open for other Roles":     "sp-openotherroles",
-    "Could be Revisited":       "sp-couldberevisited",
+    "Hired - Resigned": "sp-hiredresigned",
+    "Open for other Roles": "sp-openotherroles",
+    "Could be Revisited": "sp-couldberevisited",
     "For Future Consideration": "sp-forfuture",
-    "No Show":                  "sp-noshow",
-    "Not Qualified":            "sp-notqualified",
-    "Duplicate Lead":           "sp-duplicatelead",
+    "No Show": "sp-noshow",
+    "Not Qualified": "sp-notqualified",
+    "Duplicate Lead": "sp-duplicatelead",
     // Legacy aliases
     "In Progress": "sp-inprogress",
-    "Endorsed":    "sp-endorsed",
-    "Applied":     "sp-new",
-    "Screening":   "sp-new",
-    "Assessment":  "sp-inprogress",
-    "Interview":   "sp-forinterview",
-    "Review":      "sp-forclientendorsement",
-    "Rejected":    "sp-closed",
-    "Cancelled":   "sp-closed",
-    "To Do":       "sp-new",
-    "In Review":   "sp-endorsed",
-    "Done":        "sp-hired",
+    Endorsed: "sp-endorsed",
+    Applied: "sp-new",
+    Screening: "sp-new",
+    Assessment: "sp-inprogress",
+    Interview: "sp-forinterview",
+    Review: "sp-forclientendorsement",
+    Rejected: "sp-closed",
+    Cancelled: "sp-closed",
+    "To Do": "sp-new",
+    "In Review": "sp-endorsed",
+    Done: "sp-hired",
   };
   return "status-pill " + (map[status] || "sp-new");
 }
@@ -279,10 +279,7 @@ const JOB_POSITIONS = [
 ];
 
 /* ── Candidate folders ── */
-const CANDIDATE_FOLDERS = [
-  "Waiting List",
-  "Talent Pool / Shortlisted",
-];
+const CANDIDATE_FOLDERS = ["Waiting List", "Talent Pool / Shortlisted"];
 const LS_KEYS_CANDIDATES = "upstaff_candidates";
 
 /* ── Public calendars available for subscription ── */
@@ -347,12 +344,18 @@ function _updateBulkToolbar() {
   } else {
     tb.style.display = "none";
   }
-  const _bmBtn = document.getElementById('bulk-move-stage-btn');
+  const _bmBtn = document.getElementById("bulk-move-stage-btn");
   if (_bmBtn) {
-    const _statuses = [...new Set([...selectedTaskIds].map(id => TASKS.find(t => t.id === id)?.status).filter(Boolean))];
+    const _statuses = [
+      ...new Set(
+        [...selectedTaskIds]
+          .map((id) => TASKS.find((t) => t.id === id)?.status)
+          .filter(Boolean),
+      ),
+    ];
     const _mixed = _statuses.length > 1;
-    _bmBtn.style.opacity = _mixed ? '0.45' : '1';
-    _bmBtn.title = _mixed ? 'Select applicants from the same stage only.' : '';
+    _bmBtn.style.opacity = _mixed ? "0.45" : "1";
+    _bmBtn.title = _mixed ? "Select applicants from the same stage only." : "";
   }
 }
 
@@ -368,8 +371,8 @@ function toggleBulkSelect(taskId, checkboxEl) {
 }
 
 function clearBulkSelection() {
-  const _bmsm = document.getElementById('bulk-move-stage-menu');
-  if (_bmsm) _bmsm.style.display = 'none';
+  const _bmsm = document.getElementById("bulk-move-stage-menu");
+  if (_bmsm) _bmsm.style.display = "none";
   selectedTaskIds.clear();
   _updateBulkToolbar();
   refreshCurrentView();
@@ -380,7 +383,7 @@ async function bulkAdvanceStage() {
   const ids = [...selectedTaskIds];
   const confirmed = await uiConfirm(
     `Advance ${ids.length} applicant(s) to their next pipeline stage?`,
-    { icon: "⏩", title: "Advance Stage", okText: "Advance" }
+    { icon: "⏩", title: "Advance Stage", okText: "Advance" },
   );
   if (!confirmed) return;
   ids.forEach((id) => {
@@ -397,37 +400,58 @@ async function bulkAdvanceStage() {
 
 function toggleBulkMoveStageMenu(e) {
   if (e) e.stopPropagation();
-  const menu = document.getElementById('bulk-move-stage-menu');
+  const menu = document.getElementById("bulk-move-stage-menu");
   if (!menu) return;
-  if (menu.style.display !== 'none') { menu.style.display = 'none'; return; }
+  if (menu.style.display !== "none") {
+    menu.style.display = "none";
+    return;
+  }
 
   const ids = [...selectedTaskIds];
-  const statuses = [...new Set(ids.map(id => TASKS.find(t => t.id === id)?.status).filter(Boolean))];
+  const statuses = [
+    ...new Set(
+      ids.map((id) => TASKS.find((t) => t.id === id)?.status).filter(Boolean),
+    ),
+  ];
 
   if (statuses.length !== 1) {
     menu.innerHTML = `<div style="padding:8px 12px;font-size:12px;font-weight:600;font-family:'Montserrat',sans-serif;color:#f59e0b;white-space:normal;max-width:200px;">Select applicants from the same stage only.</div>`;
   } else {
     const idx = STAGE_ORDER.indexOf(statuses[0]);
-    const fwd = idx >= 0 ? STAGE_ORDER.slice(idx + 1).filter(s => !TERMINAL_STAGES.includes(s)) : [];
-    const othersOpts = OTHERS_STATUSES.filter(s => s !== statuses[0]);
+    const fwd =
+      idx >= 0
+        ? STAGE_ORDER.slice(idx + 1).filter((s) => !TERMINAL_STAGES.includes(s))
+        : [];
+    const othersOpts = OTHERS_STATUSES.filter((s) => s !== statuses[0]);
     if (!fwd.length && !othersOpts.length) {
       menu.innerHTML = `<div style="padding:8px 12px;font-size:12px;font-weight:600;font-family:'Montserrat',sans-serif;color:var(--muted);">No stages available.</div>`;
     } else {
-      let html = fwd.map(stage => `<button onclick="bulkMoveToStage('${stage}')" class="stage-menu-btn">${stage}</button>`).join('');
+      let html = fwd
+        .map(
+          (stage) =>
+            `<button onclick="bulkMoveToStage('${stage}')" class="stage-menu-btn">${stage}</button>`,
+        )
+        .join("");
       if (othersOpts.length) {
-        if (fwd.length) html += `<div style="margin:4px 8px;border-top:1px solid var(--border);"></div>`;
+        if (fwd.length)
+          html += `<div style="margin:4px 8px;border-top:1px solid var(--border);"></div>`;
         html += `<div style="padding:4px 12px 2px;font-size:10px;font-weight:700;color:var(--muted);font-family:'Montserrat',sans-serif;text-transform:uppercase;letter-spacing:.5px;">Others</div>`;
-        html += othersOpts.map(stage => `<button onclick="bulkMoveToStage('${stage}')" class="stage-menu-btn">${stage}</button>`).join('');
+        html += othersOpts
+          .map(
+            (stage) =>
+              `<button onclick="bulkMoveToStage('${stage}')" class="stage-menu-btn">${stage}</button>`,
+          )
+          .join("");
       }
       menu.innerHTML = html;
     }
   }
-  menu.style.display = 'block';
+  menu.style.display = "block";
   setTimeout(() => {
-    document.addEventListener('click', function _close() {
-      const m = document.getElementById('bulk-move-stage-menu');
-      if (m) m.style.display = 'none';
-      document.removeEventListener('click', _close);
+    document.addEventListener("click", function _close() {
+      const m = document.getElementById("bulk-move-stage-menu");
+      if (m) m.style.display = "none";
+      document.removeEventListener("click", _close);
     });
   }, 0);
 }
@@ -435,12 +459,14 @@ function toggleBulkMoveStageMenu(e) {
 function bulkMoveToStage(targetStage) {
   const ids = [...selectedTaskIds];
   if (!ids.length) return;
-  const menu = document.getElementById('bulk-move-stage-menu');
-  if (menu) menu.style.display = 'none';
-  ids.forEach(id => moveApplicantToStage(id, targetStage, { silent: true }));
+  const menu = document.getElementById("bulk-move-stage-menu");
+  if (menu) menu.style.display = "none";
+  ids.forEach((id) => moveApplicantToStage(id, targetStage, { silent: true }));
   clearBulkSelection();
   refreshCurrentView();
-  showToast(`✅ Moved ${ids.length} applicant${ids.length !== 1 ? 's' : ''} to ${targetStage}`);
+  showToast(
+    `✅ Moved ${ids.length} applicant${ids.length !== 1 ? "s" : ""} to ${targetStage}`,
+  );
 }
 
 async function bulkReject() {
@@ -449,12 +475,15 @@ async function bulkReject() {
     const t = TASKS.find((x) => x.id === id);
     return t && !TERMINAL_STAGES.includes(t.status);
   });
-  if (!ids.length) { showToast("No eligible applicants to reject."); return; }
+  if (!ids.length) {
+    showToast("No eligible applicants to reject.");
+    return;
+  }
   const reason = await _pickRejectionReason();
   if (reason === null) return;
   const confirmed = await uiConfirm(
     `Reject ${ids.length} applicant(s)? Reason: "${reason}". They will be archived.`,
-    { icon: "🚫", title: "Bulk Reject", okText: "Reject All", okDanger: true }
+    { icon: "🚫", title: "Bulk Reject", okText: "Reject All", okDanger: true },
   );
   if (!confirmed) return;
   ids.forEach((id) => {
@@ -740,7 +769,8 @@ let tableSort = { col: "due", dir: 1 };
 ══════════════════════════════════════════════ */
 const LS_KEYS = {
   CAL: "upstaff_calEvents",
-  TASKS: "upstaff_tasks",
+  TASKS:
+    "upstaff_tasks_" + (localStorage.getItem("upstaff_user_id") || "default"),
   CAL_ID: "upstaff_calNextId",
   TASK_ID: "upstaff_taskNextId",
   GCAL_AUTH: "upstaff_gcal_signed",
@@ -758,9 +788,15 @@ function getActiveUserEmail() {
   }
 }
 /* Per-user localStorage key helpers — each user's gcal data is isolated */
-function getUserGcalAuthKey()  { return `upstaff_gcal_signed_${getActiveUserEmail()}`; }
-function getUserCalendarsKey() { return `upstaff_calendars_${getActiveUserEmail()}`; }
-function getUserGcalCountKey() { return `upstaff_gcal_count_${getActiveUserEmail()}`; }
+function getUserGcalAuthKey() {
+  return `upstaff_gcal_signed_${getActiveUserEmail()}`;
+}
+function getUserCalendarsKey() {
+  return `upstaff_calendars_${getActiveUserEmail()}`;
+}
+function getUserGcalCountKey() {
+  return `upstaff_gcal_count_${getActiveUserEmail()}`;
+}
 
 /* ── Save to localStorage ───────────────────── */
 function persistSave() {
@@ -781,7 +817,13 @@ function persistSave() {
     );
     // Update last-saved timestamp in UI
     const savedEl = document.getElementById("last-saved-indicator");
-    if (savedEl) savedEl.textContent = "Saved at " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    if (savedEl)
+      savedEl.textContent =
+        "Saved at " +
+        new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        });
     checkStorageQuota();
     // Mirror to Supabase (debounced — fires 2 s after last save)
     _syncDebounced();
@@ -791,7 +833,10 @@ function persistSave() {
       e,
     );
     if (e && (e.name === "QuotaExceededError" || e.code === 22)) {
-      showToast("⚠️ Storage is full! Export your data now to avoid losing changes.", 8000);
+      showToast(
+        "⚠️ Storage is full! Export your data now to avoid losing changes.",
+        8000,
+      );
     }
     // Update last-saved indicator with error state
     const savedEl = document.getElementById("last-saved-indicator");
@@ -838,7 +883,9 @@ function persistLoad() {
       localStorage.setItem("upstaff_manual_mode_v1", "1");
       if (TASKS.length !== before) {
         localStorage.setItem(LS_KEYS.TASKS, JSON.stringify(TASKS));
-        dbg(`[Persist] 🧹 Purged ${before - TASKS.length} auto-imported Sheet task(s) — manual-entry mode active`);
+        dbg(
+          `[Persist] 🧹 Purged ${before - TASKS.length} auto-imported Sheet task(s) — manual-entry mode active`,
+        );
       }
     }
 
@@ -895,9 +942,13 @@ function _getSupabaseCfg() {
 
 function _jwtExpiredCore(token) {
   try {
-    var p = JSON.parse(atob(token.split(".")[1].replace(/-/g,"+").replace(/_/g,"/")));
+    var p = JSON.parse(
+      atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")),
+    );
     return Date.now() / 1000 > p.exp;
-  } catch (_) { return true; }
+  } catch (_) {
+    return true;
+  }
 }
 
 async function _supabaseSyncNow() {
@@ -908,53 +959,60 @@ async function _supabaseSyncNow() {
       var fresh = await SupabaseAuth.getFreshToken();
       if (!fresh) return;
       c = _getSupabaseCfg(); // re-read after refresh
-    } else { return; }
+    } else {
+      return;
+    }
   }
 
   var headers = {
-    "Content-Type":  "application/json",
-    "apikey":        c.supabaseAnonKey,
-    "Authorization": "Bearer " + c.supabaseToken,
-    "Prefer":        "resolution=merge-duplicates",
+    "Content-Type": "application/json",
+    apikey: c.supabaseAnonKey,
+    Authorization: "Bearer " + c.supabaseToken,
+    Prefer: "resolution=merge-duplicates",
   };
   var base = c.supabaseUrl + "/rest/v1/";
 
   // Upsert tasks
   if (TASKS.length > 0) {
-    var taskRows = TASKS.map(function(t) {
+    var taskRows = TASKS.map(function (t) {
       return { id: t.id, data: t, updated_at: new Date().toISOString() };
     });
     fetch(base + "applicants", {
-      method:  "POST",
+      method: "POST",
       headers: headers,
-      body:    JSON.stringify(taskRows),
-    }).catch(function() {});
+      body: JSON.stringify(taskRows),
+    }).catch(function () {});
   }
 
   // Upsert local calendar events (exclude Google events)
-  var localEvts = calEvents.filter(function(e) { return !e.isGoogleEvent; });
+  var localEvts = calEvents.filter(function (e) {
+    return !e.isGoogleEvent;
+  });
   if (localEvts.length > 0) {
-    var evtRows = localEvts.map(function(e) {
+    var evtRows = localEvts.map(function (e) {
       return { id: e.id, data: e, updated_at: new Date().toISOString() };
     });
     fetch(base + "cal_events", {
-      method:  "POST",
+      method: "POST",
       headers: headers,
-      body:    JSON.stringify(evtRows),
-    }).catch(function() {});
+      body: JSON.stringify(evtRows),
+    }).catch(function () {});
   }
 
   // Upsert onboarding employees (so different accounts/devices share them)
-  var emps = (typeof window.EMPLOYEES_getAll === "function") ? window.EMPLOYEES_getAll() : [];
+  var emps =
+    typeof window.EMPLOYEES_getAll === "function"
+      ? window.EMPLOYEES_getAll()
+      : [];
   if (Array.isArray(emps) && emps.length > 0) {
-    var empRows = emps.map(function(e) {
+    var empRows = emps.map(function (e) {
       return { id: e.id, data: e, updated_at: new Date().toISOString() };
     });
     fetch(base + "employees", {
-      method:  "POST",
+      method: "POST",
       headers: headers,
-      body:    JSON.stringify(empRows),
-    }).catch(function() {});
+      body: JSON.stringify(empRows),
+    }).catch(function () {});
   }
 }
 
@@ -970,67 +1028,101 @@ async function loadDataFromSupabase() {
       var fresh = await SupabaseAuth.getFreshToken();
       if (!fresh) return;
       c = _getSupabaseCfg();
-    } else { return; }
+    } else {
+      return;
+    }
   }
 
   var headers = {
-    "apikey":        c.supabaseAnonKey,
-    "Authorization": "Bearer " + c.supabaseToken,
+    apikey: c.supabaseAnonKey,
+    Authorization: "Bearer " + c.supabaseToken,
   };
   var base = c.supabaseUrl + "/rest/v1/";
 
   try {
     // Pull tasks
-    var taskResp = await fetch(base + "applicants?select=id,data&order=id.asc", { headers: headers });
+    var taskResp = await fetch(
+      base + "applicants?select=id,data&order=id.asc",
+      { headers: headers },
+    );
     if (taskResp.ok) {
       var taskRows = await taskResp.json();
       if (Array.isArray(taskRows) && taskRows.length > 0) {
-        var serverTasks = taskRows.map(function(r) { return r.data; });
+        var serverTasks = taskRows.map(function (r) {
+          return r.data;
+        });
         // Migrate: ensure required fields exist on each task
-        serverTasks.forEach(function(t) {
-          if (!t.assignees)     t.assignees     = t.assignee ? [t.assignee] : ["Assistant"];
-          if (!t.assignee)      t.assignee      = t.assignees[0] || "Assistant";
-          if (!t.comments)      t.comments      = [];
-          if (!t.activity)      t.activity      = [];
-          if (!t.attachments)   t.attachments   = [];
+        serverTasks.forEach(function (t) {
+          if (!t.assignees)
+            t.assignees = t.assignee ? [t.assignee] : ["Assistant"];
+          if (!t.assignee) t.assignee = t.assignees[0] || "Assistant";
+          if (!t.comments) t.comments = [];
+          if (!t.activity) t.activity = [];
+          if (!t.attachments) t.attachments = [];
           if (!t.stage_history) t.stage_history = [];
         });
         TASKS = serverTasks;
         // Update counter so new IDs don't collide
-        var maxId = serverTasks.reduce(function(m, t) { return Math.max(m, t.id || 0); }, 0);
+        var maxId = serverTasks.reduce(function (m, t) {
+          return Math.max(m, t.id || 0);
+        }, 0);
         if (maxId >= taskNextId) taskNextId = maxId + 1;
         dbg("[Supabase] ✅ Loaded " + TASKS.length + " task(s) from server");
       }
     }
 
     // Pull onboarding employees
-    var empResp = await fetch(base + "employees?select=id,data&order=id.asc", { headers: headers });
+    var empResp = await fetch(base + "employees?select=id,data&order=id.asc", {
+      headers: headers,
+    });
     if (empResp.ok) {
       var empRowsIn = await empResp.json();
       if (Array.isArray(empRowsIn)) {
-        var serverEmps = empRowsIn.map(function(r) { return r.data; });
-        var maxEmpId = serverEmps.reduce(function(m, e) { return Math.max(m, e.id || 0); }, 0);
+        var serverEmps = empRowsIn.map(function (r) {
+          return r.data;
+        });
+        var maxEmpId = serverEmps.reduce(function (m, e) {
+          return Math.max(m, e.id || 0);
+        }, 0);
         if (typeof window.EMPLOYEES_setFromServer === "function") {
           window.EMPLOYEES_setFromServer(serverEmps, maxEmpId);
         }
-        dbg("[Supabase] ✅ Loaded " + serverEmps.length + " employee(s) from server");
+        dbg(
+          "[Supabase] ✅ Loaded " +
+            serverEmps.length +
+            " employee(s) from server",
+        );
       }
     } else if (empResp.status === 404) {
-      console.warn("[Supabase] employees table missing — run the SQL in setup notes");
+      console.warn(
+        "[Supabase] employees table missing — run the SQL in setup notes",
+      );
     }
 
     // Pull local calendar events
-    var evtResp = await fetch(base + "cal_events?select=id,data&order=id.asc", { headers: headers });
+    var evtResp = await fetch(base + "cal_events?select=id,data&order=id.asc", {
+      headers: headers,
+    });
     if (evtResp.ok) {
       var evtRows = await evtResp.json();
       if (Array.isArray(evtRows) && evtRows.length > 0) {
-        var serverEvts = evtRows.map(function(r) { return r.data; });
+        var serverEvts = evtRows.map(function (r) {
+          return r.data;
+        });
         // Merge: keep Google events already in memory, replace local ones
-        var googleEvts = calEvents.filter(function(e) { return e.isGoogleEvent; });
+        var googleEvts = calEvents.filter(function (e) {
+          return e.isGoogleEvent;
+        });
         calEvents = googleEvts.concat(serverEvts);
-        var maxEvtId = serverEvts.reduce(function(m, e) { return Math.max(m, e.id || 0); }, 0);
+        var maxEvtId = serverEvts.reduce(function (m, e) {
+          return Math.max(m, e.id || 0);
+        }, 0);
         if (maxEvtId >= calNextId) calNextId = maxEvtId + 1;
-        dbg("[Supabase] ✅ Loaded " + serverEvts.length + " calendar event(s) from server");
+        dbg(
+          "[Supabase] ✅ Loaded " +
+            serverEvts.length +
+            " calendar event(s) from server",
+        );
       }
     }
 
@@ -1046,9 +1138,12 @@ async function _supabaseDeleteTask(taskId) {
   var c = _getSupabaseCfg();
   if (!c || _jwtExpiredCore(c.supabaseToken)) return;
   fetch(c.supabaseUrl + "/rest/v1/applicants?id=eq." + taskId, {
-    method:  "DELETE",
-    headers: { "apikey": c.supabaseAnonKey, "Authorization": "Bearer " + c.supabaseToken },
-  }).catch(function() {});
+    method: "DELETE",
+    headers: {
+      apikey: c.supabaseAnonKey,
+      Authorization: "Bearer " + c.supabaseToken,
+    },
+  }).catch(function () {});
 }
 
 // Delete a cal_event row from Supabase when it is removed locally
@@ -1056,14 +1151,17 @@ async function _supabaseDeleteCalEvent(evtId) {
   var c = _getSupabaseCfg();
   if (!c || _jwtExpiredCore(c.supabaseToken)) return;
   fetch(c.supabaseUrl + "/rest/v1/cal_events?id=eq." + evtId, {
-    method:  "DELETE",
-    headers: { "apikey": c.supabaseAnonKey, "Authorization": "Bearer " + c.supabaseToken },
-  }).catch(function() {});
+    method: "DELETE",
+    headers: {
+      apikey: c.supabaseAnonKey,
+      Authorization: "Bearer " + c.supabaseToken,
+    },
+  }).catch(function () {});
 }
 
 // Expose for index.html post-login hook
-window.loadDataFromSupabase    = loadDataFromSupabase;
-window._supabaseDeleteTask     = _supabaseDeleteTask;
+window.loadDataFromSupabase = loadDataFromSupabase;
+window._supabaseDeleteTask = _supabaseDeleteTask;
 window._supabaseDeleteCalEvent = _supabaseDeleteCalEvent;
 
 /* ── Hydrate on script parse (before first render) ── */
@@ -1088,7 +1186,9 @@ function _markOverdueTasks() {
   });
 }
 // Legacy alias so any existing call sites keep working
-function autoProgressStatuses() { _markOverdueTasks(); }
+function autoProgressStatuses() {
+  _markOverdueTasks();
+}
 
 /* ══════════════════════════════════════════════
    STAGE PROGRESS BAR HELPER
@@ -1111,21 +1211,38 @@ const ACTIVE_STAGES = [
   "For Client Endorsement",
 ];
 const CLOSED_STATUSES = [
-  "Closed", "Rejected", "Cancelled", "Not Qualified",
-  "No Show", "Duplicate Lead", "Hired - Resigned",
+  "Closed",
+  "Rejected",
+  "Cancelled",
+  "Not Qualified",
+  "No Show",
+  "Duplicate Lead",
+  "Hired - Resigned",
 ];
 const OTHERS_STATUSES = [
-  "For Future Consideration", "Could be Revisited", "Open for other Roles",
+  "For Future Consideration",
+  "Could be Revisited",
+  "Open for other Roles",
 ];
 const LIST_STATUS_ORDER = [
   // Active pipeline
-  "New", "For Interview", "Interviewed", "For Client Endorsement", "Hired",
+  "New",
+  "For Interview",
+  "Interviewed",
+  "For Client Endorsement",
+  "Hired",
   // Post-hire
   "Hired - Resigned",
   // On hold
-  "For Future Consideration", "Could be Revisited", "Open for other Roles",
+  "For Future Consideration",
+  "Could be Revisited",
+  "Open for other Roles",
   // Closed
-  "Not Qualified", "Rejected", "No Show", "Duplicate Lead", "Closed",
+  "Not Qualified",
+  "Rejected",
+  "No Show",
+  "Duplicate Lead",
+  "Closed",
 ];
 
 /* ── Assessment config: which tests each position type requires ─────────── */
@@ -1176,9 +1293,15 @@ function moveApplicantToStage(taskId, newStage, opts = {}) {
   let _histBy = "HR Admin";
   try {
     const _p = JSON.parse(localStorage.getItem("upstaff_profile") || "{}");
-    if (_p.firstName) _histBy = (_p.firstName + " " + (_p.lastName || "")).trim();
+    if (_p.firstName)
+      _histBy = (_p.firstName + " " + (_p.lastName || "")).trim();
   } catch (_) {}
-  t.stage_history.push({ from: oldStage, to: newStage, at: new Date().toISOString(), by: _histBy });
+  t.stage_history.push({
+    from: oldStage,
+    to: newStage,
+    at: new Date().toISOString(),
+    by: _histBy,
+  });
 
   t.status = newStage;
   t.stage_changed_at = new Date().toISOString();
@@ -1221,7 +1344,11 @@ function moveApplicantToStage(taskId, newStage, opts = {}) {
 
   // Log activity & notify
   logActivity(taskId, "stage_change", `${oldStage} → ${newStage}`);
-  pushNotif("stage", `${t.applicant_name || t.name} moved to ${newStage}`, taskId);
+  pushNotif(
+    "stage",
+    `${t.applicant_name || t.name} moved to ${newStage}`,
+    taskId,
+  );
   persistSave();
   if (!opts.silent) refreshCurrentView();
   dbg(`[Pipeline] Task #${taskId} "${t.name}": ${oldStage} → ${newStage}`);
@@ -1237,10 +1364,14 @@ function moveApplicantToStage(taskId, newStage, opts = {}) {
     });
   }
   // Sync Google Calendar event title/status if one exists for this task
-  if (typeof gcalSignedIn !== "undefined" && gcalSignedIn && t.gcalEventId &&
-      typeof _taskSyncToGcal === "function") {
+  if (
+    typeof gcalSignedIn !== "undefined" &&
+    gcalSignedIn &&
+    t.gcalEventId &&
+    typeof _taskSyncToGcal === "function"
+  ) {
     _taskSyncToGcal(t).catch((e) =>
-      console.warn("[GCal] Stage sync failed:", e.message)
+      console.warn("[GCal] Stage sync failed:", e.message),
     );
   }
 }
@@ -1353,9 +1484,20 @@ function buildStageProgress(status) {
     } else if (i === idx) {
       cls = "ss-active";
     }
-    const connectorCls = isClosed ? "ss-connector-cancelled" : i < idx ? "ss-connector-done" : i === idx ? "ss-connector-active" : "";
-    const connector = i < STAGE_ORDER.length - 1 ? `<div class="ss-connector ${connectorCls}"></div>` : "";
-    const shortLabel = s.replace("For Client Endorsement", "Endorsed").replace("For Interview", "Interview");
+    const connectorCls = isClosed
+      ? "ss-connector-cancelled"
+      : i < idx
+        ? "ss-connector-done"
+        : i === idx
+          ? "ss-connector-active"
+          : "";
+    const connector =
+      i < STAGE_ORDER.length - 1
+        ? `<div class="ss-connector ${connectorCls}"></div>`
+        : "";
+    const shortLabel = s
+      .replace("For Client Endorsement", "Endorsed")
+      .replace("For Interview", "Interview");
     return `<div class="ss-item ${cls}"><div class="ss-node">${icon}</div><div class="ss-label">${shortLabel}</div></div>${connector}`;
   }).join("");
   const statusLabel = isClosed
@@ -1429,11 +1571,20 @@ function getCalName(calendarId) {
 /* ── Positions list (used by Settings) ── */
 let POSITIONS = [...JOB_POSITIONS];
 
-
 /* ── Team members (used by Settings) — loaded from localStorage ── */
 const DEFAULT_MEMBERS = [
-  { name: "Assistant", role: "Assistant", email: "assistant@upstaff.com", color: "#44d7e9" },
-  { name: "Manager",   role: "Manager",   email: "manager@upstaff.com",   color: "#6c63ff" },
+  {
+    name: "Assistant",
+    role: "Assistant",
+    email: "assistant@upstaff.com",
+    color: "#44d7e9",
+  },
+  {
+    name: "Manager",
+    role: "Manager",
+    email: "manager@upstaff.com",
+    color: "#6c63ff",
+  },
 ];
 let MEMBERS = (() => {
   try {
@@ -1443,30 +1594,53 @@ let MEMBERS = (() => {
   return DEFAULT_MEMBERS.map((m) => ({ ...m }));
 })();
 function saveMembers() {
-  try { localStorage.setItem("upstaff_members", JSON.stringify(MEMBERS)); } catch (_) {}
+  try {
+    localStorage.setItem("upstaff_members", JSON.stringify(MEMBERS));
+  } catch (_) {}
 }
 
 /* ── Notification store ── */
 const LS_NOTIFS_KEY = "upstaff_notifs";
 let NOTIFS = (() => {
-  try { const r = localStorage.getItem(LS_NOTIFS_KEY); return r ? JSON.parse(r) : []; } catch (_) { return []; }
+  try {
+    const r = localStorage.getItem(LS_NOTIFS_KEY);
+    return r ? JSON.parse(r) : [];
+  } catch (_) {
+    return [];
+  }
 })();
 let _notifIdCtr = NOTIFS.length ? Math.max(...NOTIFS.map((n) => n.id)) + 1 : 1;
 function saveNotifs() {
-  try { localStorage.setItem(LS_NOTIFS_KEY, JSON.stringify(NOTIFS)); } catch (_) {}
+  try {
+    localStorage.setItem(LS_NOTIFS_KEY, JSON.stringify(NOTIFS));
+  } catch (_) {}
 }
 function pushNotif(type, msg, taskId = null) {
-  const n = { id: _notifIdCtr++, type, msg, taskId, read: false, createdAt: new Date().toISOString() };
+  const n = {
+    id: _notifIdCtr++,
+    type,
+    msg,
+    taskId,
+    read: false,
+    createdAt: new Date().toISOString(),
+  };
   NOTIFS.unshift(n);
   if (NOTIFS.length > 50) NOTIFS.length = 50; // cap
   saveNotifs();
   _updateNotifBadge();
   // Browser Notification API
   if (Notification.permission === "granted") {
-    new Notification("Upstaff", { body: msg, icon: "css/logo-footer.dark.png" });
+    new Notification("Upstaff", {
+      body: msg,
+      icon: "css/logo-footer.dark.png",
+    });
   } else if (Notification.permission === "default") {
     Notification.requestPermission().then((p) => {
-      if (p === "granted") new Notification("Upstaff", { body: msg, icon: "css/logo-footer.dark.png" });
+      if (p === "granted")
+        new Notification("Upstaff", {
+          body: msg,
+          icon: "css/logo-footer.dark.png",
+        });
     });
   }
 }
@@ -1494,17 +1668,25 @@ function ageBadgeHTML(t) {
   if (d < 4) return "";
   const cls = d >= 8 ? "age-stale" : "age-aging";
   const label = d >= 8 ? `🔥 ${d}d` : `⏳ ${d}d`;
-  const title = d >= 8 ? `Stale: ${d} days in this stage` : `Aging: ${d} days in this stage`;
+  const title =
+    d >= 8
+      ? `Stale: ${d} days in this stage`
+      : `Aging: ${d} days in this stage`;
   return `<span class="age-badge ${cls}" title="${title}">${label}</span>`;
 }
 
 const LS_WIP_KEY = "upstaff_wip_limits";
 let WIP_LIMITS = (() => {
-  try { return JSON.parse(localStorage.getItem(LS_WIP_KEY) || "{}") || {}; }
-  catch (_) { return {}; }
+  try {
+    return JSON.parse(localStorage.getItem(LS_WIP_KEY) || "{}") || {};
+  } catch (_) {
+    return {};
+  }
 })();
 function saveWIPLimits() {
-  try { localStorage.setItem(LS_WIP_KEY, JSON.stringify(WIP_LIMITS)); } catch (_) {}
+  try {
+    localStorage.setItem(LS_WIP_KEY, JSON.stringify(WIP_LIMITS));
+  } catch (_) {}
 }
 function setWIPLimit(status, limit) {
   const n = parseInt(limit, 10);
@@ -1524,13 +1706,21 @@ window.promptWIPLimit = promptWIPLimit;
 
 const LS_COLLAPSED_KEY = "upstaff_collapsed_cols";
 let COLLAPSED_COLS = (() => {
-  try { return new Set(JSON.parse(localStorage.getItem(LS_COLLAPSED_KEY) || "[]")); }
-  catch (_) { return new Set(); }
+  try {
+    return new Set(JSON.parse(localStorage.getItem(LS_COLLAPSED_KEY) || "[]"));
+  } catch (_) {
+    return new Set();
+  }
 })();
 function toggleColumnCollapse(status) {
   if (COLLAPSED_COLS.has(status)) COLLAPSED_COLS.delete(status);
   else COLLAPSED_COLS.add(status);
-  try { localStorage.setItem(LS_COLLAPSED_KEY, JSON.stringify(Array.from(COLLAPSED_COLS))); } catch (_) {}
+  try {
+    localStorage.setItem(
+      LS_COLLAPSED_KEY,
+      JSON.stringify(Array.from(COLLAPSED_COLS)),
+    );
+  } catch (_) {}
   if (typeof renderBoard === "function") renderBoard();
 }
 window.toggleColumnCollapse = toggleColumnCollapse;
@@ -1549,7 +1739,10 @@ window.toggleListDensity = function () {
   setListDensity(getListDensity() === "compact" ? "comfy" : "compact");
 };
 document.addEventListener("DOMContentLoaded", () => {
-  document.body.classList.toggle("list-density-compact", getListDensity() === "compact");
+  document.body.classList.toggle(
+    "list-density-compact",
+    getListDensity() === "compact",
+  );
 });
 
 /* ══════════════════════════════════════════════
@@ -1561,12 +1754,21 @@ function showToast(msg, duration) {
   t.textContent = msg;
   if (window.gsap) {
     t.style.display = "block";
-    gsap.fromTo(t, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.3, ease: "back.out(1.4)" });
+    gsap.fromTo(
+      t,
+      { opacity: 0, y: 20 },
+      { opacity: 1, y: 0, duration: 0.3, ease: "back.out(1.4)" },
+    );
     setTimeout(() => {
-      gsap.to(t, { opacity: 0, y: 10, duration: 0.2, onComplete: () => {
-        t.style.display = "none";
-        gsap.set(t, { clearProps: "all" });
-      }});
+      gsap.to(t, {
+        opacity: 0,
+        y: 10,
+        duration: 0.2,
+        onComplete: () => {
+          t.style.display = "none";
+          gsap.set(t, { clearProps: "all" });
+        },
+      });
     }, duration || 2800);
   } else {
     t.classList.add("show");
@@ -1585,13 +1787,19 @@ function _showDialog({
 }) {
   return new Promise((resolve) => {
     const overlay = document.getElementById("upstaff-dialog");
-    if (!overlay) { resolve(false); return; }
+    if (!overlay) {
+      resolve(false);
+      return;
+    }
     const iconEl = document.getElementById("upstaff-dialog-icon");
     const titleEl = document.getElementById("upstaff-dialog-title");
     const msgEl = document.getElementById("upstaff-dialog-msg");
     const okBtn = document.getElementById("upstaff-dialog-ok");
     const cancelBtn = document.getElementById("upstaff-dialog-cancel");
-    if (!okBtn || !cancelBtn) { resolve(false); return; }
+    if (!okBtn || !cancelBtn) {
+      resolve(false);
+      return;
+    }
     if (iconEl) iconEl.textContent = icon;
     if (titleEl) titleEl.textContent = title;
     if (msgEl) msgEl.textContent = msg;
@@ -1644,15 +1852,17 @@ const REJECTION_REASONS = [
 function _pickRejectionReason() {
   return new Promise((resolve) => {
     const overlay = document.createElement("div");
-    overlay.style.cssText = "position:fixed;inset:0;z-index:99998;background:rgba(0,0,0,.55);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;";
+    overlay.style.cssText =
+      "position:fixed;inset:0;z-index:99998;background:rgba(0,0,0,.55);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;";
     overlay.innerHTML = `
       <div style="background:var(--surface-1);border:1px solid var(--border);border-radius:14px;padding:24px 24px 20px;min-width:320px;max-width:420px;width:90%;box-shadow:0 8px 40px rgba(0,0,0,.3);font-family:'Montserrat',sans-serif;">
         <div style="font-size:22px;margin-bottom:8px;">🚫</div>
         <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px;">Rejection Reason</div>
         <div style="font-size:12.5px;color:var(--muted);margin-bottom:16px;line-height:1.5;">Select a reason before archiving this applicant.</div>
         <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:18px;">
-          ${REJECTION_REASONS.map((r) =>
-            `<button class="rr-option" data-reason="${r}" style="text-align:left;padding:9px 14px;border-radius:9px;border:1px solid var(--border);background:var(--surface-3);color:var(--text);font-size:12.5px;font-weight:500;cursor:pointer;font-family:'Montserrat',sans-serif;transition:background 0.15s,border-color 0.15s;">${r}</button>`
+          ${REJECTION_REASONS.map(
+            (r) =>
+              `<button class="rr-option" data-reason="${r}" style="text-align:left;padding:9px 14px;border-radius:9px;border:1px solid var(--border);background:var(--surface-3);color:var(--text);font-size:12.5px;font-weight:500;cursor:pointer;font-family:'Montserrat',sans-serif;transition:background 0.15s,border-color 0.15s;">${r}</button>`,
           ).join("")}
         </div>
         <div style="display:flex;gap:10px;justify-content:flex-end;">
@@ -1671,7 +1881,10 @@ function _pickRejectionReason() {
         btn.style.borderColor = "var(--cyan)";
         btn.style.color = "#fff";
         const reason = btn.dataset.reason;
-        setTimeout(() => { document.body.removeChild(overlay); resolve(reason); }, 220);
+        setTimeout(() => {
+          document.body.removeChild(overlay);
+          resolve(reason);
+        }, 220);
       });
     });
     overlay.querySelector("#rr-cancel").addEventListener("click", () => {
@@ -1692,10 +1905,15 @@ function checkStorageQuota() {
     const bar = document.getElementById("storage-usage-bar");
     const label = document.getElementById("storage-usage-label");
     if (bar) bar.style.width = Math.min(pct, 100) + "%";
-    if (bar) bar.style.background = pct > 85 ? "#ef4444" : pct > 65 ? "#fa8231" : "var(--cyan)";
-    if (label) label.textContent = `${MB.toFixed(2)} MB used (~${pct}% of 5 MB)`;
+    if (bar)
+      bar.style.background =
+        pct > 85 ? "#ef4444" : pct > 65 ? "#fa8231" : "var(--cyan)";
+    if (label)
+      label.textContent = `${MB.toFixed(2)} MB used (~${pct}% of 5 MB)`;
     if (pct > 85) {
-      showToast("⚠️ Storage nearly full! Consider exporting & clearing old data.");
+      showToast(
+        "⚠️ Storage nearly full! Consider exporting & clearing old data.",
+      );
     } else if (pct > 65 && !_quotaWarnedSession) {
       _quotaWarnedSession = true;
       showToast("💾 Storage is over 65% full. Keep an eye on it.");
@@ -1715,20 +1933,31 @@ function logActivity(taskId, action, detail = "") {
     const p = JSON.parse(localStorage.getItem("upstaff_profile") || "{}");
     if (p.firstName) byName = (p.firstName + " " + (p.lastName || "")).trim();
   } catch (_) {}
-  t.activity.push({ id: _actIdCtr++, action, by: byName, at: new Date().toISOString(), detail });
+  t.activity.push({
+    id: _actIdCtr++,
+    action,
+    by: byName,
+    at: new Date().toISOString(),
+    detail,
+  });
   persistSave();
 }
 
 /* ── Cross-tab data sync (storage event) ─────── */
 window.addEventListener("storage", function onStorageSync(e) {
-  const watchedKeys = Object.values(LS_KEYS).concat(["upstaff_todos", "upstaff_employees", "upstaff_notifs"]);
+  const watchedKeys = Object.values(LS_KEYS).concat([
+    "upstaff_todos",
+    "upstaff_employees",
+    "upstaff_notifs",
+  ]);
   if (!e.key || !watchedKeys.includes(e.key)) return;
   // Reload affected data slices
   try {
     if (e.key === LS_KEYS.TASKS && e.newValue) {
       TASKS = JSON.parse(e.newValue);
       TASKS.forEach((t) => {
-        if (!t.assignees) t.assignees = t.assignee ? [t.assignee] : ["Assistant"];
+        if (!t.assignees)
+          t.assignees = t.assignee ? [t.assignee] : ["Assistant"];
         if (!t.comments) t.comments = [];
         if (!t.activity) t.activity = [];
         if (!t.attachments) t.attachments = [];
@@ -1796,25 +2025,37 @@ function todayStr() {
    SIDEBAR COLLAPSE
 ══════════════════════════════════════════════ */
 document.getElementById("toggle-btn")?.addEventListener("click", () => {
-  const sb   = document.getElementById("sidebar");
+  const sb = document.getElementById("sidebar");
   const icon = document.getElementById("toggle-icon");
   const isCollapsing = !sb.classList.contains("collapsed");
   sb.classList.toggle("collapsed");
   if (window.gsap) {
     if (isCollapsing) {
-      gsap.to(sb,   { width: 64,  duration: 0.3, ease: "power2.inOut", onComplete: () => gsap.set(sb, { clearProps: "width" }) });
+      gsap.to(sb, {
+        width: 64,
+        duration: 0.3,
+        ease: "power2.inOut",
+        onComplete: () => gsap.set(sb, { clearProps: "width" }),
+      });
       gsap.to(icon, { rotation: 180, duration: 0.3, ease: "power2.inOut" });
     } else {
-      gsap.to(sb,   { width: 220, duration: 0.3, ease: "power2.inOut", onComplete: () => gsap.set(sb, { clearProps: "width" }) });
-      gsap.to(icon, { rotation: 0,   duration: 0.3, ease: "power2.inOut" });
+      gsap.to(sb, {
+        width: 220,
+        duration: 0.3,
+        ease: "power2.inOut",
+        onComplete: () => gsap.set(sb, { clearProps: "width" }),
+      });
+      gsap.to(icon, { rotation: 0, duration: 0.3, ease: "power2.inOut" });
     }
     // Enable / disable Tippy tooltips based on collapsed state
-    document.querySelectorAll(".nav-item").forEach(el => {
+    document.querySelectorAll(".nav-item").forEach((el) => {
       if (isCollapsing) el._tippy?.enable();
       else el._tippy?.disable();
     });
   } else {
-    icon.style.transform = sb.classList.contains("collapsed") ? "rotate(180deg)" : "";
+    icon.style.transform = sb.classList.contains("collapsed")
+      ? "rotate(180deg)"
+      : "";
   }
 });
 
@@ -1866,7 +2107,9 @@ const AppState = (() => {
    Extracted from inline HTML onclick handlers
 ══════════════════════════════════════════════ */
 function handleClearTasks() {
-  const typed = prompt('This will permanently delete ALL applicants and tasks.\nType DELETE to confirm:');
+  const typed = prompt(
+    "This will permanently delete ALL applicants and tasks.\nType DELETE to confirm:",
+  );
   if (typed === null) return; // cancelled
   if (typed.trim().toUpperCase() !== "DELETE") {
     showToast("Cancelled — you must type DELETE to confirm.");
@@ -1879,7 +2122,9 @@ function handleClearTasks() {
 }
 
 function handleClearCalendar() {
-  const typed = prompt('This will permanently delete ALL calendar events.\nType DELETE to confirm:');
+  const typed = prompt(
+    "This will permanently delete ALL calendar events.\nType DELETE to confirm:",
+  );
   if (typed === null) return;
   if (typed.trim().toUpperCase() !== "DELETE") {
     showToast("Cancelled — you must type DELETE to confirm.");
@@ -1898,7 +2143,7 @@ function handleClearCalendar() {
 
 function handleWipeStorage() {
   const typed = prompt(
-    "This will permanently delete ALL data — applicants, calendar events, settings, and Google auth.\nThis CANNOT be undone.\n\nType DELETE to confirm:"
+    "This will permanently delete ALL data — applicants, calendar events, settings, and Google auth.\nThis CANNOT be undone.\n\nType DELETE to confirm:",
   );
   if (typed === null) return;
   if (typed.trim().toUpperCase() !== "DELETE") {
@@ -2170,16 +2415,41 @@ document.addEventListener("click", function (e) {
 /* ══════════════════════════════════════════════
    MEMBER CRUD FUNCTIONS
 ══════════════════════════════════════════════ */
-const MEMBER_COLORS = ["#6c63ff","#44d7e9","#43e97b","#fa8231","#ff6584","#f59e0b","#3b82f6","#8b5cf6","#ec4899","#14b8a6"];
-const MEMBER_ROLES  = ["HR Manager","Recruiter","Reviewer","Interviewer","Admin","Administrator"];
+const MEMBER_COLORS = [
+  "#6c63ff",
+  "#44d7e9",
+  "#43e97b",
+  "#fa8231",
+  "#ff6584",
+  "#f59e0b",
+  "#3b82f6",
+  "#8b5cf6",
+  "#ec4899",
+  "#14b8a6",
+];
+const MEMBER_ROLES = [
+  "HR Manager",
+  "Recruiter",
+  "Reviewer",
+  "Interviewer",
+  "Admin",
+  "Administrator",
+];
 
 async function addMemberForm() {
-  const name  = (prompt("Full name of new member:") || "").trim();
+  const name = (prompt("Full name of new member:") || "").trim();
   if (!name) return;
-  const role  = (prompt(`Role (${MEMBER_ROLES.join(", ")}):`) || "Recruiter").trim();
+  const role = (
+    prompt(`Role (${MEMBER_ROLES.join(", ")}):`) || "Recruiter"
+  ).trim();
   const email = (prompt("Email address:") || "").trim();
   const colorIdx = MEMBERS.length % MEMBER_COLORS.length;
-  MEMBERS.push({ name, role, email: email || `${name.toLowerCase().replace(/\s+/g,".")}@upstaff.com`, color: MEMBER_COLORS[colorIdx] });
+  MEMBERS.push({
+    name,
+    role,
+    email: email || `${name.toLowerCase().replace(/\s+/g, ".")}@upstaff.com`,
+    color: MEMBER_COLORS[colorIdx],
+  });
   saveMembers();
   if (typeof renderMembersList === "function") renderMembersList();
   if (typeof _rebuildAssigneeOptions === "function") _rebuildAssigneeOptions();
@@ -2189,9 +2459,11 @@ async function addMemberForm() {
 async function editMemberForm(idx) {
   const m = MEMBERS[idx];
   if (!m) return;
-  const name  = (prompt("Full name:", m.name) || "").trim();
+  const name = (prompt("Full name:", m.name) || "").trim();
   if (!name) return;
-  const role  = (prompt(`Role (${MEMBER_ROLES.join(", ")}):`, m.role) || m.role).trim();
+  const role = (
+    prompt(`Role (${MEMBER_ROLES.join(", ")}):`, m.role) || m.role
+  ).trim();
   const email = (prompt("Email:", m.email) || m.email).trim();
   MEMBERS[idx] = { ...m, name, role, email };
   saveMembers();
@@ -2203,7 +2475,15 @@ async function editMemberForm(idx) {
 async function removeMemberAction(idx) {
   const m = MEMBERS[idx];
   if (!m) return;
-  if (!(await uiConfirm(`Remove "${m.name}" from the team?`, { icon: "🗑️", title: "Remove Member?", okText: "Remove", okDanger: true }))) return;
+  if (
+    !(await uiConfirm(`Remove "${m.name}" from the team?`, {
+      icon: "🗑️",
+      title: "Remove Member?",
+      okText: "Remove",
+      okDanger: true,
+    }))
+  )
+    return;
   MEMBERS.splice(idx, 1);
   saveMembers();
   if (typeof renderMembersList === "function") renderMembersList();
@@ -2220,10 +2500,16 @@ function toggleNotifPanel() {
   const isOpen = panel.classList.contains("open");
   if (isOpen) {
     if (window.gsap) {
-      gsap.to(panel, { opacity: 0, y: -8, duration: 0.15, ease: "power2.in", onComplete: () => {
-        panel.classList.remove("open");
-        gsap.set(panel, { clearProps: "opacity,y" });
-      }});
+      gsap.to(panel, {
+        opacity: 0,
+        y: -8,
+        duration: 0.15,
+        ease: "power2.in",
+        onComplete: () => {
+          panel.classList.remove("open");
+          gsap.set(panel, { clearProps: "opacity,y" });
+        },
+      });
     } else {
       panel.classList.remove("open");
     }
@@ -2235,7 +2521,11 @@ function toggleNotifPanel() {
     saveNotifs();
     _updateNotifBadge();
     if (window.gsap) {
-      gsap.fromTo(panel, { opacity: 0, y: -8 }, { opacity: 1, y: 0, duration: 0.2, ease: "power2.out" });
+      gsap.fromTo(
+        panel,
+        { opacity: 0, y: -8 },
+        { opacity: 1, y: 0, duration: 0.2, ease: "power2.out" },
+      );
     }
   }
 }
@@ -2249,13 +2539,19 @@ function markAllNotifsRead() {
 
 function dismissNotif(id) {
   const idx = NOTIFS.findIndex((n) => n.id === id);
-  if (idx > -1) { NOTIFS.splice(idx, 1); saveNotifs(); }
+  if (idx > -1) {
+    NOTIFS.splice(idx, 1);
+    saveNotifs();
+  }
   if (typeof renderNotifPanel === "function") renderNotifPanel();
   _updateNotifBadge();
 }
 
 // Request browser notification permission on load
-if (typeof Notification !== "undefined" && Notification.permission === "default") {
+if (
+  typeof Notification !== "undefined" &&
+  Notification.permission === "default"
+) {
   Notification.requestPermission();
 }
 
@@ -2280,7 +2576,12 @@ function postComment() {
     const p = JSON.parse(localStorage.getItem("upstaff_profile") || "{}");
     if (p.firstName) byName = (p.firstName + " " + (p.lastName || "")).trim();
   } catch (_) {}
-  t.comments.push({ id: _actIdCtr++, author: byName, text, createdAt: new Date().toISOString() });
+  t.comments.push({
+    id: _actIdCtr++,
+    author: byName,
+    text,
+    createdAt: new Date().toISOString(),
+  });
   logActivity(taskId, "comment", `${byName} commented`);
   textarea.value = "";
   if (typeof renderActivityTab === "function") renderActivityTab(t);
@@ -2337,23 +2638,46 @@ function handleFileAttach(input) {
       return;
     }
     if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
-      showToast(`⚠️ "${file.name}" exceeds ${MAX_FILE_SIZE_MB} MB limit — skipped.`);
+      showToast(
+        `⚠️ "${file.name}" exceeds ${MAX_FILE_SIZE_MB} MB limit — skipped.`,
+      );
       return;
     }
     // Pre-flight quota check: base64 encoding inflates size by ~1.37x
     const estimatedBase64Bytes = Math.ceil(file.size * 1.37);
-    if (_getLocalStorageUsedBytes() + estimatedBase64Bytes > LS_QUOTA_SAFETY_BYTES) {
-      showToast(`⚠️ Storage nearly full — cannot attach "${file.name}". Export your data to free space.`, 7000);
+    if (
+      _getLocalStorageUsedBytes() + estimatedBase64Bytes >
+      LS_QUOTA_SAFETY_BYTES
+    ) {
+      showToast(
+        `⚠️ Storage nearly full — cannot attach "${file.name}". Export your data to free space.`,
+        7000,
+      );
       return;
     }
     const reader = new FileReader();
     reader.onload = (ev) => {
       let byName = "HR Admin";
-      try { const p = JSON.parse(localStorage.getItem("upstaff_profile") || "{}"); if (p.firstName) byName = (p.firstName + " " + (p.lastName || "")).trim(); } catch (_) {}
-      t.attachments.push({ id: _actIdCtr++, name: file.name, type: file.type, size: file.size, dataUrl: ev.target.result, uploadedAt: new Date().toISOString(), uploadedBy: byName });
+      try {
+        const p = JSON.parse(localStorage.getItem("upstaff_profile") || "{}");
+        if (p.firstName)
+          byName = (p.firstName + " " + (p.lastName || "")).trim();
+      } catch (_) {}
+      t.attachments.push({
+        id: _actIdCtr++,
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        dataUrl: ev.target.result,
+        uploadedAt: new Date().toISOString(),
+        uploadedBy: byName,
+      });
       logActivity(taskId, "attachment", `Attached "${file.name}"`);
       processed++;
-      if (processed === files.filter((f) => f.size <= MAX_FILE_SIZE_MB * 1024 * 1024).length) {
+      if (
+        processed ===
+        files.filter((f) => f.size <= MAX_FILE_SIZE_MB * 1024 * 1024).length
+      ) {
         if (typeof renderFilesTab === "function") renderFilesTab(t);
         showToast(`✅ ${processed} file(s) attached!`);
       }
@@ -2370,7 +2694,15 @@ async function deleteAttachment(attachId) {
   if (!t || !t.attachments) return;
   const idx = t.attachments.findIndex((a) => a.id === attachId);
   if (idx === -1) return;
-  if (!(await uiConfirm(`Delete "${t.attachments[idx].name}"?`, { icon: "🗑️", title: "Delete File?", okText: "Delete", okDanger: true }))) return;
+  if (
+    !(await uiConfirm(`Delete "${t.attachments[idx].name}"?`, {
+      icon: "🗑️",
+      title: "Delete File?",
+      okText: "Delete",
+      okDanger: true,
+    }))
+  )
+    return;
   const name = t.attachments[idx].name;
   t.attachments.splice(idx, 1);
   logActivity(taskId, "attachment_deleted", `Deleted "${name}"`);
@@ -2387,11 +2719,15 @@ document.addEventListener("keydown", function (e) {
   // Esc: close topmost visible modal
   if (e.key === "Escape") {
     const modalIds = [
-      { id: "task-modal-overlay",   closeFn: "closeTaskModal" },
-      { id: "todo-modal-overlay",   closeFn: "closeTodoModal" },
-      { id: "hire-modal-overlay",   closeFn: "closeHireModal" },
-      { id: "cal-modal-overlay",    closeFn: null, btnId: "cal-modal-cancel-btn" },
-      { id: "search-modal-overlay", closeFn: null, btnId: "search-modal-close" },
+      { id: "task-modal-overlay", closeFn: "closeTaskModal" },
+      { id: "todo-modal-overlay", closeFn: "closeTodoModal" },
+      { id: "hire-modal-overlay", closeFn: "closeHireModal" },
+      { id: "cal-modal-overlay", closeFn: null, btnId: "cal-modal-cancel-btn" },
+      {
+        id: "search-modal-overlay",
+        closeFn: null,
+        btnId: "search-modal-close",
+      },
     ];
     for (const m of modalIds) {
       const el = document.getElementById(m.id);
@@ -2418,20 +2754,26 @@ document.addEventListener("keydown", function (e) {
   if (e.key === "Enter" && !e.shiftKey) {
     const tag = document.activeElement && document.activeElement.tagName;
     if (tag === "TEXTAREA") return; // allow newlines in textareas
-    if (tag === "SELECT") return;   // allow select navigation
+    if (tag === "SELECT") return; // allow select navigation
 
     // Applicant modal save
     const taskModal = document.getElementById("task-modal-overlay");
     if (taskModal && taskModal.classList.contains("open")) {
       const saveBtn = document.getElementById("btn-task-save");
-      if (saveBtn) { saveBtn.click(); e.preventDefault(); }
+      if (saveBtn) {
+        saveBtn.click();
+        e.preventDefault();
+      }
       return;
     }
     // Todo modal save
     const todoModal = document.getElementById("todo-modal-overlay");
     if (todoModal && todoModal.classList.contains("open")) {
       const saveBtn = todoModal.querySelector(".btn-save");
-      if (saveBtn) { saveBtn.click(); e.preventDefault(); }
+      if (saveBtn) {
+        saveBtn.click();
+        e.preventDefault();
+      }
       return;
     }
   }
@@ -2449,7 +2791,10 @@ document.addEventListener("keydown", function (e) {
     // Listen for other tabs announcing themselves
     _tabChannel.onmessage = function (e) {
       if (e.data === "tab_opened") {
-        showToast("⚠️ Upstaff is already open in another tab. Close it to avoid data conflicts.", 7000);
+        showToast(
+          "⚠️ Upstaff is already open in another tab. Close it to avoid data conflicts.",
+          7000,
+        );
       }
     };
     // Announce this tab to any existing ones
@@ -2474,9 +2819,13 @@ window.addEventListener("unhandledrejection", function (event) {
     msg.includes("the user is not signed in") ||
     msg.includes("popup_closed") ||
     msg.includes("cancelled")
-  ) return;
+  )
+    return;
   console.error("[Unhandled Rejection]", reason);
   if (typeof showToast === "function") {
-    showToast("⚠️ An unexpected error occurred. Please refresh if something looks wrong.", 5000);
+    showToast(
+      "⚠️ An unexpected error occurred. Please refresh if something looks wrong.",
+      5000,
+    );
   }
 });
