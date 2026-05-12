@@ -1,6 +1,7 @@
 // ── Upstaff Partner API Client ────────────────────────────────────────────────
 // Connects to the partner's Google Apps Script Web App (backed by Supabase).
 // Config stored in localStorage key "upstaff_api_config".
+// v2.1
 
 window.UpstaffAPI = (function () {
   var CONFIG_KEY = "upstaff_api_config";
