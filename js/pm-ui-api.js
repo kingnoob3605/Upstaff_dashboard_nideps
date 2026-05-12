@@ -567,6 +567,11 @@ window.UpstaffAPI = (function () {
         if (atIdx === -1) return "";
         var datePart = first.slice(0, atIdx).trim();
         try {
+          // Split manually to avoid UTC timezone shift (e.g. 2026-05-05 → May 4 in UTC+8)
+          var parts = datePart.split("-");
+          if (parts.length === 3) {
+            return datePart; // already YYYY-MM-DD, use as-is
+          }
           var d = new Date(datePart);
           if (isNaN(d.getTime())) return "";
           var pad = function (n) {
