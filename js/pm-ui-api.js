@@ -22,7 +22,7 @@ window.UpstaffAPI = (function () {
     if (!cfg || typeof cfg !== "object") return cfg;
     var safe = Object.assign({}, cfg);
     if (safe.adminPassword) safe.adminPassword = "[REDACTED]";
-    if (safe.sessionToken)  safe.sessionToken  = "[REDACTED]";
+    if (safe.sessionToken) safe.sessionToken = "[REDACTED]";
     return safe;
   }
   // Expose for debug-safe logging
@@ -33,7 +33,11 @@ window.UpstaffAPI = (function () {
       var c = JSON.parse(localStorage.getItem(CONFIG_KEY) || "{}");
       // Decode obfuscated password (btoa-encoded). Handles legacy plaintext gracefully.
       if (c.adminPassword) {
-        try { c.adminPassword = atob(c.adminPassword); } catch (e) { /* legacy plaintext — use as-is */ }
+        try {
+          c.adminPassword = atob(c.adminPassword);
+        } catch (e) {
+          /* legacy plaintext — use as-is */
+        }
       }
       return c;
     } catch (e) {
@@ -44,7 +48,8 @@ window.UpstaffAPI = (function () {
   function saveConfig(cfg) {
     var toStore = Object.assign({}, cfg);
     // Obfuscate password at rest — not cryptographic but prevents casual inspection
-    if (toStore.adminPassword) toStore.adminPassword = btoa(toStore.adminPassword);
+    if (toStore.adminPassword)
+      toStore.adminPassword = btoa(toStore.adminPassword);
     localStorage.setItem(CONFIG_KEY, JSON.stringify(toStore));
   }
 
@@ -74,14 +79,18 @@ window.UpstaffAPI = (function () {
       var proxyResp = await fetch(c.edgeProxyUrl, {
         method: "POST",
         headers: {
-          "Content-Type":  "application/json",
-          "Authorization": "Bearer " + c.supabaseToken,
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + c.supabaseToken,
         },
         body: JSON.stringify(proxyBody),
       });
       // Try to parse JSON regardless of status — edge fn always returns JSON.
       var proxyJson;
-      try { proxyJson = await proxyResp.json(); } catch (_) { proxyJson = null; }
+      try {
+        proxyJson = await proxyResp.json();
+      } catch (_) {
+        proxyJson = null;
+      }
 
       // 401 → token expired, try Supabase refresh + one retry.
       if (proxyResp.status === 401 && !_isRetry) {
@@ -89,7 +98,8 @@ window.UpstaffAPI = (function () {
         if (refreshed) return _post(payload, true);
       }
       if (!proxyResp.ok) {
-        var errMsg = (proxyJson && proxyJson.message) || ("HTTP " + proxyResp.status);
+        var errMsg =
+          (proxyJson && proxyJson.message) || "HTTP " + proxyResp.status;
         throw new Error(errMsg);
       }
       if (proxyJson && proxyJson.result === "error") {
@@ -117,14 +127,17 @@ window.UpstaffAPI = (function () {
     // Auto-refresh token on auth errors and retry once
     if (json.result === "error") {
       var msg = json.message || "API error";
-      var isAuthError = msg.toUpperCase().includes("UNAUTHORIZED") ||
-                        msg.toUpperCase().includes("INVALID_TOKEN") ||
-                        msg.toUpperCase().includes("SESSION_EXPIRED");
+      var isAuthError =
+        msg.toUpperCase().includes("UNAUTHORIZED") ||
+        msg.toUpperCase().includes("INVALID_TOKEN") ||
+        msg.toUpperCase().includes("SESSION_EXPIRED");
       if (isAuthError && !_isRetry) {
         var refreshed = await silentReLogin();
         if (refreshed) {
           // Update the token in the payload and retry once
-          var retryPayload = Object.assign({}, payload, { token: _config().token });
+          var retryPayload = Object.assign({}, payload, {
+            token: _config().token,
+          });
           return _post(retryPayload, true);
         }
       }
@@ -157,9 +170,9 @@ window.UpstaffAPI = (function () {
       method: "POST",
       headers: { "Content-Type": "text/plain" },
       body: JSON.stringify({
-        action:      "login",
-        email:       c.adminEmail,
-        password:    c.adminPassword,
+        action: "login",
+        email: c.adminEmail,
+        password: c.adminPassword,
         googleEmail: email,
       }),
     });
@@ -168,11 +181,11 @@ window.UpstaffAPI = (function () {
     if (json.result === "error")
       throw new Error(json.message || "Login failed");
 
-    c.email    = email;
-    c.name     = json.name || googlePayload.name || email;
-    c.role     = json.role;
-    c.picture  = googlePayload.picture || "";
-    c.token    = json.token;
+    c.email = email;
+    c.name = json.name || googlePayload.name || email;
+    c.role = json.role;
+    c.picture = googlePayload.picture || "";
+    c.token = json.token;
     c.login_at = Date.now();
     delete c.loggedOut;
     saveConfig(c);
@@ -181,13 +194,13 @@ window.UpstaffAPI = (function () {
     try {
       var nameParts = (googlePayload.name || "").trim().split(" ");
       var firstName = nameParts[0] || "";
-      var lastName  = nameParts.slice(1).join(" ") || "";
+      var lastName = nameParts.slice(1).join(" ") || "";
       var existingProfile = JSON.parse(
         localStorage.getItem("upstaff_profile") || "{}",
       );
       existingProfile.firstName = firstName || existingProfile.firstName || "";
-      existingProfile.lastName  = lastName  || existingProfile.lastName  || "";
-      existingProfile.email     = email     || existingProfile.email     || "";
+      existingProfile.lastName = lastName || existingProfile.lastName || "";
+      existingProfile.email = email || existingProfile.email || "";
       localStorage.setItem("upstaff_profile", JSON.stringify(existingProfile));
     } catch (_) {}
 
@@ -215,14 +228,21 @@ window.UpstaffAPI = (function () {
     if (!c.supabaseRefreshToken) return false;
     if (!window.supabase || !c.supabaseUrl || !c.supabaseAnonKey) return false;
     try {
-      var client = window.supabase.createClient(c.supabaseUrl, c.supabaseAnonKey);
-      var res = await client.auth.refreshSession({ refresh_token: c.supabaseRefreshToken });
+      var client = window.supabase.createClient(
+        c.supabaseUrl,
+        c.supabaseAnonKey,
+      );
+      var res = await client.auth.refreshSession({
+        refresh_token: c.supabaseRefreshToken,
+      });
       if (res.error || !res.data || !res.data.session) return false;
-      c.supabaseToken        = res.data.session.access_token;
+      c.supabaseToken = res.data.session.access_token;
       c.supabaseRefreshToken = res.data.session.refresh_token;
       saveConfig(c);
       return true;
-    } catch (_) { return false; }
+    } catch (_) {
+      return false;
+    }
   }
 
   // Silent re-login using stored credentials — no Google OAuth needed
@@ -239,9 +259,9 @@ window.UpstaffAPI = (function () {
         method: "POST",
         headers: { "Content-Type": "text/plain" },
         body: JSON.stringify({
-          action:      "login",
-          email:       c.adminEmail,
-          password:    c.adminPassword,
+          action: "login",
+          email: c.adminEmail,
+          password: c.adminPassword,
           googleEmail: c.email || "",
         }),
       });
@@ -426,7 +446,12 @@ window.UpstaffAPI = (function () {
   // Google Forms / Sheets often stores multi-select answers as "• A • B • C"
   function _parseBulletList(str) {
     if (!str) return [];
-    return str.split("•").map(function(s) { return s.trim(); }).filter(Boolean);
+    return str
+      .split("•")
+      .map(function (s) {
+        return s.trim();
+      })
+      .filter(Boolean);
   }
   // Extract first item from a bullet list (used for single-value fields like position)
   function _firstBullet(str) {
@@ -436,11 +461,17 @@ window.UpstaffAPI = (function () {
   // Normalize employment type casing to match dashboard options
   // e.g. "Project-Based" → "Project-based", "Full Time" → "Full-time"
   var _EMPTYPE_NORM = {
-    "full-time": "Full-time", "full time": "Full-time", "fulltime": "Full-time",
-    "part-time": "Part-time", "part time": "Part-time", "parttime": "Part-time",
-    "contract": "Contract", "contractual": "Contract",
-    "freelance": "Freelance",
-    "project-based": "Project-based", "project based": "Project-based",
+    "full-time": "Full-time",
+    "full time": "Full-time",
+    fulltime: "Full-time",
+    "part-time": "Part-time",
+    "part time": "Part-time",
+    parttime: "Part-time",
+    contract: "Contract",
+    contractual: "Contract",
+    freelance: "Freelance",
+    "project-based": "Project-based",
+    "project based": "Project-based",
   };
   function _normalizeEmpType(val) {
     if (!val) return "";
@@ -460,9 +491,13 @@ window.UpstaffAPI = (function () {
     }
     var d = new Date(val);
     if (isNaN(d)) return "";
-    return d.getFullYear() + "-" +
-      String(d.getMonth() + 1).padStart(2, "0") + "-" +
-      String(d.getDate()).padStart(2, "0");
+    return (
+      d.getFullYear() +
+      "-" +
+      String(d.getMonth() + 1).padStart(2, "0") +
+      "-" +
+      String(d.getDate()).padStart(2, "0")
+    );
   }
 
   // ── Field mapper: partner fields → dashboard task fields ────────────────────
@@ -489,10 +524,17 @@ window.UpstaffAPI = (function () {
 
       // Extended partner fields
       address: r.address || "",
-      employment_type: _normalizeEmpType(r.employmentType || r.employment_type || ""),
+      employment_type: _normalizeEmpType(
+        r.employmentType || r.employment_type || "",
+      ),
       work_setup: r.workSetup || r.work_setup || "",
       work_schedule: (r.workSchedule || r.work_schedule || "")
-        .split(/[•\n,]/).map(function(s){ return s.trim(); }).filter(Boolean).join(", "),
+        .split(/[•\n,]/)
+        .map(function (s) {
+          return s.trim();
+        })
+        .filter(Boolean)
+        .join(", "),
       education_level: r.educationLevel || r.education_level || "",
       school: r.school || "",
       course: r.course || "",
@@ -503,9 +545,40 @@ window.UpstaffAPI = (function () {
       //      and: "• 2026-05-04 @ 19:50\n• 2026-05-06 @ 13:00" (newline-separated)
       interview_slots: (r.interviewSlots || r.interview_slots || "")
         .split(/[•\n]/)
-        .map(function(s) { return s.trim(); })
+        .map(function (s) {
+          return s.trim();
+        })
         .filter(Boolean)
         .join("\n"),
+      interview_date: (function () {
+        var raw = r.interviewSlots || r.interview_slots || "";
+        var first = raw
+          .split(/[•\n]/)
+          .map(function (s) {
+            return s.trim();
+          })
+          .filter(Boolean)[0];
+        if (!first) return "";
+        var atIdx = first.indexOf("@");
+        if (atIdx === -1) return "";
+        var datePart = first.slice(0, atIdx).trim();
+        try {
+          var d = new Date(datePart);
+          if (isNaN(d.getTime())) return "";
+          var pad = function (n) {
+            return String(n).padStart(2, "0");
+          };
+          return (
+            d.getFullYear() +
+            "-" +
+            pad(d.getMonth() + 1) +
+            "-" +
+            pad(d.getDate())
+          );
+        } catch (_) {
+          return "";
+        }
+      })(),
       referral_source: r.referralSource || r.referral_source || "",
       referral_code: r.referralCode || r.referral_code || "",
       video_intro_link:
@@ -516,19 +589,23 @@ window.UpstaffAPI = (function () {
         "",
       other_docs_link: r.otherDocsLink || r.other_docs_link || "",
       drive_folder_link: r.driveFolderLink || r.drive_folder_link || "",
-      application_date: _toDateStr(r.timestamp || r.application_date || r.created_at || ""),
+      application_date: _toDateStr(
+        r.timestamp || r.application_date || r.created_at || "",
+      ),
       timestamp: r.timestamp || "",
 
       // Assessment scores — joined from Assessments sheet by getData
-      typing_score:     r.typing_score     || r.typingScore     || "",
-      word_typing:      r.word_typing      || r.wordTyping      || "",
-      knowledge_score:  r.knowledge_score  || r.knowledgeScore  || "",
-      verbal_link:      r.verbal_link      || r.verbalLink      || "",
-      conflict_score:   r.conflict_score   || r.conflictScore   || "",
-      grammar_score:    r.grammar_score    || r.grammarScore    || "",
-      data_entry_score: r.data_entry_score || r.dataEntryScore  || r.excelFile || "",
-      formatting_score: r.formatting_score || r.formattingScore || r.excelTime || "",
-      sorting_score:    r.sorting_score    || r.sortingScore    || "",
+      typing_score: r.typing_score || r.typingScore || "",
+      word_typing: r.word_typing || r.wordTyping || "",
+      knowledge_score: r.knowledge_score || r.knowledgeScore || "",
+      verbal_link: r.verbal_link || r.verbalLink || "",
+      conflict_score: r.conflict_score || r.conflictScore || "",
+      grammar_score: r.grammar_score || r.grammarScore || "",
+      data_entry_score:
+        r.data_entry_score || r.dataEntryScore || r.excelFile || "",
+      formatting_score:
+        r.formatting_score || r.formattingScore || r.excelTime || "",
+      sorting_score: r.sorting_score || r.sortingScore || "",
 
       // Defaults for fields the dashboard expects
       priority: "Medium",
@@ -565,7 +642,9 @@ window.UpstaffAPI = (function () {
     // Apps Script token is HR-scoped; skip for assistants or unconfigured sessions
     var cfg = _config();
     if (!cfg.token) return false;
-    var role = (window.SupabaseAuth && SupabaseAuth.getRole && SupabaseAuth.getRole()) || "";
+    var role =
+      (window.SupabaseAuth && SupabaseAuth.getRole && SupabaseAuth.getRole()) ||
+      "";
     if (role && role !== "hr") return false;
     // Convert dashboard stage (e.g. "Review") → partner status (e.g. "Interviewed")
     var partnerStatus = mapToPartnerStatus(
