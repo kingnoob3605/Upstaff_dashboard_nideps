@@ -896,7 +896,7 @@ function gcalInjectEvents(googleEvents) {
       .join("\n");
 
     const localId =
-      90000 + Math.abs(hashStr(gEvent.id || gEvent.summary || eventDate));
+      900000 + Math.abs(hashStr(gEvent.id || gEvent.summary || eventDate));
 
     calEvents.push({
       id: localId,
@@ -999,7 +999,7 @@ function injectInterviewSlotsAsEvents(tasks) {
       const _stableKey =
         task.supabase_id || task.applicant_email || String(task.id);
       const slotKey = `slot_${_stableKey}_${parsedDate}_${parsedTime}`;
-      const numericId = 80000 + Math.abs(hashStr(slotKey));
+      const numericId = 800000 + Math.abs(hashStr(slotKey));
       if (_slotEventIds.has(numericId)) return;
 
       // Skip if an identical Google Calendar event already covers this slot
@@ -1236,7 +1236,7 @@ function hashStr(str) {
   for (let i = 0; i < str.length; i++) {
     hash = (Math.imul(31, hash) + str.charCodeAt(i)) | 0;
   }
-  return Math.abs(hash) % 89999;
+  return Math.abs(hash) % 899999;
 }
 
 /* openEdit + closeModal overrides removed — logic merged into originals above */
