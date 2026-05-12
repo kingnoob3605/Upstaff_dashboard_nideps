@@ -613,6 +613,7 @@ window.UpstaffAPI = (function () {
 
       // Defaults for fields the dashboard expects
       priority: "Medium",
+      followup_date: r.followup_date || "",
       assignees: [],
       comments: [],
       activity: [],

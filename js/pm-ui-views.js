@@ -1242,6 +1242,8 @@ async function syncApplicantsFromApi(opts) {
         // Always preserve assessment state — these fields live only in localStorage
         const assessFields = [
           "assess_token",
+          "followup_date",
+          "followup_notified",
           "assess_sent_at",
           "assess_completed",
           "assess_completed_at",
