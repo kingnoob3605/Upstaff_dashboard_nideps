@@ -95,15 +95,17 @@ function getListFilters() {
 
 let listSavedView = localStorage.getItem("upstaff_list_view") || "all";
 const SAVED_VIEWS = [
-  { id: "all",        label: "All" },
-  { id: "mine",       label: "My applicants" },
-  { id: "thisWeek",   label: "This week" },
-  { id: "stale",      label: "Stale ≥7d" },
+  { id: "all", label: "All" },
+  { id: "mine", label: "My applicants" },
+  { id: "thisWeek", label: "This week" },
+  { id: "stale", label: "Stale ≥7d" },
   { id: "unassigned", label: "Unassigned" },
 ];
 function applySavedView(id) {
   listSavedView = id;
-  try { localStorage.setItem("upstaff_list_view", id); } catch (_) {}
+  try {
+    localStorage.setItem("upstaff_list_view", id);
+  } catch (_) {}
   renderSavedViewBar();
   renderList();
 }
@@ -111,24 +113,29 @@ window.applySavedView = applySavedView;
 function renderSavedViewBar() {
   const el = document.getElementById("list-saved-views");
   if (!el) return;
-  el.innerHTML = SAVED_VIEWS.map(v =>
-    `<button class="saved-view-chip ${listSavedView === v.id ? "active" : ""}" onclick="applySavedView('${v.id}')">${v.label}</button>`
+  el.innerHTML = SAVED_VIEWS.map(
+    (v) =>
+      `<button class="saved-view-chip ${listSavedView === v.id ? "active" : ""}" onclick="applySavedView('${v.id}')">${v.label}</button>`,
   ).join("");
 }
 function _matchesSavedView(t) {
   if (listSavedView === "all" || !listSavedView) return true;
   if (listSavedView === "mine") {
-    const me = (window.SupabaseAuth && SupabaseAuth.getName && SupabaseAuth.getName()) || "";
+    const me =
+      (window.SupabaseAuth && SupabaseAuth.getName && SupabaseAuth.getName()) ||
+      "";
     if (!me) return true;
     const a = t.assignees || (t.assignee ? [t.assignee] : []);
-    return a.some(x => (x || "").toLowerCase() === me.toLowerCase());
+    return a.some((x) => (x || "").toLowerCase() === me.toLowerCase());
   }
   if (listSavedView === "thisWeek") {
     const ts = t.interview_date || t.due;
     if (!ts) return false;
     const d = new Date(ts + (ts.length === 10 ? "T00:00" : ""));
-    const now = new Date(); now.setHours(0,0,0,0);
-    const wk = new Date(now); wk.setDate(wk.getDate() + 7);
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    const wk = new Date(now);
+    wk.setDate(wk.getDate() + 7);
     return d >= now && d <= wk;
   }
   if (listSavedView === "stale") {
@@ -149,9 +156,14 @@ function _getActiveView() {
 
 function toggleSuperFilter() {
   // In calendar view, redirect to the inline cal filter bar
-  if (_getActiveView() === "calendar") { toggleCalFilterBar(); return; }
+  if (_getActiveView() === "calendar") {
+    toggleCalFilterBar();
+    return;
+  }
   const panel = document.getElementById("super-filter-panel");
-  const btn   = document.getElementById("list-filter-btn") || document.getElementById("topbar-filter-btn");
+  const btn =
+    document.getElementById("list-filter-btn") ||
+    document.getElementById("topbar-filter-btn");
   if (!panel) return;
   const isOpen = panel.style.display !== "none";
   if (isOpen) {
@@ -160,7 +172,7 @@ function toggleSuperFilter() {
     return;
   }
   document.getElementById("sf-list-section").style.display = "";
-  document.getElementById("sf-cal-section").style.display  = "none";
+  document.getElementById("sf-cal-section").style.display = "none";
   panel.style.display = "";
   if (btn) btn.classList.add("active");
 }
@@ -171,54 +183,80 @@ function toggleCalFilterBar() {
   if (!bar) return;
   const open = bar.style.display !== "none";
   bar.style.display = open ? "none" : "";
-  if (btn) btn.style.background = open ? "" : "var(--surface-3, var(--surface-2))";
+  if (btn)
+    btn.style.background = open ? "" : "var(--surface-3, var(--surface-2))";
 }
 
 function updateFilterBadge() {
   const f = getListFilters();
-  const count = [f.priority, f.position, f.assignee, f.dateFrom, f.dateTo].filter(Boolean).length;
-  const badge  = document.getElementById("filter-active-badge");
+  const count = [
+    f.priority,
+    f.position,
+    f.assignee,
+    f.dateFrom,
+    f.dateTo,
+  ].filter(Boolean).length;
+  const badge = document.getElementById("filter-active-badge");
   const clearBtn = document.getElementById("super-filter-clear-btn");
-  if (badge)    { badge.textContent = count; badge.style.display = count ? "" : "none"; }
+  if (badge) {
+    badge.textContent = count;
+    badge.style.display = count ? "" : "none";
+  }
   if (clearBtn) clearBtn.style.display = count ? "" : "none";
 }
 
 function updateCalFilterBadge() {
-  const cal    = document.getElementById("cal-filter-calendar")?.value || "";
-  const pos    = document.getElementById("cal-filter-position")?.value  || "";
-  const status = document.getElementById("cal-filter-status")?.value    || "";
-  const type   = document.getElementById("cal-filter-type")?.value      || "";
-  const from   = document.getElementById("cal-filter-date-from")?.value || "";
-  const to     = document.getElementById("cal-filter-date-to")?.value   || "";
-  const count  = [cal, pos, status, type, from, to].filter(Boolean).length;
-  const badge       = document.getElementById("filter-active-badge");
-  const toolbarBadge= document.getElementById("cal-toolbar-filter-badge");
-  const clearBtn    = document.getElementById("cal-filter-clear-btn");
-  const tagsEl      = document.getElementById("cal-active-filter-tags");
-  if (badge)        { badge.textContent = count; badge.style.display = count ? "" : "none"; }
-  if (toolbarBadge) { toolbarBadge.textContent = count; toolbarBadge.style.display = count ? "" : "none"; }
-  if (clearBtn)     clearBtn.style.display = count ? "" : "none";
+  const cal = document.getElementById("cal-filter-calendar")?.value || "";
+  const pos = document.getElementById("cal-filter-position")?.value || "";
+  const status = document.getElementById("cal-filter-status")?.value || "";
+  const type = document.getElementById("cal-filter-type")?.value || "";
+  const from = document.getElementById("cal-filter-date-from")?.value || "";
+  const to = document.getElementById("cal-filter-date-to")?.value || "";
+  const count = [cal, pos, status, type, from, to].filter(Boolean).length;
+  const badge = document.getElementById("filter-active-badge");
+  const toolbarBadge = document.getElementById("cal-toolbar-filter-badge");
+  const clearBtn = document.getElementById("cal-filter-clear-btn");
+  const tagsEl = document.getElementById("cal-active-filter-tags");
+  if (badge) {
+    badge.textContent = count;
+    badge.style.display = count ? "" : "none";
+  }
+  if (toolbarBadge) {
+    toolbarBadge.textContent = count;
+    toolbarBadge.style.display = count ? "" : "none";
+  }
+  if (clearBtn) clearBtn.style.display = count ? "" : "none";
   // Show active filter tags below cal toolbar
   if (tagsEl) {
     const labels = [
-      cal    && { key: "cal",    label: `Calendar: ${cal}` },
-      pos    && { key: "pos",    label: `Position: ${pos}` },
+      cal && { key: "cal", label: `Calendar: ${cal}` },
+      pos && { key: "pos", label: `Position: ${pos}` },
       status && { key: "status", label: `Status: ${status}` },
-      type   && { key: "type",   label: `Type: ${type}` },
-      from   && { key: "from",   label: `From: ${from}` },
-      to     && { key: "to",     label: `To: ${to}` },
+      type && { key: "type", label: `Type: ${type}` },
+      from && { key: "from", label: `From: ${from}` },
+      to && { key: "to", label: `To: ${to}` },
     ].filter(Boolean);
     tagsEl.style.display = labels.length ? "" : "none";
-    tagsEl.innerHTML = labels.map(t =>
-      `<span class="list-filter-tag" onclick="clearCalFilter('${t.key}')">${sanitize(t.label)}
+    tagsEl.innerHTML = labels
+      .map(
+        (t) =>
+          `<span class="list-filter-tag" onclick="clearCalFilter('${t.key}')">${sanitize(t.label)}
         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </span>`
-    ).join("");
+      </span>`,
+      )
+      .join("");
   }
 }
 
 function clearCalFilter(key) {
-  const map = { cal:"cal-filter-calendar", pos:"cal-filter-position", status:"cal-filter-status", type:"cal-filter-type", from:"cal-filter-date-from", to:"cal-filter-date-to" };
+  const map = {
+    cal: "cal-filter-calendar",
+    pos: "cal-filter-position",
+    status: "cal-filter-status",
+    type: "cal-filter-type",
+    from: "cal-filter-date-from",
+    to: "cal-filter-date-to",
+  };
   const el = document.getElementById(map[key]);
   if (el) el.value = "";
   updateCalFilterBadge();
@@ -226,16 +264,31 @@ function clearCalFilter(key) {
 }
 
 function clearCalFilters() {
-  ["cal-filter-calendar","cal-filter-position","cal-filter-status","cal-filter-type","cal-filter-date-from","cal-filter-date-to"].forEach(id => {
-    const el = document.getElementById(id); if (el) el.value = "";
+  [
+    "cal-filter-calendar",
+    "cal-filter-position",
+    "cal-filter-status",
+    "cal-filter-type",
+    "cal-filter-date-from",
+    "cal-filter-date-to",
+  ].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.value = "";
   });
   updateCalFilterBadge();
   renderCalendar();
 }
 
 function clearAllFilters() {
-  ["list-filter-priority","list-filter-position","list-filter-assignee","list-filter-date-from","list-filter-date-to"].forEach(id => {
-    const el = document.getElementById(id); if (el) el.value = "";
+  [
+    "list-filter-priority",
+    "list-filter-position",
+    "list-filter-assignee",
+    "list-filter-date-from",
+    "list-filter-date-to",
+  ].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.value = "";
   });
   updateFilterBadge();
   renderList();
@@ -337,7 +390,18 @@ function renderList() {
   }
 
   // Group by status
-  const order = [...ACTIVE_STAGES, "Hired", "Others", "Closed", "Rejected", "Cancelled", "Not Qualified", "No Show", "Duplicate Lead", "Hired - Resigned"];
+  const order = [
+    ...ACTIVE_STAGES,
+    "Hired",
+    "Others",
+    "Closed",
+    "Rejected",
+    "Cancelled",
+    "Not Qualified",
+    "No Show",
+    "Duplicate Lead",
+    "Hired - Resigned",
+  ];
   const groups = {};
   tasks.forEach((t) => {
     if (!groups[t.status]) groups[t.status] = [];
@@ -369,11 +433,14 @@ function renderList() {
 
     // On "All" tab, always show active pipeline stages even when empty
     // (mirrors Board view), but hide empty terminal/others/closed stages
-    if (!f.status && stTasks.length === 0 && !ACTIVE_STAGES.includes(st)) return;
-    const sm = STATUS_META[sectionLabel] || STATUS_META[st] || STATUS_META["New"];
-    const allInStatus = st === "Others"
-      ? TASKS.filter((t) => OTHERS_STATUSES.includes(t.status)).length
-      : TASKS.filter((t) => t.status === st).length;
+    if (!f.status && stTasks.length === 0 && !ACTIVE_STAGES.includes(st))
+      return;
+    const sm =
+      STATUS_META[sectionLabel] || STATUS_META[st] || STATUS_META["New"];
+    const allInStatus =
+      st === "Others"
+        ? TASKS.filter((t) => OTHERS_STATUSES.includes(t.status)).length
+        : TASKS.filter((t) => t.status === st).length;
     anySection = true;
 
     const sortIcons = {
@@ -499,7 +566,9 @@ function renderList() {
                     const rowCls =
                       t.status === "Hired"
                         ? "list-row-hired"
-                        : t.status === "Closed" || t.status === "Cancelled" || t.status === "Rejected"
+                        : t.status === "Closed" ||
+                            t.status === "Cancelled" ||
+                            t.status === "Rejected"
                           ? "list-row-cancelled"
                           : "";
                     const pc = PRIORITY_COLORS[t.priority] || "#9ca3af";
@@ -663,27 +732,37 @@ function cycleSort(colKey) {
 
 /* ── List view: Three-dot action menu helpers ── */
 function buildListActionMenuHTML(taskId) {
-  const t = TASKS.find(x => x.id === taskId);
+  const t = TASKS.find((x) => x.id === taskId);
   if (!t) return "";
   const curIdx = STAGE_ORDER.indexOf(t.status);
-  const fwd = curIdx >= 0 ? STAGE_ORDER.slice(curIdx + 1).filter(s => !TERMINAL_STAGES.includes(s)) : [];
-  const othersOpts = OTHERS_STATUSES.filter(s => s !== t.status);
+  const fwd =
+    curIdx >= 0
+      ? STAGE_ORDER.slice(curIdx + 1).filter(
+          (s) => !TERMINAL_STAGES.includes(s),
+        )
+      : [];
+  const othersOpts = OTHERS_STATUSES.filter((s) => s !== t.status);
   const moveId = `lam-move-${taskId}`;
-  const moveToSub = (fwd.length || othersOpts.length) ? `
+  const moveToSub =
+    fwd.length || othersOpts.length
+      ? `
     <button type="button" class="lam-item lam-collapsible" data-target="${moveId}" onclick="(function(b){var x=document.getElementById(b.dataset.target);var open=x.style.display==='block';document.querySelectorAll('#list-action-menu .lam-collapse').forEach(function(el){el.style.display='none';});document.querySelectorAll('#list-action-menu .lam-collapsible svg.lam-chev').forEach(function(c){c.style.transform='';});x.style.display=open?'none':'block';b.querySelector('svg.lam-chev').style.transform=open?'':'rotate(90deg)';})(this)">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>
       Move to Stage
       <svg class="lam-chev" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="margin-left:auto;transition:transform .15s ease;"><polyline points="9 18 15 12 9 6"/></svg>
     </button>
     <div id="${moveId}" class="lam-collapse" style="display:none;padding:2px 0 4px 18px;border-left:2px solid var(--border);margin:2px 0 4px 14px;">
-      ${fwd.map(st => `<button class="lam-item lam-sub-item" onclick="moveApplicantToStage(${taskId},'${st}');closeAllListMenus()">${st}</button>`).join("")}
-      ${othersOpts.length ? (fwd.length ? `<div class="lam-sub-header">Others</div>` : "") + othersOpts.map(st => `<button class="lam-item lam-sub-item" onclick="moveApplicantToStage(${taskId},'${st}');closeAllListMenus()">${st}</button>`).join("") : ""}
-    </div>` : "";
+      ${fwd.map((st) => `<button class="lam-item lam-sub-item" onclick="moveApplicantToStage(${taskId},'${st}');closeAllListMenus()">${st}</button>`).join("")}
+      ${othersOpts.length ? (fwd.length ? `<div class="lam-sub-header">Others</div>` : "") + othersOpts.map((st) => `<button class="lam-item lam-sub-item" onclick="moveApplicantToStage(${taskId},'${st}');closeAllListMenus()">${st}</button>`).join("") : ""}
+    </div>`
+      : "";
   const prevStage = getPrevStage(t.status);
-  const moveBack = prevStage ? `<button class="lam-item" onclick="listRevertStage(${taskId});closeAllListMenus()">
+  const moveBack = prevStage
+    ? `<button class="lam-item" onclick="listRevertStage(${taskId});closeAllListMenus()">
     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
     Move Back to ${prevStage}
-  </button>` : "";
+  </button>`
+    : "";
   return `
     <button class="lam-item" onclick="openTaskEdit(${taskId});closeAllListMenus()">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
@@ -722,7 +801,8 @@ function buildListActionMenuHTML(taskId) {
 function toggleListActionMenu(taskId, btnEl) {
   const menu = document.getElementById("list-action-menu");
   if (!menu) return;
-  const isOpen = menu.classList.contains("open") && menu.dataset.taskId == taskId;
+  const isOpen =
+    menu.classList.contains("open") && menu.dataset.taskId == taskId;
   closeAllListMenus();
   if (!isOpen) {
     menu.dataset.taskId = taskId;
@@ -737,7 +817,8 @@ function toggleListActionMenu(taskId, btnEl) {
     const left = spaceRight > menuW ? rect.left : rect.right - menuW;
     menu.style.top = "";
     menu.style.bottom = "";
-    menu.style[yDir] = (yDir === "top" ? top : window.innerHeight - rect.top + 4) + "px";
+    menu.style[yDir] =
+      (yDir === "top" ? top : window.innerHeight - rect.top + 4) + "px";
     menu.style.left = Math.max(4, left) + "px";
     menu.classList.add("open");
 
@@ -843,6 +924,18 @@ async function listDeleteApplicant(taskId) {
   closeAllListMenus();
   const t = TASKS.find((x) => x.id === taskId);
   if (!t) return;
+  // Also remove any duplicates with same supabase_id or email
+  const dupeIds = TASKS.filter(
+    (x) =>
+      x.id !== taskId &&
+      ((t.supabase_id && x.supabase_id === t.supabase_id) ||
+        (t.applicant_email && x.applicant_email === t.applicant_email)),
+  ).map((x) => x.id);
+  // Remove any local duplicates
+  dupeIds.forEach((did) => {
+    const di = TASKS.findIndex((x) => x.id === did);
+    if (di !== -1) TASKS.splice(di, 1);
+  });
 
   const name = t.applicant_name || t.name || "this applicant";
   const confirmed = await uiConfirm(
@@ -863,8 +956,12 @@ async function listDeleteApplicant(taskId) {
       await UpstaffAPI.deleteApplicant({
         email: t.applicant_email,
         supabaseId: t.supabase_id,
+        name: t.applicant_name || t.name || "",
       });
-      if (idx !== -1) { window._supabaseDeleteTask && _supabaseDeleteTask(t.id); TASKS.splice(idx, 1); }
+      if (idx !== -1) {
+        window._supabaseDeleteTask && _supabaseDeleteTask(t.id);
+        TASKS.splice(idx, 1);
+      }
       showToast(`🗑️ ${name} deleted.`);
     } catch (e) {
       showToast(`⚠️ Delete failed: ${e.message}`);
@@ -872,7 +969,10 @@ async function listDeleteApplicant(taskId) {
     }
   } else {
     // Local-only applicant — safe to remove immediately
-    if (idx !== -1) { window._supabaseDeleteTask && _supabaseDeleteTask(t.id); TASKS.splice(idx, 1); }
+    if (idx !== -1) {
+      window._supabaseDeleteTask && _supabaseDeleteTask(t.id);
+      TASKS.splice(idx, 1);
+    }
     showToast(`🗑️ ${name} removed.`);
   }
 
@@ -904,5 +1004,6 @@ function populateListPositionFilter() {
    populateCalendarSelectors and renderPositionSelects are defined globals.
    ══════════════════════════════════════════════════════════════════════ */
 if (typeof renderList === "function") renderList();
-if (typeof populateCalendarSelectors === "function") populateCalendarSelectors();
+if (typeof populateCalendarSelectors === "function")
+  populateCalendarSelectors();
 if (typeof renderPositionSelects === "function") renderPositionSelects();
