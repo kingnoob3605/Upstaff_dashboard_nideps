@@ -357,13 +357,14 @@ window.UpstaffAPI = (function () {
   }
 
   async function deleteApplicant(opts) {
-    // opts: { email, supabaseId }
+    // opts: { email, supabaseId, name }
     var c = _config();
     return _post({
       action: "deleteApplicant",
       token: c.token,
       email: opts.email,
       supabaseId: opts.supabaseId,
+      name: opts.name || "",
     });
   }
 

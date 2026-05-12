@@ -769,8 +769,7 @@ let tableSort = { col: "due", dir: 1 };
 ══════════════════════════════════════════════ */
 const LS_KEYS = {
   CAL: "upstaff_calEvents",
-  TASKS:
-    "upstaff_tasks_" + (localStorage.getItem("upstaff_user_id") || "default"),
+  TASKS: "upstaff_tasks",
   CAL_ID: "upstaff_calNextId",
   TASK_ID: "upstaff_taskNextId",
   GCAL_AUTH: "upstaff_gcal_signed",
