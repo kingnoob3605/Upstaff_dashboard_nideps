@@ -551,9 +551,12 @@ window.UpstaffAPI = (function () {
         .filter(Boolean)
         .join("\n"),
       interview_date: (function () {
-        var raw = r.interviewSlots || r.interview_slots || "";
+        var raw = (r.interviewSlots || r.interview_slots || "").replace(
+          /•/g,
+          "\n•",
+        );
         var first = raw
-          .split(/[•\n]/)
+          .split(/[\n•]/)
           .map(function (s) {
             return s.trim();
           })
