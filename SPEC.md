@@ -221,3 +221,34 @@ Current tables live (confirmed via MCP list_tables):
 | `supabase/functions/apps-script-proxy/index.ts` | Edge Fn: secure Apps Script proxy |
 | `supabase/functions/invite-user/index.ts` | Edge Fn: HR-only invitations |
 | `2MAINappscript.txt` | Apps Script source; sheet column schema |
+
+---
+
+## §B. Bugs
+
+| id | date | severity | cause | fix |
+|---|---|---|---|---|
+| B01 | 2026-06-04 | High | `t.assignee` (string) checked in search; field is `t.assignees` (array) → multi-assignee never matches | `(t.assignees\|\|[]).some(a => a?.toLowerCase().includes(f.search))` in `pm-ui-list.js:350` |
+| B02 | 2026-06-04 | High | `ageBadgeHTML(t)` called in `pm-ui-list.js:545` but ⊥ defined anywhere → runtime crash | Define in `pm-ui-core.js` |
+| B03 | 2026-06-04 | High | Save handler ⊥ clears modal → old field values persist on new/re-open. Resume/CV Link removed → save → reopen → link reappears. Root: empty fields not written as `""` to Supabase upsert | In save handler (`pm-ui-views.js:2582`): explicitly set cleared fields to `""` before `persistSave()`. In `_taskToRow()`: write `|| ""` for all URL fields, not `|| null` |
+| B04 | 2026-06-04 | Medium | URL input fields (`f-resume`, `f-portfolio`, `f-video-intro`, `f-other-docs`, `f-drive-folder`) show validation error on blank → fields ! optional. `type="url"` browser validation fires on empty string | Remove `type="url"` → use `type="text"` + custom URL validator only when non-empty. Or add `pattern` that allows blank. |
+| B05 | 2026-06-04 | Medium | Date parse: `new Date("YYYY-MM-DD")` → UTC midnight → shifts ±1 day in non-UTC zones | Use `new Date(y, m-1, d)` for local midnight ∀ date fields |
+| B06 | 2026-06-04 | Medium | `loadDataFromSupabase()` no try/catch → `_supabaseLoading` stays `true` ∀ network fail → UI hangs | Wrap in try/catch; set `_supabaseLoading=false`; show error toast |
+| B07 | 2026-06-04 | High | Reminder timer (60s): `minutesUntil` threshold `±1 min` → double-fire at boundary | Change threshold to `±0.5 min` in `pm-ui-gcal.js:1460` |
+
+---
+
+## §T. Tasks
+
+| id | status | task | cites |
+|---|---|---|---|
+| T01 | x | Fix save handler: write empty string for cleared URL fields → Supabase upsert | B03 |
+| T02 | x | Fix URL fields: optional when blank, no browser validation error | B04 |
+| T03 | x | `ageBadgeHTML()` already defined @ `pm-ui-core.js:1759` — audit FP | B02 |
+| T04 | x | Fix assignee search: array `.some()` check | B01 |
+| T05 | . | Interview slot revamp: 3 date options (1 primary, 2 alternates) replacing free-text `f-interview-slots` | §IV |
+| T06 | . | Fix date parse: `new Date(y,m-1,d)` local midnight ∀ date fields | B05 |
+| T07 | x | Fix `loadDataFromSupabase()`: move JWT check inside try block; reset loading flag; show error toast | B06 |
+| T08 | . | Add DB indexes: `applicants(status, position, application_date, assignee)` | audit |
+| T09 | . | Add NOT NULL to `applicant_name`, `status`, `priority` columns | audit |
+| T10 | . | Deprecate `pm-ui-api.js` entirely; remove `syncApplicantsFromApi()` dead path | audit |

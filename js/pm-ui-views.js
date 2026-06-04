@@ -1823,6 +1823,67 @@ function _updateLinkCard(inputId, cardId) {
 })();
 
 /* ══════════════════════════════════════════════
+   INTERVIEW SLOT PICKERS
+   Converts 3 date+time pairs ↔ newline-separated "YYYY-MM-DD @ HH:MM" string
+══════════════════════════════════════════════ */
+function _readInterviewSlots() {
+  const slots = [];
+  for (let i = 1; i <= 3; i++) {
+    const d = document.getElementById(`f-slot-${i}-date`)?.value || "";
+    const t = document.getElementById(`f-slot-${i}-time`)?.value || "";
+    if (d) slots.push(`${d} @ ${t || "09:00"}`);
+  }
+  const val = slots.join("\n");
+  const hidden = document.getElementById("f-interview-slots");
+  if (hidden) hidden.value = val;
+  return val;
+}
+
+function _writeInterviewSlots(str) {
+  const lines = (str || "")
+    .split(/[\n•]/)
+    .map((l) => l.replace(/^[•\-\s]+/, "").trim())
+    .filter(Boolean)
+    .slice(0, 3);
+
+  for (let i = 1; i <= 3; i++) {
+    const line = lines[i - 1] || "";
+    const atIdx = line.indexOf("@");
+    const dateEl = document.getElementById(`f-slot-${i}-date`);
+    const timeEl = document.getElementById(`f-slot-${i}-time`);
+    if (!dateEl || !timeEl) continue;
+    if (!line || atIdx === -1) {
+      dateEl.value = "";
+      timeEl.value = "09:00";
+    } else {
+      const datePart = line.slice(0, atIdx).trim();
+      const timePart = line.slice(atIdx + 1).trim().slice(0, 5); // HH:MM
+      // Normalize date to YYYY-MM-DD
+      try {
+        const d = new Date(datePart + "T12:00");
+        if (!isNaN(d)) {
+          const pad = (n) => String(n).padStart(2, "0");
+          dateEl.value = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+        } else {
+          dateEl.value = datePart;
+        }
+      } catch (_) { dateEl.value = datePart; }
+      timeEl.value = /^\d{2}:\d{2}$/.test(timePart) ? timePart : "09:00";
+    }
+  }
+  const hidden = document.getElementById("f-interview-slots");
+  if (hidden) hidden.value = str || "";
+}
+
+// Sync pickers → hidden input on every change
+(function _initSlotPickers() {
+  for (let i = 1; i <= 3; i++) {
+    document.getElementById(`f-slot-${i}-date`)?.addEventListener("change", _readInterviewSlots);
+    document.getElementById(`f-slot-${i}-time`)?.addEventListener("change", _readInterviewSlots);
+  }
+})();
+
+/* ══════════════════════════════════════════════
    [SECTION: MODAL-OPEN] — Task/Applicant Modal
 ══════════════════════════════════════════════ */
 function _setModalAvatar(name, status) {
@@ -1859,6 +1920,9 @@ window.closeNewApplicantChooser = function () {
 };
 function _openTaskNewWithMode(status, mode) {
   taskEditId = null;
+  // Clear any stale validation errors from previous modal session
+  const _modalForm = document.getElementById("task-modal");
+  if (_modalForm) clearAllFieldErrors(_modalForm);
   document.getElementById("task-modal-heading").textContent = "New Applicant";
   _setModalAvatar("New Applicant", status);
   document.getElementById("f-name").value = "";
@@ -1886,7 +1950,7 @@ function _openTaskNewWithMode(status, mode) {
   _setField("f-course", "");
   _setField("f-skills", "");
   _setField("f-tools", "");
-  _setField("f-interview-slots", "");
+  _writeInterviewSlots("");
   _setField("f-supabase-id", "");
   _setField("f-referral-source", "");
   _setField("f-resume", "");
@@ -1961,6 +2025,9 @@ function openTaskEdit(id, goToAssessment = false) {
   const t = TASKS.find((x) => x.id === id);
   if (!t) return;
   taskEditId = id;
+  // Clear any stale validation errors from previous modal session
+  const _modalFormEdit = document.getElementById("task-modal");
+  if (_modalFormEdit) clearAllFieldErrors(_modalFormEdit);
   const _tName = t.applicant_name || t.name;
   // Hide sheet import strip when editing existing applicant
   const _importStripEdit = document.getElementById("sheet-import-strip");
@@ -1991,7 +2058,7 @@ function openTaskEdit(id, goToAssessment = false) {
   _setField("f-course", t.course || "");
   _setField("f-skills", t.skills || "");
   _setField("f-tools", t.tools || "");
-  _setField("f-interview-slots", t.interview_slots || "");
+  _writeInterviewSlots(t.interview_slots || "");
   _setField("f-supabase-id", t.supabase_id || "");
   _setField("f-referral-source", t.referral_source || "");
   _setField("f-resume", t.resume_link || "");
@@ -2579,6 +2646,13 @@ document
     _updateVerbalPreview(this.value);
   });
 
+// Clear stale URL validation errors when user edits the field
+["f-resume", "f-portfolio", "f-video-intro", "f-other-docs", "f-drive-folder"].forEach((id) => {
+  document.getElementById(id)?.addEventListener("input", function () {
+    clearFieldError(this);
+  });
+});
+
 document
   .getElementById("btn-task-save")
   ?.addEventListener("click", async () => {
@@ -2639,17 +2713,11 @@ document
       gcalEventId: existing?.gcalEventId || null,
       // Applicant profile
       applicant_email:
-        document.getElementById("f-email")?.value?.trim() ||
-        existing?.applicant_email ||
-        "",
+        document.getElementById("f-email")?.value?.trim() ?? "",
       applicant_phone:
-        document.getElementById("f-phone")?.value?.trim() ||
-        existing?.applicant_phone ||
-        "",
+        document.getElementById("f-phone")?.value?.trim() ?? "",
       address:
-        document.getElementById("f-address")?.value?.trim() ||
-        existing?.address ||
-        "",
+        document.getElementById("f-address")?.value?.trim() ?? "",
       employment_type:
         document.getElementById("f-employment-type")?.value ||
         existing?.employment_type ||
@@ -2667,53 +2735,30 @@ document
         existing?.education_level ||
         "",
       school:
-        document.getElementById("f-school")?.value?.trim() ||
-        existing?.school ||
-        "",
+        document.getElementById("f-school")?.value?.trim() ?? "",
       course:
-        document.getElementById("f-course")?.value?.trim() ||
-        existing?.course ||
-        "",
+        document.getElementById("f-course")?.value?.trim() ?? "",
       skills:
-        document.getElementById("f-skills")?.value?.trim() ||
-        existing?.skills ||
-        "",
+        document.getElementById("f-skills")?.value?.trim() ?? "",
       tools:
-        document.getElementById("f-tools")?.value?.trim() ||
-        existing?.tools ||
-        "",
-      interview_slots:
-        document.getElementById("f-interview-slots")?.value?.trim() ||
-        existing?.interview_slots ||
-        "",
+        document.getElementById("f-tools")?.value?.trim() ?? "",
+      interview_slots: _readInterviewSlots(),
       supabase_id:
-        document.getElementById("f-supabase-id")?.value?.trim() ||
-        existing?.supabase_id ||
-        "",
+        document.getElementById("f-supabase-id")?.value?.trim() ?? "",
       referral_source:
         document.getElementById("f-referral-source")?.value ||
         existing?.referral_source ||
         "",
       resume_link:
-        document.getElementById("f-resume")?.value?.trim() ||
-        existing?.resume_link ||
-        "",
+        document.getElementById("f-resume")?.value?.trim() ?? "",
       portfolio_link:
-        document.getElementById("f-portfolio")?.value?.trim() ||
-        existing?.portfolio_link ||
-        "",
+        document.getElementById("f-portfolio")?.value?.trim() ?? "",
       video_intro_link:
-        document.getElementById("f-video-intro")?.value?.trim() ||
-        existing?.video_intro_link ||
-        "",
+        document.getElementById("f-video-intro")?.value?.trim() ?? "",
       other_docs_link:
-        document.getElementById("f-other-docs")?.value?.trim() ||
-        existing?.other_docs_link ||
-        "",
+        document.getElementById("f-other-docs")?.value?.trim() ?? "",
       drive_folder_link:
-        document.getElementById("f-drive-folder")?.value?.trim() ||
-        existing?.drive_folder_link ||
-        "",
+        document.getElementById("f-drive-folder")?.value?.trim() ?? "",
       application_date:
         document.getElementById("f-app-date")?.value ||
         existing?.application_date ||
@@ -5697,7 +5742,7 @@ function sheetImportFill(idx) {
   _setField("f-course", r.course || "");
   _setField("f-skills", r.skills || "");
   _setField("f-tools", r.tools || "");
-  _setField("f-interview-slots", r.interviewSlots || "");
+  _writeInterviewSlots(r.interviewSlots || "");
   _setField("f-referral-source", r.referralSource || "");
   _setField("f-resume", r.resumeLink || "");
   _setField("f-portfolio", r.portfolioLink || "");

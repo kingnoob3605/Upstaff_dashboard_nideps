@@ -1102,9 +1102,9 @@ async function _supabaseSyncNow() {
     }).catch(function () {});
   }
 
-  // Upsert local calendar events (exclude Google events)
+  // Upsert local calendar events (exclude Google events + _fromSlot pseudo-events)
   var localEvts = calEvents.filter(function (e) {
-    return !e.isGoogleEvent;
+    return !e.isGoogleEvent && !e._fromSlot && e.sourceCalendar !== "interview_slots";
   });
   if (localEvts.length > 0) {
     var evtRows = localEvts.map(function (e) {
@@ -1144,6 +1144,7 @@ async function loadDataFromSupabase() {
   window._supabaseLoading = true;
   var c = _getSupabaseCfg();
   if (!c) { window._supabaseLoading = false; return; }
+  try {
   if (_jwtExpiredCore(c.supabaseToken)) {
     if (window.SupabaseAuth && SupabaseAuth.getFreshToken) {
       var fresh = await SupabaseAuth.getFreshToken();
@@ -1159,8 +1160,6 @@ async function loadDataFromSupabase() {
     Authorization: "Bearer " + c.supabaseToken,
   };
   var base = c.supabaseUrl + "/rest/v1/";
-
-  try {
     // Pull tasks — flat columns
     var taskResp = await fetch(
       base + "applicants?select=*&order=id.asc",
@@ -1238,6 +1237,7 @@ async function loadDataFromSupabase() {
     persistSave();
   } catch (err) {
     console.warn("[Supabase] ⚠️ loadDataFromSupabase failed:", err);
+    if (typeof showToast === "function") showToast("⚠️ Could not load data from server. Working offline.");
   } finally {
     window._supabaseLoading = false;
     if (typeof renderList === "function") renderList();

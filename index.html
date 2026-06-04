@@ -1701,7 +1701,25 @@
       </div>
       <div class="form-group">
         <label class="form-label">Interview Slots</label>
-        <input type="text" class="form-input" id="f-interview-slots" placeholder="e.g. 2026-04-17 @ 09:00"/>
+        <div class="slot-picker-grid">
+          <div class="slot-picker-row">
+            <span class="slot-badge slot-primary">Primary</span>
+            <input type="date" class="form-input slot-date" id="f-slot-1-date"/>
+            <input type="time" class="form-input slot-time" id="f-slot-1-time" value="09:00"/>
+          </div>
+          <div class="slot-picker-row">
+            <span class="slot-badge slot-alt">Alt 1</span>
+            <input type="date" class="form-input slot-date" id="f-slot-2-date"/>
+            <input type="time" class="form-input slot-time" id="f-slot-2-time" value="09:00"/>
+          </div>
+          <div class="slot-picker-row">
+            <span class="slot-badge slot-alt">Alt 2</span>
+            <input type="date" class="form-input slot-date" id="f-slot-3-date"/>
+            <input type="time" class="form-input slot-time" id="f-slot-3-time" value="09:00"/>
+          </div>
+        </div>
+        <!-- hidden: keeps backward-compat for all code reading f-interview-slots -->
+        <input type="hidden" id="f-interview-slots"/>
       </div>
       <div class="form-group">
         <label class="form-label">Supabase ID</label>
@@ -1751,7 +1769,7 @@
           <label class="form-label">Resume / CV Link</label>
           <div class="link-card" id="lc-resume">
             <div class="link-card-input-row">
-              <input type="url" class="form-input link-card-input" id="f-resume" placeholder="https://drive.google.com/…"/>
+              <input type="text" class="form-input link-card-input" id="f-resume" placeholder="https://drive.google.com/… (optional)"/>
               <button type="button" class="link-card-btn" id="lc-resume-copy" title="Copy link" style="display:none">📋</button>
               <button type="button" class="link-card-btn" id="lc-resume-open" title="Open link" style="display:none">↗</button>
             </div>
@@ -1762,7 +1780,7 @@
           <label class="form-label">Portfolio Link</label>
           <div class="link-card" id="lc-portfolio">
             <div class="link-card-input-row">
-              <input type="url" class="form-input link-card-input" id="f-portfolio" placeholder="https://behance.net/…"/>
+              <input type="text" class="form-input link-card-input" id="f-portfolio" placeholder="https://behance.net/… (optional)"/>
               <button type="button" class="link-card-btn" id="lc-portfolio-copy" title="Copy link" style="display:none">📋</button>
               <button type="button" class="link-card-btn" id="lc-portfolio-open" title="Open link" style="display:none">↗</button>
             </div>
@@ -1775,7 +1793,7 @@
           <label class="form-label">Video Intro Link</label>
           <div class="link-card" id="lc-video-intro">
             <div class="link-card-input-row">
-              <input type="url" class="form-input link-card-input" id="f-video-intro" placeholder="https://drive.google.com/… or YouTube"/>
+              <input type="text" class="form-input link-card-input" id="f-video-intro" placeholder="https://drive.google.com/… or YouTube (optional)"/>
               <button type="button" class="link-card-btn" id="lc-video-intro-copy" title="Copy link" style="display:none">📋</button>
               <button type="button" class="link-card-btn" id="lc-video-intro-open" title="Open link" style="display:none">↗</button>
             </div>
@@ -1786,7 +1804,7 @@
           <label class="form-label">Other Docs Link</label>
           <div class="link-card" id="lc-other-docs">
             <div class="link-card-input-row">
-              <input type="url" class="form-input link-card-input" id="f-other-docs" placeholder="https://drive.google.com/…"/>
+              <input type="text" class="form-input link-card-input" id="f-other-docs" placeholder="https://drive.google.com/… (optional)"/>
               <button type="button" class="link-card-btn" id="lc-other-docs-copy" title="Copy link" style="display:none">📋</button>
               <button type="button" class="link-card-btn" id="lc-other-docs-open" title="Open link" style="display:none">↗</button>
             </div>
@@ -1798,7 +1816,7 @@
         <label class="form-label">Drive Folder Link</label>
         <div class="link-card" id="lc-drive-folder">
           <div class="link-card-input-row">
-            <input type="url" class="form-input link-card-input" id="f-drive-folder" placeholder="https://drive.google.com/drive/folders/…"/>
+            <input type="text" class="form-input link-card-input" id="f-drive-folder" placeholder="https://drive.google.com/drive/folders/… (optional)"/>
             <button type="button" class="link-card-btn" id="lc-drive-folder-copy" title="Copy link" style="display:none">📋</button>
             <button type="button" class="link-card-btn" id="lc-drive-folder-open" title="Open link" style="display:none">↗</button>
           </div>

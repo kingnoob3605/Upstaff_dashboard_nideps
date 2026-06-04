@@ -2131,6 +2131,47 @@ tr:has(.bulk-cb:checked) td {
 .link-badge-drive   { background: #e8f5e9; color: #2e7d32; border-color: #a5d6a7; }
 .link-badge-dropbox { background: #e3f2fd; color: #1565c0; border-color: #90caf9; }
 .link-badge-onedrive{ background: #e3f2fd; color: #0277bd; border-color: #81d4fa; }
+
+/* ── Interview Slot Picker ── */
+.slot-picker-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.slot-picker-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.slot-badge {
+  font-size: 10px;
+  font-weight: 700;
+  font-family: "Plus Jakarta Sans", sans-serif;
+  padding: 3px 9px;
+  border-radius: 99px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  min-width: 52px;
+  text-align: center;
+}
+.slot-primary {
+  background: var(--cyan-lt);
+  color: var(--cyan);
+  border: 1px solid var(--cyan);
+}
+.slot-alt {
+  background: var(--surface-3);
+  color: var(--muted);
+  border: 1px solid var(--border);
+}
+.slot-date {
+  flex: 1.5;
+  min-width: 0;
+}
+.slot-time {
+  flex: 1;
+  min-width: 0;
+}
 .link-badge-behance { background: #e8eaf6; color: #283593; border-color: #9fa8da; }
 .link-badge-linkedin{ background: #e1f0fa; color: #0a66c2; border-color: #90caf9; }
 .link-badge-github  { background: #f3f0ff; color: #4a148c; border-color: #ce93d8; }

@@ -347,14 +347,17 @@ function renderList() {
     if (
       f.search &&
       !t.name.toLowerCase().includes(f.search) &&
+      !(t.applicant_name || "").toLowerCase().includes(f.search) &&
       !t.position.toLowerCase().includes(f.search) &&
-      !(t.assignee || "").toLowerCase().includes(f.search)
+      !(t.assignees || [t.assignee]).some(
+        (a) => a && a.toLowerCase().includes(f.search)
+      )
     )
       return false;
     if (f.status && t.status !== f.status) return false;
     if (f.priority && t.priority !== f.priority) return false;
     if (f.position && t.position !== f.position) return false;
-    if (f.assignee && t.assignee !== f.assignee) return false;
+    if (f.assignee && !(t.assignees || [t.assignee]).includes(f.assignee)) return false;
     if (f.dateFrom && t.due && t.due < f.dateFrom) return false;
     if (f.dateTo && t.due && t.due > f.dateTo) return false;
     if (!_matchesSavedView(t)) return false;
