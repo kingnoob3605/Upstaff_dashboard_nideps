@@ -1823,6 +1823,67 @@ function _updateLinkCard(inputId, cardId) {
 })();
 
 /* ══════════════════════════════════════════════
+   INTERVIEW SLOT PICKERS
+   Converts 3 date+time pairs ↔ newline-separated "YYYY-MM-DD @ HH:MM" string
+══════════════════════════════════════════════ */
+function _readInterviewSlots() {
+  const slots = [];
+  for (let i = 1; i <= 3; i++) {
+    const d = document.getElementById(`f-slot-${i}-date`)?.value || "";
+    const t = document.getElementById(`f-slot-${i}-time`)?.value || "";
+    if (d) slots.push(`${d} @ ${t || "09:00"}`);
+  }
+  const val = slots.join("\n");
+  const hidden = document.getElementById("f-interview-slots");
+  if (hidden) hidden.value = val;
+  return val;
+}
+
+function _writeInterviewSlots(str) {
+  const lines = (str || "")
+    .split(/[\n•]/)
+    .map((l) => l.replace(/^[•\-\s]+/, "").trim())
+    .filter(Boolean)
+    .slice(0, 3);
+
+  for (let i = 1; i <= 3; i++) {
+    const line = lines[i - 1] || "";
+    const atIdx = line.indexOf("@");
+    const dateEl = document.getElementById(`f-slot-${i}-date`);
+    const timeEl = document.getElementById(`f-slot-${i}-time`);
+    if (!dateEl || !timeEl) continue;
+    if (!line || atIdx === -1) {
+      dateEl.value = "";
+      timeEl.value = "09:00";
+    } else {
+      const datePart = line.slice(0, atIdx).trim();
+      const timePart = line.slice(atIdx + 1).trim().slice(0, 5); // HH:MM
+      // Normalize date to YYYY-MM-DD
+      try {
+        const d = new Date(datePart + "T12:00");
+        if (!isNaN(d)) {
+          const pad = (n) => String(n).padStart(2, "0");
+          dateEl.value = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+        } else {
+          dateEl.value = datePart;
+        }
+      } catch (_) { dateEl.value = datePart; }
+      timeEl.value = /^\d{2}:\d{2}$/.test(timePart) ? timePart : "09:00";
+    }
+  }
+  const hidden = document.getElementById("f-interview-slots");
+  if (hidden) hidden.value = str || "";
+}
+
+// Sync pickers → hidden input on every change
+(function _initSlotPickers() {
+  for (let i = 1; i <= 3; i++) {
+    document.getElementById(`f-slot-${i}-date`)?.addEventListener("change", _readInterviewSlots);
+    document.getElementById(`f-slot-${i}-time`)?.addEventListener("change", _readInterviewSlots);
+  }
+})();
+
+/* ══════════════════════════════════════════════
    [SECTION: MODAL-OPEN] — Task/Applicant Modal
 ══════════════════════════════════════════════ */
 function _setModalAvatar(name, status) {
@@ -1889,7 +1950,7 @@ function _openTaskNewWithMode(status, mode) {
   _setField("f-course", "");
   _setField("f-skills", "");
   _setField("f-tools", "");
-  _setField("f-interview-slots", "");
+  _writeInterviewSlots("");
   _setField("f-supabase-id", "");
   _setField("f-referral-source", "");
   _setField("f-resume", "");
@@ -1997,7 +2058,7 @@ function openTaskEdit(id, goToAssessment = false) {
   _setField("f-course", t.course || "");
   _setField("f-skills", t.skills || "");
   _setField("f-tools", t.tools || "");
-  _setField("f-interview-slots", t.interview_slots || "");
+  _writeInterviewSlots(t.interview_slots || "");
   _setField("f-supabase-id", t.supabase_id || "");
   _setField("f-referral-source", t.referral_source || "");
   _setField("f-resume", t.resume_link || "");
@@ -2681,8 +2742,7 @@ document
         document.getElementById("f-skills")?.value?.trim() ?? "",
       tools:
         document.getElementById("f-tools")?.value?.trim() ?? "",
-      interview_slots:
-        document.getElementById("f-interview-slots")?.value?.trim() ?? "",
+      interview_slots: _readInterviewSlots(),
       supabase_id:
         document.getElementById("f-supabase-id")?.value?.trim() ?? "",
       referral_source:
@@ -5682,7 +5742,7 @@ function sheetImportFill(idx) {
   _setField("f-course", r.course || "");
   _setField("f-skills", r.skills || "");
   _setField("f-tools", r.tools || "");
-  _setField("f-interview-slots", r.interviewSlots || "");
+  _writeInterviewSlots(r.interviewSlots || "");
   _setField("f-referral-source", r.referralSource || "");
   _setField("f-resume", r.resumeLink || "");
   _setField("f-portfolio", r.portfolioLink || "");

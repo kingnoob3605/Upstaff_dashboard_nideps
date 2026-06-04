@@ -1701,7 +1701,25 @@
       </div>
       <div class="form-group">
         <label class="form-label">Interview Slots</label>
-        <input type="text" class="form-input" id="f-interview-slots" placeholder="e.g. 2026-04-17 @ 09:00"/>
+        <div class="slot-picker-grid">
+          <div class="slot-picker-row">
+            <span class="slot-badge slot-primary">Primary</span>
+            <input type="date" class="form-input slot-date" id="f-slot-1-date"/>
+            <input type="time" class="form-input slot-time" id="f-slot-1-time" value="09:00"/>
+          </div>
+          <div class="slot-picker-row">
+            <span class="slot-badge slot-alt">Alt 1</span>
+            <input type="date" class="form-input slot-date" id="f-slot-2-date"/>
+            <input type="time" class="form-input slot-time" id="f-slot-2-time" value="09:00"/>
+          </div>
+          <div class="slot-picker-row">
+            <span class="slot-badge slot-alt">Alt 2</span>
+            <input type="date" class="form-input slot-date" id="f-slot-3-date"/>
+            <input type="time" class="form-input slot-time" id="f-slot-3-time" value="09:00"/>
+          </div>
+        </div>
+        <!-- hidden: keeps backward-compat for all code reading f-interview-slots -->
+        <input type="hidden" id="f-interview-slots"/>
       </div>
       <div class="form-group">
         <label class="form-label">Supabase ID</label>
