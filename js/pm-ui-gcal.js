@@ -660,7 +660,10 @@ async function handleCreateCalendar() {
 /* handleDeleteCalendar
    Deletes a calendar from Google and removes it from the local registry.
    Primary calendar cannot be deleted. */
-async function handleDeleteCalendar(calendarId, calendarName, btnEl) {
+async function handleDeleteCalendar(calendarId, btnEl) {
+  // Look up name safely from in-memory store — never pass user data through inline JS attributes
+  const _calRec = (typeof UPSTAFF_CALENDARS !== "undefined" ? UPSTAFF_CALENDARS : []).find((c) => c.calendarId === calendarId);
+  const calendarName = _calRec ? _calRec.calendarName : calendarId;
   if (!gcalSignedIn) {
     showCalToast("⚠️ Sign in with Google first.");
     return;

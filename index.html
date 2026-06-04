@@ -181,36 +181,36 @@
     <!-- LIST / BOARD / TABLE filters -->
     <div id="sf-list-section" class="super-filter-inner">
       <div class="super-filter-group">
-        <label class="super-filter-label">Position</label>
+        <label class="super-filter-label" for="list-filter-position">Position</label>
         <select class="list-filter-select" id="list-filter-position" onchange="renderList();updateFilterBadge()">
           <option value="">All Positions</option>
         </select>
       </div>
       <div class="super-filter-group">
-        <label class="super-filter-label">Assignee</label>
+        <label class="super-filter-label" for="list-filter-assignee">Assignee</label>
         <select class="list-filter-select" id="list-filter-assignee" onchange="renderList();updateFilterBadge()">
           <option value="">All Assignees</option>
           <option>Assistant</option><option>Manager</option>
         </select>
       </div>
       <div class="super-filter-group">
-        <label class="super-filter-label">Priority</label>
+        <label class="super-filter-label" for="list-filter-priority">Priority</label>
         <select class="list-filter-select" id="list-filter-priority" onchange="renderList();updateFilterBadge()">
           <option value="">All Priorities</option>
           <option>Low</option><option>Medium</option><option>High</option><option>Urgent</option>
         </select>
       </div>
       <div class="super-filter-group">
-        <label class="super-filter-label">Due From</label>
+        <label class="super-filter-label" for="list-filter-date-from">Due From</label>
         <input type="date" class="list-filter-select" id="list-filter-date-from" onchange="renderList();updateFilterBadge()" style="height:32px;"/>
       </div>
       <div class="super-filter-group">
-        <label class="super-filter-label">Due To</label>
+        <label class="super-filter-label" for="list-filter-date-to">Due To</label>
         <input type="date" class="list-filter-select" id="list-filter-date-to" onchange="renderList();updateFilterBadge()" style="height:32px;"/>
       </div>
       <div class="super-filter-sep"></div>
       <div class="super-filter-group">
-        <label class="super-filter-label">Sort By</label>
+        <label class="super-filter-label" for="list-sort">Sort By</label>
         <select class="list-filter-select" id="list-sort" onchange="renderList()">
           <option value="due-asc">Due Date ↑</option>
           <option value="due-desc">Due Date ↓</option>
@@ -268,7 +268,7 @@
       <div class="list-filter-bar">
         <div class="list-search-wrap">
           <svg class="list-search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input type="text" placeholder="Search applicants…" id="list-search" oninput="_renderListDebounced()"/>
+          <input type="text" placeholder="Search applicants…" id="list-search" aria-label="Search applicants" oninput="_renderListDebounced()"/>
         </div>
         <button class="filter-btn" id="list-filter-btn" aria-label="Filter" onclick="toggleSuperFilter()" style="display:inline-flex;align-items:center;gap:6px;">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="20" y2="12"/><line x1="12" y1="18" x2="20" y2="18"/></svg>
@@ -882,14 +882,14 @@
             <!-- ── Google Calendar API Credentials ── -->
             <div class="settings-card">
               <div class="settings-card-title">🔑 Google Calendar API Credentials</div>
-              <div class="settings-card-desc">Required to sync with Google Calendar. Get these from <a href="https://console.cloud.google.com/" target="_blank" style="color:var(--violet)">Google Cloud Console</a> → APIs &amp; Services → Credentials.</div>
+              <div class="settings-card-desc">Required to sync with Google Calendar. Credentials are pre-loaded from your workspace config. <span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;background:rgba(67,233,123,.12);color:#43e97b;border:1px solid rgba(67,233,123,.25);">🔒 Synced from Supabase</span></div>
               <div class="settings-row">
                 <div><div class="settings-row-label">API Key</div><div class="settings-row-sub">Restrict this key to Google Calendar API only in Cloud Console</div></div>
-                <input class="settings-input" id="s-gcal-api-key" placeholder="AIzaSy…"/>
+                <input class="settings-input" type="password" id="s-gcal-api-key" placeholder="AIzaSy…" aria-label="Google Calendar API Key" autocomplete="off"/>
               </div>
               <div class="settings-row">
-                <div><div class="settings-row-label">OAuth Client ID</div><div class="settings-row-sub">Web application type, ends in .apps.googleusercontent.com</div></div>
-                <input class="settings-input" id="s-gcal-client-id" placeholder="xxxxxx.apps.googleusercontent.com"/>
+                <div><div class="settings-row-label">OAuth Client ID</div><div class="settings-row-sub">Web application type, ends in .apps.googleusercontent.com. This is a public identifier — safe to view.</div></div>
+                <input class="settings-input" id="s-gcal-client-id" placeholder="xxxxxx.apps.googleusercontent.com" aria-label="Google Calendar OAuth Client ID" autocomplete="off"/>
               </div>
               <div style="margin-top:12px;display:flex;justify-content:flex-end">
                 <button class="settings-save-btn" data-action="saveGCalApiCredentials">
@@ -903,7 +903,7 @@
             <div class="settings-card">
               <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
                 <div>
-                  <div class="settings-card-title" class="u-mb-2">Connected Calendars</div>
+                  <div class="settings-card-title u-mb-2">Connected Calendars</div>
                   <div class="u-fs-12 u-light">Calendars synced from your Google account. Sync to refresh.</div>
                 </div>
                 <button class="settings-save-btn" data-action="handleGCalSync">
@@ -1611,21 +1611,21 @@
         <div id="rejection-reason-text" style="font-size:12.5px;color:#dc2626;font-family:'Plus Jakarta Sans',sans-serif;"></div>
       </div>
       <div class="form-group">
-        <label class="form-label">Full Name <span class="req">*</span></label>
+        <label class="form-label" for="f-name">Full Name <span class="req">*</span></label>
         <input type="text" class="form-input" id="f-name" placeholder="e.g. Maria Santos"/>
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label">Email</label>
+          <label class="form-label" for="f-email">Email</label>
           <input type="email" class="form-input" id="f-email" placeholder="applicant@email.com"/>
         </div>
         <div class="form-group">
-          <label class="form-label">Phone</label>
+          <label class="form-label" for="f-phone">Phone</label>
           <input type="tel" class="form-input" id="f-phone" placeholder="+63 917 000 0000"/>
         </div>
       </div>
       <div class="form-group">
-        <label class="form-label">Address</label>
+        <label class="form-label" for="f-address">Address</label>
         <input type="text" class="form-input" id="f-address" placeholder="City, Province, Philippines"/>
       </div>
 
@@ -1633,27 +1633,27 @@
       <div class="form-section-divider">Application Info</div>
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label">Position Applied</label>
+          <label class="form-label" for="f-position">Position Applied</label>
           <select class="form-select" id="f-position"><option>Intake Caller</option></select>
         </div>
         <div class="form-group">
-          <label class="form-label">Application Date</label>
+          <label class="form-label" for="f-app-date">Application Date</label>
           <input type="date" class="form-input" id="f-app-date"/>
         </div>
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label">Interview Date</label>
+          <label class="form-label" for="f-interview-date">Interview Date</label>
           <input type="date" class="form-input" id="f-interview-date" title="Date applicant is scheduled to come in for interview"/>
         </div>
         <div class="form-group">
-          <label class="form-label">Follow-up Reminder</label>
+          <label class="form-label" for="f-followup-date">Follow-up Reminder</label>
           <input type="date" class="form-input" id="f-followup-date" title="Get notified on this date to follow up with the applicant"/>
         </div>
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label">Employment Type</label>
+          <label class="form-label" for="f-employment-type">Employment Type</label>
           <select class="form-select" id="f-employment-type">
             <option value="">— Select —</option>
             <option>Full-time</option>
@@ -1664,7 +1664,7 @@
           </select>
         </div>
         <div class="form-group">
-          <label class="form-label">Work Setup</label>
+          <label class="form-label" for="f-work-setup">Work Setup</label>
           <select class="form-select" id="f-work-setup">
             <option value="">— Select —</option>
             <option>On-site</option>
@@ -1675,7 +1675,7 @@
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label">Work Schedule</label>
+          <label class="form-label" for="f-work-schedule">Work Schedule</label>
           <select class="form-select" id="f-work-schedule">
             <option value="">— Select —</option>
             <option>Morning (6AM–2PM)</option>
@@ -1686,7 +1686,7 @@
           </select>
         </div>
         <div class="form-group">
-          <label class="form-label">Referral Source</label>
+          <label class="form-label" for="f-referral-source">Referral Source</label>
           <select class="form-select" id="f-referral-source">
             <option value="">— Select —</option>
             <option>LinkedIn</option>
@@ -1704,32 +1704,32 @@
         <div class="slot-picker-grid">
           <div class="slot-picker-row">
             <span class="slot-badge slot-primary">Primary</span>
-            <input type="date" class="form-input slot-date" id="f-slot-1-date"/>
-            <input type="time" class="form-input slot-time" id="f-slot-1-time" value="09:00"/>
+            <input type="date" class="form-input slot-date" id="f-slot-1-date" aria-label="Primary interview date"/>
+            <input type="time" class="form-input slot-time" id="f-slot-1-time" value="09:00" aria-label="Primary interview time"/>
           </div>
           <div class="slot-picker-row">
             <span class="slot-badge slot-alt">Alt 1</span>
-            <input type="date" class="form-input slot-date" id="f-slot-2-date"/>
-            <input type="time" class="form-input slot-time" id="f-slot-2-time" value="09:00"/>
+            <input type="date" class="form-input slot-date" id="f-slot-2-date" aria-label="Alternate 1 interview date"/>
+            <input type="time" class="form-input slot-time" id="f-slot-2-time" value="09:00" aria-label="Alternate 1 interview time"/>
           </div>
           <div class="slot-picker-row">
             <span class="slot-badge slot-alt">Alt 2</span>
-            <input type="date" class="form-input slot-date" id="f-slot-3-date"/>
-            <input type="time" class="form-input slot-time" id="f-slot-3-time" value="09:00"/>
+            <input type="date" class="form-input slot-date" id="f-slot-3-date" aria-label="Alternate 2 interview date"/>
+            <input type="time" class="form-input slot-time" id="f-slot-3-time" value="09:00" aria-label="Alternate 2 interview time"/>
           </div>
         </div>
         <!-- hidden: keeps backward-compat for all code reading f-interview-slots -->
         <input type="hidden" id="f-interview-slots"/>
       </div>
       <div class="form-group">
-        <label class="form-label">Supabase ID</label>
+        <label class="form-label" for="f-supabase-id">Supabase ID</label>
         <input type="text" class="form-input" id="f-supabase-id" placeholder="e.g. uuid-xxxx-xxxx"/>
       </div>
 
       <!-- Education -->
       <div class="form-section-divider">Education</div>
       <div class="form-group">
-        <label class="form-label">Education Level</label>
+        <label class="form-label" for="f-education-level">Education Level</label>
         <select class="form-select" id="f-education-level">
           <option value="">— Select —</option>
           <option>High School</option>
@@ -1742,11 +1742,11 @@
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label">School</label>
+          <label class="form-label" for="f-school">School</label>
           <input type="text" class="form-input" id="f-school" placeholder="University / College name"/>
         </div>
         <div class="form-group">
-          <label class="form-label">Course</label>
+          <label class="form-label" for="f-course">Course</label>
           <input type="text" class="form-input" id="f-course" placeholder="e.g. BS Computer Science"/>
         </div>
       </div>
@@ -1754,11 +1754,11 @@
       <!-- Skills & Tools -->
       <div class="form-section-divider">Skills &amp; Tools</div>
       <div class="form-group">
-        <label class="form-label">Skills</label>
+        <label class="form-label" for="f-skills">Skills</label>
         <textarea class="form-textarea" id="f-skills" placeholder="e.g. Communication, Problem-solving, Customer Service…" rows="2"></textarea>
       </div>
       <div class="form-group">
-        <label class="form-label">Tools</label>
+        <label class="form-label" for="f-tools">Tools</label>
         <textarea class="form-textarea" id="f-tools" placeholder="e.g. MS Office, Slack, Salesforce, Figma…" rows="2"></textarea>
       </div>
 
@@ -1766,7 +1766,7 @@
       <div class="form-section-divider">Links</div>
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label">Resume / CV Link</label>
+          <label class="form-label" for="f-resume">Resume / CV Link</label>
           <div class="link-card" id="lc-resume">
             <div class="link-card-input-row">
               <input type="text" class="form-input link-card-input" id="f-resume" placeholder="https://drive.google.com/… (optional)"/>
@@ -1777,7 +1777,7 @@
           </div>
         </div>
         <div class="form-group">
-          <label class="form-label">Portfolio Link</label>
+          <label class="form-label" for="f-portfolio">Portfolio Link</label>
           <div class="link-card" id="lc-portfolio">
             <div class="link-card-input-row">
               <input type="text" class="form-input link-card-input" id="f-portfolio" placeholder="https://behance.net/… (optional)"/>
@@ -1790,7 +1790,7 @@
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label">Video Intro Link</label>
+          <label class="form-label" for="f-video-intro">Video Intro Link</label>
           <div class="link-card" id="lc-video-intro">
             <div class="link-card-input-row">
               <input type="text" class="form-input link-card-input" id="f-video-intro" placeholder="https://drive.google.com/… or YouTube (optional)"/>
@@ -1801,7 +1801,7 @@
           </div>
         </div>
         <div class="form-group">
-          <label class="form-label">Other Docs Link</label>
+          <label class="form-label" for="f-other-docs">Other Docs Link</label>
           <div class="link-card" id="lc-other-docs">
             <div class="link-card-input-row">
               <input type="text" class="form-input link-card-input" id="f-other-docs" placeholder="https://drive.google.com/… (optional)"/>
@@ -1813,7 +1813,7 @@
         </div>
       </div>
       <div class="form-group">
-        <label class="form-label">Drive Folder Link</label>
+        <label class="form-label" for="f-drive-folder">Drive Folder Link</label>
         <div class="link-card" id="lc-drive-folder">
           <div class="link-card-input-row">
             <input type="text" class="form-input link-card-input" id="f-drive-folder" placeholder="https://drive.google.com/drive/folders/… (optional)"/>
@@ -1827,7 +1827,7 @@
       <!-- Notes -->
       <div class="form-section-divider">Notes</div>
       <div class="form-group">
-        <label class="form-label">Notes</label>
+        <label class="form-label" for="f-notes">Notes</label>
         <textarea class="form-textarea" id="f-notes" placeholder="Any additional notes about this applicant…" rows="3"></textarea>
         <div class="u-surface-note" id="f-notes-preview" style="display:none;"></div>
       </div>
@@ -1909,15 +1909,15 @@
       <div class="assessment-section assess-panel" id="assess-typing">
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label">Typing Assessment <span class="u-light u-fw-400">(WPM)</span></label>
+            <label class="form-label" for="f-typing-score">Typing Assessment <span class="u-light u-fw-400">(WPM)</span></label>
             <input type="text" class="form-input" id="f-typing-score" placeholder="e.g. 75"/>
           </div>
           <div class="form-group">
-            <label class="form-label">Word Typing <span class="u-light u-fw-400">(WPM)</span></label>
+            <label class="form-label" for="f-word-typing">Word Typing <span class="u-light u-fw-400">(WPM)</span></label>
             <input type="text" class="form-input" id="f-word-typing" placeholder="e.g. 80"/>
           </div>
           <div class="form-group">
-            <label class="form-label">Knowledge Test <span class="u-light u-fw-400">(out of 100)</span></label>
+            <label class="form-label" for="f-knowledge-score">Knowledge Test <span class="u-light u-fw-400">(out of 100)</span></label>
             <input type="number" class="form-input" id="f-knowledge-score" placeholder="e.g. 82" min="0" max="100"/>
           </div>
         </div>
@@ -1927,15 +1927,15 @@
       <div class="assessment-section assess-panel" id="assess-verbal" style="display:none">
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label">Verbal Comm <span class="u-light u-fw-400">(Recording Link)</span></label>
+            <label class="form-label" for="f-verbal-link">Verbal Comm <span class="u-light u-fw-400">(Recording Link)</span></label>
             <input type="url" class="form-input" id="f-verbal-link" placeholder="https://drive.google.com/…"/>
           </div>
           <div class="form-group">
-            <label class="form-label">Conflict Reso <span class="u-light u-fw-400">(out of 20)</span></label>
+            <label class="form-label" for="f-conflict-score">Conflict Reso <span class="u-light u-fw-400">(out of 20)</span></label>
             <input type="number" class="form-input" id="f-conflict-score" placeholder="e.g. 17" min="0" max="20"/>
           </div>
           <div class="form-group">
-            <label class="form-label">Grammar Test <span class="u-light u-fw-400">(out of 20)</span></label>
+            <label class="form-label" for="f-grammar-score">Grammar Test <span class="u-light u-fw-400">(out of 20)</span></label>
             <input type="number" class="form-input" id="f-grammar-score" placeholder="e.g. 18" min="0" max="20"/>
           </div>
         </div>
@@ -1954,7 +1954,7 @@
           Interview Notes
         </div>
         <div class="form-group">
-          <textarea class="form-textarea" id="f-interview-notes" placeholder="Notes from the interview panel…" rows="4"></textarea>
+          <textarea class="form-textarea" id="f-interview-notes" placeholder="Notes from the interview panel…" rows="4" aria-label="Interview notes"></textarea>
         </div>
       </div>
 
@@ -1966,7 +1966,7 @@
     <div class="modal-tab-panel" id="tab-recruit">
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label">Pipeline Stage</label>
+          <label class="form-label" for="f-status">Pipeline Stage</label>
           <select class="form-select" id="f-status">
             <option value="">All Stages</option>
             <option value="New">New</option>
@@ -1986,7 +1986,7 @@
           </select>
         </div>
         <div class="form-group">
-          <label class="form-label">Priority</label>
+          <label class="form-label" for="f-priority">Priority</label>
           <select class="form-select" id="f-priority">
             <option value="Low">Low</option>
             <option value="Medium" selected>Medium</option>
@@ -2009,7 +2009,7 @@
           </div>
         </div>
         <div class="form-group">
-          <label class="form-label">Candidate Folder</label>
+          <label class="form-label" for="f-folder">Candidate Folder</label>
           <select class="form-select" id="f-folder">
             <option value="">— None —</option>
             <option value="Waiting List">⏳ Waiting List</option>
@@ -2019,11 +2019,11 @@
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label">Start Date</label>
+          <label class="form-label" for="f-start">Start Date</label>
           <input type="date" class="form-input" id="f-start"/>
         </div>
         <div class="form-group">
-          <label class="form-label">Target / Due Date</label>
+          <label class="form-label" for="f-due">Target / Due Date</label>
           <input type="date" class="form-input" id="f-due"/>
         </div>
       </div>
@@ -2041,11 +2041,11 @@
       <!-- Row 1: Date + Interview Type -->
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label">Date</label>
+          <label class="form-label" for="iv-date">Date</label>
           <input type="date" class="form-input" id="iv-date"/>
         </div>
         <div class="form-group">
-          <label class="form-label">Interview Stage</label>
+          <label class="form-label" for="iv-type">Interview Stage</label>
           <select class="form-select" id="iv-type">
             <option>Initial Interview</option>
             <option>HR Round</option>
@@ -2062,11 +2062,11 @@
       <!-- Row 2: Start Time + End Time -->
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label">Start Time</label>
+          <label class="form-label" for="iv-start-time">Start Time</label>
           <input type="time" class="form-input" id="iv-start-time" onchange="document.getElementById('iv-end-time').value=ivAutoEndTime(this.value)"/>
         </div>
         <div class="form-group">
-          <label class="form-label">End Time</label>
+          <label class="form-label" for="iv-end-time">End Time</label>
           <input type="time" class="form-input" id="iv-end-time"/>
         </div>
       </div>
@@ -2074,7 +2074,7 @@
       <!-- Row 3: Status + Interviewer -->
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label">Status</label>
+          <label class="form-label" for="iv-status">Status</label>
           <select class="form-select" id="iv-status">
             <option>Scheduled</option>
             <option>Completed</option>
@@ -2083,7 +2083,7 @@
           </select>
         </div>
         <div class="form-group">
-          <label class="form-label">Interviewer</label>
+          <label class="form-label" for="iv-interviewer">Interviewer</label>
           <input type="text" class="form-input" id="iv-interviewer" placeholder="e.g. Assistant"/>
         </div>
       </div>
@@ -2091,7 +2091,7 @@
       <!-- Row 4: Format -->
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label">Interview Format</label>
+          <label class="form-label" for="iv-format">Interview Format</label>
           <select class="form-select" id="iv-format">
             <option value="Face-to-Face">Face-to-Face</option>
             <option value="Virtual">Virtual</option>
@@ -2102,7 +2102,7 @@
 
       <!-- Meeting Link — with platform toggle + generate -->
       <div class="form-group">
-        <label class="form-label" class="u-flex-row u-gap-6">
+        <label class="form-label u-flex-row u-gap-6" for="iv-meeting-link">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M15 10l4.553-2.069A1 1 0 0 1 21 8.845v6.31a1 1 0 0 1-1.447.914L15 14"/><rect x="1" y="6" width="15" height="12" rx="2"/></svg>
           Meeting Link
         </label>
@@ -2128,7 +2128,7 @@
             Open platform
           </button>
         </div>
-        <input type="url" class="form-input" id="iv-meeting-link" placeholder="https://meet.google.com/xxx-xxxx-xxx" class="u-mt-8"/>
+        <input type="url" class="form-input u-mt-8" id="iv-meeting-link" placeholder="https://meet.google.com/xxx-xxxx-xxx"/>
         <!-- Join preview -->
         <div id="iv-link-preview" style="display:none;margin-top:6px">
           <a id="iv-link-anchor" href="#" target="_blank" rel="noopener noreferrer"
@@ -2142,7 +2142,7 @@
 
       <!-- Notes -->
       <div class="form-group">
-        <label class="form-label">Notes</label>
+        <label class="form-label" for="iv-notes">Notes</label>
         <textarea class="form-textarea" id="iv-notes" placeholder="Additional notes about this interview…" rows="3"></textarea>
       </div>
 
