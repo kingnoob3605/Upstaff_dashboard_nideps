@@ -2579,6 +2579,13 @@ document
     _updateVerbalPreview(this.value);
   });
 
+// Clear stale URL validation errors when user edits the field
+["f-resume", "f-portfolio", "f-video-intro", "f-other-docs", "f-drive-folder"].forEach((id) => {
+  document.getElementById(id)?.addEventListener("input", function () {
+    clearFieldError(this);
+  });
+});
+
 document
   .getElementById("btn-task-save")
   ?.addEventListener("click", async () => {
@@ -2639,17 +2646,11 @@ document
       gcalEventId: existing?.gcalEventId || null,
       // Applicant profile
       applicant_email:
-        document.getElementById("f-email")?.value?.trim() ||
-        existing?.applicant_email ||
-        "",
+        document.getElementById("f-email")?.value?.trim() ?? "",
       applicant_phone:
-        document.getElementById("f-phone")?.value?.trim() ||
-        existing?.applicant_phone ||
-        "",
+        document.getElementById("f-phone")?.value?.trim() ?? "",
       address:
-        document.getElementById("f-address")?.value?.trim() ||
-        existing?.address ||
-        "",
+        document.getElementById("f-address")?.value?.trim() ?? "",
       employment_type:
         document.getElementById("f-employment-type")?.value ||
         existing?.employment_type ||
@@ -2667,53 +2668,31 @@ document
         existing?.education_level ||
         "",
       school:
-        document.getElementById("f-school")?.value?.trim() ||
-        existing?.school ||
-        "",
+        document.getElementById("f-school")?.value?.trim() ?? "",
       course:
-        document.getElementById("f-course")?.value?.trim() ||
-        existing?.course ||
-        "",
+        document.getElementById("f-course")?.value?.trim() ?? "",
       skills:
-        document.getElementById("f-skills")?.value?.trim() ||
-        existing?.skills ||
-        "",
+        document.getElementById("f-skills")?.value?.trim() ?? "",
       tools:
-        document.getElementById("f-tools")?.value?.trim() ||
-        existing?.tools ||
-        "",
+        document.getElementById("f-tools")?.value?.trim() ?? "",
       interview_slots:
-        document.getElementById("f-interview-slots")?.value?.trim() ||
-        existing?.interview_slots ||
-        "",
+        document.getElementById("f-interview-slots")?.value?.trim() ?? "",
       supabase_id:
-        document.getElementById("f-supabase-id")?.value?.trim() ||
-        existing?.supabase_id ||
-        "",
+        document.getElementById("f-supabase-id")?.value?.trim() ?? "",
       referral_source:
         document.getElementById("f-referral-source")?.value ||
         existing?.referral_source ||
         "",
       resume_link:
-        document.getElementById("f-resume")?.value?.trim() ||
-        existing?.resume_link ||
-        "",
+        document.getElementById("f-resume")?.value?.trim() ?? "",
       portfolio_link:
-        document.getElementById("f-portfolio")?.value?.trim() ||
-        existing?.portfolio_link ||
-        "",
+        document.getElementById("f-portfolio")?.value?.trim() ?? "",
       video_intro_link:
-        document.getElementById("f-video-intro")?.value?.trim() ||
-        existing?.video_intro_link ||
-        "",
+        document.getElementById("f-video-intro")?.value?.trim() ?? "",
       other_docs_link:
-        document.getElementById("f-other-docs")?.value?.trim() ||
-        existing?.other_docs_link ||
-        "",
+        document.getElementById("f-other-docs")?.value?.trim() ?? "",
       drive_folder_link:
-        document.getElementById("f-drive-folder")?.value?.trim() ||
-        existing?.drive_folder_link ||
-        "",
+        document.getElementById("f-drive-folder")?.value?.trim() ?? "",
       application_date:
         document.getElementById("f-app-date")?.value ||
         existing?.application_date ||

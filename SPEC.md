@@ -242,13 +242,13 @@ Current tables live (confirmed via MCP list_tables):
 
 | id | status | task | cites |
 |---|---|---|---|
-| T01 | . | Fix save handler: write empty string for cleared URL fields → Supabase upsert | B03 |
-| T02 | . | Fix URL fields: optional when blank, no browser validation error | B04 |
-| T03 | . | Define `ageBadgeHTML()` in `pm-ui-core.js` | B02 |
-| T04 | . | Fix assignee search: array `.some()` check | B01 |
+| T01 | x | Fix save handler: write empty string for cleared URL fields → Supabase upsert | B03 |
+| T02 | x | Fix URL fields: optional when blank, no browser validation error | B04 |
+| T03 | x | `ageBadgeHTML()` already defined @ `pm-ui-core.js:1759` — audit FP | B02 |
+| T04 | x | Fix assignee search: array `.some()` check | B01 |
 | T05 | . | Interview slot revamp: 3 date options (1 primary, 2 alternates) replacing free-text `f-interview-slots` | §IV |
 | T06 | . | Fix date parse: `new Date(y,m-1,d)` local midnight ∀ date fields | B05 |
-| T07 | . | Fix `loadDataFromSupabase()`: add try/catch, reset loading flag, show error toast | B06 |
+| T07 | x | Fix `loadDataFromSupabase()`: move JWT check inside try block; reset loading flag; show error toast | B06 |
 | T08 | . | Add DB indexes: `applicants(status, position, application_date, assignee)` | audit |
 | T09 | . | Add NOT NULL to `applicant_name`, `status`, `priority` columns | audit |
 | T10 | . | Deprecate `pm-ui-api.js` entirely; remove `syncApplicantsFromApi()` dead path | audit |
