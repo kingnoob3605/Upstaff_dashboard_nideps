@@ -268,7 +268,7 @@
       <div class="list-filter-bar">
         <div class="list-search-wrap">
           <svg class="list-search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input type="text" placeholder="Search applicants…" id="list-search"/>
+          <input type="text" placeholder="Search applicants…" id="list-search" oninput="_renderListDebounced()"/>
         </div>
         <button class="filter-btn" id="list-filter-btn" aria-label="Filter" onclick="toggleSuperFilter()" style="display:inline-flex;align-items:center;gap:6px;">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="20" y2="12"/><line x1="12" y1="18" x2="20" y2="18"/></svg>

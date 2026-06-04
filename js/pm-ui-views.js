@@ -2940,6 +2940,34 @@ document
       }
     }
 
+    // ── Auto-sync interview_date to Google Calendar ──
+    // Fires when: interview_date is set + GCal connected + date changed (or no event yet)
+    const _ivDateChanged = t.interview_date &&
+      t.interview_date !== (existing?.interview_date || "");
+    const _ivHasNoEvent = t.interview_date && !t.gcalEventId;
+    if (
+      t.interview_date &&
+      (_ivDateChanged || _ivHasNoEvent) &&
+      !sync && // don't double-sync if checkbox already handled it
+      typeof gcalSignedIn !== "undefined" &&
+      gcalSignedIn &&
+      gapi?.client?.calendar
+    ) {
+      try {
+        // Build a task proxy with interview_date as the event date
+        const _ivTask = {
+          ...t,
+          start: t.interview_date,
+          due:   t.interview_date,
+          name:  `📅 Interview: ${t.applicant_name || t.name}${t.position ? " — " + t.position : ""}`,
+        };
+        await _taskSyncToGcal(_ivTask);
+        showToast("📅 Interview date synced to Google Calendar!");
+      } catch (e) {
+        console.warn("[GCal] Interview date auto-sync failed:", e.message);
+      }
+    }
+
     closeTaskModal();
     refreshCurrentView();
   });
@@ -6892,7 +6920,7 @@ function renderAnalytics() {
     (t) => t.hired_at && (t.application_date || t.start),
   )
     .map((t) => {
-      const a = new Date(t.application_date || t.start);
+      const a = new Date((t.application_date || t.start) + "T12:00");
       const h = new Date(t.hired_at);
       return isNaN(a) || isNaN(h)
         ? null
@@ -6976,7 +7004,7 @@ function renderAnalytics() {
       const days = Math.max(
         0,
         Math.round(
-          (new Date(t.hired_at) - new Date(t.application_date || t.start)) /
+          (new Date(t.hired_at) - new Date((t.application_date || t.start) + "T12:00")) /
             86400000,
         ),
       );
