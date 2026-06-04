@@ -1859,6 +1859,9 @@ window.closeNewApplicantChooser = function () {
 };
 function _openTaskNewWithMode(status, mode) {
   taskEditId = null;
+  // Clear any stale validation errors from previous modal session
+  const _modalForm = document.getElementById("task-modal");
+  if (_modalForm) clearAllFieldErrors(_modalForm);
   document.getElementById("task-modal-heading").textContent = "New Applicant";
   _setModalAvatar("New Applicant", status);
   document.getElementById("f-name").value = "";
@@ -1961,6 +1964,9 @@ function openTaskEdit(id, goToAssessment = false) {
   const t = TASKS.find((x) => x.id === id);
   if (!t) return;
   taskEditId = id;
+  // Clear any stale validation errors from previous modal session
+  const _modalFormEdit = document.getElementById("task-modal");
+  if (_modalFormEdit) clearAllFieldErrors(_modalFormEdit);
   const _tName = t.applicant_name || t.name;
   // Hide sheet import strip when editing existing applicant
   const _importStripEdit = document.getElementById("sheet-import-strip");
