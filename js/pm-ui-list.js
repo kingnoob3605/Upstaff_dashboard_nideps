@@ -388,22 +388,29 @@ function renderList() {
 
   // Stats bar
   const allTasks = TASKS;
-  const overdueCount = allTasks.filter(
-    (t) => dueCls(t.due) === "overdue" && !TERMINAL_STAGES.includes(t.status),
-  ).length;
-  const todayCount = allTasks.filter(
-    (t) => dueCls(t.due) === "today" && t.status !== "Hired",
-  ).length;
-  const doneCount = allTasks.filter((t) => t.status === "Hired").length;
-  const totalCount = allTasks.length;
   const statsEl = document.getElementById("list-stats-bar");
-  if (statsEl)
-    statsEl.innerHTML = `
-    <div class="list-stat-chip"><span class="stat-val">${totalCount}</span>&nbsp;Total Applicants</div>
-    <div class="list-stat-chip overdue-chip"><span class="stat-val">${overdueCount}</span>&nbsp;Overdue</div>
-    <div class="list-stat-chip today-chip"><span class="stat-val">${todayCount}</span>&nbsp;Interview Today</div>
-    <div class="list-stat-chip done-chip"><span class="stat-val">${doneCount}</span>&nbsp;Hired</div>
-  `;
+  if (statsEl) {
+    if (window._supabaseLoading && !allTasks.length) {
+      statsEl.innerHTML = Array(4)
+        .fill('<div class="skeleton skeleton-stat-chip"></div>')
+        .join("");
+    } else {
+      const overdueCount = allTasks.filter(
+        (t) => dueCls(t.due) === "overdue" && !TERMINAL_STAGES.includes(t.status),
+      ).length;
+      const todayCount = allTasks.filter(
+        (t) => dueCls(t.due) === "today" && t.status !== "Hired",
+      ).length;
+      const doneCount = allTasks.filter((t) => t.status === "Hired").length;
+      const totalCount = allTasks.length;
+      statsEl.innerHTML = `
+        <div class="list-stat-chip"><span class="stat-val">${totalCount}</span>&nbsp;Total Applicants</div>
+        <div class="list-stat-chip overdue-chip"><span class="stat-val">${overdueCount}</span>&nbsp;Overdue</div>
+        <div class="list-stat-chip today-chip"><span class="stat-val">${todayCount}</span>&nbsp;Interview Today</div>
+        <div class="list-stat-chip done-chip"><span class="stat-val">${doneCount}</span>&nbsp;Hired</div>
+      `;
+    }
+  }
 
   // Active filter tags
   const tagsEl = document.getElementById("list-active-tags");
@@ -647,8 +654,8 @@ function renderList() {
               <td class="col-intdate">${intDateHTML}</td>
               <td>
                 <span class="${statusPillClass(t.status)}">${t.status}</span>
-                ${t.partner_status ? `<span style="display:block;margin-top:3px;font-size:9px;padding:1px 6px;border-radius:99px;background:rgba(62,207,223,.12);color:#3ecfdf;font-weight:600;font-family:'Montserrat',sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px;" title="${sanitize(t.partner_status)}">${sanitize(t.partner_status)}</span>` : ""}
-                ${t.rejection_reason && t.status === "Rejected" ? `<span style="display:block;margin-top:3px;font-size:9px;padding:1px 6px;border-radius:99px;background:#fee2e2;color:#ef4444;font-weight:600;font-family:'Montserrat',sans-serif;">${sanitize(t.rejection_reason)}</span>` : ""}
+                ${t.partner_status ? `<span style="display:block;margin-top:3px;font-size:9px;padding:1px 6px;border-radius:99px;background:rgba(62,207,223,.12);color:#3ecfdf;font-weight:600;font-family:'Plus Jakarta Sans',sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px;" title="${sanitize(t.partner_status)}">${sanitize(t.partner_status)}</span>` : ""}
+                ${t.rejection_reason && t.status === "Rejected" ? `<span style="display:block;margin-top:3px;font-size:9px;padding:1px 6px;border-radius:99px;background:#fee2e2;color:#ef4444;font-weight:600;font-family:'Plus Jakarta Sans',sans-serif;">${sanitize(t.rejection_reason)}</span>` : ""}
                 ${stageMini}
               </td>
               <td class="col-scores"><div class="list-scores-cell">${scoresHTML || `<span style="font-size:11px;color:var(--light);">—</span>`}</div></td>
@@ -673,12 +680,22 @@ function renderList() {
     </div>`;
   });
 
-  if (!anySection)
-    html = `<div class="empty-state">
-      <div class="empty-state-icon">👥</div>
-      <div class="empty-state-title">${TASKS.length === 0 ? "No applicants yet" : "No applicants match your filters"}</div>
-      <div class="empty-state-subtitle">${TASKS.length === 0 ? "Click <strong>+ Add Applicant</strong> in the top right to get started." : "Try adjusting or clearing your filters."}</div>
-    </div>`;
+  if (!anySection) {
+    if (window._supabaseLoading && TASKS.length === 0) {
+      html =
+        '<div class="skeleton-list-wrap">' +
+        Array(7)
+          .fill('<div class="skeleton-list-row"><div class="skeleton skeleton-avatar"></div><div class="skeleton-lines"><div class="skeleton skeleton-text sk-long"></div><div class="skeleton skeleton-text sk-medium"></div></div></div>')
+          .join("") +
+        "</div>";
+    } else {
+      html = `<div class="empty-state">
+        <div class="empty-state-icon">👥</div>
+        <div class="empty-state-title">${TASKS.length === 0 ? "No applicants yet" : "No applicants match your filters"}</div>
+        <div class="empty-state-subtitle">${TASKS.length === 0 ? "Click <strong>+ Add Applicant</strong> in the top right to get started." : "Try adjusting or clearing your filters."}</div>
+      </div>`;
+    }
+  }
 
   // Render the fully-built html into the DOM
   const _listEl = document.getElementById("list-sections");

@@ -630,7 +630,7 @@ function _refreshScoreSummary() {
     const hasPass = threshold !== undefined && !isNaN(num);
     const passed = hasPass && num >= threshold;
     const pill = hasPass
-      ? `<span style="font-size:10px;font-weight:800;font-family:'Montserrat',sans-serif;padding:2px 8px;border-radius:99px;background:${passed ? "rgba(67,233,123,.12)" : "rgba(239,68,68,.1)"};color:${passed ? "var(--green)" : "#ef4444"};">${passed ? "✓ PASS" : "✗ FAIL"}</span>`
+      ? `<span style="font-size:10px;font-weight:800;font-family:'Plus Jakarta Sans',sans-serif;padding:2px 8px;border-radius:99px;background:${passed ? "rgba(67,233,123,.12)" : "rgba(239,68,68,.1)"};color:${passed ? "var(--green)" : "#ef4444"};">${passed ? "✓ PASS" : "✗ FAIL"}</span>`
       : "";
     const display = outOf ? `${val}/${outOf}` : val;
     return `<div class="score-item"><span class="score-label">${label}</span><span class="score-val" style="display:flex;align-items:center;gap:6px;">${display}${pill}</span></div>`;
@@ -2501,7 +2501,7 @@ function _renderReviewAssessmentSummary(task) {
       const passed = kNum >= 75;
       const rc = passed ? "var(--green)" : "#ef4444";
       const rb = passed ? "rgba(67,233,123,.12)" : "rgba(239,68,68,.1)";
-      return `<div class="rv-assess-row"><span class="rv-assess-label">📝 Knowledge Test</span><div style="display:flex;align-items:center;gap:6px;"><span class="rv-assess-val">${knowledge} / 100</span><span style="font-size:10px;font-weight:800;font-family:'Montserrat',sans-serif;padding:2px 8px;border-radius:99px;background:${rb};color:${rc};">${passed ? "✓ PASSED" : "✗ FAILED"}</span></div></div>`;
+      return `<div class="rv-assess-row"><span class="rv-assess-label">📝 Knowledge Test</span><div style="display:flex;align-items:center;gap:6px;"><span class="rv-assess-val">${knowledge} / 100</span><span style="font-size:10px;font-weight:800;font-family:'Plus Jakarta Sans',sans-serif;padding:2px 8px;border-radius:99px;background:${rb};color:${rc};">${passed ? "✓ PASSED" : "✗ FAILED"}</span></div></div>`;
     })()}
     ${verbal ? `<div class="rv-assess-row"><span class="rv-assess-label">🎙️ Verbal Test</span><a href="${verbal}" target="_blank" style="color:var(--cyan);font-weight:700;font-size:12px;">View Recording</a></div>` : ""}
     ${notes ? `<div class="rv-assess-row rv-assess-row-full"><span class="rv-assess-label">💬 Interview Notes</span><span class="rv-assess-val" style="font-weight:400;color:var(--muted);">${sanitize(notes)}</span></div>` : ""}
@@ -3565,11 +3565,11 @@ function openEmpDetail(empId) {
     `${e.fname} ${e.lname}`;
   document.getElementById("emp-detail-body").innerHTML = `
     <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border);">
-      <div style="width:56px;height:56px;border-radius:16px;background:${ac};display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:#fff;font-family:'Montserrat',sans-serif;">${initParts}</div>
+      <div style="width:56px;height:56px;border-radius:16px;background:${ac};display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:#fff;font-family:'Plus Jakarta Sans',sans-serif;">${initParts}</div>
       <div class="u-flex-1">
         <div style="font-size:16px;font-weight:800;font-family:'Syne',sans-serif;color:var(--text);">${sanitize(e.fname)} ${sanitize(e.lname)}</div>
         <div style="font-size:12px;color:var(--muted);margin-top:2px;">${sanitize(e.position)}</div>
-        <span style="display:inline-flex;margin-top:5px;padding:3px 10px;border-radius:99px;font-size:10px;font-weight:700;font-family:'Montserrat',sans-serif;background:${sm.bg};color:${sm.color};">${sm.label}</span>
+        <span style="display:inline-flex;margin-top:5px;padding:3px 10px;border-radius:99px;font-size:10px;font-weight:700;font-family:'Plus Jakarta Sans',sans-serif;background:${sm.bg};color:${sm.color};">${sm.label}</span>
       </div>
     </div>
 
@@ -3749,14 +3749,25 @@ function renderTable() {
   ];
   const thead = `<thead><tr>${cols.map((c) => `<th onclick="sortTable('${c.key}')">${c.label} ${tableSort.col === c.key ? (tableSort.dir === 1 ? "↑" : "↓") : ""}</th>`).join("")}</tr></thead>`;
   if (data.length === 0) {
-    document.getElementById("table-el").innerHTML = `
-      <tbody><tr><td colspan="11" class="u-text-center" style="padding:48px 24px;">
-        <div class="u-text-md u-text-muted u-flex-col u-gap-8" style="align-items:center;">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.4"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <span class="u-font-600">No applicants found</span>
-          <span class="u-text-sm" style="opacity:0.6;">Try a different search or add an applicant</span>
-        </div>
-      </td></tr></tbody>`;
+    if (window._supabaseLoading) {
+      document.getElementById("table-el").innerHTML =
+        "<tbody>" +
+        Array(8)
+          .fill(
+            '<tr><td colspan="11" style="padding:4px 16px;"><div class="skeleton skeleton-table-row"></div></td></tr>',
+          )
+          .join("") +
+        "</tbody>";
+    } else {
+      document.getElementById("table-el").innerHTML = `
+        <tbody><tr><td colspan="11" class="u-text-center" style="padding:48px 24px;">
+          <div class="u-text-md u-text-muted u-flex-col u-gap-8" style="align-items:center;">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.4"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <span class="u-font-600">No applicants found</span>
+            <span class="u-text-sm" style="opacity:0.6;">Try a different search or add an applicant</span>
+          </div>
+        </td></tr></tbody>`;
+    }
     return;
   }
   const tbody = `<tbody>${data
@@ -4257,7 +4268,7 @@ function renderCalendarSidebar() {
       <span style="font-size:14px;line-height:1;opacity:${opacity};">${cal.icon}</span>
       <div style="flex:1;min-width:0;opacity:${opacity};">
         <div style="font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${cal.calendarName}</div>
-        <div style="font-size:10px;color:var(--muted);font-family:'Montserrat',sans-serif;">${cal.calendarType} · ${count} event${count !== 1 ? "s" : ""}</div>
+        <div style="font-size:10px;color:var(--muted);font-family:'Plus Jakarta Sans',sans-serif;">${cal.calendarType} · ${count} event${count !== 1 ? "s" : ""}</div>
       </div>
     </div>`;
   }).join("");
@@ -4305,7 +4316,7 @@ function renderCalendarSidebar() {
           s,
         ) => `<div style="display:flex;flex-direction:column;align-items:center;padding:8px 12px;border-radius:10px;background:var(--surface-3);min-width:56px;">
       <div style="font-size:20px;font-weight:800;color:${s.color};font-family:'Syne',sans-serif;line-height:1;">${s.val}</div>
-      <div style="font-size:10px;color:var(--muted);font-family:'Montserrat',sans-serif;margin-top:2px;">${s.label}</div>
+      <div style="font-size:10px;color:var(--muted);font-family:'Plus Jakarta Sans',sans-serif;margin-top:2px;">${s.label}</div>
     </div>`,
       )
       .join("");
@@ -4368,7 +4379,7 @@ function renderSettingsCalendarList() {
       <!-- Info -->
       <div class="u-flex-1">
         <div style="font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-          ${cal.calendarName}${isPrimary ? ' <span style="font-size:10px;font-weight:700;background:rgba(68,215,233,.15);color:var(--cyan);padding:1px 7px;border-radius:5px;font-family:Montserrat,sans-serif;">PRIMARY</span>' : ""}
+          ${cal.calendarName}${isPrimary ? ' <span style="font-size:10px;font-weight:700;background:rgba(68,215,233,.15);color:var(--cyan);padding:1px 7px;border-radius:5px;font-family:Plus Jakarta Sans,sans-serif;">PRIMARY</span>' : ""}
         </div>
         <div style="font-size:11px;color:var(--muted);margin-top:2px;display:flex;align-items:center;gap:8px;">
           <span style="display:inline-flex;align-items:center;gap:4px;">
@@ -4789,7 +4800,7 @@ function openEdit(id) {
         const badge = document.createElement("span");
         badge.className = "gcal-badge";
         badge.style.cssText =
-          'font-size:10px;font-weight:700;background:rgba(66,133,244,.12);color:#4285F4;border:1px solid rgba(66,133,244,.25);border-radius:6px;padding:2px 8px;margin-left:8px;font-family:"Montserrat",sans-serif;';
+          'font-size:10px;font-weight:700;background:rgba(66,133,244,.12);color:#4285F4;border:1px solid rgba(66,133,244,.25);border-radius:6px;padding:2px 8px;margin-left:8px;font-family:"Plus Jakarta Sans",sans-serif;';
         badge.textContent = getCalName(e.calendarId || e.sourceCalendar);
         heading.appendChild(badge);
       }
@@ -5450,9 +5461,6 @@ async function _rebuildAssigneeOptions() {
     const rows = await SupabaseAuth.getMembers();
     if (!Array.isArray(rows) || !rows.length) return;
     const byKey = new Map();
-    MEMBERS.forEach((m) =>
-      byKey.set((m.email || m.name || "").toLowerCase(), m),
-    );
     rows.forEach((r) => {
       const name = (r.name || (r.email || "").split("@")[0] || "Member").trim();
       const key = (r.email || name).toLowerCase();
@@ -5586,7 +5594,7 @@ function renderHistoryTab(task) {
   if (!el) return;
   const history = task.stage_history || [];
   if (!history.length) {
-    el.innerHTML = `<div style="padding:24px;text-align:center;color:var(--muted);font-size:12px;font-family:'Montserrat',sans-serif;">No stage transitions recorded yet.</div>`;
+    el.innerHTML = `<div style="padding:24px;text-align:center;color:var(--muted);font-size:12px;font-family:'Plus Jakarta Sans',sans-serif;">No stage transitions recorded yet.</div>`;
     return;
   }
   el.innerHTML = [...history]
@@ -5626,18 +5634,18 @@ function sheetImportSearch(query) {
     if (!window.UpstaffAPI || !UpstaffAPI.isConfigured()) {
       if (resEl) {
         resEl.style.display = "";
-        resEl.innerHTML = `<div style="padding:10px 12px;font-size:11px;color:var(--muted);font-family:'Montserrat',sans-serif;">Sheet API not configured.</div>`;
+        resEl.innerHTML = `<div style="padding:10px 12px;font-size:11px;color:var(--muted);font-family:'Plus Jakarta Sans',sans-serif;">Sheet API not configured.</div>`;
       }
       return;
     }
     if (resEl)
-      resEl.innerHTML = `<div style="padding:10px 12px;font-size:11px;color:var(--muted);font-family:'Montserrat',sans-serif;">Searching…</div>`;
+      resEl.innerHTML = `<div style="padding:10px 12px;font-size:11px;color:var(--muted);font-family:'Plus Jakarta Sans',sans-serif;">Searching…</div>`;
     if (resEl) resEl.style.display = "";
     try {
       const res = await UpstaffAPI.search(query.trim());
       const data = res.data || [];
       if (!data.length) {
-        resEl.innerHTML = `<div style="padding:10px 12px;font-size:11px;color:var(--muted);font-family:'Montserrat',sans-serif;">No applicants found in Sheet.</div>`;
+        resEl.innerHTML = `<div style="padding:10px 12px;font-size:11px;color:var(--muted);font-family:'Plus Jakarta Sans',sans-serif;">No applicants found in Sheet.</div>`;
         return;
       }
       resEl.innerHTML = data
@@ -5646,8 +5654,8 @@ function sheetImportSearch(query) {
           (r, i) =>
             `<div class="sheet-import-row" onclick="sheetImportFill(${i})" data-idx="${i}"
           style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:2px;">
-          <div style="font-size:12px;font-weight:700;color:var(--text);font-family:'Montserrat',sans-serif;">${sanitize(r.fullName || "—")}</div>
-          <div style="font-size:10px;color:var(--muted);font-family:'Montserrat',sans-serif;">${sanitize(r.positions || r.email || "")}</div>
+          <div style="font-size:12px;font-weight:700;color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;">${sanitize(r.fullName || "—")}</div>
+          <div style="font-size:10px;color:var(--muted);font-family:'Plus Jakarta Sans',sans-serif;">${sanitize(r.positions || r.email || "")}</div>
         </div>`,
         )
         .join("");
@@ -5660,7 +5668,7 @@ function sheetImportSearch(query) {
         row.addEventListener("mouseleave", () => (row.style.background = ""));
       });
     } catch (e) {
-      resEl.innerHTML = `<div style="padding:10px 12px;font-size:11px;color:var(--muted);font-family:'Montserrat',sans-serif;">Search failed: ${sanitize(e.message)}</div>`;
+      resEl.innerHTML = `<div style="padding:10px 12px;font-size:11px;color:var(--muted);font-family:'Plus Jakarta Sans',sans-serif;">Search failed: ${sanitize(e.message)}</div>`;
     }
   }, 350);
 }
@@ -6696,7 +6704,7 @@ function buildDonut(container, data, colors) {
     <circle cx="${cx}" cy="${cy}" r="${r}" fill="currentColor" style="fill:var(--surface-1,#ffffff);"/>
     <!-- centre labels — drawn last so they sit on top of the hole -->
     <text x="${cx}" y="${cy - 4}" text-anchor="middle" dominant-baseline="middle" font-size="16" font-weight="800" font-family="Syne,sans-serif" fill="currentColor" style="fill:var(--text);">${total}</text>
-    <text x="${cx}" y="${cy + 11}" text-anchor="middle" dominant-baseline="middle" font-size="8" font-weight="700" font-family="Montserrat,sans-serif" fill="currentColor" style="fill:var(--muted);letter-spacing:.08em;">TOTAL</text>
+    <text x="${cx}" y="${cy + 11}" text-anchor="middle" dominant-baseline="middle" font-size="8" font-weight="700" font-family="Plus Jakarta Sans,sans-serif" fill="currentColor" style="fill:var(--muted);letter-spacing:.08em;">TOTAL</text>
   </svg>`;
 
   const legend = `<div class="donut-legend">${slices
@@ -6952,7 +6960,7 @@ function renderAnalytics() {
           labels: {
             style: {
               fontSize: "11px",
-              fontFamily: "Montserrat,sans-serif",
+              fontFamily: "Plus Jakarta Sans,sans-serif",
               colors: _apexFore,
             },
           },
@@ -7037,7 +7045,7 @@ function renderAnalytics() {
           labels: {
             style: {
               fontSize: "11px",
-              fontFamily: "Montserrat,sans-serif",
+              fontFamily: "Plus Jakarta Sans,sans-serif",
               colors: _apexFore,
             },
           },
@@ -7109,7 +7117,7 @@ function renderAnalytics() {
           labels: {
             style: {
               fontSize: "11px",
-              fontFamily: "Montserrat,sans-serif",
+              fontFamily: "Plus Jakarta Sans,sans-serif",
               colors: _apexFore,
             },
           },
@@ -7212,7 +7220,7 @@ function renderAnalytics() {
       legend: {
         position: "bottom",
         fontSize: "11px",
-        fontFamily: "Montserrat,sans-serif",
+        fontFamily: "Plus Jakarta Sans,sans-serif",
         labels: { colors: _apexFore },
       },
       plotOptions: {
@@ -7276,7 +7284,7 @@ function renderAnalytics() {
       legend: {
         position: "bottom",
         fontSize: "11px",
-        fontFamily: "Montserrat,sans-serif",
+        fontFamily: "Plus Jakarta Sans,sans-serif",
         labels: { colors: _apexFore },
       },
       plotOptions: {
@@ -7341,7 +7349,7 @@ function renderAnalytics() {
         labels: {
           style: {
             fontSize: "11px",
-            fontFamily: "Montserrat,sans-serif",
+            fontFamily: "Plus Jakarta Sans,sans-serif",
             colors: _apexFore,
           },
         },
@@ -7414,7 +7422,7 @@ function renderAnalytics() {
         labels: {
           style: {
             fontSize: "11px",
-            fontFamily: "Montserrat,sans-serif",
+            fontFamily: "Plus Jakarta Sans,sans-serif",
             colors: _apexFore,
           },
         },
@@ -7757,7 +7765,7 @@ function showAnalytics() {
   document.getElementById("btn-add-task").style.display = "none";
 
   renderAnalytics();
-  _renderApiCountsBanner();
+  // _renderApiCountsBanner(); — disabled: not needed
 
   // syncApplicantsFromApi({ silent: true }); — disabled: manual-entry mode
 }
@@ -7805,7 +7813,7 @@ async function _renderApiCountsBanner() {
           .join("")}
       </div>`;
   } catch (e) {
-    banner.innerHTML = `<div style="font-size:12px;color:var(--muted)">🔗 Could not load live counts: ${sanitize(e.message)}</div>`;
+    banner.remove();
   }
 }
 
@@ -8004,7 +8012,7 @@ function moveCandidateFolder(taskId, btnEl) {
   if (existing) existing.remove();
   const popup = document.createElement("div");
   popup.id = "folder-picker-popup";
-  popup.style.cssText = `position:fixed;top:${rect.bottom + 4}px;left:${rect.left}px;background:var(--surface-1);border:1.5px solid var(--border);border-radius:12px;box-shadow:var(--shadow-lg);z-index:9999;padding:6px;min-width:200px;font-family:"DM Sans",sans-serif;`;
+  popup.style.cssText = `position:fixed;top:${rect.bottom + 4}px;left:${rect.left}px;background:var(--surface-1);border:1.5px solid var(--border);border-radius:12px;box-shadow:var(--shadow-lg);z-index:9999;padding:6px;min-width:200px;font-family:"Plus Jakarta Sans",sans-serif;`;
   popup.innerHTML = folders
     .map(
       (f) => `
@@ -8741,7 +8749,7 @@ function applyTheme(key) {
   const g = parseInt(t.accent.slice(3, 5), 16);
   const b = parseInt(t.accent.slice(5, 7), 16);
   const tint = (a) =>
-    `rgb(${Math.round(r * a + 255 * (1 - a))},${Math.round(g * a + 255 * (1 - a))},${Math.round(b * a + 255 * (1 - a))})`;
+    `rgb(${Math.round(r * a + 244 * (1 - a))},${Math.round(g * a + 243 * (1 - a))},${Math.round(b * a + 241 * (1 - a))})`;
   // Luminance gate: compute light-mode accent as rgba-ready integers
   const lum = (r * 299 + g * 587 + b * 114) / 1000;
   const la_r = lum > 160 ? Math.round(r * 0.55) : r;

@@ -415,7 +415,7 @@ function toggleBulkMoveStageMenu(e) {
   ];
 
   if (statuses.length !== 1) {
-    menu.innerHTML = `<div style="padding:8px 12px;font-size:12px;font-weight:600;font-family:'Montserrat',sans-serif;color:#f59e0b;white-space:normal;max-width:200px;">Select applicants from the same stage only.</div>`;
+    menu.innerHTML = `<div style="padding:8px 12px;font-size:12px;font-weight:600;font-family:'Plus Jakarta Sans',sans-serif;color:#f59e0b;white-space:normal;max-width:200px;">Select applicants from the same stage only.</div>`;
   } else {
     const idx = STAGE_ORDER.indexOf(statuses[0]);
     const fwd =
@@ -424,7 +424,7 @@ function toggleBulkMoveStageMenu(e) {
         : [];
     const othersOpts = OTHERS_STATUSES.filter((s) => s !== statuses[0]);
     if (!fwd.length && !othersOpts.length) {
-      menu.innerHTML = `<div style="padding:8px 12px;font-size:12px;font-weight:600;font-family:'Montserrat',sans-serif;color:var(--muted);">No stages available.</div>`;
+      menu.innerHTML = `<div style="padding:8px 12px;font-size:12px;font-weight:600;font-family:'Plus Jakarta Sans',sans-serif;color:var(--muted);">No stages available.</div>`;
     } else {
       let html = fwd
         .map(
@@ -435,7 +435,7 @@ function toggleBulkMoveStageMenu(e) {
       if (othersOpts.length) {
         if (fwd.length)
           html += `<div style="margin:4px 8px;border-top:1px solid var(--border);"></div>`;
-        html += `<div style="padding:4px 12px 2px;font-size:10px;font-weight:700;color:var(--muted);font-family:'Montserrat',sans-serif;text-transform:uppercase;letter-spacing:.5px;">Others</div>`;
+        html += `<div style="padding:4px 12px 2px;font-size:10px;font-weight:700;color:var(--muted);font-family:'Plus Jakarta Sans',sans-serif;text-transform:uppercase;letter-spacing:.5px;">Others</div>`;
         html += othersOpts
           .map(
             (stage) =>
@@ -993,6 +993,10 @@ function _taskToRow(t) {
     verbal_link:        t.verbal_link || "",
     conflict_score:     t.conflict_score || "",
     grammar_score:      t.grammar_score || "",
+    data_entry_score:   t.data_entry_score || "",
+    formatting_score:   t.formatting_score || "",
+    sorting_score:      t.sorting_score || "",
+    candidate_folder:   t.candidateFolder || "",
     gcal_event_id:      t.gcalEventId || "",
     hired_at:           t.hired_at || null,
     rejected_at:        t.rejected_at || null,
@@ -1047,6 +1051,10 @@ function _rowToTask(r) {
     verbal_link:        r.verbal_link || "",
     conflict_score:     r.conflict_score || "",
     grammar_score:      r.grammar_score || "",
+    data_entry_score:   r.data_entry_score || "",
+    formatting_score:   r.formatting_score || "",
+    sorting_score:      r.sorting_score || "",
+    candidateFolder:    r.candidate_folder || "",
     gcalEventId:        r.gcal_event_id || null,
     hired_at:           r.hired_at || "",
     rejected_at:        r.rejected_at || "",
@@ -1130,9 +1138,12 @@ async function _supabaseSyncNow() {
 var _syncDebounced = debounce(_supabaseSyncNow, 2000);
 window._syncDebounced = _syncDebounced;
 
+window._supabaseLoading = false;
+
 async function loadDataFromSupabase() {
+  window._supabaseLoading = true;
   var c = _getSupabaseCfg();
-  if (!c) return;
+  if (!c) { window._supabaseLoading = false; return; }
   if (_jwtExpiredCore(c.supabaseToken)) {
     if (window.SupabaseAuth && SupabaseAuth.getFreshToken) {
       var fresh = await SupabaseAuth.getFreshToken();
@@ -1227,6 +1238,12 @@ async function loadDataFromSupabase() {
     persistSave();
   } catch (err) {
     console.warn("[Supabase] ⚠️ loadDataFromSupabase failed:", err);
+  } finally {
+    window._supabaseLoading = false;
+    if (typeof renderList === "function") renderList();
+    if (typeof renderBoard === "function") renderBoard();
+    if (typeof renderTable === "function") renderTable();
+    if (typeof renderCalendar === "function") renderCalendar();
   }
 }
 
@@ -1658,26 +1675,17 @@ function getCalName(calendarId) {
 let POSITIONS = [...JOB_POSITIONS];
 
 /* ── Team members (used by Settings) — loaded from localStorage ── */
-const DEFAULT_MEMBERS = [
-  {
-    name: "Assistant",
-    role: "Assistant",
-    email: "assistant@upstaff.com",
-    color: "#44d7e9",
-  },
-  {
-    name: "Manager",
-    role: "Manager",
-    email: "manager@upstaff.com",
-    color: "#6c63ff",
-  },
-];
+const DEFAULT_MEMBERS = [];
+const _FAKE_MEMBER_EMAILS = ["assistant@upstaff.com", "manager@upstaff.com"];
 let MEMBERS = (() => {
   try {
     const raw = localStorage.getItem("upstaff_members");
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      return parsed.filter((m) => !_FAKE_MEMBER_EMAILS.includes(m.email));
+    }
   } catch (_) {}
-  return DEFAULT_MEMBERS.map((m) => ({ ...m }));
+  return [];
 })();
 function saveMembers() {
   try {
@@ -1941,18 +1949,18 @@ function _pickRejectionReason() {
     overlay.style.cssText =
       "position:fixed;inset:0;z-index:99998;background:rgba(0,0,0,.55);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;";
     overlay.innerHTML = `
-      <div style="background:var(--surface-1);border:1px solid var(--border);border-radius:14px;padding:24px 24px 20px;min-width:320px;max-width:420px;width:90%;box-shadow:0 8px 40px rgba(0,0,0,.3);font-family:'Montserrat',sans-serif;">
+      <div style="background:var(--surface-1);border:1px solid var(--border);border-radius:14px;padding:24px 24px 20px;min-width:320px;max-width:420px;width:90%;box-shadow:0 8px 40px rgba(0,0,0,.3);font-family:'Plus Jakarta Sans',sans-serif;">
         <div style="font-size:22px;margin-bottom:8px;">🚫</div>
         <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px;">Rejection Reason</div>
         <div style="font-size:12.5px;color:var(--muted);margin-bottom:16px;line-height:1.5;">Select a reason before archiving this applicant.</div>
         <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:18px;">
           ${REJECTION_REASONS.map(
             (r) =>
-              `<button class="rr-option" data-reason="${r}" style="text-align:left;padding:9px 14px;border-radius:9px;border:1px solid var(--border);background:var(--surface-3);color:var(--text);font-size:12.5px;font-weight:500;cursor:pointer;font-family:'Montserrat',sans-serif;transition:background 0.15s,border-color 0.15s;">${r}</button>`,
+              `<button class="rr-option" data-reason="${r}" style="text-align:left;padding:9px 14px;border-radius:9px;border:1px solid var(--border);background:var(--surface-3);color:var(--text);font-size:12.5px;font-weight:500;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:background 0.15s,border-color 0.15s;">${r}</button>`,
           ).join("")}
         </div>
         <div style="display:flex;gap:10px;justify-content:flex-end;">
-          <button id="rr-cancel" style="padding:8px 18px;border-radius:8px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);font-size:13px;font-weight:600;cursor:pointer;font-family:'Montserrat',sans-serif;">Cancel</button>
+          <button id="rr-cancel" style="padding:8px 18px;border-radius:8px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);font-size:13px;font-weight:600;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;">Cancel</button>
         </div>
       </div>`;
     document.body.appendChild(overlay);

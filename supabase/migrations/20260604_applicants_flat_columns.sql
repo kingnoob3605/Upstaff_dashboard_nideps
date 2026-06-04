@@ -54,6 +54,10 @@ ALTER TABLE applicants
   ADD COLUMN IF NOT EXISTS verbal_link        text,
   ADD COLUMN IF NOT EXISTS conflict_score     text,
   ADD COLUMN IF NOT EXISTS grammar_score      text,
+  ADD COLUMN IF NOT EXISTS data_entry_score   text,
+  ADD COLUMN IF NOT EXISTS formatting_score   text,
+  ADD COLUMN IF NOT EXISTS sorting_score      text,
+  ADD COLUMN IF NOT EXISTS candidate_folder   text,
 
   -- Pipeline / system fields
   ADD COLUMN IF NOT EXISTS gcal_event_id      text,
@@ -107,6 +111,10 @@ SET
   verbal_link       = data->>'verbal_link',
   conflict_score    = data->>'conflict_score',
   grammar_score     = data->>'grammar_score',
+  data_entry_score  = data->>'data_entry_score',
+  formatting_score  = data->>'formatting_score',
+  sorting_score     = data->>'sorting_score',
+  candidate_folder  = data->>'candidateFolder',
   gcal_event_id     = data->>'gcalEventId',
   hired_at          = NULLIF(data->>'hired_at',          '')::timestamptz,
   rejected_at       = NULLIF(data->>'rejected_at',       '')::timestamptz,

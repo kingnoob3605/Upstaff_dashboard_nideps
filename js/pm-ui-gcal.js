@@ -271,7 +271,7 @@ function showPopupBlockedBanner() {
   const banner = document.createElement("div");
   banner.id = "gcal-popup-banner";
   banner.style.cssText =
-    'position:fixed;top:68px;left:50%;transform:translateX(-50%);z-index:9999;background:#fff8e1;border:1.5px solid #fbbf24;border-radius:14px;padding:14px 20px;box-shadow:0 6px 24px rgba(0,0,0,.15);display:flex;align-items:center;gap:14px;max-width:520px;width:calc(100% - 40px);font-family:"DM Sans",sans-serif;animation:slideUp .3s ease;';
+    'position:fixed;top:68px;left:50%;transform:translateX(-50%);z-index:9999;background:#fff8e1;border:1.5px solid #fbbf24;border-radius:14px;padding:14px 20px;box-shadow:0 6px 24px rgba(0,0,0,.15);display:flex;align-items:center;gap:14px;max-width:520px;width:calc(100% - 40px);font-family:"Plus Jakarta Sans",sans-serif;animation:slideUp .3s ease;';
   banner.innerHTML = `
     <div style="font-size:24px;flex-shrink:0;">&#x1F512;</div>
     <div style="flex:1;min-width:0;">
@@ -1264,7 +1264,7 @@ function hashStr(str) {
     display:none; position:fixed; top:0; left:0; right:0; z-index:99999;
     background:linear-gradient(135deg,#0f172a 0%,#1e3a5f 100%);
     color:#fff; padding:0; box-shadow:0 8px 40px rgba(0,0,0,.5);
-    font-family:"DM Sans",sans-serif; animation:reminderSlideDown .4s ease;
+    font-family:"Plus Jakarta Sans",sans-serif; animation:reminderSlideDown .4s ease;
   `;
   banner.innerHTML = `
     <style>
@@ -1288,7 +1288,7 @@ function hashStr(str) {
       #reminder-content { flex:1; min-width:0; }
       #reminder-label {
         font-size:11px; font-weight:700; text-transform:uppercase;
-        letter-spacing:.08em; font-family:"Montserrat",sans-serif;
+        letter-spacing:.08em; font-family:"Plus Jakarta Sans",sans-serif;
         margin-bottom:3px; opacity:.75;
       }
       #reminder-name {
@@ -1303,7 +1303,7 @@ function hashStr(str) {
       #reminder-join-btn {
         display:none; padding:9px 18px; border-radius:10px;
         background:var(--cyan); color:#0f172a; font-size:12px; font-weight:700;
-        font-family:"Montserrat",sans-serif; text-decoration:none; border:none;
+        font-family:"Plus Jakarta Sans",sans-serif; text-decoration:none; border:none;
         cursor:pointer; white-space:nowrap; transition:background .15s;
         align-items:center; gap:6px;
       }
@@ -1311,7 +1311,7 @@ function hashStr(str) {
       #reminder-view-btn {
         padding:9px 18px; border-radius:10px;
         background:rgba(255,255,255,.1); color:#fff; font-size:12px; font-weight:700;
-        font-family:"Montserrat",sans-serif; border:1px solid rgba(255,255,255,.2);
+        font-family:"Plus Jakarta Sans",sans-serif; border:1px solid rgba(255,255,255,.2);
         cursor:pointer; white-space:nowrap; transition:background .15s;
       }
       #reminder-view-btn:hover { background:rgba(255,255,255,.18); }
@@ -1323,7 +1323,7 @@ function hashStr(str) {
       }
       #reminder-dismiss-btn:hover { background:rgba(255,255,255,.15); color:#fff; }
       #reminder-countdown {
-        font-size:11px; font-weight:700; font-family:"Montserrat",sans-serif;
+        font-size:11px; font-weight:700; font-family:"Plus Jakarta Sans",sans-serif;
         padding:3px 10px; border-radius:6px; white-space:nowrap;
       }
     </style>
@@ -1509,7 +1509,7 @@ function fireReminder(evt, minutesBefore) {
 
   const countdown = document.getElementById("reminder-countdown");
   if (countdown)
-    countdown.style.cssText = `font-size:11px;font-weight:700;font-family:"Montserrat",sans-serif;padding:3px 10px;border-radius:6px;white-space:nowrap;background:${countdownColor}22;color:${countdownColor};border:1px solid ${countdownColor}44;`;
+    countdown.style.cssText = `font-size:11px;font-weight:700;font-family:"Plus Jakarta Sans",sans-serif;padding:3px 10px;border-radius:6px;white-space:nowrap;background:${countdownColor}22;color:${countdownColor};border:1px solid ${countdownColor}44;`;
 
   // Color the icon based on urgency
   const iconWrap = document.getElementById("reminder-icon-wrap");
