@@ -1007,6 +1007,7 @@ function _taskToRow(t) {
     activity:           t.activity || [],
     comments:           t.comments || [],
     attachments:        t.attachments || [],
+    partner_status:     t.partner_status || "",
   };
 }
 
@@ -1065,6 +1066,7 @@ function _rowToTask(r) {
     activity:           r.activity || [],
     comments:           r.comments || [],
     attachments:        r.attachments || [],
+    partner_status:     r.partner_status || "",
     // Legacy aliases
     start:              r.application_date || "",
     due:                r.interview_date || "",

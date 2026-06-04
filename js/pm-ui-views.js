@@ -1876,11 +1876,27 @@ function _writeInterviewSlots(str) {
 }
 
 // Sync pickers → hidden input on every change
+// Also: interview_date ↔ Primary slot (slot 1) stay in sync
 (function _initSlotPickers() {
   for (let i = 1; i <= 3; i++) {
     document.getElementById(`f-slot-${i}-date`)?.addEventListener("change", _readInterviewSlots);
     document.getElementById(`f-slot-${i}-time`)?.addEventListener("change", _readInterviewSlots);
   }
+
+  // interview_date → Primary slot date
+  document.getElementById("f-interview-date")?.addEventListener("change", function () {
+    const slot1 = document.getElementById("f-slot-1-date");
+    if (slot1 && this.value) {
+      slot1.value = this.value;
+      _readInterviewSlots();
+    }
+  });
+
+  // Primary slot date → interview_date
+  document.getElementById("f-slot-1-date")?.addEventListener("change", function () {
+    const ivDate = document.getElementById("f-interview-date");
+    if (ivDate && this.value) ivDate.value = this.value;
+  });
 })();
 
 /* ══════════════════════════════════════════════
@@ -2059,6 +2075,11 @@ function openTaskEdit(id, goToAssessment = false) {
   _setField("f-skills", t.skills || "");
   _setField("f-tools", t.tools || "");
   _writeInterviewSlots(t.interview_slots || "");
+  // If no primary slot set but interview_date exists, pre-fill slot 1
+  if (t.interview_date && !document.getElementById("f-slot-1-date")?.value) {
+    const slot1 = document.getElementById("f-slot-1-date");
+    if (slot1) { slot1.value = t.interview_date; _readInterviewSlots(); }
+  }
   _setField("f-supabase-id", t.supabase_id || "");
   _setField("f-referral-source", t.referral_source || "");
   _setField("f-resume", t.resume_link || "");
@@ -2272,11 +2293,11 @@ function _renderIvSavedList(task) {
       <div class="u-surface-card">
         <div class="u-flex-between" style="margin-bottom:6px;">
           <div class="u-text-md u-font-700">
-            ${e.round || e.interview_type || "Interview"}
+            ${sanitize(e.round || e.interview_type || "Interview")}
           </div>
           <div class="u-flex-center u-gap-8">
             <span style="font-size:11px;font-weight:700;color:${sc};background:${sc}18;padding:2px 10px;border-radius:20px;">
-              ${e.status || "Scheduled"}
+              ${sanitize(e.status || "Scheduled")}
             </span>
             <button
               onclick="deleteIvScheduleEvent(${e.id})"
@@ -4333,15 +4354,15 @@ function renderCalendarSidebar() {
       onmouseenter="this.style.background='var(--surface-4)'"
       onmouseleave="this.style.background='${hidden ? "transparent" : "var(--row-hover)"}'">
       <!-- visibility toggle -->
-      <button onclick="toggleCalendarVisibility('${cal.calendarId}')" title="${hidden ? "Show" : "Hide"} ${cal.calendarName}"
+      <button onclick="toggleCalendarVisibility('${cal.calendarId}')" title="${hidden ? "Show" : "Hide"} ${sanitize(cal.calendarName)}"
         style="all:unset;cursor:pointer;display:flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:5px;border:2px solid ${cal.color};background:${hidden ? "transparent" : cal.color};flex-shrink:0;transition:all .15s;">
         ${hidden ? "" : `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>`}
       </button>
       <!-- icon + name -->
       <span style="font-size:14px;line-height:1;opacity:${opacity};">${cal.icon}</span>
       <div style="flex:1;min-width:0;opacity:${opacity};">
-        <div style="font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${cal.calendarName}</div>
-        <div style="font-size:10px;color:var(--muted);font-family:'Plus Jakarta Sans',sans-serif;">${cal.calendarType} · ${count} event${count !== 1 ? "s" : ""}</div>
+        <div style="font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${sanitize(cal.calendarName)}</div>
+        <div style="font-size:10px;color:var(--muted);font-family:'Plus Jakarta Sans',sans-serif;">${sanitize(cal.calendarType)} · ${count} event${count !== 1 ? "s" : ""}</div>
       </div>
     </div>`;
   }).join("");
@@ -4452,12 +4473,12 @@ function renderSettingsCalendarList() {
       <!-- Info -->
       <div class="u-flex-1">
         <div style="font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-          ${cal.calendarName}${isPrimary ? ' <span style="font-size:10px;font-weight:700;background:rgba(68,215,233,.15);color:var(--cyan);padding:1px 7px;border-radius:5px;font-family:Plus Jakarta Sans,sans-serif;">PRIMARY</span>' : ""}
+          ${sanitize(cal.calendarName)}${isPrimary ? ' <span style="font-size:10px;font-weight:700;background:rgba(68,215,233,.15);color:var(--cyan);padding:1px 7px;border-radius:5px;font-family:Plus Jakarta Sans,sans-serif;">PRIMARY</span>' : ""}
         </div>
         <div style="font-size:11px;color:var(--muted);margin-top:2px;display:flex;align-items:center;gap:8px;">
           <span style="display:inline-flex;align-items:center;gap:4px;">
             <span style="width:8px;height:8px;border-radius:50%;background:${cal.color};flex-shrink:0;display:inline-block;"></span>
-            ${cal.calendarType}
+            ${sanitize(cal.calendarType)}
           </span>
           <span>·</span>
           <span>${count} event${count !== 1 ? "s" : ""}</span>
@@ -4473,7 +4494,7 @@ function renderSettingsCalendarList() {
         ${
           !isPrimary
             ? `
-        <button onclick="handleDeleteCalendar('${cal.calendarId}', '${cal.calendarName.replace(/'/g, "\'")}', this)"
+        <button onclick="handleDeleteCalendar('${cal.calendarId}', this)"
           title="Delete this calendar from Google"
           class="btn-cal-delete">
           🗑 Delete
@@ -4506,9 +4527,9 @@ function renderCalendarLegend() {
     `<span class="u-text-sm u-font-700 u-text-muted u-font-mono">Calendars:</span>` +
     UPSTAFF_CALENDARS.map((cal) => {
       const hidden = hiddenCalendars.has(cal.calendarId);
-      return `<div class="cal-legend-item" onclick="toggleCalendarVisibility('${cal.calendarId}')" title="${hidden ? "Show" : "Hide"} ${cal.calendarName}" style="cursor:pointer;opacity:${hidden ? 0.4 : 1};transition:opacity .15s;">
+      return `<div class="cal-legend-item" onclick="toggleCalendarVisibility('${cal.calendarId}')" title="${hidden ? "Show" : "Hide"} ${sanitize(cal.calendarName)}" style="cursor:pointer;opacity:${hidden ? 0.4 : 1};transition:opacity .15s;">
         <div class="cal-legend-dot" style="background:${cal.color};${hidden ? "border:2px solid var(--border);background:transparent;" : ""};"></div>
-        ${cal.calendarName}
+        ${sanitize(cal.calendarName)}
       </div>`;
     }).join("");
 }
@@ -5631,7 +5652,7 @@ function renderActivityTab(task) {
       <div class="activity-dot"></div>
       <div class="activity-content">
         <span class="activity-author">${sanitize(item.by)}</span>
-        <span class="activity-action"> ${actLabel[item.action] || item.action}</span>
+        <span class="activity-action"> ${sanitize(actLabel[item.action] || item.action)}</span>
         ${item.detail ? `<span class="activity-detail"> — ${sanitize(item.detail)}</span>` : ""}
         <div class="activity-time">${_relTime(item.at)}</div>
       </div>

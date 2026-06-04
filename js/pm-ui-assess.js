@@ -340,6 +340,6 @@ function applyPendingAssessment() {
   // Instant notification via CustomEvent (same-origin portal)
   window.addEventListener("upstaff:assessmentSubmitted", _checkForNew);
 
-  // Fallback poller every 30s (covers cross-tab writes)
-  setInterval(_checkForNew, 30000);
+  // Fallback poller disabled — assessment portal is optional; instant event above handles same-tab.
+  // setInterval(_checkForNew, 30000);
 })();
