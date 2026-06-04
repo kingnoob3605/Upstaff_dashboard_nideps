@@ -1102,9 +1102,9 @@ async function _supabaseSyncNow() {
     }).catch(function () {});
   }
 
-  // Upsert local calendar events (exclude Google events)
+  // Upsert local calendar events (exclude Google events + _fromSlot pseudo-events)
   var localEvts = calEvents.filter(function (e) {
-    return !e.isGoogleEvent;
+    return !e.isGoogleEvent && !e._fromSlot && e.sourceCalendar !== "interview_slots";
   });
   if (localEvts.length > 0) {
     var evtRows = localEvts.map(function (e) {
