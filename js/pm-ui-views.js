@@ -1876,11 +1876,27 @@ function _writeInterviewSlots(str) {
 }
 
 // Sync pickers → hidden input on every change
+// Also: interview_date ↔ Primary slot (slot 1) stay in sync
 (function _initSlotPickers() {
   for (let i = 1; i <= 3; i++) {
     document.getElementById(`f-slot-${i}-date`)?.addEventListener("change", _readInterviewSlots);
     document.getElementById(`f-slot-${i}-time`)?.addEventListener("change", _readInterviewSlots);
   }
+
+  // interview_date → Primary slot date
+  document.getElementById("f-interview-date")?.addEventListener("change", function () {
+    const slot1 = document.getElementById("f-slot-1-date");
+    if (slot1 && this.value) {
+      slot1.value = this.value;
+      _readInterviewSlots();
+    }
+  });
+
+  // Primary slot date → interview_date
+  document.getElementById("f-slot-1-date")?.addEventListener("change", function () {
+    const ivDate = document.getElementById("f-interview-date");
+    if (ivDate && this.value) ivDate.value = this.value;
+  });
 })();
 
 /* ══════════════════════════════════════════════
@@ -2059,6 +2075,11 @@ function openTaskEdit(id, goToAssessment = false) {
   _setField("f-skills", t.skills || "");
   _setField("f-tools", t.tools || "");
   _writeInterviewSlots(t.interview_slots || "");
+  // If no primary slot set but interview_date exists, pre-fill slot 1
+  if (t.interview_date && !document.getElementById("f-slot-1-date")?.value) {
+    const slot1 = document.getElementById("f-slot-1-date");
+    if (slot1) { slot1.value = t.interview_date; _readInterviewSlots(); }
+  }
   _setField("f-supabase-id", t.supabase_id || "");
   _setField("f-referral-source", t.referral_source || "");
   _setField("f-resume", t.resume_link || "");
