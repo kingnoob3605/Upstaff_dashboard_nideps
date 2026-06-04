@@ -950,6 +950,119 @@ function _jwtExpiredCore(token) {
   }
 }
 
+// ── Supabase row helpers ────────────────────────────────────────────────────
+function _taskToRow(t) {
+  var now = new Date().toISOString();
+  return {
+    id:                 t.id,
+    updated_at:         now,
+    applicant_name:     t.applicant_name || t.name || "",
+    applicant_email:    t.applicant_email || "",
+    applicant_phone:    t.applicant_phone || "",
+    address:            t.address || "",
+    status:             t.status || "",
+    priority:           t.priority || "",
+    position:           t.position || "",
+    assignee:           t.assignee || "",
+    assignees:          t.assignees || [],
+    application_date:   t.application_date || null,
+    interview_date:     t.interview_date || null,
+    followup_date:      t.followup_date || null,
+    followup_notified:  t.followup_notified || "",
+    employment_type:    t.employment_type || "",
+    work_setup:         t.work_setup || "",
+    work_schedule:      t.work_schedule || "",
+    referral_source:    t.referral_source || "",
+    interview_slots:    t.interview_slots || "",
+    supabase_id:        t.supabase_id || "",
+    education_level:    t.education_level || "",
+    school:             t.school || "",
+    course:             t.course || "",
+    skills:             t.skills || "",
+    tools:              t.tools || "",
+    resume_link:        t.resume_link || "",
+    portfolio_link:     t.portfolio_link || "",
+    video_intro_link:   t.video_intro_link || "",
+    other_docs_link:    t.other_docs_link || "",
+    drive_folder_link:  t.drive_folder_link || "",
+    notes:              t.notes || "",
+    interview_notes:    t.interview_notes || "",
+    typing_score:       t.typing_score || "",
+    word_typing:        t.word_typing || "",
+    knowledge_score:    t.knowledge_score || "",
+    verbal_link:        t.verbal_link || "",
+    conflict_score:     t.conflict_score || "",
+    grammar_score:      t.grammar_score || "",
+    gcal_event_id:      t.gcalEventId || "",
+    hired_at:           t.hired_at || null,
+    rejected_at:        t.rejected_at || null,
+    rejection_reason:   t.rejection_reason || "",
+    stage_changed_at:   t.stage_changed_at || null,
+    archived:           t.archived || false,
+    stage_history:      t.stage_history || [],
+    activity:           t.activity || [],
+    comments:           t.comments || [],
+    attachments:        t.attachments || [],
+  };
+}
+
+function _rowToTask(r) {
+  return {
+    id:                 r.id,
+    name:               r.applicant_name || "",
+    applicant_name:     r.applicant_name || "",
+    applicant_email:    r.applicant_email || "",
+    applicant_phone:    r.applicant_phone || "",
+    address:            r.address || "",
+    status:             r.status || "New",
+    priority:           r.priority || "Medium",
+    position:           r.position || "",
+    assignee:           r.assignee || "Assistant",
+    assignees:          r.assignees || (r.assignee ? [r.assignee] : ["Assistant"]),
+    application_date:   r.application_date || "",
+    interview_date:     r.interview_date || "",
+    followup_date:      r.followup_date || "",
+    followup_notified:  r.followup_notified || "",
+    employment_type:    r.employment_type || "",
+    work_setup:         r.work_setup || "",
+    work_schedule:      r.work_schedule || "",
+    referral_source:    r.referral_source || "",
+    interview_slots:    r.interview_slots || "",
+    supabase_id:        r.supabase_id || "",
+    education_level:    r.education_level || "",
+    school:             r.school || "",
+    course:             r.course || "",
+    skills:             r.skills || "",
+    tools:              r.tools || "",
+    resume_link:        r.resume_link || "",
+    portfolio_link:     r.portfolio_link || "",
+    video_intro_link:   r.video_intro_link || "",
+    other_docs_link:    r.other_docs_link || "",
+    drive_folder_link:  r.drive_folder_link || "",
+    notes:              r.notes || "",
+    interview_notes:    r.interview_notes || "",
+    typing_score:       r.typing_score || "",
+    word_typing:        r.word_typing || "",
+    knowledge_score:    r.knowledge_score || "",
+    verbal_link:        r.verbal_link || "",
+    conflict_score:     r.conflict_score || "",
+    grammar_score:      r.grammar_score || "",
+    gcalEventId:        r.gcal_event_id || null,
+    hired_at:           r.hired_at || "",
+    rejected_at:        r.rejected_at || "",
+    rejection_reason:   r.rejection_reason || "",
+    stage_changed_at:   r.stage_changed_at || "",
+    archived:           r.archived || false,
+    stage_history:      r.stage_history || [],
+    activity:           r.activity || [],
+    comments:           r.comments || [],
+    attachments:        r.attachments || [],
+    // Legacy aliases
+    start:              r.application_date || "",
+    due:                r.interview_date || "",
+  };
+}
+
 async function _supabaseSyncNow() {
   var c = _getSupabaseCfg();
   if (!c) return;
@@ -971,11 +1084,9 @@ async function _supabaseSyncNow() {
   };
   var base = c.supabaseUrl + "/rest/v1/";
 
-  // Upsert tasks
+  // Upsert tasks — flat columns
   if (TASKS.length > 0) {
-    var taskRows = TASKS.map(function (t) {
-      return { id: t.id, data: t, updated_at: new Date().toISOString() };
-    });
+    var taskRows = TASKS.map(_taskToRow);
     fetch(base + "applicants", {
       method: "POST",
       headers: headers,
@@ -1039,29 +1150,16 @@ async function loadDataFromSupabase() {
   var base = c.supabaseUrl + "/rest/v1/";
 
   try {
-    // Pull tasks
+    // Pull tasks — flat columns
     var taskResp = await fetch(
-      base + "applicants?select=id,data&order=id.asc",
+      base + "applicants?select=*&order=id.asc",
       { headers: headers },
     );
     if (taskResp.ok) {
       var taskRows = await taskResp.json();
       if (Array.isArray(taskRows) && taskRows.length > 0) {
-        var serverTasks = taskRows.map(function (r) {
-          return r.data;
-        });
-        // Migrate: ensure required fields exist on each task
-        serverTasks.forEach(function (t) {
-          if (!t.assignees)
-            t.assignees = t.assignee ? [t.assignee] : ["Assistant"];
-          if (!t.assignee) t.assignee = t.assignees[0] || "Assistant";
-          if (!t.comments) t.comments = [];
-          if (!t.activity) t.activity = [];
-          if (!t.attachments) t.attachments = [];
-          if (!t.stage_history) t.stage_history = [];
-        });
+        var serverTasks = taskRows.map(_rowToTask);
         TASKS = serverTasks;
-        // Update counter so new IDs don't collide
         var maxId = serverTasks.reduce(function (m, t) {
           return Math.max(m, t.id || 0);
         }, 0);
@@ -1351,17 +1449,6 @@ function moveApplicantToStage(taskId, newStage, opts = {}) {
   persistSave();
   if (!opts.silent) refreshCurrentView();
   dbg(`[Pipeline] Task #${taskId} "${t.name}": ${oldStage} → ${newStage}`);
-  // Sync status back to partner API (fire-and-forget)
-  if (window.UpstaffAPI && t._source === "api") {
-    UpstaffAPI.syncStatusToApi(t, newStage).then((resolvedPartnerStatus) => {
-      if (resolvedPartnerStatus) {
-        // Update partner_status locally so badge and future syncs stay consistent
-        t.partner_status = resolvedPartnerStatus;
-        persistSave();
-        dbg(`[API] Status synced: ${t.name} → ${resolvedPartnerStatus}`);
-      }
-    });
-  }
   // Sync Google Calendar event title/status if one exists for this task
   if (
     typeof gcalSignedIn !== "undefined" &&
@@ -1666,7 +1753,7 @@ function ageBadgeHTML(t) {
   const d = _stageAgeDays(t);
   if (d < 4) return "";
   const cls = d >= 8 ? "age-stale" : "age-aging";
-  const label = d >= 8 ? `🔥 ${d}d` : `⏳ ${d}d`;
+  const label = `${d}d`;
   const title =
     d >= 8
       ? `Stale: ${d} days in this stage`

@@ -56,27 +56,71 @@ function listPageChange(dir) {
    [SECTION: LIST-VIEW]
 ══════════════════════════════════════════════ */
 function renderListStatusTabs() {
-  // STATUS STRINGS — ordered by pipeline stage (defined in pm-ui-core.js)
-  const allStatuses = LIST_STATUS_ORDER;
   const tabsEl = document.getElementById("list-status-tabs");
   if (!tabsEl) return;
+  const allStatuses = LIST_STATUS_ORDER;
   const tabs = [
     { label: "All", value: "" },
     ...allStatuses.map((s) => ({ label: s, value: s })),
   ];
-  tabsEl.innerHTML = tabs
+  const activeTab = tabs.find((t) => t.value === listActiveStatus) || tabs[0];
+  const activeCount =
+    activeTab.value === ""
+      ? TASKS.length
+      : TASKS.filter((x) => x.status === activeTab.value).length;
+
+  const items = tabs
     .map((t) => {
       const count =
         t.value === ""
           ? TASKS.length
           : TASKS.filter((x) => x.status === t.value).length;
       const isActive = listActiveStatus === t.value;
-      return `<button class="list-status-tab${isActive ? " active" : ""}" onclick="setListStatusTab('${t.value}')">
-      ${t.label}
-      <span class="tab-count">${count}</span>
-    </button>`;
+      return `<button class="lst-dd-item${isActive ? " active" : ""}" onclick="setListStatusTab('${t.value}');_closeLstDropdown()">
+        <span class="lst-dd-label">${t.label}</span>
+        <span class="lst-dd-count">${count}</span>
+      </button>`;
     })
     .join("");
+
+  tabsEl.innerHTML = `
+    <div class="lst-dd-wrap" id="lst-dd-wrap">
+      <button class="lst-dd-trigger" id="lst-dd-trigger" onclick="_toggleLstDropdown(event)">
+        <span class="lst-dd-active-label">${activeTab.label}</span>
+        <span class="tab-count">${activeCount}</span>
+        <svg class="lst-dd-chev" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div class="lst-dd-menu" id="lst-dd-menu" style="display:none">
+        ${items}
+      </div>
+    </div>`;
+}
+
+function _toggleLstDropdown(e) {
+  e.stopPropagation();
+  const menu = document.getElementById("lst-dd-menu");
+  const chev = document.querySelector(".lst-dd-chev");
+  if (!menu) return;
+  const open = menu.style.display === "block";
+  if (open) {
+    menu.style.display = "none";
+    if (chev) chev.style.transform = "";
+    document.removeEventListener("click", _lstDdOutside);
+  } else {
+    menu.style.display = "block";
+    if (chev) chev.style.transform = "rotate(180deg)";
+    setTimeout(() => document.addEventListener("click", _lstDdOutside), 0);
+  }
+}
+function _closeLstDropdown() {
+  const menu = document.getElementById("lst-dd-menu");
+  const chev = document.querySelector(".lst-dd-chev");
+  if (menu) menu.style.display = "none";
+  if (chev) chev.style.transform = "";
+  document.removeEventListener("click", _lstDdOutside);
+}
+function _lstDdOutside(e) {
+  if (!e.target.closest("#lst-dd-wrap")) _closeLstDropdown();
 }
 
 function getListFilters() {
@@ -824,16 +868,19 @@ function toggleListActionMenu(taskId, btnEl) {
 
     // Close when clicking outside
     setTimeout(() => {
-      document.addEventListener("click", _lamOutsideClick, { once: true });
+      document.addEventListener("click", _lamOutsideClick);
     }, 0);
   }
 }
 function _lamOutsideClick(e) {
-  if (!e.target.closest(".list-row-actions")) closeAllListMenus();
+  if (!e.target.closest("#list-action-menu") && !e.target.closest(".list-row-actions")) {
+    closeAllListMenus();
+  }
 }
 function closeAllListMenus() {
   const menu = document.getElementById("list-action-menu");
   if (menu) menu.classList.remove("open");
+  document.removeEventListener("click", _lamOutsideClick);
 }
 // Also close menus on content scroll so they don't float out of sync
 document
@@ -933,35 +980,11 @@ async function listDeleteApplicant(taskId) {
   if (!confirmed) return;
 
   const idx = TASKS.findIndex((x) => x.id === taskId);
-
-  // If synced to the sheet, delete from API first — only remove locally if it succeeds
-  if (
-    (t._source === "api" || t.supabase_id) &&
-    window.UpstaffAPI &&
-    UpstaffAPI.isConfigured()
-  ) {
-    try {
-      await UpstaffAPI.deleteApplicant({
-        email: t.applicant_email,
-        supabaseId: t.supabase_id,
-      });
-      if (idx !== -1) {
-        window._supabaseDeleteTask && _supabaseDeleteTask(t.id);
-        TASKS.splice(idx, 1);
-      }
-      showToast(`🗑️ ${name} deleted.`);
-    } catch (e) {
-      showToast(`⚠️ Delete failed: ${e.message}`);
-      return; // Do not remove locally if API delete failed
-    }
-  } else {
-    // Local-only applicant — safe to remove immediately
-    if (idx !== -1) {
-      window._supabaseDeleteTask && _supabaseDeleteTask(t.id);
-      TASKS.splice(idx, 1);
-    }
-    showToast(`🗑️ ${name} removed.`);
+  if (idx !== -1) {
+    window._supabaseDeleteTask && _supabaseDeleteTask(t.id);
+    TASKS.splice(idx, 1);
   }
+  showToast(`🗑️ ${name} deleted.`);
 
   persistSave();
   refreshCurrentView();
