@@ -41,6 +41,14 @@ let listActiveStatus = "";
 let listCurrentPage = 1;
 const LIST_PAGE_SIZE = 20;
 
+// Debounce helper — prevents re-render on every keystroke during search
+function _debounce(fn, ms) {
+  let timer;
+  return (...args) => { clearTimeout(timer); timer = setTimeout(() => fn(...args), ms); };
+}
+const _renderListDebounced  = _debounce(() => renderList(),  180);
+const _renderBoardDebounced = _debounce(() => typeof renderBoard === "function" && renderBoard(), 180);
+
 function setListStatusTab(status) {
   listActiveStatus = status;
   listCurrentPage = 1;
