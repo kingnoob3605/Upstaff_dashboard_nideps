@@ -68,7 +68,7 @@
   font-weight: 600;
   color: rgba(255,255,255,.7);
   margin-bottom: 6px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
 }
 
 .login-gate-required {
@@ -88,7 +88,7 @@
   background: rgba(255,255,255,.07);
   color: #fff;
   font-size: 13px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   outline: none;
   transition: border-color .15s;
 }
@@ -138,7 +138,7 @@
   font-size: 12px;
   color: rgba(255,255,255,.6);
   cursor: pointer;
-  font-family: 'DM Sans', sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
 }
 
 .login-gate-btn {
@@ -151,7 +151,7 @@
   font-size: 14px;
   font-weight: 700;
   cursor: pointer;
-  font-family: 'Montserrat', sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   letter-spacing: .3px;
   transition: opacity .15s, transform .1s;
 }
@@ -170,7 +170,7 @@
   font-size: 12px;
   color: rgba(255,255,255,.5);
   min-height: 18px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
 }
 
 .login-gate-footer {
@@ -186,7 +186,7 @@
   color: rgba(255,255,255,.35);
   font-size: 11px;
   cursor: pointer;
-  font-family: 'DM Sans', sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   transition: color .15s;
 }
 
@@ -223,7 +223,7 @@
   text-transform: uppercase;
   letter-spacing: .05em;
   color: var(--muted);
-  font-family: 'Montserrat', sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
 }
 .super-filter-sep {
   width: 1px;
@@ -246,7 +246,7 @@
   font-size: 11px;
   font-weight: 700;
   cursor: pointer;
-  font-family: 'Montserrat', sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   transition: background .15s;
   height: 32px;
 }
@@ -267,7 +267,7 @@
   border-radius: 8px;
   font-size: 11px;
   font-weight: 700;
-  font-family: 'Montserrat', sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   border: 1.5px solid var(--border);
   background: var(--surface-1);
   color: var(--muted);
@@ -285,7 +285,7 @@
   border-radius: 8px;
   font-size: 11px;
   font-weight: 700;
-  font-family: 'Montserrat', sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   border: 1.5px solid #fca5a5;
   background: rgba(220,38,38,.06);
   color: #dc2626;
@@ -315,7 +315,7 @@
   border-radius: 8px;
   font-size: 12px;
   font-weight: 600;
-  font-family: 'Montserrat', sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   color: var(--muted);
   cursor: pointer;
   background: transparent;
@@ -404,7 +404,7 @@
   background: var(--surface-1);
   font-size: 12px;
   font-weight: 600;
-  font-family: "Montserrat", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   color: var(--muted);
   cursor: pointer;
   transition: all 0.15s;
@@ -445,7 +445,7 @@
 .hr-stat-label {
   font-size: 13px;
   font-weight: 600;
-  font-family: "Montserrat", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   color: var(--muted);
   margin-top: 4px;
   text-transform: uppercase;
@@ -458,7 +458,7 @@
   margin-top: 6px;
   font-size: 12px;
   font-weight: 700;
-  font-family: "Montserrat", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   padding: 2px 8px;
   border-radius: 99px;
 }
@@ -521,7 +521,7 @@
   font-size: 16px;
   font-weight: 800;
   color: #fff;
-  font-family: "Montserrat", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   flex-shrink: 0;
 }
 .employee-name {
@@ -548,7 +548,7 @@
   border-radius: 99px;
   font-size: 10px;
   font-weight: 700;
-  font-family: "Montserrat", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   margin-left: auto;
   flex-shrink: 0;
 }
@@ -570,7 +570,7 @@
 .checklist-progress-label {
   font-size: 10px;
   font-weight: 700;
-  font-family: "Montserrat", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   color: var(--muted);
   margin-bottom: 8px;
   display: flex;
@@ -687,7 +687,7 @@
 .hire-form-section-title {
   font-size: 11px;
   font-weight: 700;
-  font-family: "Montserrat", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   color: var(--cyan);
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -711,7 +711,7 @@
 .hire-form-label {
   font-size: 11px;
   font-weight: 600;
-  font-family: "Montserrat", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   color: var(--muted);
 }
 .hire-form-input {
@@ -719,7 +719,7 @@
   border: 1.5px solid var(--border);
   border-radius: 9px;
   font-size: 13px;
-  font-family: "DM Sans", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   color: var(--text);
   background: var(--input-bg);
   outline: none;
@@ -733,7 +733,7 @@
   border: 1.5px solid var(--border);
   border-radius: 9px;
   font-size: 13px;
-  font-family: "DM Sans", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   color: var(--text);
   background: var(--input-bg);
   outline: none;
@@ -748,7 +748,7 @@
   border: 1.5px solid var(--border);
   border-radius: 9px;
   font-size: 13px;
-  font-family: "DM Sans", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   color: var(--text);
   background: var(--input-bg);
   outline: none;
@@ -826,7 +826,7 @@
 .doc-item-status {
   font-size: 10px;
   font-weight: 700;
-  font-family: "Montserrat", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   padding: 2px 8px;
   border-radius: 99px;
 }
@@ -848,7 +848,7 @@
   background: var(--surface-2);
   font-size: 12px;
   font-weight: 600;
-  font-family: "Montserrat", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   color: var(--muted);
   cursor: pointer;
   transition: all 0.15s;
@@ -864,7 +864,7 @@
   background: var(--cyan);
   font-size: 12px;
   font-weight: 700;
-  font-family: "Montserrat", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   color: #fff;
   cursor: pointer;
   transition: all 0.15s;
@@ -884,7 +884,7 @@
   text-align: center;
   color: var(--muted);
   font-size: 13px;
-  font-family: "DM Sans", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
 }
 #mobile-board-notice svg {
   opacity: 0.35;
@@ -977,7 +977,7 @@
 .emp-detail-section-title {
   font-size: 11px;
   font-weight: 700;
-  font-family: "Montserrat", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   color: var(--cyan);
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -998,7 +998,7 @@
 .emp-info-label {
   font-size: 10px;
   font-weight: 700;
-  font-family: "Montserrat", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   color: var(--light);
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -1026,7 +1026,7 @@
 .training-status-badge {
   font-size: 10px;
   font-weight: 700;
-  font-family: "Montserrat", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   padding: 2px 9px;
   border-radius: 99px;
 }
@@ -1045,7 +1045,7 @@
   background: var(--surface-2);
   font-size: 12px;
   font-weight: 600;
-  font-family: "Montserrat", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   color: var(--muted);
   cursor: pointer;
   transition: all 0.15s;
@@ -1164,7 +1164,7 @@
   cursor: pointer;
   font-size: 12px;
   color: var(--muted);
-  font-family: "DM Sans", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   transition:
     color 0.15s,
     background 0.15s;
@@ -1247,7 +1247,7 @@
   border: none;
   background: transparent;
   font-size: 13px;
-  font-family: "DM Sans", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   color: var(--text);
   outline: none;
 }
@@ -1259,7 +1259,7 @@
   border: 1.5px solid var(--border);
   border-radius: 8px;
   font-size: 12px;
-  font-family: "DM Sans", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   color: var(--text);
   background: var(--surface-2);
   outline: none;
@@ -1274,7 +1274,7 @@
   color: #fff;
   font-size: 12px;
   font-weight: 700;
-  font-family: "Montserrat", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   cursor: pointer;
   transition: background 0.15s;
   height: 32px;
@@ -1338,6 +1338,22 @@
   height: 180px;
   border-radius: 12px;
   margin-bottom: 12px;
+}
+
+/* Stat chips skeleton */
+.skeleton-stat-chip {
+  height: 34px;
+  width: 130px;
+  border-radius: 99px;
+  flex-shrink: 0;
+}
+
+/* Table row skeleton */
+.skeleton-table-row {
+  height: 44px;
+  border-radius: 8px;
+  display: block;
+  width: 100%;
 }
 
 /* ══════════════════════════════════════════════
@@ -1446,7 +1462,7 @@
   font-weight: 800;
 }
 .u-font-mono {
-  font-family: "Montserrat", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
 }
 .u-font-syne {
   font-family: "Syne", sans-serif;
@@ -1513,7 +1529,7 @@
   color: var(--cyan);
   padding: 1px 7px;
   border-radius: 5px;
-  font-family: Montserrat, sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
 }
 
 /* Input validation states */
@@ -1528,7 +1544,7 @@
   font-size: 11px;
   color: #ef4444;
   margin-top: 3px;
-  font-family: "DM Sans", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   display: none;
 }
 .u-field-error-msg.visible {
@@ -1681,7 +1697,7 @@
   margin-top: 8px; padding: 6px 14px; border-radius: 8px;
   border: 1.5px solid var(--cyan); background: transparent;
   color: var(--cyan); font-size: 11px; font-weight: 700;
-  font-family: "Montserrat", sans-serif; cursor: pointer;
+  font-family: "Plus Jakarta Sans", sans-serif; cursor: pointer;
   transition: background 0.15s;
 }
 .file-upload-btn:hover { background: rgba(62,207,223,.1); }
@@ -1751,19 +1767,19 @@
 .sh-stage {
   font-size: 13px;
   font-weight: 700;
-  font-family: "Montserrat", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   margin-bottom: 2px;
 }
 .sh-meta {
   font-size: 11px;
   color: var(--muted);
-  font-family: "DM Sans", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
 }
 .sh-date {
   font-size: 10px;
   color: var(--light);
   margin-top: 2px;
-  font-family: "DM Sans", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
 }
 
 /* ══════════════════════════════════════════════
@@ -1883,7 +1899,7 @@ tr:has(.bulk-cb:checked) td {
   border: none;
   border-radius: 11px;
   font-size: 13px;
-  font-family: "DM Sans", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   color: var(--text);
   background: transparent;
   outline: none;
@@ -1903,7 +1919,7 @@ tr:has(.bulk-cb:checked) td {
   color: var(--cyan);
   font-size: 11px;
   font-weight: 700;
-  font-family: "Montserrat", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   margin-left: 8px;
 }
 .position-group {
@@ -1938,7 +1954,7 @@ tr:has(.bulk-cb:checked) td {
   border: 1.5px solid var(--border);
   font-size: 12.5px;
   font-weight: 600;
-  font-family: "DM Sans", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   color: var(--text);
   cursor: default;
   transition: all 0.15s;
@@ -2001,7 +2017,7 @@ tr:has(.bulk-cb:checked) td {
   border: 1.5px solid var(--input-border);
   border-radius: 11px;
   font-size: 13px;
-  font-family: "DM Sans", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   color: var(--text);
   background: var(--input-bg);
   outline: none;
@@ -2097,7 +2113,7 @@ tr:has(.bulk-cb:checked) td {
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s;
   white-space: nowrap;
-  font-family: 'DM Sans', sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
 }
 .link-card-btn:hover { background: var(--surface-3); border-color: var(--cyan); }
 .link-card-badge {
@@ -2108,7 +2124,7 @@ tr:has(.bulk-cb:checked) td {
   border-radius: 7px;
   font-size: 11px;
   font-weight: 600;
-  font-family: 'DM Sans', sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   border: 1px solid transparent;
   width: fit-content;
 }
@@ -2177,7 +2193,7 @@ tr:has(.bulk-cb:checked) td {
   margin-bottom: 6px;
 }
 .analytics-stat-value {
-  font-family: 'Syne', sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   font-size: 28px;
   font-weight: 800;
   color: var(--text);
@@ -2403,7 +2419,7 @@ tr:has(.bulk-cb:checked) td {
   color: var(--muted);
   font-size: 11px;
   font-weight: 600;
-  font-family: 'Montserrat', sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
 }
 #chart-source {
   display: flex;
@@ -2512,7 +2528,7 @@ tr:has(.bulk-cb:checked) td {
   color: #fff;
   font-size: 12px;
   font-weight: 600;
-  font-family: "Montserrat", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   border-radius: 8px;
   padding: 2px 4px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);

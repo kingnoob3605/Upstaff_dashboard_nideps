@@ -62,9 +62,9 @@ body.role-assistant [data-role-hide="hr"] {
   --pink: #ff6584;
   --navy: #0f172a;
   --slate: #1e293b;
-  /* Warm blush-pink light theme — soft on eyes, Gmail-inspired */
-  --bg: #fce8f0;
-  --card: #fef5f8;
+  /* Warm greige light theme — low brightness, easy on eyes */
+  --bg: #f4f3f1;
+  --card: #ffffff;
   --border: rgba(0, 0, 0, 0.09);
   /* High-contrast text — WCAG AAA compliant on white (≥7:1) */
   --text: #0f172a;
@@ -75,28 +75,27 @@ body.role-assistant [data-role-hide="hr"] {
   --s-review: #fa8231;
   --s-done: #43e97b;
   --s-cancelled: #9ca3af;
-  /* Surface layers — warm blush depth scale */
-  --surface-1: #fef5f8; /* cards, modals */
-  --surface-2: #fce4ec; /* content bg layer */
-  --surface-3: #fad9e8; /* table headers, subtle bg */
-  --surface-4: #f8cfe0; /* tags, count pills */
-  --row-hover: #f7c8d8;
-  --row-alt: #fdf0f5;
-  --topbar-bg: #fef5f8;
-  --input-bg: #fef5f8;
+  /* Surface layers — warm greige depth scale */
+  --surface-1: #ffffff; /* cards, modals */
+  --surface-2: #eeedeb; /* content bg layer */
+  --surface-3: #e6e4e1; /* table headers, subtle bg */
+  --surface-4: #dedad6; /* tags, count pills */
+  --row-hover: #eae8e4;
+  --row-alt: #f8f7f5;
+  --topbar-bg: #f9f8f6;
+  --input-bg: #ffffff;
   --input-border: rgba(0, 0, 0, 0.13);
-  /* Stronger drop shadow — cards lift clearly off tinted backgrounds */
-  --shadow-sm: 0 2px 12px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.06);
-  --shadow-md: 0 6px 20px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.07);
-  --shadow-lg: 0 24px 60px rgba(0, 0, 0, 0.16);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.07), 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 24px 60px rgba(0, 0, 0, 0.14);
   --search-overlay: rgba(15, 23, 42, 0.6);
   /* Calendar */
-  --cal-cell-border: #f0d0dc;
-  --cal-other-month: #fdf0f5;
-  --cal-today-bg: #fce4ec; /* warm blush today highlight */
-  --cal-hour-hover: #fef0f5;
-  --agenda-item-bg: #fdf0f5;
-  --board-col-bg: #fce8f0;
+  --cal-cell-border: #dedad6;
+  --cal-other-month: #f4f3f1;
+  --cal-today-bg: #e6e4e1;
+  --cal-hour-hover: #f4f3f1;
+  --agenda-item-bg: #f8f7f5;
+  --board-col-bg: #efede9;
 }
 
 /* ── DARK MODE ── */
@@ -141,7 +140,7 @@ body {
   height: 100%;
   overflow: hidden;
   background: var(--bg);
-  font-family: "DM Sans", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   color: var(--text);
   transition:
     background 0.25s,
@@ -271,7 +270,7 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.08em;
   padding: 16px 16px 4px;
-  font-family: "Montserrat", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   white-space: nowrap;
   overflow: hidden;
 }
@@ -319,7 +318,7 @@ nav {
 .nav-label {
   font-size: 14px;
   font-weight: 600;
-  font-family: "Montserrat", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   color: rgba(255, 255, 255, 0.45);
   transition:
     color 0.15s,
@@ -350,7 +349,7 @@ nav {
   cursor: pointer;
   color: rgba(255, 255, 255, 0.5);
   font-size: 12px;
-  font-family: "Montserrat", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   font-weight: 600;
   transition: background 0.15s;
 }
@@ -376,12 +375,12 @@ nav {
    TOP BAR
 ══════════════════════════════════════════════ */
 #topbar {
-  height: 56px;
-  min-height: 56px;
+  height: 64px;
+  min-height: 64px;
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 0 20px;
+  padding: 0 24px;
   background: var(--topbar-bg);
   border-bottom: 1px solid var(--border);
   box-shadow: var(--shadow-sm);
@@ -392,7 +391,7 @@ nav {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 13px;
+  font-size: 14px;
 }
 .topbar-breadcrumb .crumb-parent {
   color: var(--muted);
@@ -413,13 +412,13 @@ nav {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 7px 14px;
-  border-radius: 9px;
+  padding: 9px 16px;
+  border-radius: 10px;
   border: 1.5px solid var(--border);
   background: var(--surface-1);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
-  font-family: "Montserrat", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   color: var(--muted);
   cursor: pointer;
   transition: all 0.15s;
@@ -438,17 +437,17 @@ nav {
   background: #2cc5d6;
 }
 .topbar-avatar {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   background: linear-gradient(135deg, var(--violet), var(--cyan));
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
   color: #fff;
-  font-family: "Montserrat", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   cursor: pointer;
   flex-shrink: 0;
 }
@@ -461,7 +460,7 @@ nav {
   display: flex;
   align-items: center;
   gap: 2px;
-  padding: 0 20px;
+  padding: 0 24px;
   background: var(--topbar-bg);
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
@@ -470,16 +469,16 @@ nav {
 .view-tab {
   display: flex;
   align-items: center;
-  gap: 7px;
-  padding: 12px 16px;
+  gap: 8px;
+  padding: 14px 18px;
   border: none;
   background: transparent;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
-  font-family: "Montserrat", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   color: var(--muted);
   cursor: pointer;
-  border-bottom: 2px solid transparent;
+  border-bottom: 2.5px solid transparent;
   transition: all 0.15s;
   white-space: nowrap;
   flex-shrink: 0;
@@ -524,7 +523,7 @@ nav {
   background: var(--surface-1);
   font-size: 12px;
   font-weight: 600;
-  font-family: "Montserrat", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   color: var(--muted);
   cursor: pointer;
   transition: all 0.15s;
@@ -554,7 +553,7 @@ nav {
   border: 1.5px solid var(--border);
   border-radius: 9px;
   font-size: 12px;
-  font-family: "DM Sans", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   color: var(--text);
   background: var(--surface-1);
   outline: none;
@@ -601,7 +600,7 @@ nav {
   background: var(--surface-1);
   font-size: 13px;
   font-weight: 600;
-  font-family: "Montserrat", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   color: var(--muted);
 }
 /* Light mode: stat chips get elevation so they float clearly above tinted bg */
@@ -647,7 +646,7 @@ nav {
   background: var(--surface-1);
   font-size: 13px;
   font-weight: 600;
-  font-family: "Montserrat", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   color: var(--text);
   cursor: pointer;
   transition: all 0.15s;
@@ -691,7 +690,7 @@ nav {
   background: transparent;
   font-size: 13px;
   font-weight: 500;
-  font-family: "Montserrat", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   color: var(--light);
   cursor: pointer;
   text-align: left;
@@ -709,7 +708,7 @@ nav {
 .lst-dd-count {
   font-size: 11px;
   font-weight: 700;
-  font-family: "Montserrat", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   background: rgba(0,0,0,0.1);
   padding: 1px 6px;
   border-radius: 99px;
@@ -728,7 +727,7 @@ nav {
   background: var(--surface-1);
   font-size: 13px;
   font-weight: 600;
-  font-family: "Montserrat", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   color: var(--light);
   cursor: pointer;
   transition: all 0.15s;
@@ -770,7 +769,7 @@ nav {
   color: var(--text);
   font-size: 13px;
   font-weight: 600;
-  font-family: "Montserrat", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   cursor: pointer;
   transition: all 0.15s;
 }
@@ -785,7 +784,7 @@ nav {
 .pagination-info {
   font-size: 13px;
   font-weight: 600;
-  font-family: "Montserrat", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   color: var(--muted);
 }
 
@@ -803,7 +802,7 @@ nav {
 .list-filter-bar .filter-label {
   font-size: 11px;
   font-weight: 700;
-  font-family: "Montserrat", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   color: var(--light);
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -814,7 +813,7 @@ nav {
   border: 1.5px solid var(--border);
   border-radius: 8px;
   font-size: 13px;
-  font-family: "DM Sans", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   color: var(--text);
   background: var(--surface-2);
   outline: none;
@@ -842,7 +841,7 @@ nav {
   border: 1.5px solid var(--border);
   border-radius: 8px;
   font-size: 13px;
-  font-family: "DM Sans", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   color: var(--text);
   background: var(--surface-2);
   outline: none;
@@ -878,7 +877,7 @@ nav {
   border-radius: 99px;
   font-size: 11px;
   font-weight: 600;
-  font-family: "Montserrat", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   background: rgba(68, 215, 233, 0.1);
   color: var(--cyan);
   border: 1px solid rgba(68, 215, 233, 0.25);
@@ -890,7 +889,7 @@ nav {
 .clear-filters-btn {
   font-size: 11px;
   font-weight: 600;
-  font-family: "Montserrat", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   color: var(--light);
   background: none;
   border: none;
@@ -960,7 +959,7 @@ nav {
 .list-section-title {
   font-size: 14px;
   font-weight: 700;
-  font-family: "DM Sans", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
 }
 .list-section-count {
   font-size: 11px;
@@ -969,7 +968,7 @@ nav {
   background: var(--surface-4);
   padding: 2px 9px;
   border-radius: 99px;
-  font-family: "Montserrat", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
 }
 .list-section-progress {
   flex: 1;
@@ -1001,7 +1000,7 @@ nav {
   padding: 9px 14px;
   font-size: 10px;
   font-weight: 700;
-  font-family: "Montserrat", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   color: var(--light);
   text-transform: uppercase;
   letter-spacing: 0.07em;
@@ -1075,7 +1074,7 @@ nav {
 .task-name {
   font-weight: 700;
   font-size: 14px;
-  font-family: "DM Sans", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
 }
 .task-name.done {
   text-decoration: line-through;
@@ -1107,7 +1106,7 @@ nav {
 .ss-label-pipeline {
   font-size: 10px;
   font-weight: 700;
-  font-family: "Montserrat", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   color: var(--muted);
   text-transform: uppercase;
   letter-spacing: 0.07em;
@@ -1115,7 +1114,7 @@ nav {
 .ss-status-badge {
   font-size: 10px;
   font-weight: 700;
-  font-family: "Montserrat", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   padding: 2px 9px;
   border-radius: 99px;
   background: var(--surface-3);
@@ -1188,7 +1187,7 @@ nav {
 .ss-label {
   font-size: 8.5px;
   font-weight: 600;
-  font-family: "Montserrat", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   color: var(--muted);
   text-align: center;
   white-space: nowrap;
@@ -1235,7 +1234,7 @@ nav {
   border-radius: 5px;
   font-size: 10px;
   font-weight: 700;
-  font-family: "Montserrat", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   background: rgba(68, 215, 233, 0.12);
   color: var(--cyan);
   border: 1px solid rgba(68, 215, 233, 0.2);
@@ -1259,7 +1258,7 @@ nav {
   border-radius: 99px;
   font-size: 11px;
   font-weight: 700;
-  font-family: "Montserrat", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   white-space: nowrap;
 }
 /* Force dark text on pastel backgrounds in light mode so they're always readable */
@@ -1469,7 +1468,7 @@ nav {
   border-radius: 6px;
   font-size: 11px;
   font-weight: 700;
-  font-family: "Montserrat", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
 }
 .assignee-chip {
   display: inline-flex;
@@ -1488,13 +1487,13 @@ nav {
   font-size: 9px;
   font-weight: 700;
   color: #fff;
-  font-family: "Montserrat", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   flex-shrink: 0;
 }
 .due-date {
   font-size: 11px;
   font-weight: 600;
-  font-family: "Montserrat", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   padding: 3px 8px;
   border-radius: 6px;
   color: var(--muted);
@@ -1555,7 +1554,7 @@ nav {
   background: none;
   border: none;
   cursor: pointer;
-  font-family: "DM Sans", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   transition: color 0.15s;
   padding: 2px 0;
 }
@@ -1570,7 +1569,7 @@ nav {
   gap: 4px;
   font-size: 10px;
   font-weight: 700;
-  font-family: "Montserrat", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   padding: 2px 7px;
   border-radius: 5px;
   background: rgba(108, 99, 255, 0.12);
@@ -1682,7 +1681,7 @@ nav {
   border-radius: 8px;
   font-size: 12px;
   font-weight: 600;
-  font-family: "Montserrat", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   color: var(--muted);
   cursor: pointer;
   transition:
@@ -1733,7 +1732,7 @@ nav {
   color: var(--muted);
   text-transform: uppercase;
   letter-spacing: 0.6px;
-  font-family: "Montserrat", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
 }
 
 /* ── Score badges in list rows ── */
@@ -1750,7 +1749,7 @@ nav {
   border-radius: 5px;
   font-size: 10px;
   font-weight: 700;
-  font-family: "Montserrat", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   background: var(--surface-4);
   color: var(--muted);
   white-space: nowrap;
@@ -1786,7 +1785,7 @@ nav {
 .list-int-date {
   font-size: 11px;
   font-weight: 700;
-  font-family: "Montserrat", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   color: var(--text);
 }
 .list-int-time {
@@ -1828,7 +1827,7 @@ textarea,
 .pipeline-action-btn,
 .pub-cal-btn,
 .lam-item {
-  font-family: "Montserrat", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
 }
 
 /* ══════════════════════════════════════════════
@@ -2327,7 +2326,7 @@ select:focus-visible {
   font-weight: 700;
   padding: 1px 6px;
   border-radius: 99px;
-  font-family: "Montserrat", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   letter-spacing: 0.2px;
   white-space: nowrap;
 }
@@ -2352,7 +2351,7 @@ body.theme-dark .age-badge.age-stale {
 .board-col-wip {
   font-size: 10px;
   font-weight: 700;
-  font-family: "Montserrat", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   padding: 2px 7px;
   border-radius: 99px;
   background: rgba(108, 99, 255, 0.12);
@@ -2451,7 +2450,7 @@ body.list-density-compact .stage-mini-track {
   gap: 6px;
   font-size: 11px;
   font-weight: 600;
-  font-family: "Montserrat", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   padding: 6px 11px;
   border-radius: 99px;
   background: var(--surface-2, #f1f5f9);
@@ -2567,7 +2566,7 @@ body.theme-dark .board-toolbar {
   color: var(--muted);
   font-size: 11px;
   font-weight: 700;
-  font-family: "Montserrat", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
   cursor: pointer;
   transition:
     background 0.12s,
@@ -2594,7 +2593,7 @@ body.theme-dark .board-toolbar {
   backdrop-filter: blur(6px);
   align-items: center;
   justify-content: center;
-  font-family: "Montserrat", sans-serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
 }
 #img-crop-modal.open {
   display: flex;

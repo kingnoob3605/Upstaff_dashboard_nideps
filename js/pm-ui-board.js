@@ -29,7 +29,7 @@ function _renderBoardCard(t) {
   return `<div class="board-card" data-task-id="${t.id}" onclick="openTaskEdit(${t.id})">
     <label class="bulk-cb-wrap" onclick="event.stopPropagation();"><input type="checkbox" class="bulk-cb" ${typeof selectedTaskIds !== "undefined" && selectedTaskIds.has(t.id) ? "checked" : ""} onchange="toggleBulkSelect(${t.id},this)"></label>
     <div class="board-card-name">${sanitize(t.applicant_name || t.name)} ${ageBadgeHTML(t)}</div>
-    ${t.partner_status ? `<div style="margin-bottom:4px;"><span style="font-size:9px;padding:1px 7px;border-radius:99px;background:rgba(62,207,223,.13);color:#3ecfdf;font-weight:600;font-family:'Montserrat',sans-serif;white-space:nowrap;">${sanitize(t.partner_status)}</span></div>` : ""}
+    ${t.partner_status ? `<div style="margin-bottom:4px;"><span style="font-size:9px;padding:1px 7px;border-radius:99px;background:rgba(62,207,223,.13);color:#3ecfdf;font-weight:600;font-family:'Plus Jakarta Sans',sans-serif;white-space:nowrap;">${sanitize(t.partner_status)}</span></div>` : ""}
     <div class="board-card-meta">
       <span class="board-card-pos">${sanitize(t.position)}</span>
       <span class="priority-pill" style="background:${pc}22;color:${pc};font-size:10px;">${t.priority}</span>
@@ -44,7 +44,7 @@ function _renderBoardCard(t) {
         )}${_boardAssignees.length > 2 ? `<span style="font-size:9px;color:var(--muted);margin-left:2px;">+${_boardAssignees.length - 2}</span>` : ""}</div>
     </div>
     ${t.due ? `<div style="margin-top:4px;"><span class="due-date ${dc}" style="font-size:10px;">📅 ${fmtDue(t.due)}</span></div>` : ""}
-    ${t.interview_date ? `<div style="margin-top:4px;"><span style="font-size:10px;font-family:'Montserrat',sans-serif;font-weight:600;color:var(--cyan);padding:2px 6px;background:rgba(62,207,223,.12);border-radius:99px;white-space:nowrap;">🗓 Interview: ${fmtDue(t.interview_date)}</span></div>` : ""}
+    ${t.interview_date ? `<div style="margin-top:4px;"><span style="font-size:10px;font-family:'Plus Jakarta Sans',sans-serif;font-weight:600;color:var(--cyan);padding:2px 6px;background:rgba(62,207,223,.12);border-radius:99px;white-space:nowrap;">🗓 Interview: ${fmtDue(t.interview_date)}</span></div>` : ""}
     ${scoreTag}
     <div class="board-mini-pipeline" title="${t.status}">
       ${STAGE_ORDER.map((_, i) => {
@@ -204,7 +204,7 @@ function renderBoard() {
             <span class="board-card-pos">${sanitize(t.position)}</span>
             <span class="${statusPillClass(t.status)}" style="font-size:9px;">${t.status}</span>
           </div>
-          ${t.rejection_reason ? `<div style="margin-top:4px;font-size:9px;padding:2px 7px;border-radius:99px;background:#fee2e2;color:#ef4444;font-weight:600;display:inline-block;font-family:'Montserrat',sans-serif;">${sanitize(t.rejection_reason)}</div>` : ""}
+          ${t.rejection_reason ? `<div style="margin-top:4px;font-size:9px;padding:2px 7px;border-radius:99px;background:#fee2e2;color:#ef4444;font-weight:600;display:inline-block;font-family:'Plus Jakarta Sans',sans-serif;">${sanitize(t.rejection_reason)}</div>` : ""}
         </div>`,
           )
           .join("")}
@@ -215,11 +215,20 @@ function renderBoard() {
   const _boardEl = document.getElementById("board-wrap");
   if (_boardEl) {
     if (TASKS.length === 0) {
-      _boardEl.innerHTML = `<div class="empty-state" style="width:100%;">
-        <div class="empty-state-icon">📋</div>
-        <div class="empty-state-title">No applicants yet</div>
-        <div class="empty-state-subtitle">Click <strong>+ Add Applicant</strong> in the top right to add your first candidate to the pipeline.</div>
-      </div>`;
+      if (window._supabaseLoading) {
+        _boardEl.innerHTML =
+          '<div class="u-flex u-gap-12">' +
+          Array(4)
+            .fill('<div class="skeleton skeleton-board-card" style="flex:1;height:200px;"></div>')
+            .join("") +
+          "</div>";
+      } else {
+        _boardEl.innerHTML = `<div class="empty-state" style="width:100%;">
+          <div class="empty-state-icon">📋</div>
+          <div class="empty-state-title">No applicants yet</div>
+          <div class="empty-state-subtitle">Click <strong>+ Add Applicant</strong> in the top right to add your first candidate to the pipeline.</div>
+        </div>`;
+      }
       return;
     }
     _boardEl.innerHTML =
