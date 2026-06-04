@@ -279,10 +279,6 @@ function applyPendingAssessment() {
     _fill("f-verbal-link", r.verbal_link || "");
     _fill("f-conflict-score", r.conflict_score || "");
     _fill("f-grammar-score", r.grammar_score || "");
-    // Excel Test
-    _fill("f-data-entry-score", r.data_entry_score || "");
-    _fill("f-formatting-score", r.formatting_score || "");
-    _fill("f-sorting-score", r.sorting_score || "");
     if (r.interview_notes) {
       const notesEl = document.getElementById("f-interview-notes");
       if (notesEl)

@@ -151,9 +151,11 @@
 
   /* Row wrappers — fully transparent. Chips float directly over bg-image scrim;
      no card frame, no padding override, no border. Matches old behavior. */
+  body.has-bg-image .list-header-row,
   body.has-bg-image .list-stats-bar,
   body.has-bg-image .list-status-tabs,
   body.has-bg-image .list-active-filters,
+  :root:not([data-theme="dark"]) body.has-bg-image .list-header-row,
   :root:not([data-theme="dark"]) body.has-bg-image .list-stats-bar,
   :root:not([data-theme="dark"]) body.has-bg-image .list-status-tabs,
   :root:not([data-theme="dark"]) body.has-bg-image .list-active-filters {

@@ -612,19 +612,11 @@ function _refreshScoreSummary() {
   const verbal = document.getElementById("f-verbal-link")?.value?.trim();
   const conflict = document.getElementById("f-conflict-score")?.value?.trim();
   const grammar = document.getElementById("f-grammar-score")?.value?.trim();
-  const dataEntry = document
-    .getElementById("f-data-entry-score")
-    ?.value?.trim();
-  const formatting = document
-    .getElementById("f-formatting-score")
-    ?.value?.trim();
-  const sorting = document.getElementById("f-sorting-score")?.value?.trim();
   const notes = document.getElementById("f-interview-notes")?.value?.trim();
 
   const hasTyping = typing || wordTyping || knowledge;
   const hasVerbal = verbal || conflict || grammar;
-  const hasExcel = dataEntry || formatting || sorting;
-  const hasAny = hasTyping || hasVerbal || hasExcel || notes;
+  const hasAny = hasTyping || hasVerbal || notes;
 
   if (!hasAny) {
     card.style.display = "none";
@@ -668,12 +660,6 @@ function _refreshScoreSummary() {
       _scoreRow("Conflict Reso", conflict, 20, 15),
       _scoreRow("Grammar Test", grammar, 20, 15),
     ])}
-    ${_categoryBlock("📊", "Excel Test", [
-      dataEntry
-        ? `<div class="score-item"><span class="score-label">Skill Test</span><span class="score-val">${dataEntry.startsWith("http") ? `<a href="${dataEntry}" target="_blank" style="color:var(--cyan);">View File</a>` : dataEntry}</span></div>`
-        : "",
-      _scoreRow("Time Used", formatting),
-    ])}
     ${notes ? `<div class="score-category"><div class="score-category-title">💬 Interview Notes</div><div class="score-summary-grid"><div class="score-item score-item-full"><span class="score-val" style="font-weight:400;color:var(--muted);font-size:12px;">${notes.slice(0, 120)}${notes.length > 120 ? "…" : ""}</span></div></div></div>` : ""}
   `;
 
@@ -683,9 +669,6 @@ function _refreshScoreSummary() {
     "f-knowledge-score",
     "f-conflict-score",
     "f-grammar-score",
-    "f-data-entry-score",
-    "f-formatting-score",
-    "f-sorting-score",
   ].forEach((id) => {
     const el = document.getElementById(id);
     if (el) el.classList.toggle("score-filled", !!el.value.trim());
@@ -1860,15 +1843,7 @@ function _setModalAvatar(name, status) {
 }
 
 function openTaskNew(status = "New") {
-  // Show chooser first: Import from Sheet vs Manual Entry
-  const chooser = document.getElementById("new-applicant-chooser-overlay");
-  if (chooser) {
-    window._pendingNewStatus = status || "New";
-    chooser.style.display = "flex";
-    return;
-  }
-  // Fallback if chooser DOM missing — go straight to manual
-  _openTaskNewWithMode(status, "manual");
+  _openTaskNewWithMode(status || "New", "manual");
 }
 window.chooseNewApplicantMode = function (mode) {
   const chooser = document.getElementById("new-applicant-chooser-overlay");
@@ -1912,6 +1887,7 @@ function _openTaskNewWithMode(status, mode) {
   _setField("f-skills", "");
   _setField("f-tools", "");
   _setField("f-interview-slots", "");
+  _setField("f-supabase-id", "");
   _setField("f-referral-source", "");
   _setField("f-resume", "");
   _setField("f-portfolio", "");
@@ -2016,6 +1992,7 @@ function openTaskEdit(id, goToAssessment = false) {
   _setField("f-skills", t.skills || "");
   _setField("f-tools", t.tools || "");
   _setField("f-interview-slots", t.interview_slots || "");
+  _setField("f-supabase-id", t.supabase_id || "");
   _setField("f-referral-source", t.referral_source || "");
   _setField("f-resume", t.resume_link || "");
   _setField("f-portfolio", t.portfolio_link || "");
@@ -2709,6 +2686,10 @@ document
         document.getElementById("f-interview-slots")?.value?.trim() ||
         existing?.interview_slots ||
         "",
+      supabase_id:
+        document.getElementById("f-supabase-id")?.value?.trim() ||
+        existing?.supabase_id ||
+        "",
       referral_source:
         document.getElementById("f-referral-source")?.value ||
         existing?.referral_source ||
@@ -2840,96 +2821,9 @@ document
       const i = TASKS.findIndex((x) => x.id === taskEditId);
       if (i > -1) TASKS[i] = t;
       showToast("✅ Task updated!");
-      // Sync status change to partner API when edited via the save form
-      if (
-        existing &&
-        newStatus !== existing.status &&
-        window.UpstaffAPI &&
-        (t._source === "api" || t.supabase_id)
-      ) {
-        UpstaffAPI.syncStatusToApi(t, newStatus)
-          .then((resolvedPartnerStatus) => {
-            if (resolvedPartnerStatus) {
-              t.partner_status = resolvedPartnerStatus;
-              persistSave();
-            }
-          })
-          .catch((e) => {
-            console.warn("[API] Status sync failed on save:", e.message);
-          });
-      }
-      // Full field sync — push all edited fields to the sheet regardless of status change
-      if ((t._source === "api" || t.supabase_id) && window.UpstaffAPI) {
-        UpstaffAPI.updateApplicant({
-          supabase_id: t.supabase_id,
-          email: t.applicant_email,
-          full_name: t.applicant_name || t.name,
-          status: t.partner_status || t.status,
-          phone: t.applicant_phone,
-          address: t.address,
-          positions: t.position,
-          employment_type: t.employment_type,
-          work_setup: t.work_setup,
-          work_schedule: t.work_schedule,
-          education_level: t.education_level,
-          school: t.school,
-          course: t.course,
-          skills: t.skills,
-          tools: t.tools,
-          interview_slots: t.interview_slots,
-          referral_source: t.referral_source,
-          resume_link: t.resume_link,
-          portfolio_link: t.portfolio_link,
-          video_intro_link: t.video_intro_link,
-          other_docs_link: t.other_docs_link,
-          notes: t.notes,
-          drive_folder_link: t.drive_folder_link,
-          // Assessment scores — Excel Test
-          data_entry_score: t.data_entry_score || "",
-          formatting_score: t.formatting_score || "",
-          sorting_score: t.sorting_score || "",
-        }).catch((e) =>
-          console.warn("[API] Full field sync failed:", e.message),
-        );
-      }
     } else {
       TASKS.push(t);
       showToast("✅ Task added!");
-      // Sync new applicant to Google Sheet if API is configured
-      if (window.UpstaffAPI && UpstaffAPI.isConfigured()) {
-        try {
-          const _addRes = await UpstaffAPI.addApplicant({
-            status: t.partner_status || "For Interview",
-            full_name: t.name || t.applicant_name || "",
-            email: t.applicant_email || "",
-            phone: t.applicant_phone || "",
-            address: t.address || "",
-            positions: t.position || "",
-            employment_type: t.employment_type || "",
-            work_setup: t.work_setup || "",
-            work_schedule: t.work_schedule || "",
-            education_level: t.education_level || "",
-            school: t.school || "",
-            course: t.course || "",
-            skills: t.skills || "",
-            tools: t.tools || "",
-            interview_slots: t.interview_slots || "",
-            referral_source: t.referral_source || "",
-            resume_link: t.resume_link || "",
-            portfolio_link: t.portfolio_link || "",
-            video_intro_link: t.video_intro_link || "",
-            other_docs_link: t.other_docs_link || "",
-            notes: t.notes || "",
-            drive_folder_link: t.drive_folder_link || "",
-          });
-          // Mark as API-sourced so it won't duplicate on next sync
-          t._source = "api";
-          if (_addRes && _addRes.supabaseId) t.supabase_id = _addRes.supabaseId;
-        } catch (e) {
-          console.warn("Could not sync new applicant to sheet:", e.message);
-          showToast("⚠️ Saved locally — sheet sync failed: " + e.message);
-        }
-      }
     }
     persistSave();
 

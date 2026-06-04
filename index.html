@@ -258,11 +258,11 @@
     <!-- ── LIST VIEW ── -->
     <div id="view-list" class="view-panel">
 
-      <!-- Stats Bar -->
-      <div class="list-stats-bar" id="list-stats-bar"></div>
-
-     <!-- Status Tab Bar -->
-      <div class="list-status-tabs" id="list-status-tabs"></div>
+      <!-- Stats Bar + Status Tabs row -->
+      <div class="list-header-row">
+        <div class="list-stats-bar" id="list-stats-bar"></div>
+        <div class="list-status-tabs" id="list-status-tabs"></div>
+      </div>
 
       <!-- Inline search bar (filter controls moved to super filter panel) -->
       <div class="list-filter-bar">
@@ -1701,6 +1701,10 @@
         <label class="form-label">Interview Slots</label>
         <input type="text" class="form-input" id="f-interview-slots" placeholder="e.g. 2026-04-17 @ 09:00"/>
       </div>
+      <div class="form-group">
+        <label class="form-label">Supabase ID</label>
+        <input type="text" class="form-input" id="f-supabase-id" placeholder="e.g. uuid-xxxx-xxxx"/>
+      </div>
 
       <!-- Education -->
       <div class="form-section-divider">Education</div>
@@ -1879,10 +1883,6 @@
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
           Verbal Test
         </button>
-        <button class="assess-tab" data-target="assess-excel">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/></svg>
-          Excel Test
-        </button>
       </div>
 
       <!-- ── Typing Test ── -->
@@ -1927,20 +1927,6 @@
         </div>
       </div>
 
-      <!-- ── Excel Test ── -->
-      <div class="assessment-section assess-panel" id="assess-excel" style="display:none">
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Skill Test <span class="u-light u-fw-400">(file link)</span></label>
-            <input type="text" class="form-input" id="f-data-entry-score" placeholder="https://…"/>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Time Used</label>
-            <input type="text" class="form-input" id="f-formatting-score" placeholder="e.g. 1:38"/>
-          </div>
-          <input type="hidden" id="f-sorting-score"/>
-        </div>
-      </div>
 
       <div class="assessment-section" id="assess-interview-notes">
         <div class="assessment-section-header">
