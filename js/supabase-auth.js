@@ -456,14 +456,38 @@ window.SupabaseAuth = (function () {
   async function _getFreshToken() {
     var c = _config();
     if (!c.supabaseToken) return null;
-    if (!_jwtExpired(c.supabaseToken)) return c.supabaseToken;
 
-    // Token expired — try refresh
-    if (!c.supabaseRefreshToken) return null;
+    // Prefer the client's live session — it has autoRefreshToken:true so it
+    // already handles silent refresh. This fixes the stale-token mismatch where
+    // the client refreshed the JWT (1-hour TTL) but our upstaff_api_config copy
+    // still held the old expired token, causing getMembers() to get a 401.
     try {
       var client = _getClient();
-      if (!client) return null;
-      var result = await client.auth.refreshSession({
+      if (client) {
+        var { data } = await client.auth.getSession();
+        if (data && data.session && data.session.access_token) {
+          var liveToken = data.session.access_token;
+          // Sync back if the client refreshed the token since last login
+          if (liveToken !== c.supabaseToken) {
+            c.supabaseToken = liveToken;
+            c.supabaseRefreshToken = data.session.refresh_token;
+            c.login_at = Date.now();
+            _saveConfig(c);
+          }
+          return liveToken;
+        }
+      }
+    } catch (_) {}
+
+    // Fallback: stored token still valid?
+    if (!_jwtExpired(c.supabaseToken)) return c.supabaseToken;
+
+    // Expired — try manual refresh
+    if (!c.supabaseRefreshToken) return null;
+    try {
+      var client2 = _getClient();
+      if (!client2) return null;
+      var result = await client2.auth.refreshSession({
         refresh_token: c.supabaseRefreshToken,
       });
       if (result.error || !result.data || !result.data.session) return null;
@@ -482,7 +506,10 @@ window.SupabaseAuth = (function () {
     var c = _config();
     if (!c.supabaseUrl || !c.supabaseAnonKey) return [];
     var token = await _getFreshToken();
-    if (!token) return [];
+    if (!token) {
+      console.warn("[SupabaseAuth] getMembers: no valid token — user may need to re-login.");
+      return [];
+    }
     try {
       var resp = await fetch(
         c.supabaseUrl +
@@ -494,9 +521,14 @@ window.SupabaseAuth = (function () {
           },
         },
       );
-      if (!resp.ok) return [];
+      if (!resp.ok) {
+        var errText = await resp.text().catch(() => "(unreadable)");
+        console.error("[SupabaseAuth] getMembers: API error", resp.status, errText);
+        return [];
+      }
       return await resp.json();
-    } catch (_) {
+    } catch (e) {
+      console.error("[SupabaseAuth] getMembers: fetch failed:", e);
       return [];
     }
   }

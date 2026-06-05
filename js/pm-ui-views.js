@@ -5437,8 +5437,9 @@ document.querySelectorAll(".settings-nav-item").forEach((btn) => {
       .querySelectorAll(".settings-panel")
       .forEach((p) => p.classList.remove("active"));
     document.getElementById("setting-" + key).classList.add("active");
-    // Re-render the Calendars list every time that tab is activated
+    // Re-render dynamic lists every time their tab is activated
     if (key === "calendars") renderSettingsCalendarList();
+    if (key === "workspace") renderMembersList();
   });
 });
 
