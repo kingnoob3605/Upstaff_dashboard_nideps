@@ -157,30 +157,63 @@ window.SupabaseAuth = (function () {
       .single();
 
     if (profileErr || !profile) {
-      // Check for a pending invite stashed by HR (sendMemberInvite). If
-      // present, use the role/name HR chose; otherwise default to assistant.
+      // Resolve invite: DB invites table first (cross-device), then
+      // localStorage fallback for invites sent before this change.
       var inviteRole = "assistant";
       var inviteName = fallbackName;
+      var inviteId = null;
+      var inviterId = null;
+      var inviteCreatedAt = null;
+
+      // 1. Check invites table (secure, cross-device)
       try {
-        var pending = JSON.parse(
-          localStorage.getItem("upstaff_pending_invites") || "{}",
-        );
-        var entry = pending[session.user.email];
-        if (entry) {
-          if (entry.role) inviteRole = entry.role;
-          if (entry.name) inviteName = entry.name;
-          delete pending[session.user.email];
-          localStorage.setItem(
-            "upstaff_pending_invites",
-            JSON.stringify(pending),
-          );
+        var { data: dbInvite } = await client
+          .from("invites")
+          .select("id,role,name,invited_by,created_at")
+          .eq("email", (session.user.email || "").toLowerCase())
+          .eq("accepted", false)
+          .gt("expires_at", new Date().toISOString())
+          .maybeSingle();
+        if (dbInvite) {
+          inviteRole = dbInvite.role || inviteRole;
+          inviteName = dbInvite.name || inviteName;
+          inviteId = dbInvite.id;
+          inviterId = dbInvite.invited_by;
+          inviteCreatedAt = dbInvite.created_at;
         }
       } catch (_) {}
+
+      // 2. Fallback: localStorage (backwards compat with pre-invites-table invites)
+      if (!inviteId) {
+        try {
+          var pending = JSON.parse(
+            localStorage.getItem("upstaff_pending_invites") || "{}",
+          );
+          var entry = pending[session.user.email];
+          if (entry) {
+            if (entry.role) inviteRole = entry.role;
+            if (entry.name) inviteName = entry.name;
+            delete pending[session.user.email];
+            localStorage.setItem(
+              "upstaff_pending_invites",
+              JSON.stringify(pending),
+            );
+          }
+        } catch (_) {}
+      }
 
       var { data: created, error: insertErr } = await client
         .from("profiles")
         .upsert(
-          { id: session.user.id, role: inviteRole, name: inviteName },
+          {
+            id: session.user.id,
+            role: inviteRole,
+            name: inviteName,
+            email: session.user.email,
+            status: "active",
+            invited_by: inviterId || null,
+            invited_at: inviteCreatedAt || null,
+          },
           { onConflict: "id" },
         )
         .select("role, name")
@@ -190,6 +223,18 @@ window.SupabaseAuth = (function () {
         throw new Error("Profile setup failed. Contact your administrator.");
       }
       profile = created;
+
+      // Mark invite accepted so it disappears from pending list
+      if (inviteId) {
+        client.from("invites").update({ accepted: true }).eq("id", inviteId)
+          .then(() => {}).catch(() => {});
+      }
+    } else {
+      // Existing profile: update last_seen_at (fire and forget)
+      client.from("profiles")
+        .update({ last_seen_at: new Date().toISOString() })
+        .eq("id", session.user.id)
+        .then(() => {}).catch(() => {});
     }
 
     c.supabaseToken = session.access_token;
@@ -239,6 +284,12 @@ window.SupabaseAuth = (function () {
       await client.auth.signOut();
       throw new Error("Account not set up. Contact your administrator.");
     }
+
+    // Update last_seen_at (fire and forget — don't block login)
+    client.from("profiles")
+      .update({ last_seen_at: new Date().toISOString() })
+      .eq("id", data.user.id)
+      .then(() => {}).catch(() => {});
 
     // Persist session in localStorage alongside existing config
     var c = _config();
@@ -513,7 +564,7 @@ window.SupabaseAuth = (function () {
     try {
       var resp = await fetch(
         c.supabaseUrl +
-          "/rest/v1/profiles?select=id,role,name,email,avatar_url&order=role.asc,name.asc",
+          "/rest/v1/profiles?select=id,role,name,email,avatar_url,status,last_seen_at,created_at&order=role.asc,name.asc",
         {
           headers: {
             apikey: c.supabaseAnonKey,
@@ -533,37 +584,62 @@ window.SupabaseAuth = (function () {
     }
   }
 
-  // Create a new member via the invite-member Edge Function (HR sets password directly)
-  async function inviteMember(email, role, name, password) {
-    var c = _config();
-    if (!c.supabaseUrl || !c.supabaseToken) throw new Error("Not logged in.");
-    if (!password || password.length < 6)
-      throw new Error("Password must be at least 6 characters.");
-    var resp = await fetch(c.supabaseUrl + "/functions/v1/invite-member", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: "Bearer " + c.supabaseToken,
-        apikey: c.supabaseAnonKey,
-      },
-      body: JSON.stringify({
-        email: email.trim().toLowerCase(),
-        role,
-        name: name || email.split("@")[0],
-        password,
-      }),
-    });
-    var json = await resp.json();
-    if (!resp.ok) throw new Error(json.error || "Failed to create account.");
-    return json;
-  }
-
   // Remove a member by deleting their profiles row (blocks login; HR only via RLS)
   async function removeMember(memberId) {
     var client = _getClient();
     if (!client) throw new Error("Not connected to Supabase.");
     var { error } = await client.from("profiles").delete().eq("id", memberId);
     if (error) throw new Error(error.message);
+  }
+
+  // Insert a pending invite row. handleMagicLinkCallback reads this on first login.
+  async function createInvite(email, role, name) {
+    var client = _getClient();
+    if (!client) throw new Error("Supabase not configured.");
+    var myId = getCurrentUserId();
+    var { data, error } = await client
+      .from("invites")
+      .insert({
+        email: (email || "").trim().toLowerCase(),
+        role: role || "assistant",
+        name: name || null,
+        invited_by: myId || null,
+        accepted: false,
+      })
+      .select()
+      .single();
+    if (error) throw new Error(error.message || "Failed to create invite.");
+    return data;
+  }
+
+  // Fetch all non-accepted, non-expired invites (HR only via RLS).
+  async function getInvites() {
+    var client = _getClient();
+    if (!client) return [];
+    try {
+      var { data, error } = await client
+        .from("invites")
+        .select("id,email,role,name,invited_by,created_at,expires_at")
+        .eq("accepted", false)
+        .gt("expires_at", new Date().toISOString())
+        .order("created_at", { ascending: false });
+      if (error) {
+        console.warn("[SupabaseAuth] getInvites:", error.message);
+        return [];
+      }
+      return data || [];
+    } catch (e) {
+      console.error("[SupabaseAuth] getInvites error:", e);
+      return [];
+    }
+  }
+
+  // Delete a pending invite (HR cancels before it is accepted).
+  async function cancelInvite(inviteId) {
+    var client = _getClient();
+    if (!client) throw new Error("Supabase not configured.");
+    var { error } = await client.from("invites").delete().eq("id", inviteId);
+    if (error) throw new Error(error.message || "Failed to cancel invite.");
   }
 
   function getCurrentUserId() {
@@ -582,7 +658,9 @@ window.SupabaseAuth = (function () {
     changePassword,
     sendPasswordReset,
     getMembers,
-    inviteMember,
+    createInvite,
+    getInvites,
+    cancelInvite,
     removeMember,
     getCurrentUserId,
     getFreshToken: _getFreshToken,

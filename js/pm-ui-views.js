@@ -5475,36 +5475,7 @@ function navigateToCalendarsSettings() {
   renderSettingsCalendarList();
 }
 
-/* â”€â”€ Team Members render â”€â”€ */
-function renderMembersList() {
-  const el = document.getElementById("members-list");
-  if (!el) return;
-  const ROLE_COLORS = {
-    Administrator: "#6c63ff",
-    "HR Manager": "#44d7e9",
-    Recruiter: "#43e97b",
-    Reviewer: "#fa8231",
-    Interviewer: "#ff6584",
-    Admin: "#9ca3af",
-  };
-  el.innerHTML =
-    MEMBERS.map(
-      (m, i) => `
-    <div class="member-row">
-      <div class="assignee-avatar" style="background:${m.color};width:36px;height:36px;font-size:12px;flex-shrink:0;">${initials(m.name)}</div>
-      <div class="member-info">
-        <div class="member-name">${sanitize(m.name)}</div>
-        <div style="font-size:11px;color:var(--light);margin-top:1px;">${sanitize(m.email)}</div>
-      </div>
-      <span class="member-role-badge" style="background:${ROLE_COLORS[m.role] || "#9ca3af"}22;color:${ROLE_COLORS[m.role] || "#9ca3af"};">${sanitize(m.role)}</span>
-      <div class="member-actions">
-        <button class="member-action-btn" data-action="editMember" data-arg="${i}" data-role-hide="hr">Edit</button>
-        <button class="member-action-btn" style="color:#ef4444;border-color:#fca5a5;" data-action="removeMember" data-arg="${i}" data-role-hide="hr">Remove</button>
-      </div>
-    </div>`,
-    ).join("") +
-    `<button class="btn-add-member" data-action="addMember" data-role-hide="hr" style="margin-top:10px;width:100%;padding:8px;border:1.5px dashed var(--border);border-radius:10px;background:transparent;color:var(--muted);cursor:pointer;font-size:12px;font-weight:600;">+ Add Member</button>`;
-}
+/* â”€â”€ Team Members render â”€â”€ async Supabase version defined below â”€â”€ */
 
 /* â”€â”€ Rebuild assignee options in modal â”€â”€ */
 function _renderAssigneeOptionsList() {
@@ -9063,44 +9034,88 @@ async function renderMembersList() {
   list.innerHTML =
     '<div style="font-size:12px;color:var(--muted);padding:12px 0;">Loading membersâ€¦</div>';
 
-  const members = window.SupabaseAuth ? await SupabaseAuth.getMembers() : [];
+  const [members, invites] = await Promise.all([
+    window.SupabaseAuth ? SupabaseAuth.getMembers() : Promise.resolve([]),
+    window.SupabaseAuth ? SupabaseAuth.getInvites() : Promise.resolve([]),
+  ]);
   const myId = window.SupabaseAuth ? SupabaseAuth.getCurrentUserId() : null;
 
-  if (counter) counter.textContent = `${members.length} / ${MAX_MEMBERS}`;
+  const total = members.length + invites.length;
+  if (counter) counter.textContent = `${total} / ${MAX_MEMBERS}`;
   const inviteBtn = document.getElementById("invite-member-btn");
-  if (inviteBtn) inviteBtn.disabled = members.length >= MAX_MEMBERS;
+  if (inviteBtn) inviteBtn.disabled = total >= MAX_MEMBERS;
 
-  if (!members.length) {
+  if (!members.length && !invites.length) {
     list.innerHTML = `<div style="text-align:center;padding:24px;color:var(--muted);font-size:13px;">No team members yet. Click <strong>Invite Member</strong> to add someone.</div>`;
     return;
   }
+
   const myPicUrl = localStorage.getItem("upstaff_profile_picture");
-  list.innerHTML = members
-    .map((m) => {
-      const initial = (m.name || m.email || "?")[0].toUpperCase();
-      const isMe = m.id === myId;
-      const picUrl = isMe ? myPicUrl : m.avatar_url || null;
-      const avatarHtml = picUrl
-        ? `<div class="member-avatar" style="padding:0;overflow:hidden"><img src="${picUrl}" alt="${initial}" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.parentElement.style.padding='';this.parentElement.textContent='${initial}';this.remove()"/></div>`
-        : `<div class="member-avatar">${initial}</div>`;
-      return `
+
+  // Format last_seen_at into a short relative string
+  function _relTime(iso) {
+    if (!iso) return null;
+    const diff = Date.now() - new Date(iso).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 2)  return "Active now";
+    if (mins < 60) return `${mins}m ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24)  return `${hrs}h ago`;
+    const days = Math.floor(hrs / 24);
+    if (days < 7)  return `${days}d ago`;
+    return new Date(iso).toLocaleDateString("en-PH", { month: "short", day: "numeric" });
+  }
+
+  // ── Active members ────────────────────────────────────────────────────
+  const memberHtml = members.map((m) => {
+    const initial  = (m.name || m.email || "?")[0].toUpperCase();
+    const isMe     = m.id === myId;
+    const safeUrl  = m.avatar_url && m.avatar_url.startsWith("https://") ? m.avatar_url : null;
+    const picUrl   = isMe ? myPicUrl : safeUrl;
+    const avatarHtml = picUrl
+      ? `<div class="member-avatar" style="padding:0;overflow:hidden"><img src="${picUrl}" alt="${initial}" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.parentElement.style.padding='';this.parentElement.textContent='${initial}';this.remove()"/></div>`
+      : `<div class="member-avatar">${initial}</div>`;
+    const lastSeen = _relTime(m.last_seen_at);
+    const suspended = m.status === "suspended"
+      ? `<span style="font-size:10px;color:#ef4444;background:#ef444420;padding:1px 6px;border-radius:99px;margin-left:4px;">Suspended</span>`
+      : "";
+    return `
     <div class="member-row">
       ${avatarHtml}
       <div class="member-info">
-        <div class="member-name">${sanitize(m.name || m.email || "")}</div>
-        <div class="member-email">${sanitize(m.email || "")}</div>
+        <div class="member-name">${sanitize(m.name || m.email || "")}${isMe ? ' <span style="font-size:10px;color:var(--muted);">(You)</span>' : ""}${suspended}</div>
+        <div class="member-email">${sanitize(m.email || "")}${lastSeen ? `<span style="margin-left:8px;font-size:10px;color:var(--muted);">${lastSeen}</span>` : ""}</div>
       </div>
       <span class="member-role-badge ${m.role === "hr" ? "hr" : "assistant"}">${m.role === "hr" ? "HR" : "Assistant"}</span>
-      ${
-        !isMe
-          ? `<button class="member-remove-btn" onclick="removeMember('${m.id}')" title="Remove member">
+      ${!isMe
+        ? `<button class="member-remove-btn" onclick="removeMember('${m.id}')" title="Remove member">
              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
            </button>`
-          : `<span style="font-size:10px;color:var(--muted);padding:0 8px;">You</span>`
-      }
+        : ""}
     </div>`;
-    })
-    .join("");
+  }).join("");
+
+  // ── Pending invites ───────────────────────────────────────────────────
+  const inviteHtml = invites.length ? `
+    <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);">
+      <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">Pending Invites</div>
+      ${invites.map((inv) => `
+        <div class="member-row" style="opacity:0.75;">
+          <div class="member-avatar" style="background:var(--surface-4);color:var(--muted);font-size:14px;display:flex;align-items:center;justify-content:center;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          </div>
+          <div class="member-info">
+            <div class="member-name">${sanitize(inv.name || inv.email)}</div>
+            <div class="member-email">${sanitize(inv.email)}<span style="margin-left:8px;font-size:10px;color:var(--muted);">Expires ${new Date(inv.expires_at).toLocaleDateString("en-PH",{month:"short",day:"numeric"})}</span></div>
+          </div>
+          <span class="member-role-badge" style="background:var(--surface-4);color:var(--muted);border:1px solid var(--border);">${inv.role === "hr" ? "HR" : "Assistant"}</span>
+          <button class="member-remove-btn" onclick="cancelInvite('${inv.id}')" title="Cancel invite" style="color:var(--muted);">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>`).join("")}
+    </div>` : "";
+
+  list.innerHTML = memberHtml + inviteHtml;
 }
 
 function toggleInviteForm() {
@@ -9139,41 +9154,44 @@ async function sendMemberInvite() {
   }
 
   try {
-    // Stash the desired role/name so handleMagicLinkCallback can apply it on
-    // the invitee's first login. Server-side we'd use admin API, but client
-    // just sends the magic link via signInWithOtp (free-plan friendly).
-    try {
-      const pending = JSON.parse(
-        localStorage.getItem("upstaff_pending_invites") || "{}",
-      );
-      pending[email] = {
-        role,
-        name,
-        invited_by: SupabaseAuth.getEmail?.() || "",
-        at: Date.now(),
-      };
-      localStorage.setItem("upstaff_pending_invites", JSON.stringify(pending));
-    } catch (_) {}
+    // Store invite in Supabase (cross-device, auditable, expirable after 7 days).
+    // handleMagicLinkCallback reads this on the invitee's first login.
+    await SupabaseAuth.createInvite(email, role, name);
 
+    // Send the one-time magic link via Supabase Auth OTP
     await SupabaseAuth.sendMagicLink(email);
 
     if (statusEl) {
-      statusEl.innerHTML = `âœ… Invite link sent to <b>${email}</b>. Link expires in 1 hour. They'll be added as <b>${role}</b> on first sign-in.`;
+      statusEl.innerHTML = `✅ Invite link sent to <b>${email}</b>. Link expires in 1 hour. They'll be added as <b>${role}</b> on first sign-in.`;
       statusEl.style.color = "var(--green)";
     }
     document.getElementById("invite-name").value = "";
     document.getElementById("invite-email").value = "";
-    showToast(`âœ‰ Invite sent to ${name}`);
+    showToast(`✉ Invite sent to ${name}`);
     setTimeout(toggleInviteForm, 2500);
     renderMembersList();
   } catch (err) {
     if (statusEl) {
-      statusEl.textContent = "âŒ " + (err.message || "Failed to send invite.");
+      statusEl.textContent = "❌ " + (err.message || "Failed to send invite.");
       statusEl.style.color = "#ef4444";
     }
   }
 }
 
+async function cancelInvite(inviteId) {
+  const confirmed = await uiConfirm(
+    "Cancel this invite? The person will not be able to use the invite link.",
+    { icon: "⚠️", title: "Cancel Invite", okText: "Cancel Invite" },
+  );
+  if (!confirmed) return;
+  try {
+    await SupabaseAuth.cancelInvite(inviteId);
+    renderMembersList();
+    showToast("Invite cancelled.");
+  } catch (err) {
+    showToast("❌ " + (err.message || "Could not cancel invite."));
+  }
+}
 async function removeMember(memberId) {
   const confirmed = await uiConfirm(
     "Remove this member? They will lose access immediately.",
