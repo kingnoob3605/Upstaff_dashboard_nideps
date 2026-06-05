@@ -206,6 +206,46 @@ function _getActiveView() {
   return document.querySelector(".view-tab.active")?.dataset.view || "list";
 }
 
+function _closeSuperFilter() {
+  const panel = document.getElementById("super-filter-panel");
+  const btn =
+    document.getElementById("list-filter-btn") ||
+    document.getElementById("topbar-filter-btn");
+  if (!panel) return;
+  panel.style.display = "none";
+  if (btn) btn.classList.remove("active");
+  document.removeEventListener("mousedown", _sfClickOutside);
+  document.removeEventListener("keydown", _sfEscape);
+}
+
+function _sfClickOutside(e) {
+  const panel = document.getElementById("super-filter-panel");
+  const btn =
+    document.getElementById("list-filter-btn") ||
+    document.getElementById("topbar-filter-btn");
+  if (!panel) return;
+  if (!panel.contains(e.target) && e.target !== btn && !btn.contains(e.target)) {
+    _closeSuperFilter();
+  }
+}
+
+function _sfEscape(e) {
+  if (e.key === "Escape") _closeSuperFilter();
+}
+
+function _positionSuperFilter(panel, btn) {
+  const r   = btn.getBoundingClientRect();
+  const vw  = window.innerWidth;
+  const MAX = 480;
+  // Remove any stale inline width — CSS max-width controls it
+  panel.style.removeProperty("width");
+  let left = r.left;
+  if (left + MAX > vw - 12) left = vw - MAX - 12;
+  if (left < 12) left = 12;
+  panel.style.top  = (r.bottom + 8) + "px";
+  panel.style.left = left + "px";
+}
+
 function toggleSuperFilter() {
   // In calendar view, redirect to the inline cal filter bar
   if (_getActiveView() === "calendar") {
@@ -219,14 +259,21 @@ function toggleSuperFilter() {
   if (!panel) return;
   const isOpen = panel.style.display !== "none";
   if (isOpen) {
-    panel.style.display = "none";
-    if (btn) btn.classList.remove("active");
+    _closeSuperFilter();
     return;
   }
   document.getElementById("sf-list-section").style.display = "";
   document.getElementById("sf-cal-section").style.display = "none";
   panel.style.display = "";
-  if (btn) btn.classList.add("active");
+  if (btn) {
+    btn.classList.add("active");
+    _positionSuperFilter(panel, btn);
+  }
+  // Defer listeners so this click doesn't immediately close
+  setTimeout(() => {
+    document.addEventListener("mousedown", _sfClickOutside);
+    document.addEventListener("keydown", _sfEscape);
+  }, 0);
 }
 
 function toggleCalFilterBar() {
@@ -415,10 +462,12 @@ function renderList() {
       const doneCount = allTasks.filter((t) => t.status === "Hired").length;
       const totalCount = allTasks.length;
       statsEl.innerHTML = `
-        <div class="list-stat-chip"><span class="stat-val">${totalCount}</span>&nbsp;Total Applicants</div>
-        <div class="list-stat-chip overdue-chip"><span class="stat-val">${overdueCount}</span>&nbsp;Overdue</div>
-        <div class="list-stat-chip today-chip"><span class="stat-val">${todayCount}</span>&nbsp;Interview Today</div>
-        <div class="list-stat-chip done-chip"><span class="stat-val">${doneCount}</span>&nbsp;Hired</div>
+        <div class="stat-legend">
+          <span class="stat-legend-item"><span class="stat-legend-dot"></span><span class="stat-val">${totalCount}</span>&nbsp;Total</span>
+          <span class="stat-legend-item overdue"><span class="stat-legend-dot"></span><span class="stat-val">${overdueCount}</span>&nbsp;Overdue</span>
+          <span class="stat-legend-item today"><span class="stat-legend-dot"></span><span class="stat-val">${todayCount}</span>&nbsp;Interview Today</span>
+          <span class="stat-legend-item done"><span class="stat-legend-dot"></span><span class="stat-val">${doneCount}</span>&nbsp;Hired</span>
+        </div>
       `;
     }
   }
