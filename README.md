@@ -157,19 +157,6 @@ upstaff-dashboard/
 
 ---
 
-## Environment Variables
-
-Create a `.env` file in the project root (never commit this file):
-
-```env
-GOOGLE_API_KEY=your_google_api_key
-GOOGLE_CLIENT_ID=your_google_oauth_client_id
-```
-
-Supabase URL and anon key are configured in-app via the settings panel (stored in `localStorage` under key `upstaff_api_config`). Default fallback values are embedded in `js/supabase-auth.js`.
-
----
-
 ## Local Setup
 
 ```bash
