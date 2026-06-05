@@ -1,7 +1,7 @@
-﻿/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   UTILITY â€” Debounce
+﻿/* ══════════════════════════════════════════════
+   UTILITY — Debounce
    Delays a function until user stops typing.
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+══════════════════════════════════════════════ */
 function debounce(fn, delay) {
   let timer;
   return function (...args) {
@@ -10,11 +10,11 @@ function debounce(fn, delay) {
   };
 }
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   UTILITY â€” Sanitize
+/* ══════════════════════════════════════════════
+   UTILITY — Sanitize
    Escapes HTML special chars to prevent XSS.
    Use: sanitize(userInput) before innerHTML.
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+══════════════════════════════════════════════ */
 function sanitize(str) {
   if (str == null) return "";
   return String(str)
@@ -25,16 +25,16 @@ function sanitize(str) {
     .replace(/'/g, "&#39;");
 }
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+/* ══════════════════════════════════════════════
    INPUT VALIDATION LAYER
-   validateField(value, type) â†’ { ok, message }
+   validateField(value, type) → { ok, message }
    Types: "name" | "email" | "phone" | "url" | "date" | "required"
-   showFieldError(inputEl, message) â€” attaches inline error under input
-   clearFieldError(inputEl)         â€” removes inline error
-   validateForm(rules)              â€” validates multiple fields at once
+   showFieldError(inputEl, message) — attaches inline error under input
+   clearFieldError(inputEl)         — removes inline error
+   validateForm(rules)              — validates multiple fields at once
      rules = [{ id, type, label }]
      returns true if all pass, false + shows errors if any fail
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+══════════════════════════════════════════════ */
 
 function validateField(value, type) {
   const v = (value || "").trim();
@@ -114,7 +114,7 @@ function clearAllFieldErrors(containerEl) {
 }
 
 /**
- * validateForm(rules) â€” validate multiple fields at once.
+ * validateForm(rules) — validate multiple fields at once.
  * rules = [{ id: "input-id", type: "name"|"email"|..., label: "Field Name" }]
  * Returns true if all pass. Shows inline errors and returns false if any fail.
  */
@@ -134,37 +134,37 @@ function validateForm(rules) {
   return allOk;
 }
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   UTILITY â€” Debug Logger
+/* ══════════════════════════════════════════════
+   UTILITY — Debug Logger
    Set DEBUG = true to enable console output.
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+══════════════════════════════════════════════ */
 const DEBUG = false;
 function dbg(...args) {
   if (DEBUG) console.log(...args);
 }
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+/* ══════════════════════════════════════════════
    CONSTANTS & DATA
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+══════════════════════════════════════════════ */
 const PRIORITY_COLORS = {
   Low: "#43e97b",
   Medium: "#44d7e9",
   High: "#fa8231",
   Urgent: "#ff6584",
 };
-/* â”€â”€ Recruitment Pipeline stages â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-   Applied â†’ Screening â†’ Assessment â†’ Interview â†’ Review â†’ Hired / Rejected / Cancelled
+/* ── Recruitment Pipeline stages ──────────────────────────────────────────
+   Applied → Screening → Assessment → Interview → Review → Hired / Rejected / Cancelled
    Legacy generic statuses are preserved as aliases so old data still renders.
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+───────────────────────────────────────────────────────────────────────── */
 const STATUS_META = {
-  // â”€â”€ Pipeline stages â”€â”€
+  // ── Pipeline stages ──
   New: { color: "#6c63ff", bg: "#ede9ff" },
   "In Progress": { color: "#f59e0b", bg: "#fef3c7" },
   Endorsed: { color: "#3ecfdf", bg: "#e0fafb" },
   Hired: { color: "#43e97b", bg: "#e8fdf1" },
   Others: { color: "#60a5fa", bg: "#dbeafe" },
   Closed: { color: "#9ca3af", bg: "#f3f4f6" },
-  // â”€â”€ Legacy aliases (keeps old tasks rendering correctly) â”€â”€
+  // ── Legacy aliases (keeps old tasks rendering correctly) ──
   Applied: { color: "#6c63ff", bg: "#ede9ff" },
   Screening: { color: "#6c63ff", bg: "#ede9ff" },
   Assessment: { color: "#f59e0b", bg: "#fef3c7" },
@@ -175,7 +175,7 @@ const STATUS_META = {
   "To Do": { color: "#6c63ff", bg: "#ede9ff" },
   "In Review": { color: "#3ecfdf", bg: "#e0fafb" },
   Done: { color: "#43e97b", bg: "#e8fdf1" },
-  // â”€â”€ Partner statuses (from Supabase / Google Sheets) â”€â”€
+  // ── Partner statuses (from Supabase / Google Sheets) ──
   "For Interview": { color: "#0369a1", bg: "#e0f2fe" },
   Interviewed: { color: "#059669", bg: "#d1fae5" },
   "For Client Endorsement": { color: "#7c3aed", bg: "#ede9fe" },
@@ -188,7 +188,7 @@ const STATUS_META = {
   "Duplicate Lead": { color: "#a21caf", bg: "#fae8ff" },
 };
 
-/** Returns the CSS class for a status pill â€” theme-aware, always readable */
+/** Returns the CSS class for a status pill — theme-aware, always readable */
 function statusPillClass(status) {
   const map = {
     // Pipeline stages
@@ -242,10 +242,10 @@ const AVATAR_COLORS = [
   "#f59e0b",
 ];
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   JOB POSITIONS â€” Single source of truth
+/* ══════════════════════════════════════════════
+   JOB POSITIONS — Single source of truth
    Used by task modal, calendar modal, analytics, settings
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+══════════════════════════════════════════════ */
 const JOB_POSITIONS = [
   "Accountant",
   "Accounts Payable Specialist",
@@ -278,16 +278,16 @@ const JOB_POSITIONS = [
   "Video Editor",
 ];
 
-/* â”€â”€ Candidate folders â”€â”€ */
+/* ── Candidate folders ── */
 const CANDIDATE_FOLDERS = ["Waiting List", "Talent Pool / Shortlisted"];
 const LS_KEYS_CANDIDATES = "upstaff_candidates";
 
-/* â”€â”€ Public calendars available for subscription â”€â”€ */
+/* ── Public calendars available for subscription ── */
 const PUBLIC_CALENDARS = [
   {
     id: "en.christian#holiday@group.v.calendar.google.com",
     name: "Christian Holidays",
-    icon: "âœï¸",
+    icon: "✝️",
     desc: "Official Christian holiday calendar",
   },
   {
@@ -299,7 +299,7 @@ const PUBLIC_CALENDARS = [
   {
     id: "en.islamic#holiday@group.v.calendar.google.com",
     name: "Islamic Holidays",
-    icon: "â˜ªï¸",
+    icon: "☪️",
     desc: "Official Islamic holidays",
   },
   {
@@ -310,7 +310,7 @@ const PUBLIC_CALENDARS = [
   },
 ];
 
-/* â”€â”€ Candidates store â”€â”€ */
+/* ── Candidates store ── */
 let CANDIDATES = [];
 (function loadCandidates() {
   try {
@@ -324,14 +324,14 @@ function saveCandidates() {
   try {
     localStorage.setItem(LS_KEYS_CANDIDATES, JSON.stringify(CANDIDATES));
   } catch (e) {
-    console.warn("[Persist] âš ï¸ Could not save candidates:", e);
+    console.warn("[Persist] ⚠️ Could not save candidates:", e);
   }
 }
 
-/* â”€â”€ Drag state â”€â”€ */
+/* ── Drag state ── */
 let _dragTaskId = null;
 
-/* â”€â”€ Bulk selection state â”€â”€ */
+/* ── Bulk selection state ── */
 let selectedTaskIds = new Set();
 
 function _updateBulkToolbar() {
@@ -383,7 +383,7 @@ async function bulkAdvanceStage() {
   const ids = [...selectedTaskIds];
   const confirmed = await uiConfirm(
     `Advance ${ids.length} applicant(s) to their next pipeline stage?`,
-    { icon: "â©", title: "Advance Stage", okText: "Advance" },
+    { icon: "⏩", title: "Advance Stage", okText: "Advance" },
   );
   if (!confirmed) return;
   ids.forEach((id) => {
@@ -395,7 +395,7 @@ async function bulkAdvanceStage() {
   selectedTaskIds.clear();
   refreshCurrentView();
   _updateBulkToolbar();
-  showToast(`âœ… ${ids.length} applicant(s) advanced.`);
+  showToast(`✅ ${ids.length} applicant(s) advanced.`);
 }
 
 function toggleBulkMoveStageMenu(e) {
@@ -465,7 +465,7 @@ function bulkMoveToStage(targetStage) {
   clearBulkSelection();
   refreshCurrentView();
   showToast(
-    `âœ… Moved ${ids.length} applicant${ids.length !== 1 ? "s" : ""} to ${targetStage}`,
+    `✅ Moved ${ids.length} applicant${ids.length !== 1 ? "s" : ""} to ${targetStage}`,
   );
 }
 
@@ -499,7 +499,7 @@ async function bulkReject() {
   showToast(`ðŸš« ${ids.length} applicant(s) rejected.`);
 }
 
-/* â”€â”€ Seed task data â”€â”€ */
+/* ── Seed task data ── */
 const _SEED_TASKS_UNUSED_REMOVED = [
   {
     id: 1,
@@ -726,14 +726,14 @@ const _SEED_TASKS_UNUSED_REMOVED = [
   },
 ];
 
-/* â”€â”€ Seed calendar events â”€â”€ (empty â€” real events come from the form or Google Calendar sync) */
+/* ── Seed calendar events ── (empty — real events come from the form or Google Calendar sync) */
 const SEED_CALENDAR_EVENTS = [];
 
-/* Mutable working copies â€” hydrated from localStorage below */
+/* Mutable working copies — hydrated from localStorage below */
 let TASKS = [];
 let calEvents = [];
 
-/* â”€â”€ Google Calendar registry â€” must be declared BEFORE persistLoad() is called â”€â”€ */
+/* ── Google Calendar registry — must be declared BEFORE persistLoad() is called ── */
 /* Moved up from its original position to avoid a temporal dead zone crash:          */
 /* persistLoad() (line ~497) assigns UPSTAFF_CALENDARS, so it must exist first.      */
 let UPSTAFF_CALENDARS = [];
@@ -745,28 +745,28 @@ let calNextId = 200;
 let calEditId = null;
 let tableSort = { col: "due", dir: 1 };
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   PERSISTENCE LAYER â€” localStorage
-   â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+/* ══════════════════════════════════════════════
+   PERSISTENCE LAYER — localStorage
+   ──────────────────────────────────────────────
    Strategy:
-   â€¢ Local events (manually created) â†’ saved to localStorage on every mutation.
-   â€¢ Google Calendar events           â†’ NOT stored locally; re-fetched on load
+   • Local events (manually created) → saved to localStorage on every mutation.
+   • Google Calendar events           → NOT stored locally; re-fetched on load
                                         via silent OAuth token refresh.
-   â€¢ TASKS                            â†’ saved to localStorage on every mutation.
-   â€¢ ID counters                      â†’ saved to prevent collisions after reload.
-   â€¢ gcal_signed flag                 â†’ remembers if user previously signed in
+   • TASKS                            → saved to localStorage on every mutation.
+   • ID counters                      → saved to prevent collisions after reload.
+   • gcal_signed flag                 → remembers if user previously signed in
                                         so we can attempt a silent re-auth on load.
 
    localStorage keys
-   â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-   upstaff_calEvents   â€” JSON array of LOCAL calendar events
-   upstaff_tasks       â€” JSON array of tasks
-   upstaff_calNextId   â€” integer counter
-   upstaff_taskNextId  â€” integer counter
-   upstaff_gcal_signed â€” '1' if user authorised Google Calendar before
-   upstaff_gcal_count  â€” last known synced event count (UI display only)
-   upstaff_calendars   â€” JSON array of discovered Google Calendar entries
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+   ─────────────────────────────────────────────
+   upstaff_calEvents   — JSON array of LOCAL calendar events
+   upstaff_tasks       — JSON array of tasks
+   upstaff_calNextId   — integer counter
+   upstaff_taskNextId  — integer counter
+   upstaff_gcal_signed — '1' if user authorised Google Calendar before
+   upstaff_gcal_count  — last known synced event count (UI display only)
+   upstaff_calendars   — JSON array of discovered Google Calendar entries
+══════════════════════════════════════════════ */
 const LS_KEYS = {
   CAL: "upstaff_calEvents",
   TASKS: "upstaff_tasks",
@@ -777,7 +777,7 @@ const LS_KEYS = {
   CALENDARS: "upstaff_calendars",
 };
 
-/* â”€â”€ Active user email â€” used to scope per-user gcal data â”€â”€ */
+/* ── Active user email — used to scope per-user gcal data ── */
 function getActiveUserEmail() {
   try {
     const p = JSON.parse(localStorage.getItem(window._profileKey ? window._profileKey() : "upstaff_profile") || "{}");
@@ -786,7 +786,7 @@ function getActiveUserEmail() {
     return "default";
   }
 }
-/* Per-user localStorage key helpers â€” each user's gcal data is isolated */
+/* Per-user localStorage key helpers — each user's gcal data is isolated */
 function getUserGcalAuthKey() {
   return `upstaff_gcal_signed_${getActiveUserEmail()}`;
 }
@@ -797,10 +797,10 @@ function getUserGcalCountKey() {
   return `upstaff_gcal_count_${getActiveUserEmail()}`;
 }
 
-/* â”€â”€ Save to localStorage â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Save to localStorage ───────────────────── */
 function persistSave() {
   try {
-    // Only persist LOCAL events â€” Google events are ephemeral and re-fetched on load
+    // Only persist LOCAL events — Google events are ephemeral and re-fetched on load
     const localOnly = calEvents.filter((e) => !e.isGoogleEvent);
     localStorage.setItem(LS_KEYS.CAL, JSON.stringify(localOnly));
     localStorage.setItem(LS_KEYS.TASKS, JSON.stringify(TASKS));
@@ -824,27 +824,27 @@ function persistSave() {
           minute: "2-digit",
         });
     checkStorageQuota();
-    // Mirror to Supabase (debounced â€” fires 2 s after last save)
+    // Mirror to Supabase (debounced — fires 2 s after last save)
     _syncDebounced();
   } catch (e) {
     console.warn(
-      "[Persist] âš ï¸ localStorage write failed (storage full or blocked):",
+      "[Persist] ⚠️ localStorage write failed (storage full or blocked):",
       e,
     );
     if (e && (e.name === "QuotaExceededError" || e.code === 22)) {
       showToast(
-        "âš ï¸ Storage is full! Export your data now to avoid losing changes.",
+        "⚠️ Storage is full! Export your data now to avoid losing changes.",
         8000,
       );
     }
     // Update last-saved indicator with error state
     const savedEl = document.getElementById("last-saved-indicator");
-    if (savedEl) savedEl.textContent = "Save failed â€” storage full";
+    if (savedEl) savedEl.textContent = "Save failed — storage full";
     return;
   }
 }
 
-/* â”€â”€ Load from localStorage â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Load from localStorage ─────────────────── */
 function persistLoad() {
   try {
     const rawCal = localStorage.getItem(LS_KEYS.CAL);
@@ -860,7 +860,7 @@ function persistLoad() {
       if (rawTaskId) taskNextId = parseInt(rawTaskId, 10) || 100;
       if (rawCals) UPSTAFF_CALENDARS = JSON.parse(rawCals);
     } catch (e) {
-      console.error("[Persist] âŒ Corrupted saved data, resetting:", e);
+      console.error("[Persist] ❌ Corrupted saved data, resetting:", e);
       calEvents = [];
       TASKS = [];
       UPSTAFF_CALENDARS = [];
@@ -883,24 +883,24 @@ function persistLoad() {
       if (TASKS.length !== before) {
         localStorage.setItem(LS_KEYS.TASKS, JSON.stringify(TASKS));
         dbg(
-          `[Persist] ðŸ§¹ Purged ${before - TASKS.length} auto-imported Sheet task(s) â€” manual-entry mode active`,
+          `[Persist] ðŸ§¹ Purged ${before - TASKS.length} auto-imported Sheet task(s) — manual-entry mode active`,
         );
       }
     }
 
     dbg(
-      `[Persist] âœ… Restored ${calEvents.length} event(s), ${TASKS.length} task(s), ${UPSTAFF_CALENDARS.length} calendar(s)`,
+      `[Persist] ✅ Restored ${calEvents.length} event(s), ${TASKS.length} task(s), ${UPSTAFF_CALENDARS.length} calendar(s)`,
     );
 
     // Session expiry is handled by verifySession() on load (with auto silent re-login)
   } catch (e) {
-    console.warn("[Persist] âš ï¸ localStorage read failed â€” starting fresh:", e);
+    console.warn("[Persist] ⚠️ localStorage read failed — starting fresh:", e);
     calEvents = [];
     TASKS = [];
   }
 }
 
-/* â”€â”€ Wipe calendar from localStorage â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Wipe calendar from localStorage ───────── */
 function persistClearCalendar() {
   try {
     localStorage.removeItem(LS_KEYS.CAL);
@@ -908,12 +908,12 @@ function persistClearCalendar() {
     localStorage.removeItem(getUserGcalCountKey());
     localStorage.removeItem(getUserCalendarsKey());
   } catch (e) {
-    console.warn("[Persist] âš ï¸ Could not clear calendar storage:", e);
+    console.warn("[Persist] ⚠️ Could not clear calendar storage:", e);
   }
   UPSTAFF_CALENDARS = [];
 }
 
-/* â”€â”€ Wipe everything from localStorage â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Wipe everything from localStorage ──────── */
 function persistClearAll() {
   Object.values(LS_KEYS).forEach((k) => localStorage.removeItem(k));
   // Also wipe user-scoped gcal keys for the current user
@@ -922,15 +922,15 @@ function persistClearAll() {
   localStorage.removeItem(getUserGcalCountKey());
 }
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+/* ══════════════════════════════════════════════
    SUPABASE SYNC
    Mirrors TASKS + local calEvents to Supabase so
    data survives browser clears and is shared across
    all team members' devices.
 
-   _supabaseSyncNow()  â€” upsert current state (fire-and-forget)
-   loadDataFromSupabase() â€” pull server rows, replace local data
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+   _supabaseSyncNow()  — upsert current state (fire-and-forget)
+   loadDataFromSupabase() — pull server rows, replace local data
+══════════════════════════════════════════════ */
 function _getSupabaseCfg() {
   try {
     var c = JSON.parse(localStorage.getItem("upstaff_api_config") || "{}");
@@ -950,7 +950,7 @@ function _jwtExpiredCore(token) {
   }
 }
 
-// â”€â”€ Supabase row helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Supabase row helpers ────────────────────────────────────────────────────
 function _taskToRow(t) {
   var now = new Date().toISOString();
   return {
@@ -1094,7 +1094,7 @@ async function _supabaseSyncNow() {
   };
   var base = c.supabaseUrl + "/rest/v1/";
 
-  // Upsert tasks â€” flat columns
+  // Upsert tasks — flat columns
   if (TASKS.length > 0) {
     var taskRows = TASKS.map(_taskToRow);
     fetch(base + "applicants", {
@@ -1136,7 +1136,7 @@ async function _supabaseSyncNow() {
   }
 }
 
-// Debounced version â€” batches rapid saves into one network call
+// Debounced version — batches rapid saves into one network call
 var _syncDebounced = debounce(_supabaseSyncNow, 2000);
 window._syncDebounced = _syncDebounced;
 
@@ -1162,7 +1162,7 @@ async function loadDataFromSupabase() {
     Authorization: "Bearer " + c.supabaseToken,
   };
   var base = c.supabaseUrl + "/rest/v1/";
-    // Pull tasks â€” flat columns
+    // Pull tasks — flat columns
     var taskResp = await fetch(
       base + "applicants?select=*&order=id.asc",
       { headers: headers },
@@ -1176,7 +1176,7 @@ async function loadDataFromSupabase() {
           return Math.max(m, t.id || 0);
         }, 0);
         if (maxId >= taskNextId) taskNextId = maxId + 1;
-        dbg("[Supabase] âœ… Loaded " + TASKS.length + " task(s) from server");
+        dbg("[Supabase] ✅ Loaded " + TASKS.length + " task(s) from server");
       }
     }
 
@@ -1197,14 +1197,14 @@ async function loadDataFromSupabase() {
           window.EMPLOYEES_setFromServer(serverEmps, maxEmpId);
         }
         dbg(
-          "[Supabase] âœ… Loaded " +
+          "[Supabase] ✅ Loaded " +
             serverEmps.length +
             " employee(s) from server",
         );
       }
     } else if (empResp.status === 404) {
       console.warn(
-        "[Supabase] employees table missing â€” run the SQL in setup notes",
+        "[Supabase] employees table missing — run the SQL in setup notes",
       );
     }
 
@@ -1228,7 +1228,7 @@ async function loadDataFromSupabase() {
         }, 0);
         if (maxEvtId >= calNextId) calNextId = maxEvtId + 1;
         dbg(
-          "[Supabase] âœ… Loaded " +
+          "[Supabase] ✅ Loaded " +
             serverEvts.length +
             " calendar event(s) from server",
         );
@@ -1238,8 +1238,8 @@ async function loadDataFromSupabase() {
     // Persist the freshly-loaded data to localStorage as cache
     persistSave();
   } catch (err) {
-    console.warn("[Supabase] âš ï¸ loadDataFromSupabase failed:", err);
-    if (typeof showToast === "function") showToast("âš ï¸ Could not load data from server. Working offline.");
+    console.warn("[Supabase] ⚠️ loadDataFromSupabase failed:", err);
+    if (typeof showToast === "function") showToast("⚠️ Could not load data from server. Working offline.");
   } finally {
     window._supabaseLoading = false;
     if (typeof renderList === "function") renderList();
@@ -1280,17 +1280,17 @@ window.loadDataFromSupabase = loadDataFromSupabase;
 window._supabaseDeleteTask = _supabaseDeleteTask;
 window._supabaseDeleteCalEvent = _supabaseDeleteCalEvent;
 
-/* â”€â”€ Hydrate on script parse (before first render) â”€â”€ */
+/* ── Hydrate on script parse (before first render) ── */
 persistLoad();
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   OVERDUE FLAG â€” _markOverdueTasks  (formerly autoProgressStatuses)
+/* ══════════════════════════════════════════════
+   OVERDUE FLAG — _markOverdueTasks  (formerly autoProgressStatuses)
    NOTE: This function does NOT change pipeline stages.
    It only sets t._overdue = true on tasks whose due date
-   has passed. Stage advancement (Applied â†’ Screening â†’ â€¦)
+   has passed. Stage advancement (Applied → Screening → …)
    is always recruiter-driven and never happens automatically.
-   Safe to call before every render â€” runs in O(n).
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+   Safe to call before every render — runs in O(n).
+══════════════════════════════════════════════ */
 function _markOverdueTasks() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -1306,12 +1306,12 @@ function autoProgressStatuses() {
   _markOverdueTasks();
 }
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+/* ══════════════════════════════════════════════
    STAGE PROGRESS BAR HELPER
    Renders a 5-step progress bar for the
-   To Do â†’ In Progress â†’ In Review â†’ Done flow.
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
-/* â”€â”€ Recruitment Pipeline order â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+   To Do → In Progress → In Review → Done flow.
+══════════════════════════════════════════════ */
+/* ── Recruitment Pipeline order ─────────────────────────────────────────── */
 const STAGE_ORDER = [
   "New",
   "For Interview",
@@ -1361,7 +1361,7 @@ const LIST_STATUS_ORDER = [
   "Closed",
 ];
 
-/* â”€â”€ Assessment config: which tests each position type requires â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Assessment config: which tests each position type requires ─────────── */
 const ASSESSMENT_CONFIG = {
   // Data-entry / typing-heavy roles
   "Data Entry": ["typing", "knowledge"],
@@ -1392,7 +1392,7 @@ function getAssessmentConfig(position) {
   return ASSESSMENT_CONFIG["_default"];
 }
 
-/* â”€â”€ Pipeline progression helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Pipeline progression helpers ──────────────────────────────────────── */
 function getNextStage(currentStatus) {
   const idx = STAGE_ORDER.indexOf(currentStatus);
   if (idx === -1 || idx >= STAGE_ORDER.length - 1) return null;
@@ -1426,40 +1426,40 @@ function moveApplicantToStage(taskId, newStage, opts = {}) {
     t.hired_at = new Date().toISOString();
     t.archived = false;
     showToast(
-      `ðŸŽ‰ ${t.name.split(" â€” ")[1] || t.name} hired! Moving to Onboarding.`,
+      `ðŸŽ‰ ${t.name.split(" — ")[1] || t.name} hired! Moving to Onboarding.`,
     );
     // Auto-create onboarding employee record
     _autoCreateEmployee(t);
   } else if (oldStage === "Hired" && !TERMINAL_STAGES.includes(newStage)) {
-    // Moved back from Hired â€” soft-flag the onboarding record instead of deleting it
+    // Moved back from Hired — soft-flag the onboarding record instead of deleting it
     // This preserves checklist progress and docs if re-hired later
     const emp = EMPLOYEES.find(
       (e) =>
         (e.source_task_id && e.source_task_id === t.id) ||
         (e.fname + " " + e.lname).toLowerCase().trim() ===
-          (t.applicant_name || t.name.split(" â€” ")[1] || t.name)
+          (t.applicant_name || t.name.split(" — ")[1] || t.name)
             .toLowerCase()
             .trim(),
     );
     if (emp) {
       emp.status = "Pending";
-      emp._returned_from_hired = true; // soft flag â€” record kept but marked as returned
+      emp._returned_from_hired = true; // soft flag — record kept but marked as returned
       empPersistSave();
     }
     t.hired_at = "";
     showToast(
-      `â†©ï¸ Applicant returned to ${newStage}. Onboarding record preserved.`,
+      `↩️ Applicant returned to ${newStage}. Onboarding record preserved.`,
     );
   } else if (newStage === "Closed") {
     t.rejected_at = new Date().toISOString();
     t.archived = true;
     showToast(`Applicant moved to Closed and archived.`);
   } else {
-    showToast(`âœ… Moved to ${newStage}`);
+    showToast(`✅ Moved to ${newStage}`);
   }
 
   // Log activity & notify
-  logActivity(taskId, "stage_change", `${oldStage} â†’ ${newStage}`);
+  logActivity(taskId, "stage_change", `${oldStage} → ${newStage}`);
   pushNotif(
     "stage",
     `${t.applicant_name || t.name} moved to ${newStage}`,
@@ -1467,7 +1467,7 @@ function moveApplicantToStage(taskId, newStage, opts = {}) {
   );
   persistSave();
   if (!opts.silent) refreshCurrentView();
-  dbg(`[Pipeline] Task #${taskId} "${t.name}": ${oldStage} â†’ ${newStage}`);
+  dbg(`[Pipeline] Task #${taskId} "${t.name}": ${oldStage} → ${newStage}`);
   // Sync Google Calendar event title/status if one exists for this task
   if (
     typeof gcalSignedIn !== "undefined" &&
@@ -1525,10 +1525,10 @@ async function rejectApplicant(taskId) {
 function _autoCreateEmployee(t) {
   const nameParts = (
     t.applicant_name ||
-    t.name.split(" â€” ")[1] ||
+    t.name.split(" — ")[1] ||
     t.name
   ).split(" ");
-  const resolvedName = (t.applicant_name || t.name.split(" â€” ")[1] || t.name)
+  const resolvedName = (t.applicant_name || t.name.split(" — ")[1] || t.name)
     .toLowerCase()
     .trim();
 
@@ -1539,7 +1539,7 @@ function _autoCreateEmployee(t) {
       (e.fname + " " + e.lname).toLowerCase().trim() === resolvedName,
   );
   if (existing) {
-    // Already exists â€” update position/contact info in case it changed, but keep status/checklist/docs
+    // Already exists — update position/contact info in case it changed, but keep status/checklist/docs
     existing.position = t.position || existing.position;
     existing.email = t.applicant_email || existing.email;
     existing.phone = t.applicant_phone || existing.phone;
@@ -1557,7 +1557,7 @@ function _autoCreateEmployee(t) {
 
   EMPLOYEES.push({
     id: empNextId ? empNextId++ : Date.now(),
-    source_task_id: t.id, // links back to the recruitment task â€” used for dedup
+    source_task_id: t.id, // links back to the recruitment task — used for dedup
     fname: nameParts[0] || "",
     lname: nameParts.slice(1).join(" ") || "",
     position: t.position || "",
@@ -1626,12 +1626,12 @@ const STATUS_COLORS = {
 let calView = "month";
 let calDate = new Date();
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+/* ══════════════════════════════════════════════
    DYNAMIC CALENDAR REGISTRY
    Populated from Google Calendar API after sign-in.
    Persisted to localStorage so the list survives page refresh.
-   No hardcoded IDs â€” the system auto-discovers all calendars.
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+   No hardcoded IDs — the system auto-discovers all calendars.
+══════════════════════════════════════════════ */
 
 /* Color palette assigned in order to discovered calendars */
 const CALENDAR_COLOR_PALETTE = [
@@ -1650,12 +1650,12 @@ const CALENDAR_COLOR_PALETTE = [
 /* Calendar visibility (hidden = unchecked in sidebar) */
 let hiddenCalendars = new Set();
 
-/* â”€â”€ Helper: get a calendar config object by ID â”€â”€ */
+/* ── Helper: get a calendar config object by ID ── */
 function getCalConfig(calendarId) {
   return UPSTAFF_CALENDARS.find((c) => c.calendarId === calendarId) || null;
 }
 
-/* â”€â”€ Helper: get display color for any event â”€â”€ */
+/* ── Helper: get display color for any event ── */
 function getEventColor(ev) {
   const calId = ev.calendarId || ev.sourceCalendar;
   if (calId) {
@@ -1665,7 +1665,7 @@ function getEventColor(ev) {
   return STATUS_COLORS[ev.status] || "#44D7E9";
 }
 
-/* â”€â”€ Helper: get calendar name for display â”€â”€ */
+/* ── Helper: get calendar name for display ── */
 function getCalName(calendarId) {
   const cal = getCalConfig(calendarId);
   return cal
@@ -1673,10 +1673,10 @@ function getCalName(calendarId) {
     : calendarId?.split("@")[0] || "Unknown Calendar";
 }
 
-/* â”€â”€ Positions list (used by Settings) â”€â”€ */
+/* ── Positions list (used by Settings) ── */
 let POSITIONS = [...JOB_POSITIONS];
 
-/* â”€â”€ Team members (used by Settings) â€” loaded from localStorage â”€â”€ */
+/* ── Team members (used by Settings) — loaded from localStorage ── */
 const DEFAULT_MEMBERS = [];
 const _FAKE_MEMBER_EMAILS = ["assistant@upstaff.com", "manager@upstaff.com"];
 let MEMBERS = (() => {
@@ -1695,7 +1695,7 @@ function saveMembers() {
   } catch (_) {}
 }
 
-/* â”€â”€ Notification store â”€â”€ */
+/* ── Notification store ── */
 const LS_NOTIFS_KEY = "upstaff_notifs";
 let NOTIFS = (() => {
   try {
@@ -1748,9 +1748,9 @@ function _updateNotifBadge() {
   badge.style.display = unread > 0 ? "flex" : "none";
 }
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   SCALABILITY HELPERS â€” age, stale, WIP, density
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+/* ══════════════════════════════════════════════
+   SCALABILITY HELPERS — age, stale, WIP, density
+══════════════════════════════════════════════ */
 function _stageAgeDays(t) {
   const ts = t.stage_changed_at || t.created || t.createdAt;
   if (!ts) return 0;
@@ -1841,9 +1841,9 @@ document.addEventListener("DOMContentLoaded", () => {
   );
 });
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+/* ══════════════════════════════════════════════
    UTILITIES
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+══════════════════════════════════════════════ */
 function showToast(msg, duration) {
   const t = document.getElementById("toast");
   if (!t) return;
@@ -1871,7 +1871,7 @@ function showToast(msg, duration) {
     setTimeout(() => t.classList.remove("show"), duration || 2800);
   }
 }
-/* â”€â”€ Custom Dialog Helpers (replaces native alert/confirm) â”€â”€ */
+/* ── Custom Dialog Helpers (replaces native alert/confirm) ── */
 function _showDialog({
   icon = "",
   title = "",
@@ -1925,17 +1925,17 @@ function _showDialog({
       .addEventListener("click", () => cleanup(false), { once: true });
   });
 }
-function uiAlert(msg, { icon = "â„¹ï¸", title = "Notice" } = {}) {
+function uiAlert(msg, { icon = "ℹ️", title = "Notice" } = {}) {
   return _showDialog({ icon, title, msg, showCancel: false });
 }
 function uiConfirm(
   msg,
-  { icon = "â“", title = "Confirm", okText = "Confirm", okDanger = false } = {},
+  { icon = "❓", title = "Confirm", okText = "Confirm", okDanger = false } = {},
 ) {
   return _showDialog({ icon, title, msg, okText, okDanger, showCancel: true });
 }
 
-/* â”€â”€ Rejection Reason Picker â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Rejection Reason Picker ─────────────────── */
 const REJECTION_REASONS = [
   "Failed Assessment",
   "Salary Mismatch",
@@ -1990,7 +1990,7 @@ function _pickRejectionReason() {
   });
 }
 
-/* â”€â”€ Storage quota check â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Storage quota check ─────────────────────── */
 let _quotaWarnedSession = false;
 function checkStorageQuota() {
   try {
@@ -2008,7 +2008,7 @@ function checkStorageQuota() {
       label.textContent = `${MB.toFixed(2)} MB used (~${pct}% of 5 MB)`;
     if (pct > 85) {
       showToast(
-        "âš ï¸ Storage nearly full! Consider exporting & clearing old data.",
+        "⚠️ Storage nearly full! Consider exporting & clearing old data.",
       );
     } else if (pct > 65 && !_quotaWarnedSession) {
       _quotaWarnedSession = true;
@@ -2017,7 +2017,7 @@ function checkStorageQuota() {
   } catch (_) {}
 }
 
-/* â”€â”€ Activity log helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Activity log helper ─────────────────────── */
 let _actIdCtr = Date.now();
 function logActivity(taskId, action, detail = "") {
   const t = TASKS.find((x) => x.id === taskId);
@@ -2039,7 +2039,7 @@ function logActivity(taskId, action, detail = "") {
   persistSave();
 }
 
-/* â”€â”€ Cross-tab data sync (storage event) â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Cross-tab data sync (storage event) ─────── */
 window.addEventListener("storage", function onStorageSync(e) {
   const watchedKeys = Object.values(LS_KEYS).concat([
     "upstaff_todos",
@@ -2101,7 +2101,7 @@ function dueCls(d) {
   return "";
 }
 function fmtDue(d) {
-  if (!d) return "â€”";
+  if (!d) return "—";
   const dd = new Date(d);
   return dd.toLocaleDateString("en-PH", { month: "short", day: "numeric" });
 }
@@ -2117,9 +2117,9 @@ function todayStr() {
   return fmtDate(new Date());
 }
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+/* ══════════════════════════════════════════════
    SIDEBAR COLLAPSE
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+══════════════════════════════════════════════ */
 document.getElementById("toggle-btn")?.addEventListener("click", () => {
   const sb = document.getElementById("sidebar");
   const icon = document.getElementById("toggle-icon");
@@ -2155,14 +2155,14 @@ document.getElementById("toggle-btn")?.addEventListener("click", () => {
   }
 });
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+/* ══════════════════════════════════════════════
    APP STATE MANAGER
    Simple centralized state with subscriber pattern.
    Usage:
      AppState.set('currentView', 'board')
      AppState.get('currentView')
      AppState.subscribe('currentView', (val) => console.log(val))
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+══════════════════════════════════════════════ */
 const AppState = (() => {
   const _state = {};
   const _subscribers = {};
@@ -2198,23 +2198,23 @@ const AppState = (() => {
   };
 })();
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+/* ══════════════════════════════════════════════
    SETTINGS DANGER ACTIONS
    Extracted from inline HTML onclick handlers
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+══════════════════════════════════════════════ */
 function handleClearTasks() {
   const typed = prompt(
     "This will permanently delete ALL applicants and tasks.\nType DELETE to confirm:",
   );
   if (typed === null) return; // cancelled
   if (typed.trim().toUpperCase() !== "DELETE") {
-    showToast("Cancelled â€” you must type DELETE to confirm.");
+    showToast("Cancelled — you must type DELETE to confirm.");
     return;
   }
   TASKS = [];
   persistSave();
   refreshCurrentView();
-  showToast("ðŸ—‘ï¸ All tasks deleted.");
+  showToast("ðŸ—‘️ All tasks deleted.");
 }
 
 function handleClearCalendar() {
@@ -2223,7 +2223,7 @@ function handleClearCalendar() {
   );
   if (typed === null) return;
   if (typed.trim().toUpperCase() !== "DELETE") {
-    showToast("Cancelled â€” you must type DELETE to confirm.");
+    showToast("Cancelled — you must type DELETE to confirm.");
     return;
   }
   calEvents = [];
@@ -2234,16 +2234,16 @@ function handleClearCalendar() {
   renderCalendarSidebar();
   renderSettingsCalendarList();
   renderCalendar();
-  showToast("ðŸ—‘ï¸ Calendar cleared.");
+  showToast("ðŸ—‘️ Calendar cleared.");
 }
 
 function handleWipeStorage() {
   const typed = prompt(
-    "This will permanently delete ALL data â€” applicants, calendar events, settings, and Google auth.\nThis CANNOT be undone.\n\nType DELETE to confirm:",
+    "This will permanently delete ALL data — applicants, calendar events, settings, and Google auth.\nThis CANNOT be undone.\n\nType DELETE to confirm:",
   );
   if (typed === null) return;
   if (typed.trim().toUpperCase() !== "DELETE") {
-    showToast("Cancelled â€” you must type DELETE to confirm.");
+    showToast("Cancelled — you must type DELETE to confirm.");
     return;
   }
   persistClearAll();
@@ -2257,14 +2257,14 @@ function handleWipeStorage() {
   renderSettingsCalendarList();
   renderCalendar();
   refreshCurrentView();
-  showToast("ðŸ—‘ï¸ All localStorage cleared.");
+  showToast("ðŸ—‘️ All localStorage cleared.");
 }
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+/* ══════════════════════════════════════════════
    DELEGATED EVENT HANDLER
    Replaces inline onclick= on static HTML elements.
    Dynamic template-literal HTML keeps its own onclick.
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+══════════════════════════════════════════════ */
 document.addEventListener("click", function (e) {
   const btn = e.target.closest("[data-action]");
   if (!btn) return;
@@ -2313,13 +2313,13 @@ document.addEventListener("click", function (e) {
 
     // Settings toasts (placeholder actions)
     case "toastProfileSaved":
-      showToast("âœ… Profile saved!");
+      showToast("✅ Profile saved!");
       break;
     case "toastPasswordUpdated":
       showToast("ðŸ”’ Password updated!");
       break;
     case "toastWorkspaceSaved":
-      showToast("âœ… Workspace settings saved!");
+      showToast("✅ Workspace settings saved!");
       break;
     case "toastInviteSent":
       showToast("ðŸ“§ Invite sent!");
@@ -2508,9 +2508,9 @@ document.addEventListener("click", function (e) {
   }
 });
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+/* ══════════════════════════════════════════════
    MEMBER CRUD FUNCTIONS
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+══════════════════════════════════════════════ */
 const MEMBER_COLORS = [
   "#6c63ff",
   "#44d7e9",
@@ -2549,7 +2549,7 @@ async function addMemberForm() {
   saveMembers();
   if (typeof renderMembersList === "function") renderMembersList();
   if (typeof _rebuildAssigneeOptions === "function") _rebuildAssigneeOptions();
-  showToast(`âœ… ${name} added to team!`);
+  showToast(`✅ ${name} added to team!`);
 }
 
 async function editMemberForm(idx) {
@@ -2565,7 +2565,7 @@ async function editMemberForm(idx) {
   saveMembers();
   if (typeof renderMembersList === "function") renderMembersList();
   if (typeof _rebuildAssigneeOptions === "function") _rebuildAssigneeOptions();
-  showToast(`âœ… ${name} updated!`);
+  showToast(`✅ ${name} updated!`);
 }
 
 async function removeMemberAction(idx) {
@@ -2573,7 +2573,7 @@ async function removeMemberAction(idx) {
   if (!m) return;
   if (
     !(await uiConfirm(`Remove "${m.name}" from the team?`, {
-      icon: "ðŸ—‘ï¸",
+      icon: "ðŸ—‘️",
       title: "Remove Member?",
       okText: "Remove",
       okDanger: true,
@@ -2584,12 +2584,12 @@ async function removeMemberAction(idx) {
   saveMembers();
   if (typeof renderMembersList === "function") renderMembersList();
   if (typeof _rebuildAssigneeOptions === "function") _rebuildAssigneeOptions();
-  showToast("ðŸ—‘ï¸ Member removed.");
+  showToast("ðŸ—‘️ Member removed.");
 }
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+/* ══════════════════════════════════════════════
    NOTIFICATION PANEL FUNCTIONS
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+══════════════════════════════════════════════ */
 function toggleNotifPanel() {
   const panel = document.getElementById("notif-panel");
   if (!panel) return;
@@ -2654,14 +2654,14 @@ if (
 // Update badge on load
 setTimeout(_updateNotifBadge, 500);
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+/* ══════════════════════════════════════════════
    COMMENT FUNCTIONS
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+══════════════════════════════════════════════ */
 function postComment() {
   const textarea = document.getElementById("comment-input");
   if (!textarea) return;
   const text = textarea.value.trim();
-  if (!text) return showToast("âš ï¸ Comment cannot be empty.");
+  if (!text) return showToast("⚠️ Comment cannot be empty.");
   const taskId = window._editingTaskId;
   if (!taskId) return;
   const t = TASKS.find((x) => x.id === taskId);
@@ -2683,9 +2683,9 @@ function postComment() {
   if (typeof renderActivityTab === "function") renderActivityTab(t);
 }
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+/* ══════════════════════════════════════════════
    FILE ATTACHMENT FUNCTIONS
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+══════════════════════════════════════════════ */
 const MAX_FILE_SIZE_MB = 1;
 const MAX_FILES_PER_TASK = 5;
 const ALLOWED_FILE_TYPES = [
@@ -2701,7 +2701,7 @@ const ALLOWED_FILE_TYPES = [
   "image/gif",
   "image/webp",
 ];
-// localStorage quota safety threshold (4.5 MB â€” leaves headroom for other data)
+// localStorage quota safety threshold (4.5 MB — leaves headroom for other data)
 const LS_QUOTA_SAFETY_BYTES = 4.5 * 1024 * 1024;
 
 function _getLocalStorageUsedBytes() {
@@ -2718,24 +2718,24 @@ function _getLocalStorageUsedBytes() {
 
 function handleFileAttach(input) {
   const taskId = window._editingTaskId;
-  if (!taskId) return showToast("âš ï¸ Save the task first, then attach files.");
+  if (!taskId) return showToast("⚠️ Save the task first, then attach files.");
   const t = TASKS.find((x) => x.id === taskId);
   if (!t) return;
   if (!t.attachments) t.attachments = [];
   const files = Array.from(input.files);
   if (!files.length) return;
   if (t.attachments.length + files.length > MAX_FILES_PER_TASK) {
-    return showToast(`âš ï¸ Max ${MAX_FILES_PER_TASK} files per task.`);
+    return showToast(`⚠️ Max ${MAX_FILES_PER_TASK} files per task.`);
   }
   let processed = 0;
   files.forEach((file) => {
     if (!ALLOWED_FILE_TYPES.includes(file.type)) {
-      showToast(`âš ï¸ "${file.name}" is not an allowed file type â€” skipped.`);
+      showToast(`⚠️ "${file.name}" is not an allowed file type — skipped.`);
       return;
     }
     if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
       showToast(
-        `âš ï¸ "${file.name}" exceeds ${MAX_FILE_SIZE_MB} MB limit â€” skipped.`,
+        `⚠️ "${file.name}" exceeds ${MAX_FILE_SIZE_MB} MB limit — skipped.`,
       );
       return;
     }
@@ -2746,7 +2746,7 @@ function handleFileAttach(input) {
       LS_QUOTA_SAFETY_BYTES
     ) {
       showToast(
-        `âš ï¸ Storage nearly full â€” cannot attach "${file.name}". Export your data to free space.`,
+        `⚠️ Storage nearly full — cannot attach "${file.name}". Export your data to free space.`,
         7000,
       );
       return;
@@ -2775,7 +2775,7 @@ function handleFileAttach(input) {
         files.filter((f) => f.size <= MAX_FILE_SIZE_MB * 1024 * 1024).length
       ) {
         if (typeof renderFilesTab === "function") renderFilesTab(t);
-        showToast(`âœ… ${processed} file(s) attached!`);
+        showToast(`✅ ${processed} file(s) attached!`);
       }
     };
     reader.readAsDataURL(file);
@@ -2792,7 +2792,7 @@ async function deleteAttachment(attachId) {
   if (idx === -1) return;
   if (
     !(await uiConfirm(`Delete "${t.attachments[idx].name}"?`, {
-      icon: "ðŸ—‘ï¸",
+      icon: "ðŸ—‘️",
       title: "Delete File?",
       okText: "Delete",
       okDanger: true,
@@ -2803,14 +2803,14 @@ async function deleteAttachment(attachId) {
   t.attachments.splice(idx, 1);
   logActivity(taskId, "attachment_deleted", `Deleted "${name}"`);
   if (typeof renderFilesTab === "function") renderFilesTab(t);
-  showToast("ðŸ—‘ï¸ File deleted.");
+  showToast("ðŸ—‘️ File deleted.");
 }
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+/* ══════════════════════════════════════════════
    KEYBOARD SHORTCUTS
-   Esc  â†’ close the topmost open modal
-   Enter â†’ save the active modal form (when focus is not in a textarea)
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+   Esc  → close the topmost open modal
+   Enter → save the active modal form (when focus is not in a textarea)
+══════════════════════════════════════════════ */
 document.addEventListener("keydown", function (e) {
   // Esc: close topmost visible modal
   if (e.key === "Escape") {
@@ -2875,11 +2875,11 @@ document.addEventListener("keydown", function (e) {
   }
 });
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+/* ══════════════════════════════════════════════
    MULTI-TAB CONFLICT DETECTION
    Warns the user if Upstaff is already open in
    another browser tab to prevent data overwrites.
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+══════════════════════════════════════════════ */
 (function _initTabGuard() {
   try {
     if (typeof BroadcastChannel === "undefined") return;
@@ -2888,7 +2888,7 @@ document.addEventListener("keydown", function (e) {
     _tabChannel.onmessage = function (e) {
       if (e.data === "tab_opened") {
         showToast(
-          "âš ï¸ Upstaff is already open in another tab. Close it to avoid data conflicts.",
+          "⚠️ Upstaff is already open in another tab. Close it to avoid data conflicts.",
           7000,
         );
       }
@@ -2898,13 +2898,13 @@ document.addEventListener("keydown", function (e) {
   } catch (_) {}
 })();
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   GLOBAL ERROR HANDLER â€” catch unhandled promise rejections
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+/* ══════════════════════════════════════════════
+   GLOBAL ERROR HANDLER — catch unhandled promise rejections
+══════════════════════════════════════════════ */
 window.addEventListener("unhandledrejection", function (event) {
   const reason = event.reason;
   if (!reason) return;
-  // Ignore network failures and known expected errors â€” these are already handled inline
+  // Ignore network failures and known expected errors — these are already handled inline
   const msg = (reason.message || String(reason)).toLowerCase();
   if (
     msg.includes("failed to fetch") ||
@@ -2920,7 +2920,7 @@ window.addEventListener("unhandledrejection", function (event) {
   console.error("[Unhandled Rejection]", reason);
   if (typeof showToast === "function") {
     showToast(
-      "âš ï¸ An unexpected error occurred. Please refresh if something looks wrong.",
+      "⚠️ An unexpected error occurred. Please refresh if something looks wrong.",
       5000,
     );
   }
