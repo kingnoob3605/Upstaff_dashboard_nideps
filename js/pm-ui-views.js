@@ -152,7 +152,7 @@ function refreshStorageStatus() {
   const calCount = UPSTAFF_CALENDARS.length;
   el.innerHTML = [
     statusRow(
-      "ðŸ“‹",
+      "📋",
       "Local interview events saved",
       `${localCount} event${localCount !== 1 ? "s" : ""}`,
       true,
@@ -164,7 +164,7 @@ function refreshStorageStatus() {
       true,
     ),
     statusRow(
-      "ðŸ—“ï¸",
+      "🗓ï¸",
       "Calendars connected",
       calCount
         ? `${calCount} calendar${calCount !== 1 ? "s" : ""}`
@@ -172,19 +172,19 @@ function refreshStorageStatus() {
       calCount > 0,
     ),
     statusRow(
-      "ðŸ“",
+      "📝",
       "Tasks saved",
       `${TASKS.length} task${TASKS.length !== 1 ? "s" : ""}`,
       true,
     ),
     statusRow(
-      "ðŸ”‘",
+      "🔑",
       "Google Calendar auth",
       wasSignedIn ? "Stored â€” will auto-reconnect" : "Not signed in",
       wasSignedIn,
     ),
     statusRow(
-      "ðŸ†”",
+      "🆔",
       "Next event ID / task ID",
       `${calNextId} / ${taskNextId}`,
       true,
@@ -512,7 +512,7 @@ function _updateAssessmentPanel(position) {
       verbal: "Verbal Recording",
       interview: "Interview Notes",
     };
-    const required = tests.map((k) => labels[k] || k).join(" Â· ");
+    const required = tests.map((k) => labels[k] || k).join(" · ");
     note.textContent = `Required for ${position || "this role"}: ${required}`;
     note.style.display = "block";
   }
@@ -647,20 +647,20 @@ function _refreshScoreSummary() {
   }
 
   card.innerHTML = `
-    <div class="score-summary-title">ðŸ“Š Score Summary</div>
+    <div class="score-summary-title">📊 Score Summary</div>
     ${_categoryBlock("âŒ¨ï¸", "Typing Test", [
       _scoreRow("Typing Assessment", typing, null, 40),
       _scoreRow("Word Typing", wordTyping, null, 40),
       _scoreRow("Knowledge Test", knowledge, 100, 75),
     ])}
-    ${_categoryBlock("ðŸŽ™ï¸", "Verbal Test", [
+    ${_categoryBlock("🎙ï¸", "Verbal Test", [
       verbal
         ? `<div class="score-item"><span class="score-label">Verbal Comm</span><a href="${verbal}" target="_blank" class="score-val" style="color:var(--cyan);">View Recording</a></div>`
         : "",
       _scoreRow("Conflict Reso", conflict, 20, 15),
       _scoreRow("Grammar Test", grammar, 20, 15),
     ])}
-    ${notes ? `<div class="score-category"><div class="score-category-title">ðŸ’¬ Interview Notes</div><div class="score-summary-grid"><div class="score-item score-item-full"><span class="score-val" style="font-weight:400;color:var(--muted);font-size:12px;">${notes.slice(0, 120)}${notes.length > 120 ? "â€¦" : ""}</span></div></div></div>` : ""}
+    ${notes ? `<div class="score-category"><div class="score-category-title">💬 Interview Notes</div><div class="score-summary-grid"><div class="score-item score-item-full"><span class="score-val" style="font-weight:400;color:var(--muted);font-size:12px;">${notes.slice(0, 120)}${notes.length > 120 ? "â€¦" : ""}</span></div></div></div>` : ""}
   `;
 
   [
@@ -806,7 +806,7 @@ async function autoSendAssessmentEmail(task) {
     task.assess_completed = false;
     task.assess_completed_at = null;
     persistSave();
-    showToast(`ðŸ“§ Assessment invite auto-sent to ${task.applicant_email}`);
+    showToast(`📧 Assessment invite auto-sent to ${task.applicant_email}`);
   } catch (err) {
     console.error("[AutoSend] EmailJS error:", err);
     showToast(
@@ -1099,7 +1099,7 @@ window.saveEdgeProxyConfig = function () {
       : "â„¹ï¸ Proxy disabled. Falling back to direct Apps Script mode.";
     statusEl.style.color = enabled ? "var(--green,#10b981)" : "var(--muted)";
   }
-  showToast(enabled ? "ðŸ›¡ï¸ Edge proxy enabled" : "Proxy disabled");
+  showToast(enabled ? "🛡ï¸ Edge proxy enabled" : "Proxy disabled");
 };
 
 // Send a magic-link invite via the invite-user edge function (HR only)
@@ -1153,7 +1153,7 @@ window.sendUserInvite = async function () {
       statusEl.style.color = "var(--green,#10b981)";
       try {
         await navigator.clipboard.writeText(json.actionLink);
-        showToast("ðŸ“‹ Invite link copied");
+        showToast("📋 Invite link copied");
       } catch (_) {}
       // Clear inputs
       document.getElementById("invite-email").value = "";
@@ -1299,7 +1299,7 @@ async function syncApplicantsFromApi(opts) {
       // Only notify if there are new applicants since last sync
       if (newCount > 0)
         showToast(
-          `ðŸ”„ ${newCount} new applicant${newCount > 1 ? "s" : ""} synced.`,
+          `🔄 ${newCount} new applicant${newCount > 1 ? "s" : ""} synced.`,
         );
     } else {
       showToast(`âœ… Synced ${apiTasks.length} applicants from database.`);
@@ -1346,7 +1346,7 @@ function checkFollowUpReminders() {
     const overdue = t.followup_date < today;
     pushNotif(
       "reminder",
-      `${overdue ? "âš ï¸ Overdue" : "ðŸ“Œ Follow up"}: ${name} (${t.position || t.status})`,
+      `${overdue ? "âš ï¸ Overdue" : "📌 Follow up"}: ${name} (${t.position || t.status})`,
       t.id,
     );
     t.followup_notified = today;
@@ -1619,7 +1619,7 @@ async function _doSendAssessmentEmail(isResend = false) {
     <p>If you have any questions, feel free to reply to this email.</p>
     <p>Best regards,<br><strong>${hrName}</strong><br>Upstaff HR Team</p>
   </div>
-  <div class="foot"><p>Â© ${new Date().getFullYear()} Upstaff &nbsp;Â·&nbsp; <a href="https://upstaff.netlify.app">upstaff.netlify.app</a></p></div>
+  <div class="foot"><p>© ${new Date().getFullYear()} Upstaff &nbsp;·&nbsp; <a href="https://upstaff.netlify.app">upstaff.netlify.app</a></p></div>
 </div></body></html>`;
 
     const ejsConfig = loadEmailJSConfig();
@@ -1730,7 +1730,7 @@ async function resetAssessmentAttempt() {
   if (!task) return;
   if (
     !(await uiConfirm("They will be able to retake the assessment.", {
-      icon: "ðŸ”„",
+      icon: "🔄",
       title: "Reset Assessment?",
       okText: "Reset",
     }))
@@ -1742,7 +1742,7 @@ async function resetAssessmentAttempt() {
   task.assess_sent_at = null;
   persistSave();
   _refreshAssessInviteUI(task);
-  showToast("ðŸ”„ Assessment attempt reset.");
+  showToast("🔄 Assessment attempt reset.");
 }
 
 /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -1752,23 +1752,23 @@ function _detectLinkPlatform(url) {
   if (!url) return null;
   const u = url.toLowerCase();
   if (u.includes("drive.google.com/drive/folders"))
-    return { label: "ðŸ“ Google Drive Â· Folder", cls: "link-badge-drive" };
+    return { label: "📁 Google Drive · Folder", cls: "link-badge-drive" };
   if (u.includes("drive.google.com"))
-    return { label: "ðŸ“„ Google Drive", cls: "link-badge-drive" };
+    return { label: "📄 Google Drive", cls: "link-badge-drive" };
   if (u.includes("dropbox.com"))
-    return { label: "ðŸ“¦ Dropbox", cls: "link-badge-dropbox" };
+    return { label: "📦 Dropbox", cls: "link-badge-dropbox" };
   if (u.includes("onedrive.live.com") || u.includes("1drv.ms"))
     return { label: "â˜ï¸ OneDrive", cls: "link-badge-onedrive" };
   if (u.includes("behance.net"))
-    return { label: "ðŸŽ¨ Behance", cls: "link-badge-behance" };
+    return { label: "🎨 Behance", cls: "link-badge-behance" };
   if (u.includes("linkedin.com"))
-    return { label: "ðŸ’¼ LinkedIn", cls: "link-badge-linkedin" };
+    return { label: "💼 LinkedIn", cls: "link-badge-linkedin" };
   if (u.includes("github.com"))
-    return { label: "ðŸ™ GitHub", cls: "link-badge-github" };
+    return { label: "🐙 GitHub", cls: "link-badge-github" };
   if (u.includes("notion.so"))
-    return { label: "ðŸ“ Notion", cls: "link-badge-notion" };
+    return { label: "📝 Notion", cls: "link-badge-notion" };
   if (u.startsWith("http"))
-    return { label: "ðŸ”— External Link", cls: "link-badge-generic" };
+    return { label: "🔗 External Link", cls: "link-badge-generic" };
   return null;
 }
 
@@ -1797,7 +1797,7 @@ function _updateLinkCard(inputId, cardId) {
       if (navigator.clipboard) {
         navigator.clipboard
           .writeText(url)
-          .then(() => showToast("ðŸ“‹ Link copied!"));
+          .then(() => showToast("📋 Link copied!"));
       }
     };
   }
@@ -2306,9 +2306,9 @@ function _renderIvSavedList(task) {
           </div>
         </div>
         <div class="u-text-base u-text-muted u-flex-wrap u-gap-10">
-          <span>ðŸ“… ${e.date || "â€”"}${startFmt ? " @ " + startFmt : ""}${endFmt}</span>
-          ${e.interviewer ? `<span>ðŸ‘¤ ${sanitize(e.interviewer)}</span>` : ""}
-          ${ml ? `<a href="${ml}" target="_blank" style="color:var(--cyan);font-weight:700;">ðŸ”— Join</a>` : ""}
+          <span>📅 ${e.date || "â€”"}${startFmt ? " @ " + startFmt : ""}${endFmt}</span>
+          ${e.interviewer ? `<span>👤 ${sanitize(e.interviewer)}</span>` : ""}
+          ${ml ? `<a href="${ml}" target="_blank" style="color:var(--cyan);font-weight:700;">🔗 Join</a>` : ""}
         </div>
         ${e.notes ? `<div style="font-size:11px;color:var(--light);margin-top:6px;padding-top:6px;border-top:1px solid var(--border);">${sanitize(e.notes)}</div>` : ""}
       </div>
@@ -2352,8 +2352,8 @@ function setIvPlatform(platform, btnEl) {
     if (input) input.placeholder = "https://meet.google.com/xxx-xxxx-xxx";
     if (noteEl)
       noteEl.textContent = gcalSignedIn
-        ? "ðŸ’¡ A real Google Meet room will be created when you save (GCal connected)."
-        : "ðŸ’¡ Generate a placeholder link, or open Google Meet to create a room.";
+        ? "💡 A real Google Meet room will be created when you save (GCal connected)."
+        : "💡 Generate a placeholder link, or open Google Meet to create a room.";
   }
 }
 
@@ -2371,14 +2371,14 @@ async function generateIvMeetingLink() {
     if (gcalSignedIn) {
       // Real Meet room will be auto-created when the event is saved to GCal
       showToast(
-        "ðŸ’¡ A real Google Meet room will be created automatically when you save.",
+        "💡 A real Google Meet room will be created automatically when you save.",
       );
       return;
     }
     // Can't generate a real Meet link without GCal OAuth â€” open meet.google.com/new
     // so the user can create a real room and paste the link
     window.open("https://meet.google.com/new", "_blank", "noopener");
-    showToast("ðŸ“‹ Copy the link from Google Meet and paste it below.");
+    showToast("📋 Copy the link from Google Meet and paste it below.");
     return;
   }
 
@@ -2506,7 +2506,7 @@ function saveInterviewSchedule() {
 async function deleteIvScheduleEvent(eventId) {
   if (
     !(await uiConfirm("This interview will be removed from the schedule.", {
-      icon: "ðŸ“…",
+      icon: "📅",
       title: "Remove Interview?",
       okText: "Remove",
       okDanger: true,
@@ -2518,7 +2518,7 @@ async function deleteIvScheduleEvent(eventId) {
   persistSave();
   const task = TASKS.find((x) => x.id === window._editingTaskId);
   if (task) _renderIvSavedList(task);
-  showToast("ðŸ—‘ï¸ Interview removed.");
+  showToast("🗑ï¸ Interview removed.");
 }
 
 /** Populate all 3 sections of the Review tab */
@@ -2553,8 +2553,8 @@ function _renderReviewScheduledList(task) {
       return `<div class="rv-interview-item" style="border-left:3px solid ${color};">
       <div class="rv-interview-item-title">${sanitize(e.title || e.name) || "Interview"}</div>
       <div class="rv-interview-item-meta">
-        ðŸ“… ${e.date || "â€”"} &nbsp; â° ${fmtTime(e.time || e.start_time || "")}
-        &nbsp; ${e.type === "Virtual" ? "ðŸ’» Virtual" : "ðŸ¢ On-site"}
+        📅 ${e.date || "â€”"} &nbsp; â° ${fmtTime(e.time || e.start_time || "")}
+        &nbsp; ${e.type === "Virtual" ? "💻 Virtual" : "🏢 On-site"}
         ${ml ? `&nbsp; <a href="${ml}" target="_blank" style="color:var(--cyan);font-weight:700;">Join Meeting</a>` : ""}
       </div>
     </div>`;
@@ -2589,10 +2589,10 @@ function _renderReviewAssessmentSummary(task) {
       const passed = kNum >= 75;
       const rc = passed ? "var(--green)" : "#ef4444";
       const rb = passed ? "rgba(67,233,123,.12)" : "rgba(239,68,68,.1)";
-      return `<div class="rv-assess-row"><span class="rv-assess-label">ðŸ“ Knowledge Test</span><div style="display:flex;align-items:center;gap:6px;"><span class="rv-assess-val">${knowledge} / 100</span><span style="font-size:10px;font-weight:800;font-family:'Plus Jakarta Sans',sans-serif;padding:2px 8px;border-radius:99px;background:${rb};color:${rc};">${passed ? "âœ“ PASSED" : "âœ— FAILED"}</span></div></div>`;
+      return `<div class="rv-assess-row"><span class="rv-assess-label">📝 Knowledge Test</span><div style="display:flex;align-items:center;gap:6px;"><span class="rv-assess-val">${knowledge} / 100</span><span style="font-size:10px;font-weight:800;font-family:'Plus Jakarta Sans',sans-serif;padding:2px 8px;border-radius:99px;background:${rb};color:${rc};">${passed ? "âœ“ PASSED" : "âœ— FAILED"}</span></div></div>`;
     })()}
-    ${verbal ? `<div class="rv-assess-row"><span class="rv-assess-label">ðŸŽ™ï¸ Verbal Test</span><a href="${verbal}" target="_blank" style="color:var(--cyan);font-weight:700;font-size:12px;">View Recording</a></div>` : ""}
-    ${notes ? `<div class="rv-assess-row rv-assess-row-full"><span class="rv-assess-label">ðŸ’¬ Interview Notes</span><span class="rv-assess-val" style="font-weight:400;color:var(--muted);">${sanitize(notes)}</span></div>` : ""}
+    ${verbal ? `<div class="rv-assess-row"><span class="rv-assess-label">🎙ï¸ Verbal Test</span><a href="${verbal}" target="_blank" style="color:var(--cyan);font-weight:700;font-size:12px;">View Recording</a></div>` : ""}
+    ${notes ? `<div class="rv-assess-row rv-assess-row-full"><span class="rv-assess-label">💬 Interview Notes</span><span class="rv-assess-val" style="font-weight:400;color:var(--muted);">${sanitize(notes)}</span></div>` : ""}
     ${!hasScores && !completed ? `<div style="font-size:12px;color:var(--light);padding:4px 0;">No scores recorded yet.</div>` : ""}
   `;
 }
@@ -2910,7 +2910,7 @@ document
     // â”€â”€ Optional GCal sync â”€â”€
     if (sync && dueDate) {
       if (!gcalSignedIn) {
-        showToast("ðŸ’¡ Connect Google Calendar first to sync applicants.");
+        showToast("💡 Connect Google Calendar first to sync applicants.");
       } else {
         if (statusEl) {
           statusEl.style.display = "block";
@@ -2980,10 +2980,10 @@ document
           ...t,
           start: t.interview_date,
           due:   t.interview_date,
-          name:  `ðŸ“… Interview: ${t.applicant_name || t.name}${t.position ? " â€” " + t.position : ""}`,
+          name:  `📅 Interview: ${t.applicant_name || t.name}${t.position ? " â€” " + t.position : ""}`,
         };
         await _taskSyncToGcal(_ivTask);
-        showToast("ðŸ“… Interview date synced to Google Calendar!");
+        showToast("📅 Interview date synced to Google Calendar!");
       } catch (e) {
         console.warn("[GCal] Interview date auto-sync failed:", e.message);
       }
@@ -3014,17 +3014,17 @@ async function _taskSyncToGcal(t) {
   const calId = UPSTAFF_CALENDARS[0]?.calendarId || "primary";
 
   const statusEmoji = {
-    New: "ðŸ“‹",
-    "In Progress": "ðŸ”„",
-    Endorsed: "ðŸ“¤",
+    New: "📋",
+    "In Progress": "🔄",
+    Endorsed: "📤",
     Hired: "âœ…",
-    Closed: "ðŸš«",
+    Closed: "🚫",
     Rejected: "âŒ",
-    Cancelled: "ðŸš«",
+    Cancelled: "🚫",
     Done: "âœ…",
   };
   const resource = {
-    summary: `${statusEmoji[t.status] || "ðŸ“‹"} ${t.name}`,
+    summary: `${statusEmoji[t.status] || "📋"} ${t.name}`,
     description: [
       `Position: ${t.position}`,
       `Status: ${t.status}`,
@@ -3166,11 +3166,11 @@ const DEFAULT_CHECKLIST = [
 
 // Document types
 const DOC_TYPES = [
-  { name: "Employment Contract", icon: "ðŸ“„", color: "#6c63ff" },
-  { name: "Government ID Copy", icon: "ðŸªª", color: "#44d7e9" },
-  { name: "SSS / PhilHealth / TIN", icon: "ðŸ“‹", color: "#43e97b" },
-  { name: "NBI Clearance", icon: "ðŸ”", color: "#fa8231" },
-  { name: "Upstaff Resume", icon: "ðŸ“", color: "#ff6584" },
+  { name: "Employment Contract", icon: "📄", color: "#6c63ff" },
+  { name: "Government ID Copy", icon: "🪪", color: "#44d7e9" },
+  { name: "SSS / PhilHealth / TIN", icon: "📋", color: "#43e97b" },
+  { name: "NBI Clearance", icon: "🔏", color: "#fa8231" },
+  { name: "Upstaff Resume", icon: "📝", color: "#ff6584" },
 ];
 
 /* Generate a placeholder Google Drive-style link for a doc */
@@ -3415,7 +3415,7 @@ function toggleChecklistItem(empId, idx) {
   const pct = e.checklist.filter((c) => c.done).length / e.checklist.length;
   if (pct >= 1 && e.status !== "Completed") {
     e.status = "Completed";
-    showToast("ðŸŽ‰ Onboarding completed!");
+    showToast("🎉 Onboarding completed!");
   } else if (pct > 0 && e.status === "Pending") e.status = "Active";
   empPersistSave();
   renderOnboarding();
@@ -3503,7 +3503,7 @@ function deleteEmployee(empId) {
   EMPLOYEES.splice(idx, 1);
   empPersistSave();
   if (typeof showToast === "function")
-    showToast(`ðŸ—‘ï¸ Removed ${fullName} from onboarding`);
+    showToast(`🗑ï¸ Removed ${fullName} from onboarding`);
   // Close detail modal if it was open on this emp
   if (typeof _empDetailId !== "undefined" && _empDetailId === empId) {
     if (typeof closeEmpDetailDirect === "function") closeEmpDetailDirect();
@@ -3732,7 +3732,7 @@ function openEmpDetail(empId) {
             value="${sanitize(e.driveLink || "")}"
             onchange="saveDriveLink(${e.id},this.value)"
             onblur="saveDriveLink(${e.id},this.value)"/>
-          <button type="button" class="link-card-btn" id="lc-emp-drive-${e.id}-copy" style="display:none" title="Copy link">ðŸ“‹</button>
+          <button type="button" class="link-card-btn" id="lc-emp-drive-${e.id}-copy" style="display:none" title="Copy link">📋</button>
           <button type="button" class="link-card-btn" id="lc-emp-drive-${e.id}-open" style="display:none" title="Open folder">â†—</button>
         </div>
         <div class="link-card-badge" id="lc-emp-drive-${e.id}-badge" style="display:none"></div>
@@ -3776,7 +3776,7 @@ function toggleChecklistItemDetail(empId, idx) {
   const pct = e.checklist.filter((c) => c.done).length / e.checklist.length;
   if (pct >= 1) {
     e.status = "Completed";
-    showToast("ðŸŽ‰ Onboarding completed!");
+    showToast("🎉 Onboarding completed!");
   } else if (pct > 0 && e.status === "Pending") e.status = "Active";
   empPersistSave();
   openEmpDetail(empId);
@@ -3793,7 +3793,7 @@ function toggleDocUploaded(empId, idx) {
   showToast(
     e.docs[idx].uploaded
       ? "âœ… Document marked as uploaded!"
-      : "ðŸ“‹ Marked as pending.",
+      : "📋 Marked as pending.",
   );
 }
 
@@ -4005,7 +4005,7 @@ document.getElementById("export-csv-btn")?.addEventListener("click", () => {
   });
   const date = new Date().toISOString().slice(0, 10);
   buildCSVDownload(rows, `upstaff-applicants-${date}.csv`);
-  showToast("ðŸ“¥ CSV exported! " + (rows.length - 1) + " applicants.");
+  showToast("📥 CSV exported! " + (rows.length - 1) + " applicants.");
 });
 
 /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -4122,7 +4122,7 @@ function renderMonth() {
           return `<div class="cal-event" style="background:${bg} !important;color:#0f172a !important;border:2px solid ${bg} !important;" onclick="event.stopPropagation();openEventPreview('${e.id}')">
                   <div class="cal-event-dot" style="background:rgba(0,0,0,0.3);flex-shrink:0;"></div>
           ${sanitize((e.name || "").split(" ")[0])} ${fmtTime(time)}
-          ${ml ? `<span style="margin-left:3px;opacity:.7;" title="Has meeting link">ðŸ“¹</span>` : ""}
+          ${ml ? `<span style="margin-left:3px;opacity:.7;" title="Has meeting link">📹</span>` : ""}
         </div>`;
         } else {
           return `<div class="cal-event cal-event-grouped" style="background:${bg} !important;color:#0f172a !important;border:2px solid ${bg} !important;" onclick="event.stopPropagation();openGroupSlot('${ds}','${time}')">
@@ -4135,8 +4135,8 @@ function renderMonth() {
             if (_ap === 0)
               return `<strong>${_gc}</strong>&nbsp;Event${_gc > 1 ? "s" : ""}`;
             return `<strong>${grp.length}</strong>&nbsp;Events`;
-          })()} Â· ${fmtTime(time)}
-          ${ml ? `<span style="margin-left:3px;opacity:.7;" title="Has meeting link">ðŸ“¹</span>` : ""}
+          })()} · ${fmtTime(time)}
+          ${ml ? `<span style="margin-left:3px;opacity:.7;" title="Has meeting link">📹</span>` : ""}
         </div>`;
         }
       })
@@ -4154,7 +4154,7 @@ function renderMonth() {
   // Show empty-state hint if no events at all
   if (calEvents.filter((e) => !e.isGoogleEvent).length === 0) {
     html += `<div class="empty-state">
-      <div class="empty-state-icon">ðŸ“…</div>
+      <div class="empty-state-icon">📅</div>
       <div class="empty-state-title">No interviews scheduled yet</div>
       <div class="empty-state-subtitle">Click <strong>Schedule Interview</strong> to add one, or sync from Google Calendar.</div>
     </div>`;
@@ -4223,7 +4223,7 @@ function renderWeek() {
             const e = grp[0];
             return `<div class="cal-week-event" style="${base}" onclick="event.stopPropagation();openEventPreview('${e.id}')">${fmtTime(time)} ${sanitize((e.name || "").split(" ")[0])}</div>`;
           } else {
-            return `<div class="cal-week-event cal-event-grouped" style="${base}" onclick="event.stopPropagation();openGroupSlot('${ds}','${time}')">${fmtTime(time)} Â· <strong>${grp.length}</strong> ${grp.every((e) => !e.isGoogleEvent) ? `Applicant${grp.length > 1 ? "s" : ""}` : "Events"}</div>`;
+            return `<div class="cal-week-event cal-event-grouped" style="${base}" onclick="event.stopPropagation();openGroupSlot('${ds}','${time}')">${fmtTime(time)} · <strong>${grp.length}</strong> ${grp.every((e) => !e.isGoogleEvent) ? `Applicant${grp.length > 1 ? "s" : ""}` : "Events"}</div>`;
           }
         })
         .join("");
@@ -4285,7 +4285,7 @@ function renderDay() {
       const base = `top:${top}px;height:${HH}px;width:${w};left:${l};background:${bg};color:${evColorD};border:1px solid ${bg};`;
       if (grp.length === 1) {
         const e = grp[0];
-        return `<div class="cal-day-event" style="${base}" onclick="event.stopPropagation();openEventPreview('${e.id}')"><strong>${fmtTime(time)}</strong> â€” ${sanitize(e.name || "")} (${sanitize(e.position || "")})<br><span style="font-size:10px;opacity:.85;">${sanitize(e.round || "")} Â· ${sanitize(e.type || "")}</span></div>`;
+        return `<div class="cal-day-event" style="${base}" onclick="event.stopPropagation();openEventPreview('${e.id}')"><strong>${fmtTime(time)}</strong> â€” ${sanitize(e.name || "")} (${sanitize(e.position || "")})<br><span style="font-size:10px;opacity:.85;">${sanitize(e.round || "")} · ${sanitize(e.type || "")}</span></div>`;
       } else {
         const nameList = grp
           .map((e) => sanitize(e.name || "Unknown"))
@@ -4321,7 +4321,7 @@ function renderAgenda() {
   el.innerHTML = evts
     .map((e) => {
       const bg = getEventColor(e);
-      return `<div class="agenda-item" style="border-left-color:${bg};" onclick="openEventPreview('${e.id}')"><div class="agenda-time">${fmtTime(e.time)}</div><div class="agenda-body"><div class="agenda-name">${sanitize(e.name)}</div><div class="agenda-meta">${sanitize(e.position)} Â· ${sanitize(e.round)}</div><div class="agenda-meta" style="margin-top:2px;">${e.type === "Virtual" ? "ðŸ“¹" : "ðŸ¢"} ${e.type} Â· <span style="color:${bg};font-weight:600;">${e.status}</span></div></div></div>`;
+      return `<div class="agenda-item" style="border-left-color:${bg};" onclick="openEventPreview('${e.id}')"><div class="agenda-time">${fmtTime(e.time)}</div><div class="agenda-body"><div class="agenda-name">${sanitize(e.name)}</div><div class="agenda-meta">${sanitize(e.position)} · ${sanitize(e.round)}</div><div class="agenda-meta" style="margin-top:2px;">${e.type === "Virtual" ? "📹" : "🏢"} ${e.type} · <span style="color:${bg};font-weight:600;">${e.status}</span></div></div></div>`;
     })
     .join("");
 }
@@ -4362,7 +4362,7 @@ function renderCalendarSidebar() {
       <span style="font-size:14px;line-height:1;opacity:${opacity};">${cal.icon}</span>
       <div style="flex:1;min-width:0;opacity:${opacity};">
         <div style="font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${sanitize(cal.calendarName)}</div>
-        <div style="font-size:10px;color:var(--muted);font-family:'Plus Jakarta Sans',sans-serif;">${sanitize(cal.calendarType)} Â· ${count} event${count !== 1 ? "s" : ""}</div>
+        <div style="font-size:10px;color:var(--muted);font-family:'Plus Jakarta Sans',sans-serif;">${sanitize(cal.calendarType)} · ${count} event${count !== 1 ? "s" : ""}</div>
       </div>
     </div>`;
   }).join("");
@@ -4434,12 +4434,12 @@ function renderSettingsCalendarList() {
   }
 
   const TYPE_ICONS = {
-    Interview: "ðŸ“…",
-    Event: "ðŸ“‹",
+    Interview: "📅",
+    Event: "📋",
     "To-Do": "âœ…",
-    General: "ðŸ—“ï¸",
-    Holiday: "ðŸŽ‰",
-    Primary: "ðŸ—“ï¸",
+    General: "🗓ï¸",
+    Holiday: "🎉",
+    Primary: "🗓ï¸",
   };
 
   const primaryCal = UPSTAFF_CALENDARS.find(
@@ -4460,7 +4460,7 @@ function renderSettingsCalendarList() {
       const count = calEvents.filter(
         (e) => (e.calendarId || e.sourceCalendar) === cal.calendarId,
       ).length;
-      const icon = TYPE_ICONS[cal.calendarType] || "ðŸ“‹";
+      const icon = TYPE_ICONS[cal.calendarType] || "📋";
       const isPrimary =
         cal.calendarId === "primary" || cal.calendarType === "Primary";
       return `
@@ -4480,7 +4480,7 @@ function renderSettingsCalendarList() {
             <span style="width:8px;height:8px;border-radius:50%;background:${cal.color};flex-shrink:0;display:inline-block;"></span>
             ${sanitize(cal.calendarType)}
           </span>
-          <span>Â·</span>
+          <span>·</span>
           <span>${count} event${count !== 1 ? "s" : ""}</span>
         </div>
       </div>
@@ -4489,7 +4489,7 @@ function renderSettingsCalendarList() {
         <button onclick="toggleCalendarVisibility('${cal.calendarId}')"
           title="${hiddenCalendars.has(cal.calendarId) ? "Show" : "Hide"} in calendar"
           class="btn-cal-toggle">
-          ${hiddenCalendars.has(cal.calendarId) ? "ðŸ‘ Show" : "ðŸš« Hide"}
+          ${hiddenCalendars.has(cal.calendarId) ? "👁 Show" : "🚫 Hide"}
         </button>
         ${
           !isPrimary
@@ -4497,7 +4497,7 @@ function renderSettingsCalendarList() {
         <button onclick="handleDeleteCalendar('${cal.calendarId}', this)"
           title="Delete this calendar from Google"
           class="btn-cal-delete">
-          ðŸ—‘ Delete
+          🗑 Delete
         </button>`
             : ""
         }
@@ -4573,7 +4573,7 @@ function updateCalSelectorDot() {
   if (cal) {
     dot.style.background = cal.color;
     if (meta)
-      meta.textContent = `${cal.calendarType} Â· ID: ${cal.calendarId.length > 30 ? cal.calendarId.slice(0, 28) + "â€¦" : cal.calendarId}`;
+      meta.textContent = `${cal.calendarType} · ID: ${cal.calendarId.length > 30 ? cal.calendarId.slice(0, 28) + "â€¦" : cal.calendarId}`;
   }
 }
 
@@ -4640,7 +4640,7 @@ function openNewAt(ds, ts, taskContext) {
   document.getElementById("cal-f-meeting-link").value = "";
   document.getElementById("meeting-link-preview").style.display = "none";
   document.getElementById("meeting-link-note").textContent =
-    "ðŸ’¡ Choose a platform above, generate a placeholder, or paste your own link.";
+    "💡 Choose a platform above, generate a placeholder, or paste your own link.";
   // Reset platform selector to Google Meet
   _meetingPlatform = "meet";
   document
@@ -4678,7 +4678,7 @@ function openGroupSlot(date, time) {
       <div class="cal-group-popup-dot" style="background:${getEventColor(e)};"></div>
       <div class="cal-group-popup-info">
         <div class="cal-group-popup-name">${sanitize(e.name || "Unknown")}</div>
-        <div class="cal-group-popup-meta">${sanitize(e.position || "")}${e.round ? " Â· " + sanitize(e.round) : ""}</div>
+        <div class="cal-group-popup-meta">${sanitize(e.position || "")}${e.round ? " · " + sanitize(e.round) : ""}</div>
       </div>
     </div>`,
     )
@@ -4686,7 +4686,7 @@ function openGroupSlot(date, time) {
 
   popup.innerHTML = `
     <div class="cal-group-popup-header">
-      <span>${fmtTime(time)} &nbsp;Â·&nbsp; ${(() => {
+      <span>${fmtTime(time)} &nbsp;·&nbsp; ${(() => {
         const _ap = grp.filter((e) => !e.isGoogleEvent).length;
         const _gc = grp.length - _ap;
         if (_ap > 0 && _gc === 0)
@@ -4769,9 +4769,9 @@ function openEventPreview(id) {
   if (e.type) {
     tBadge.textContent =
       e.type === "Virtual"
-        ? "ðŸ“¹ Virtual"
+        ? "📹 Virtual"
         : e.type === "Face-to-Face"
-          ? "ðŸ¤ Face-to-Face"
+          ? "🤝 Face-to-Face"
           : e.type;
     tBadge.style.display = "";
   } else {
@@ -5051,7 +5051,7 @@ function setMeetingPlatform(platform, btnEl) {
     openBtn.title = "Open Google Meet to create a new meeting";
     input.placeholder = "https://meet.google.com/xxx-xxxx-xxx";
     noteEl.textContent =
-      "ðŸ’¡ Generate a placeholder link, or open Google Meet to create a real room.";
+      "💡 Generate a placeholder link, or open Google Meet to create a real room.";
   }
 }
 
@@ -5069,14 +5069,14 @@ async function generateMeetingLink() {
     if (gcalSignedIn) {
       // Real Meet room will be auto-created when the event is saved to GCal
       showCalToast(
-        "ðŸ’¡ A real Google Meet room will be created automatically when you save.",
+        "💡 A real Google Meet room will be created automatically when you save.",
       );
       return;
     }
     // Can't generate a real Meet link without GCal OAuth â€” open meet.google.com/new
     // so the user can create a real room and paste the link
     window.open("https://meet.google.com/new", "_blank", "noopener");
-    showCalToast("ðŸ“‹ Copy the link from Google Meet and paste it below.");
+    showCalToast("📋 Copy the link from Google Meet and paste it below.");
     return;
   }
 
@@ -5225,7 +5225,7 @@ document.getElementById("cal-btn-save")?.addEventListener("click", async () => {
         showCalToast("âš ï¸ Saved locally. Google sync failed.");
       }
     } else if (shouldSync && !gcalSignedIn) {
-      showCalToast("ðŸ’¡ Sign into Google Calendar to sync events.");
+      showCalToast("💡 Sign into Google Calendar to sync events.");
     }
     // â”€â”€ BI-DIRECTIONAL SYNC: new calendar event â†’ create or link TASK â”€â”€
     syncCalEventToTask(ev);
@@ -5322,7 +5322,7 @@ function syncCalEventToTask(ev) {
       if (activeView === "list") renderList();
       if (activeView === "board") renderBoard();
       if (activeView === "table") renderTable();
-      showCalToast("ðŸ”„ Applicant record updated from calendar");
+      showCalToast("🔄 Applicant record updated from calendar");
     }
     return;
   }
@@ -5359,7 +5359,7 @@ document
     const e = calEvents.find((x) => x.id === calEditId);
     if (
       await uiConfirm("This interview will be permanently deleted.", {
-        icon: "ðŸ—‘ï¸",
+        icon: "🗑ï¸",
         title: `Delete interview with ${e?.name}?`,
         okText: "Delete",
         okDanger: true,
@@ -5377,7 +5377,7 @@ document
       persistSave();
       closeModal();
       renderCalendar();
-      showCalToast("ðŸ—‘ï¸ Interview deleted.");
+      showCalToast("🗑ï¸ Interview deleted.");
     }
   });
 document.getElementById("cal-prev")?.addEventListener("click", () => {
@@ -5562,16 +5562,16 @@ function renderNotifPanel() {
     return;
   }
   const typeIcon = {
-    stage: "ðŸ“‹",
+    stage: "📋",
     overdue: "âš ï¸",
-    comment: "ðŸ’¬",
-    attachment: "ðŸ“Ž",
-    attachment_deleted: "ðŸ—‘ï¸",
+    comment: "💬",
+    attachment: "📎",
+    attachment_deleted: "🗑ï¸",
   };
   el.innerHTML = NOTIFS.map(
     (n) => `
     <div class="notif-item${n.read ? "" : " notif-unread"}">
-      <span class="notif-icon">${typeIcon[n.type] || "ðŸ””"}</span>
+      <span class="notif-icon">${typeIcon[n.type] || "🔔"}</span>
       <div class="notif-body">
         <div class="notif-msg">${sanitize(n.msg)}</div>
         <div class="notif-time">${_relTime(n.createdAt)}</div>
@@ -5679,7 +5679,7 @@ function renderHistoryTab(task) {
       <div class="sh-dot" style="background:${sm.color};${i === 0 ? "box-shadow:0 0 0 3px " + sm.color + "33;" : ""}"></div>
       <div class="sh-content">
         <div class="sh-stage" style="color:${sm.color};">${sanitize(entry.to)}</div>
-        <div class="sh-meta">from <strong>${sanitize(entry.from)}</strong> &nbsp;Â·&nbsp; ${sanitize(entry.by)}</div>
+        <div class="sh-meta">from <strong>${sanitize(entry.from)}</strong> &nbsp;·&nbsp; ${sanitize(entry.by)}</div>
         <div class="sh-date">${dateStr}</div>
       </div>
     </div>`;
@@ -5857,7 +5857,7 @@ async function removePosition(i) {
     await uiConfirm(
       `"${POSITIONS[i]}" will be removed from the positions list.`,
       {
-        icon: "ðŸ—‘ï¸",
+        icon: "🗑ï¸",
         title: "Remove Position?",
         okText: "Remove",
         okDanger: true,
@@ -5868,7 +5868,7 @@ async function removePosition(i) {
     renderPositionsList(
       document.getElementById("position-search")?.value || "",
     );
-    showToast("ðŸ—‘ï¸ Position removed.");
+    showToast("🗑ï¸ Position removed.");
   }
 }
 
@@ -6089,7 +6089,7 @@ document.addEventListener("change", function (e) {
               ? "Assistant"
               : cfg.role;
         const roleDisplayEl = document.getElementById("profile-display-role");
-        if (roleDisplayEl) roleDisplayEl.textContent = roleLabel + " Â· upstaff";
+        if (roleDisplayEl) roleDisplayEl.textContent = roleLabel + " · upstaff";
         const roleSelectEl = document.getElementById("s-profile-role");
         if (roleSelectEl) roleSelectEl.value = roleLabel;
       }
@@ -6127,7 +6127,7 @@ document.addEventListener("change", function (e) {
 
     // â”€â”€ Profile: Change Photo â”€â”€
     if (action === "toastPhotoUpload") {
-      showToast("ðŸ“· Photo upload coming soon!");
+      showToast("📷 Photo upload coming soon!");
 
       // â”€â”€ Profile: Save Changes â”€â”€
     } else if (action === "toastProfileSaved") {
@@ -6220,7 +6220,7 @@ document.addEventListener("change", function (e) {
 
       // â”€â”€ Members: Invite â”€â”€
     } else if (action === "toastInviteSent") {
-      showToast("ðŸ“¨ Invite sent! (Member management coming soon)");
+      showToast("📨 Invite sent! (Member management coming soon)");
 
       // â”€â”€ Notifications: Save â”€â”€
     } else if (action === "toastNotifSaved") {
@@ -6240,7 +6240,7 @@ document.addEventListener("change", function (e) {
         notifs[k] = nToggles[i]?.checked || false;
       });
       localStorage.setItem(LS_NOTIFS, JSON.stringify(notifs));
-      showToast("ðŸ”” Notification preferences saved!");
+      showToast("🔔 Notification preferences saved!");
 
       // â”€â”€ Danger: Clear All Tasks â”€â”€
     } else if (action === "handleClearTasks") {
@@ -6248,7 +6248,7 @@ document.addEventListener("change", function (e) {
         !(await uiConfirm(
           "This will permanently delete ALL tasks in the workspace.",
           {
-            icon: "ðŸ—‘ï¸",
+            icon: "🗑ï¸",
             title: "Clear All Tasks?",
             okText: "Clear Tasks",
             okDanger: true,
@@ -6260,7 +6260,7 @@ document.addEventListener("change", function (e) {
       taskNextId = 100;
       persistSave();
       refreshCurrentView();
-      showToast("ðŸ—‘ï¸ All tasks cleared.");
+      showToast("🗑ï¸ All tasks cleared.");
 
       // â”€â”€ Danger: Clear Interview Calendar â”€â”€
     } else if (action === "handleClearCalendar") {
@@ -6268,7 +6268,7 @@ document.addEventListener("change", function (e) {
         !(await uiConfirm(
           "This will remove all locally created calendar events. Google Calendar events are unaffected.",
           {
-            icon: "ðŸ“…",
+            icon: "📅",
             title: "Clear Interview Calendar?",
             okText: "Clear Calendar",
             okDanger: true,
@@ -6279,7 +6279,7 @@ document.addEventListener("change", function (e) {
       calEvents = calEvents.filter((ev) => ev.isGoogleEvent);
       persistSave();
       renderCalendar();
-      showToast("ðŸ“… Local calendar events cleared.");
+      showToast("📅 Local calendar events cleared.");
 
       // â”€â”€ Danger: Wipe All Storage â”€â”€
     } else if (action === "handleWipeStorage") {
@@ -6414,7 +6414,7 @@ async function resetDemoData() {
   populateCalendarSelectors();
   renderCalendar();
   refreshCurrentView();
-  showToast("ðŸ”„ Tasks restored. Sync Google Calendar to reload events.");
+  showToast("🔄 Tasks restored. Sync Google Calendar to reload events.");
 }
 
 /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -6464,7 +6464,7 @@ async function renderSearchResults(q) {
   // Use API search when connected, otherwise filter local TASKS
   let taskHits = [];
   if (window.UpstaffAPI && UpstaffAPI.isConfigured()) {
-    el.innerHTML = `<div class="search-empty" style="color:var(--muted);">ðŸ” Searching databaseâ€¦</div>`;
+    el.innerHTML = `<div class="search-empty" style="color:var(--muted);">🔍 Searching databaseâ€¦</div>`;
     try {
       const res = await UpstaffAPI.search(q);
       if (res.data && res.data.length) {
@@ -6517,7 +6517,7 @@ async function renderSearchResults(q) {
         </div>
         <div class="search-result-body">
           <div class="search-result-title">${highlightMatch(sanitize(t.name), q)}</div>
-          <div class="search-result-meta">${sanitize(t.position)} Â· ${sanitize(t.assignee)} Â· Due ${fmtDue(t.due)}</div>
+          <div class="search-result-meta">${sanitize(t.position)} · ${sanitize(t.assignee)} · Due ${fmtDue(t.due)}</div>
         </div>
         <div class="search-result-badge">
           <span class="${statusPillClass(t.status)}" style="font-size:10px;">${t.status}</span>
@@ -6538,7 +6538,7 @@ async function renderSearchResults(q) {
         </div>
         <div class="search-result-body">
           <div class="search-result-title">${highlightMatch(sanitize(e.name), q)}</div>
-          <div class="search-result-meta">${sanitize(e.position)} Â· ${sanitize(e.round)} Â· ${fmtDue(e.date)} ${fmtTime(e.time)}</div>
+          <div class="search-result-meta">${sanitize(e.position)} · ${sanitize(e.round)} · ${fmtDue(e.date)} ${fmtTime(e.time)}</div>
         </div>
         <div class="search-result-badge">
           <span class="${calStatusPillClass(e.status)}" style="font-size:10px;">${e.status}</span>
@@ -6832,32 +6832,32 @@ function buildSourceList(container, data) {
   // Resolve icon â€” handles exact match AND prefix match (e.g. "Referral [code]")
   function _srcIcon(label) {
     const exact = {
-      Facebook: "ðŸ‘",
-      LinkedIn: "ðŸ’¼",
-      Instagram: "ðŸ“¸",
-      TikTok: "ðŸŽµ",
-      Twitter: "ðŸ¦",
-      JobStreet: "ðŸ”Ž",
-      Indeed: "ðŸ”",
-      Kalibrr: "ðŸŽ¯",
-      Referral: "ðŸ¤",
-      "Company Website": "ðŸŒ",
-      "Walk-in": "ðŸš¶",
+      Facebook: "👍",
+      LinkedIn: "💼",
+      Instagram: "📸",
+      TikTok: "🎵",
+      Twitter: "🐦",
+      JobStreet: "🔎",
+      Indeed: "🔍",
+      Kalibrr: "🎯",
+      Referral: "🤝",
+      "Company Website": "🌐",
+      "Walk-in": "🚶",
       Other: "â“",
     };
     if (exact[label]) return exact[label];
-    // Prefix match: "Referral [yangyang]" â†’ ðŸ¤
+    // Prefix match: "Referral [yangyang]" â†’ 🤝
     const lower = label.toLowerCase();
-    if (lower.startsWith("referral")) return "ðŸ¤";
-    if (lower.startsWith("facebook")) return "ðŸ‘";
-    if (lower.startsWith("linkedin")) return "ðŸ’¼";
-    if (lower.startsWith("instagram")) return "ðŸ“¸";
-    if (lower.startsWith("tiktok")) return "ðŸŽµ";
-    if (lower.startsWith("jobstreet")) return "ðŸ”Ž";
-    if (lower.startsWith("indeed")) return "ðŸ”";
-    if (lower.startsWith("walk")) return "ðŸš¶";
-    if (lower.includes("website") || lower.includes("web")) return "ðŸŒ";
-    return "ðŸ“£";
+    if (lower.startsWith("referral")) return "🤝";
+    if (lower.startsWith("facebook")) return "👍";
+    if (lower.startsWith("linkedin")) return "💼";
+    if (lower.startsWith("instagram")) return "📸";
+    if (lower.startsWith("tiktok")) return "🎵";
+    if (lower.startsWith("jobstreet")) return "🔎";
+    if (lower.startsWith("indeed")) return "🔍";
+    if (lower.startsWith("walk")) return "🚶";
+    if (lower.includes("website") || lower.includes("web")) return "🌐";
+    return "📣";
   }
 
   if (!data.length) {
@@ -6992,7 +6992,7 @@ function renderAnalytics() {
       </div>
       <div class="analytics-stat-value">${avgTTH !== null ? avgTTH + "d" : "â€”"}</div>
       <div class="analytics-stat-label">Avg. Time to Hire</div>
-      <div class="analytics-stat-sub">${_tthData.length ? `Min ${minTTH}d Â· Max ${maxTTH}d Â· ${_tthData.length} hired` : "No hire data yet"}</div>
+      <div class="analytics-stat-sub">${_tthData.length ? `Min ${minTTH}d · Max ${maxTTH}d · ${_tthData.length} hired` : "No hire data yet"}</div>
     </div>`;
   }
 
@@ -7054,7 +7054,7 @@ function renderAnalytics() {
           theme: _apexMode,
           y: {
             formatter: (v, { dataPointIndex }) =>
-              `${v}d avg Â· ${posRows[dataPointIndex].n} hire${posRows[dataPointIndex].n > 1 ? "s" : ""}`,
+              `${v}d avg · ${posRows[dataPointIndex].n} hire${posRows[dataPointIndex].n > 1 ? "s" : ""}`,
           },
         },
       });
@@ -7813,7 +7813,7 @@ function exportAnalyticsCSV() {
   });
 
   buildCSVDownload(rows, `upstaff-analytics-${date}.csv`);
-  showToast("ðŸ“Š Analytics CSV exported!");
+  showToast("📊 Analytics CSV exported!");
 }
 
 /* â”€â”€ Wire Analytics into showSettings / switchView pattern â”€â”€ */
@@ -7861,7 +7861,7 @@ async function _renderApiCountsBanner() {
   banner.id = "api-counts-banner";
   banner.style.cssText =
     "margin:0 0 20px;padding:16px 20px;background:var(--surface-1);border:1px solid var(--border);border-radius:12px;";
-  banner.innerHTML = `<div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px">ðŸ”— Live Database Counts</div>
+  banner.innerHTML = `<div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px">🔗 Live Database Counts</div>
     <div style="color:var(--muted);font-size:12px">Loadingâ€¦</div>`;
   analyticsEl.prepend(banner);
 
@@ -7872,7 +7872,7 @@ async function _renderApiCountsBanner() {
 
     banner.innerHTML = `
       <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px">
-        ðŸ”— Live Database Counts
+        🔗 Live Database Counts
         <span style="font-size:11px;font-weight:400;color:var(--muted);margin-left:8px">Total: ${counts.total || 0} applicants</span>
       </div>
       <div style="display:flex;flex-wrap:wrap;gap:8px">
@@ -7975,7 +7975,7 @@ function renderCandidates() {
         ? "candidates"
         : `"${_candidateFolderFilter}" candidates`;
     container.innerHTML = `<div class="candidate-empty">
-      <div class="candidate-empty-icon">ðŸ“­</div>
+      <div class="candidate-empty-icon">📭</div>
       <div class="candidate-empty-title">No ${folderLabel} yet</div>
       <div style="font-size:13px;color:var(--light);margin-top:4px;">
         Open any task and assign it to a candidate folder using the <strong>Candidate Folder</strong> field.
@@ -7998,8 +7998,8 @@ function renderCandidates() {
       const tasks = groups[folder];
       if (!tasks.length) return;
       const folderIcons = {
-        "Ready to Call": "ðŸ“ž",
-        "Ready to Hire": "ðŸŽ¯",
+        "Ready to Call": "📞",
+        "Ready to Hire": "🎯",
         "Talent Pool / Shortlisted": "â­",
       };
       const folderColors = {
@@ -8050,22 +8050,22 @@ function candidateCardHTML(t, accentColor) {
   const ac = avatarColor(t.assignee);
   const dc = dueCls(t.due);
   const folderIcons = {
-    "Ready to Call": "ðŸ“ž",
-    "Ready to Hire": "ðŸŽ¯",
+    "Ready to Call": "📞",
+    "Ready to Hire": "🎯",
     "Talent Pool / Shortlisted": "â­",
   };
-  const folderIcon = folderIcons[t.candidateFolder] || "ðŸ“";
+  const folderIcon = folderIcons[t.candidateFolder] || "📁";
   return `<div class="candidate-card" onclick="openTaskEdit(${t.id})">
     <div class="candidate-avatar-lg" style="background:${ac};">${initials(t.assignee)}</div>
     <div class="candidate-info">
       <div class="candidate-name">${sanitize(t.name)}</div>
       <div class="candidate-meta">
         <span>${sanitize(t.position)}</span>
-        <span>Â·</span>
+        <span>·</span>
         <span style="display:inline-flex;align-items:center;gap:4px;">
           <span class="${statusPillClass(t.status)}" style="font-size:10px;">${t.status}</span>
         </span>
-        ${t.due ? `<span>Â·</span><span class="due-date ${dc}" style="font-size:11px;">ðŸ“… ${fmtDue(t.due)}</span>` : ""}
+        ${t.due ? `<span>·</span><span class="due-date ${dc}" style="font-size:11px;">📅 ${fmtDue(t.due)}</span>` : ""}
       </div>
     </div>
     <div class="candidate-actions">
@@ -8114,15 +8114,15 @@ function assignFolder(taskId, folder) {
   if (!t) return;
   if (!folder) {
     delete t.candidateFolder;
-    showToast("ðŸ—‚ï¸ Removed from candidate folders");
+    showToast("🗂ï¸ Removed from candidate folders");
   } else {
     t.candidateFolder = folder;
     const icons = {
-      "Ready to Call": "ðŸ“ž",
-      "Ready to Hire": "ðŸŽ¯",
+      "Ready to Call": "📞",
+      "Ready to Hire": "🎯",
       "Talent Pool / Shortlisted": "â­",
     };
-    showToast(`${icons[folder] || "ðŸ“"} Moved to ${folder}`);
+    showToast(`${icons[folder] || "📁"} Moved to ${folder}`);
   }
   persistSave();
   renderCandidates();
@@ -8330,7 +8330,7 @@ async function deletePublicCalEntry(calId, calName, isCustom) {
     !(await uiConfirm(
       `"${calName}" will be removed and unsubscribed if active.`,
       {
-        icon: "ðŸ—‘ï¸",
+        icon: "🗑ï¸",
         title: "Remove Calendar?",
         okText: "Remove",
         okDanger: true,
@@ -8375,7 +8375,7 @@ async function deletePublicCalEntry(calId, calName, isCustom) {
     }
   }
 
-  showToast(`ðŸ—‘ï¸ "${calName}" removed.`);
+  showToast(`🗑ï¸ "${calName}" removed.`);
   renderPublicCalendars();
 }
 
@@ -8413,7 +8413,7 @@ async function unsubscribeExtCalendar(calendarId, calendarName, btnEl) {
     renderCalendar();
     renderPublicCalendars();
     renderSettingsCalendarList();
-    showCalToast(`ðŸ”• "${calendarName}" unsubscribed. Events hidden.`);
+    showCalToast(`🔕 "${calendarName}" unsubscribed. Events hidden.`);
   } catch (err) {
     const msg = err?.result?.error?.message || err?.message || "Unknown error";
     showCalToast(`âŒ Could not unsubscribe: ${msg}`);
@@ -8436,7 +8436,7 @@ async function subscribeExtCalendar(calendarId, calendarName, btnEl) {
     }
     copyExtCalId(calendarId, null);
     showCalToast(
-      "ðŸ“‹ Calendar ID copied! Sign in with Google to auto-load events. Open Google Calendar â†’ Other Calendars â†’ + â†’ Subscribe to calendar.",
+      "📋 Calendar ID copied! Sign in with Google to auto-load events. Open Google Calendar â†’ Other Calendars â†’ + â†’ Subscribe to calendar.",
     );
     renderPublicCalendars();
     return;
@@ -8499,7 +8499,7 @@ async function resubscribeExtCalendar(calendarId, calendarName, btnEl) {
     _saveExtCalState();
     copyExtCalId(calendarId, null);
     showCalToast(
-      "ðŸ“‹ Sign in with Google to auto-reload events. Calendar ID copied for manual import.",
+      "📋 Sign in with Google to auto-reload events. Calendar ID copied for manual import.",
     );
     renderPublicCalendars();
     return;
@@ -8527,7 +8527,7 @@ function removeCustomExtCal(calendarId) {
   );
   _saveExtCalState();
   renderPublicCalendars();
-  showCalToast("ðŸ—‘ï¸ Custom calendar removed.");
+  showCalToast("🗑ï¸ Custom calendar removed.");
 }
 
 async function subscribeCustomExtCalendar() {
@@ -8567,7 +8567,7 @@ async function subscribeCustomExtCalendar() {
       console.error("[ExtCal] âŒ Could not load custom cals:", e);
     }
     if (!customs.some((c) => c.id === id)) {
-      customs.push({ id, name, icon: "ðŸ“…", desc: id });
+      customs.push({ id, name, icon: "📅", desc: id });
       localStorage.setItem("upstaff_custom_ext_cals", JSON.stringify(customs));
     }
   }
@@ -8577,7 +8577,7 @@ async function subscribeCustomExtCalendar() {
   if (statusEl) {
     statusEl.textContent = gcalSignedIn
       ? "âœ… Subscribed â€” events loadingâ€¦"
-      : "ðŸ“‹ Calendar ID copied! Sign in to auto-load events.";
+      : "📋 Calendar ID copied! Sign in to auto-load events.";
     statusEl.style.color = gcalSignedIn ? "var(--green)" : "var(--cyan)";
     setTimeout(() => {
       if (statusEl) statusEl.textContent = "";
@@ -8601,7 +8601,7 @@ function copyExtCalId(calendarId, btnEl) {
       btnEl.textContent = orig;
     }, 2000);
   }
-  showCalToast("ðŸ“‹ Calendar ID copied to clipboard!");
+  showCalToast("📋 Calendar ID copied to clipboard!");
 }
 
 /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -9277,12 +9277,12 @@ document.addEventListener("DOMContentLoaded", _rebuildPositionFilter);
       if (mode === "profile") {
         title.textContent = "âœ‚ï¸ Crop Profile Photo";
         hint.textContent =
-          "Drag to reposition Â· Scroll to zoom Â· The result will be circular.";
+          "Drag to reposition · Scroll to zoom · The result will be circular.";
         modal.className = "open mode-profile";
       } else {
         title.textContent = "âœ‚ï¸ Crop Background Image";
         hint.textContent =
-          "Drag to reposition Â· Scroll to zoom Â· Select the area you want shown.";
+          "Drag to reposition · Scroll to zoom · Select the area you want shown.";
         modal.className = "open mode-background";
       }
 
