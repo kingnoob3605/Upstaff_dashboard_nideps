@@ -177,59 +177,73 @@
 
   <!-- Super Filter Panel -->
   <div id="super-filter-panel" class="super-filter-panel" style="display:none;">
-
-    <!-- LIST / BOARD / TABLE filters -->
-    <div id="sf-list-section" class="super-filter-inner">
-      <div class="super-filter-group">
-        <label class="super-filter-label" for="list-filter-position">Position</label>
-        <select class="list-filter-select" id="list-filter-position" onchange="renderList();updateFilterBadge()">
-          <option value="">All Positions</option>
-        </select>
-      </div>
-      <div class="super-filter-group">
-        <label class="super-filter-label" for="list-filter-assignee">Assignee</label>
-        <select class="list-filter-select" id="list-filter-assignee" onchange="renderList();updateFilterBadge()">
-          <option value="">All Assignees</option>
-          <option>Assistant</option><option>Manager</option>
-        </select>
-      </div>
-      <div class="super-filter-group">
-        <label class="super-filter-label" for="list-filter-priority">Priority</label>
-        <select class="list-filter-select" id="list-filter-priority" onchange="renderList();updateFilterBadge()">
-          <option value="">All Priorities</option>
-          <option>Low</option><option>Medium</option><option>High</option><option>Urgent</option>
-        </select>
-      </div>
-      <div class="super-filter-group">
-        <label class="super-filter-label" for="list-filter-date-from">Due From</label>
-        <input type="date" class="list-filter-select" id="list-filter-date-from" onchange="renderList();updateFilterBadge()" style="height:32px;"/>
-      </div>
-      <div class="super-filter-group">
-        <label class="super-filter-label" for="list-filter-date-to">Due To</label>
-        <input type="date" class="list-filter-select" id="list-filter-date-to" onchange="renderList();updateFilterBadge()" style="height:32px;"/>
-      </div>
-      <div class="super-filter-sep"></div>
-      <div class="super-filter-group">
-        <label class="super-filter-label" for="list-sort">Sort By</label>
-        <select class="list-filter-select" id="list-sort" onchange="renderList()">
-          <option value="due-asc">Due Date ↑</option>
-          <option value="due-desc">Due Date ↓</option>
-          <option value="name-asc">Name A–Z</option>
-          <option value="name-desc">Name Z–A</option>
-          <option value="priority-desc">Priority (High–Low)</option>
-          <option value="created-desc">Newest First</option>
-        </select>
-      </div>
-      <div class="super-filter-spacer"></div>
-      <button class="super-filter-clear" id="super-filter-clear-btn" onclick="clearAllFilters()" style="display:none;">
+    <!-- Header -->
+    <div class="sf-header">
+      <span class="sf-title">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="opacity:.6"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+        Filters
+      </span>
+      <button class="sf-close-btn" onclick="_closeSuperFilter()" aria-label="Close filters">
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        Clear All
       </button>
     </div>
 
-    <!-- CALENDAR filters — moved to inline cal-filter-bar; keep empty div so JS refs don't error -->
-    <div id="sf-cal-section" class="super-filter-inner" style="display:none;"></div>
+    <!-- LIST / BOARD / TABLE filters -->
+    <div id="sf-list-section" class="super-filter-inner">
+      <div class="sf-row">
+        <div class="super-filter-group sf-grow">
+          <label class="super-filter-label" for="list-filter-position">Position</label>
+          <select class="list-filter-select" id="list-filter-position" onchange="renderList();updateFilterBadge()">
+            <option value="">All Positions</option>
+          </select>
+        </div>
+        <div class="super-filter-group">
+          <label class="super-filter-label" for="list-filter-assignee">Assignee</label>
+          <select class="list-filter-select" id="list-filter-assignee" onchange="renderList();updateFilterBadge()">
+            <option value="">All Assignees</option>
+            <option>Assistant</option><option>Manager</option>
+          </select>
+        </div>
+      </div>
+      <div class="sf-row">
+        <div class="super-filter-group">
+          <label class="super-filter-label" for="list-filter-priority">Priority</label>
+          <select class="list-filter-select" id="list-filter-priority" onchange="renderList();updateFilterBadge()">
+            <option value="">All Priorities</option>
+            <option>Low</option><option>Medium</option><option>High</option><option>Urgent</option>
+          </select>
+        </div>
+        <div class="super-filter-group">
+          <label class="super-filter-label" for="list-filter-date-from">Due From</label>
+          <input type="date" class="list-filter-select" id="list-filter-date-from" onchange="renderList();updateFilterBadge()"/>
+        </div>
+        <div class="super-filter-group">
+          <label class="super-filter-label" for="list-filter-date-to">Due To</label>
+          <input type="date" class="list-filter-select" id="list-filter-date-to" onchange="renderList();updateFilterBadge()"/>
+        </div>
+      </div>
+      <div class="sf-divider"></div>
+      <div class="sf-row sf-row-footer">
+        <div class="super-filter-group">
+          <label class="super-filter-label" for="list-sort">Sort By</label>
+          <select class="list-filter-select" id="list-sort" onchange="renderList()">
+            <option value="due-asc">Due Date ↑</option>
+            <option value="due-desc">Due Date ↓</option>
+            <option value="name-asc">Name A–Z</option>
+            <option value="name-desc">Name Z–A</option>
+            <option value="priority-desc">Priority (High–Low)</option>
+            <option value="created-desc">Newest First</option>
+          </select>
+        </div>
+        <button class="super-filter-clear" id="super-filter-clear-btn" onclick="clearAllFilters()" style="display:none;">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          Clear filters
+        </button>
+      </div>
+    </div>
 
+    <!-- CALENDAR filters — keep empty so JS refs don't error -->
+    <div id="sf-cal-section" class="super-filter-inner" style="display:none;"></div>
   </div>
 
   <!-- View Tabs Bar — hidden on Settings page -->
@@ -258,27 +272,27 @@
     <!-- ── LIST VIEW ── -->
     <div id="view-list" class="view-panel">
 
-      <!-- Stats Bar + Status Tabs row -->
-      <div class="list-header-row">
-        <div class="list-stats-bar" id="list-stats-bar"></div>
-        <div class="list-status-tabs" id="list-status-tabs"></div>
-      </div>
+      <!-- Stats legend — outside filter box, pinned right -->
+      <div class="list-stats-bar" id="list-stats-bar"></div>
 
-      <!-- Inline search bar (filter controls moved to super filter panel) -->
+      <!-- Filter bar: All dropdown · search · controls · saved views -->
       <div class="list-filter-bar">
+        <div class="list-status-tabs" id="list-status-tabs"></div>
+        <div class="list-filter-sep"></div>
         <div class="list-search-wrap">
           <svg class="list-search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           <input type="text" placeholder="Search applicants…" id="list-search" aria-label="Search applicants" oninput="_renderListDebounced()"/>
         </div>
-        <button class="filter-btn" id="list-filter-btn" aria-label="Filter" onclick="toggleSuperFilter()" style="display:inline-flex;align-items:center;gap:6px;">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="20" y2="12"/><line x1="12" y1="18" x2="20" y2="18"/></svg>
+        <button class="filter-btn" id="list-filter-btn" aria-label="Filter" onclick="toggleSuperFilter()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
           Filter
-          <span id="filter-active-badge" style="display:none;background:var(--violet);color:#fff;border-radius:99px;font-size:9px;font-weight:800;padding:1px 5px;margin-left:2px;"></span>
+          <span id="filter-active-badge" style="display:none;background:var(--violet);color:#fff;border-radius:99px;font-size:9px;font-weight:800;padding:1px 5px;margin-left:1px;"></span>
         </button>
-        <button class="filter-btn" id="list-density-btn" aria-label="Toggle density" onclick="toggleListDensity()" title="Toggle row density" style="display:inline-flex;align-items:center;gap:6px;">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        <button class="filter-btn" id="list-density-btn" aria-label="Toggle density" onclick="toggleListDensity()" title="Toggle row density">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
           Density
         </button>
+        <div class="list-filter-sep"></div>
         <div id="list-saved-views" class="saved-views-bar"></div>
       </div>
 

@@ -9,6 +9,7 @@
 .agents/
 skills-lock.json
 
-# Apps Script source — contains private Spreadsheet ID + Drive folder URL
-2MAINappscript.txt
+# Not needed — using Vercel
+netlify.toml
+
 .claude/worktrees/

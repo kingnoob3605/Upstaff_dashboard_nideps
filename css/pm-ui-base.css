@@ -514,11 +514,12 @@ nav {
   margin-bottom: 16px;
 }
 .filter-btn {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 7px 14px;
-  border-radius: 9px;
+  gap: 5px;
+  padding: 0 13px;
+  height: 30px;
+  border-radius: 99px;
   border: 1.5px solid var(--border);
   background: var(--surface-1);
   font-size: 12px;
@@ -526,11 +527,18 @@ nav {
   font-family: "Plus Jakarta Sans", sans-serif;
   color: var(--muted);
   cursor: pointer;
-  transition: all 0.15s;
+  transition: border-color .15s, color .15s, background .15s;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .filter-btn:hover {
   border-color: var(--cyan);
-  color: var(--cyan);
+  color: var(--text);
+}
+.filter-btn.active {
+  background: var(--cyan);
+  border-color: var(--cyan);
+  color: #0f172a;
 }
 .export-csv-btn {
   background: rgba(67, 233, 123, 0.08);
@@ -586,10 +594,61 @@ nav {
 .list-stats-bar {
   display: flex;
   align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
+  justify-content: flex-end;
+  width: 100%;
+  margin-bottom: 6px;
+}
+
+/* ── Stats Legend (connected pill, no individual borders) ── */
+.stat-legend {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--surface-1);
   flex-shrink: 0;
 }
+:root:not([data-theme="dark"]) .stat-legend {
+  background: #ffffff;
+  border-color: rgba(0,0,0,0.1);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+.stat-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 14px;
+  color: var(--muted);
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 600;
+}
+.stat-legend-item + .stat-legend-item {
+  border-left: 1px solid var(--border);
+}
+.stat-legend-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--cyan);
+  flex-shrink: 0;
+}
+.stat-legend-item.overdue .stat-legend-dot { background: #ef4444; }
+.stat-legend-item.today   .stat-legend-dot { background: var(--orange); }
+.stat-legend-item.done    .stat-legend-dot { background: var(--green); }
+.stat-legend-item .stat-val {
+  font-size: 13px;
+  font-weight: 800;
+  font-family: "Syne", sans-serif;
+  color: var(--text);
+}
+.stat-legend-item.overdue .stat-val { color: #ef4444; }
+.stat-legend-item.today   .stat-val { color: var(--orange); }
+.stat-legend-item.done    .stat-val { color: var(--green); }
 .list-stat-chip {
   display: flex;
   align-items: center;
@@ -637,19 +696,20 @@ nav {
   position: relative;
 }
 .lst-dd-trigger {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 7px;
-  padding: 6px 12px;
+  padding: 0 12px;
+  height: 30px;
   border-radius: 99px;
   border: 1.5px solid var(--border);
   background: var(--surface-1);
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 700;
   font-family: "Plus Jakarta Sans", sans-serif;
   color: var(--text);
   cursor: pointer;
-  transition: all 0.15s;
+  transition: border-color .15s;
   white-space: nowrap;
 }
 .lst-dd-trigger:hover {
@@ -791,10 +851,10 @@ nav {
 .list-filter-bar {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   flex-wrap: wrap;
   margin-bottom: 14px;
-  padding: 10px 14px;
+  padding: 8px 12px;
   background: var(--surface-1);
   border: 1px solid var(--border);
   border-radius: 12px;
