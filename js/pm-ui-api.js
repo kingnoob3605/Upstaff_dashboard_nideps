@@ -191,18 +191,17 @@ window.UpstaffAPI = (function () {
     delete c.loggedOut;
     saveConfig(c);
 
-    // Pre-populate upstaff_profile with Google account data
+    // Pre-populate profile with Google account data (per-user key when available)
     try {
       var nameParts = (googlePayload.name || "").trim().split(" ");
       var firstName = nameParts[0] || "";
       var lastName = nameParts.slice(1).join(" ") || "";
-      var existingProfile = JSON.parse(
-        localStorage.getItem("upstaff_profile") || "{}",
-      );
+      var _pk = window._profileKey ? window._profileKey() : "upstaff_profile";
+      var existingProfile = JSON.parse(localStorage.getItem(_pk) || "{}");
       existingProfile.firstName = firstName || existingProfile.firstName || "";
       existingProfile.lastName = lastName || existingProfile.lastName || "";
       existingProfile.email = email || existingProfile.email || "";
-      localStorage.setItem("upstaff_profile", JSON.stringify(existingProfile));
+      localStorage.setItem(_pk, JSON.stringify(existingProfile));
     } catch (_) {}
 
     return { role: json.role, name: json.name || c.name };
