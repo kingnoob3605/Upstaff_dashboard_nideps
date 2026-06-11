@@ -492,6 +492,20 @@ window.SupabaseAuth = (function () {
     } catch (_) {}
   }
 
+  function _clearExpiredSession() {
+    var c = _config();
+    delete c.supabaseToken;
+    delete c.supabaseRefreshToken;
+    delete c.login_at;
+    delete c.role;
+    delete c.name;
+    delete c.email;
+    delete c.userId;
+    c.loggedOut = true;
+    _saveConfig(c);
+    window.dispatchEvent(new CustomEvent("supabase:session-expired"));
+  }
+
   function _jwtExpired(token) {
     try {
       var payload = JSON.parse(
@@ -534,14 +548,22 @@ window.SupabaseAuth = (function () {
     if (!_jwtExpired(c.supabaseToken)) return c.supabaseToken;
 
     // Expired — try manual refresh
-    if (!c.supabaseRefreshToken) return null;
+    if (!c.supabaseRefreshToken) {
+      // No refresh token and JWT is expired — session is fully dead
+      _clearExpiredSession();
+      return null;
+    }
     try {
       var client2 = _getClient();
       if (!client2) return null;
       var result = await client2.auth.refreshSession({
         refresh_token: c.supabaseRefreshToken,
       });
-      if (result.error || !result.data || !result.data.session) return null;
+      if (result.error || !result.data || !result.data.session) {
+        // Refresh token rejected by Supabase (400) — clear the dead session
+        _clearExpiredSession();
+        return null;
+      }
       c.supabaseToken = result.data.session.access_token;
       c.supabaseRefreshToken = result.data.session.refresh_token;
       c.login_at = Date.now();

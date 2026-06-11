@@ -2898,6 +2898,12 @@ document.addEventListener('DOMContentLoaded', function() {
   }, 50);
 });
 
+// When a token refresh fails (400), clear the dead session and prompt re-login
+window.addEventListener('supabase:session-expired', function() {
+  if (typeof showToast === 'function') showToast('Your session has expired. Please sign in again.');
+  setTimeout(function() { location.reload(); }, 1500);
+});
+
 // Keyboard shortcuts inside the login form
 document.addEventListener('DOMContentLoaded', function() {
   var emailInput = document.getElementById('gate-email');

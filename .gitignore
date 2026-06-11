@@ -2,14 +2,5 @@
 .env.local
 .env.*.local
 
-# Claude Code tooling — local only, not app code
-.claude/settings.local.json
-.claude/launch.json
-.claude/skills/
-.agents/
-skills-lock.json
-
 # Not needed — using Vercel
 netlify.toml
-
-.claude/worktrees/
