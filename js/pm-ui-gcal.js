@@ -1391,12 +1391,21 @@ function startReminderChecker() {
   // Clear any previous timer (avoid duplicates on re-sync)
   if (reminderTimer) clearInterval(reminderTimer);
 
-  // Run once immediately, then every 60 seconds
-  checkUpcomingReminders();
-  reminderTimer = setInterval(() => {
+  // Run once immediately, then every 60 seconds.
+  // Work is deferred to idle time so it never blocks the main thread.
+  const _runChecks = () => {
     checkUpcomingReminders();
-    syncGCalCancellationsToRecruitment(); // ← reflect GCal cancellations back
-  }, 60 * 1000);
+    syncGCalCancellationsToRecruitment();
+  };
+  const _scheduleChecks = () => {
+    if (window.requestIdleCallback) {
+      requestIdleCallback(_runChecks, { timeout: 5000 });
+    } else {
+      setTimeout(_runChecks, 0);
+    }
+  };
+  _scheduleChecks();
+  reminderTimer = setInterval(_scheduleChecks, 60 * 1000);
   dbg("[Reminders] ✅ Reminder checker started");
 }
 
@@ -1406,14 +1415,17 @@ function startReminderChecker() {
    and mirrors that to the matching TASK so both stay in sync.
 ────────────────────────────────────────────── */
 function syncGCalCancellationsToRecruitment() {
+  // Build a Map once for O(1) lookup instead of O(n) find() per event
+  const taskByEventId = new Map(
+    TASKS.filter((t) => t.gcalEventId).map((t) => [t.gcalEventId, t])
+  );
   let changed = false;
   calEvents.forEach((ev) => {
     if (
       (ev.status === "cancelled" || ev.status === "Cancelled") &&
       ev.google_event_id
     ) {
-      // Find the matching TASK by gcalEventId
-      const task = TASKS.find((t) => t.gcalEventId === ev.google_event_id);
+      const task = taskByEventId.get(ev.google_event_id);
       if (
         task &&
         task.status !== "Closed" &&
